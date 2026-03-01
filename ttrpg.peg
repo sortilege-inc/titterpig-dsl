@@ -1,0 +1,291 @@
+# Titterpig DSL — PEG Grammar (Bryan Ford notation)
+# Formal syntax specification for .ttrpg files (v0.3)
+#
+# This grammar defines syntactically valid .ttrpg files. Semantic rules
+# (hash uniqueness, EXTENDS resolution, type consistency) are enforced
+# by the validator, not this grammar.
+#
+# Conventions:
+#   UPPER_CASE  = rule names
+#   'literal'   = terminal strings
+#   [...]       = character class
+#   !e          = not-predicate
+#   &e          = and-predicate
+#   e*          = zero or more
+#   e+          = one or more
+#   e?          = optional
+#   e1 / e2     = ordered choice
+#   (e)         = grouping
+
+# ═══════════════════════════════════════════════════════════
+# 1. File-Level Structure
+# ═══════════════════════════════════════════════════════════
+
+FILE            <- _ (BASE_BLOCK / EXTENSION_BLOCK) _ EOF
+
+BASE_BLOCK      <- 'BASE' _ STRING _ '{' _ BODY _ '}'
+EXTENSION_BLOCK <- 'EXTENSION' _ STRING _ EXTENDS_CLAUSE? _ '{' _ BODY _ '}'
+
+EXTENDS_CLAUSE  <- 'EXTENDS' _ STRING
+
+BODY            <- (BODY_ENTRY _)*
+
+BODY_ENTRY      <- METADATA
+                 / DEF_BLOCK
+                 / PROPERTIES_BLOCK
+                 / RULES_BLOCK
+                 / APPLIES_TO_CLAUSE
+                 / EXTENDS_DECL
+                 / BARE_TYPE_CONSTRAINT
+                 / MODIFY_STATEMENT
+                 / OVERRIDE_STATEMENT
+                 / ADD_STATEMENT
+                 / GENERIC_BLOCK
+                 / INLINE_VALUE
+                 / COMMENT
+
+# ═══════════════════════════════════════════════════════════
+# 2. Metadata
+# ═══════════════════════════════════════════════════════════
+
+METADATA        <- NAME_DECL / VERSION_DECL / RELEASE_DATE_DECL / DEPENDS_ON_DECL
+
+NAME_DECL       <- 'NAME' _ STRING
+VERSION_DECL    <- 'VERSION' _ STRING
+RELEASE_DATE_DECL <- 'RELEASE_DATE' _ STRING
+DEPENDS_ON_DECL <- 'DEPENDS_ON' _ STRING (_ 'VERSION' _ STRING)?
+
+# ═══════════════════════════════════════════════════════════
+# 3. Definitions (DEF)
+# ═══════════════════════════════════════════════════════════
+
+# All DEF forms:
+#   ^"Name" DEF { ... }
+#   #hash ^"Name" DEF { ... }
+#   #hash ACTOR "Name" DEF { ... }
+#   #hash "Name" DEF { ... }
+#   ^"Name" DEF { ... }          (no hash)
+#   "Name" DEF { ... }           (rare, no caret)
+
+DEF_BLOCK       <- HASH_ID? _ ACTOR_KW? _ DEF_NAME _ 'DEF' _ '{' _ BODY _ '}'
+
+ACTOR_KW        <- 'ACTOR'
+DEF_NAME        <- CARET_REF / STRING
+
+# ═══════════════════════════════════════════════════════════
+# 4. Properties Block
+# ═══════════════════════════════════════════════════════════
+
+PROPERTIES_BLOCK <- 'PROPERTIES' _ '{' _ (PROPERTY_DECL _)* '}'
+
+PROPERTY_DECL   <- (CARET_REF / STRING) _ PROPERTY_TYPE
+
+PROPERTY_TYPE   <- DEF_INLINE
+                 / LIST_OF_TYPE
+                 / LIST_LITERAL
+                 / ENUM_TYPE
+                 / STRING_TYPE
+                 / INTEGER_TYPE
+                 / BOOLEAN_TYPE
+
+DEF_INLINE      <- 'DEF' _ '{' _ (PROPERTY_DECL _)* '}'
+
+STRING_TYPE     <- 'STRING' (_ STRING)? (_ MODIFIER)*
+INTEGER_TYPE    <- 'INTEGER' (_ INTEGER_LIT)? (_ MODIFIER)*
+BOOLEAN_TYPE    <- 'BOOLEAN' (_ MODIFIER)*
+ENUM_TYPE       <- 'ENUM' _ BRACKET_LIST
+LIST_OF_TYPE    <- 'LIST' _ 'OF' _ (CARET_REF / 'STRING') (_ BRACKET_LIST)?
+LIST_LITERAL    <- 'LIST' _ BRACKET_LIST
+
+MODIFIER        <- 'REQUIRED' / 'FIXED'
+                 / 'DEFAULT' _ VALUE
+                 / 'MIN' _ INTEGER_LIT
+                 / 'MAX' _ INTEGER_LIT
+
+# ═══════════════════════════════════════════════════════════
+# 5. Bare Type Constraints (in DEF body, outside PROPERTIES)
+# ═══════════════════════════════════════════════════════════
+
+BARE_TYPE_CONSTRAINT <- BARE_ENUM / BARE_INTEGER / BARE_STRING / BARE_BOOLEAN
+
+BARE_ENUM       <- 'ENUM' _ BRACKET_LIST
+BARE_INTEGER    <- 'INTEGER' (_ INTEGER_LIT)? (_ MODIFIER)*
+BARE_STRING     <- 'STRING' (_ STRING)? (_ MODIFIER)*
+BARE_BOOLEAN    <- 'BOOLEAN' (_ MODIFIER)*
+
+# ═══════════════════════════════════════════════════════════
+# 6. Inheritance and Scope
+# ═══════════════════════════════════════════════════════════
+
+EXTENDS_DECL    <- 'EXTENDS' _ HASH_ID? _ CARET_REF
+
+APPLIES_TO_CLAUSE <- 'APPLIES' _ 'TO' _ '[' _ CARET_REF_LIST _ ']'
+
+CARET_REF_LIST  <- CARET_REF (_ ',' _ CARET_REF)*
+
+# ═══════════════════════════════════════════════════════════
+# 7. Rules Block
+# ═══════════════════════════════════════════════════════════
+
+RULES_BLOCK     <- 'RULES' _ '{' _ (RULE_ENTRY _)* '}'
+
+RULE_ENTRY      <- HASH_ID _ RULE_BODY
+                 / COMMENT
+
+# Rule body: either a colon-separated structured rule or a bare label
+RULE_BODY       <- ':' _ RULE_CONTENT
+                 / RULE_LABEL
+
+# Structured rule: WHEN [...] THEN ... or MODIFY: ...
+RULE_CONTENT    <- 'WHEN' _ '[' RULE_TEXT_INNER ']' _ 'THEN' _ RULE_TEXT
+                 / 'MODIFY' ':' _ RULE_TEXT
+                 / RULE_TEXT
+
+# Bare label (no colon): identifier-style rule name
+RULE_LABEL      <- [a-z_] [a-zA-Z0-9_]*
+
+# Rule text consumes everything to end of line
+RULE_TEXT       <- (!EOL .)*
+RULE_TEXT_INNER <- (!']' .)*
+
+# ═══════════════════════════════════════════════════════════
+# 8. Modification System (Extensions)
+# ═══════════════════════════════════════════════════════════
+
+MODIFY_STATEMENT   <- (CARET_REF / STRING) _ 'MODIFY' _ '{' _ MODIFY_BODY _ '}'
+OVERRIDE_STATEMENT <- 'OVERRIDE' _ (CARET_REF / STRING) _ '{' _ BODY _ '}'
+ADD_STATEMENT      <- 'ADD' _ DEF_BLOCK
+
+MODIFY_BODY     <- (MODIFY_ENTRY _)*
+MODIFY_ENTRY    <- SET_ENTRY / ADD_TO_ENTRY / REMOVE_FROM_ENTRY
+                 / RULES_BLOCK / COMMENT
+
+SET_ENTRY       <- 'SET' _ CARET_REF _ PROPERTY_TYPE
+ADD_TO_ENTRY    <- 'ADD_TO' _ CARET_REF _ VALUE
+REMOVE_FROM_ENTRY <- 'REMOVE_FROM' _ CARET_REF _ VALUE
+
+# ═══════════════════════════════════════════════════════════
+# 9. System-Defined Sub-Blocks (Generic)
+#
+# The base spec does not prescribe system keywords. Any UPPERCASE
+# identifier followed by { }, [ ], or a value is a valid sub-block.
+# This catch-all rule enables system vocabulary.
+# ═══════════════════════════════════════════════════════════
+
+GENERIC_BLOCK   <- UPPER_IDENT _ GENERIC_LABEL? _ GENERIC_VALUE
+
+GENERIC_LABEL   <- CARET_REF / STRING / HASH_ID / INTEGER_LIT
+
+GENERIC_VALUE   <- '{' _ GENERIC_BODY _ '}'
+                 / BRACKET_LIST
+                 / STRING
+                 / INTEGER_LIT
+                 / BOOLEAN_LIT
+
+GENERIC_BODY    <- (GENERIC_BODY_ENTRY _)*
+
+GENERIC_BODY_ENTRY <- DEF_BLOCK
+                    / PROPERTIES_BLOCK
+                    / RULES_BLOCK
+                    / GENERIC_BLOCK
+                    / NUMBERED_ENTRY
+                    / LABELED_ENTRY
+                    / CARET_ENTRY
+                    / HASH_ENTRY
+                    / INLINE_VALUE
+                    / COMMENT
+
+# Entries within generic blocks:
+#   1 "text"                  (numbered entry)
+#   KEYWORD "text"            (labeled entry)
+#   ^"Name" "text"            (caret-labeled entry)
+#   ^"Name" [tag]             (caret with bracket tag)
+#   ^"Name" DEF { }           (nested def)
+#   #hash: text               (hash-labeled, already covered by HASH_ENTRY)
+
+NUMBERED_ENTRY  <- INTEGER_LIT _ (STRING / CARET_REF / GENERIC_BLOCK)
+
+LABELED_ENTRY   <- UPPER_IDENT _ (STRING / CARET_REF / INTEGER_LIT / BRACKET_LIST / GENERIC_BLOCK)
+
+CARET_ENTRY     <- CARET_REF _ (STRING / BRACKET_LIST / DEF_INLINE_BLOCK / GENERIC_BLOCK)?
+
+HASH_ENTRY      <- HASH_ID _ (CARET_REF _ (STRING / BRACKET_LIST)?)?
+
+DEF_INLINE_BLOCK <- 'DEF' _ '{' _ BODY _ '}'
+
+# ═══════════════════════════════════════════════════════════
+# 10. Values and Literals
+# ═══════════════════════════════════════════════════════════
+
+VALUE           <- STRING / INTEGER_LIT / BOOLEAN_LIT / CARET_REF / HASH_ID / BRACKET_LIST
+
+INLINE_VALUE    <- STRING / CARET_REF
+
+BRACKET_LIST    <- '[' _ BRACKET_ITEM (_ ',' _ BRACKET_ITEM)* _ ']'
+BRACKET_ITEM    <- CARET_REF / HASH_ID / STRING / INTEGER_LIT / BOOLEAN_LIT
+
+# ═══════════════════════════════════════════════════════════
+# 11. Terminals
+# ═══════════════════════════════════════════════════════════
+
+# String: double-quoted, with escape sequences
+STRING          <- TRIPLE_QUOTED / SINGLE_QUOTED
+TRIPLE_QUOTED   <- '"""' (!'"""' .)* '"""'
+SINGLE_QUOTED   <- '"' STRING_CHAR* '"'
+STRING_CHAR     <- '\\' ESCAPE_CHAR / !'"' .
+ESCAPE_CHAR     <- ["\\/nrt] / 'u' HEX HEX HEX HEX
+HEX             <- [0-9a-fA-F]
+
+# Integer: optional sign, digits
+INTEGER_LIT     <- '-'? [0-9]+
+
+# Boolean
+BOOLEAN_LIT     <- 'true' / 'false'
+
+# Caret reference: ^"Name"
+CARET_REF       <- '^' '"' (!'"' .)* '"'
+
+# Hash ID: # followed by alphanumeric (no space after #)
+# Distinguished from comments by: # + alphanum = hash ID, # + space = comment
+HASH_ID         <- '#' [a-zA-Z0-9] [a-zA-Z0-9_]*
+
+# Uppercase identifier (for system-defined keywords and generic blocks)
+UPPER_IDENT     <- [A-Z] [A-Z0-9_]*
+                   !{RESERVED_WORD}
+
+# Note: UPPER_IDENT must not match reserved words when used as generic blocks.
+# Reserved words are handled by their own rules with higher priority.
+
+# ═══════════════════════════════════════════════════════════
+# 12. Comments
+# ═══════════════════════════════════════════════════════════
+
+COMMENT         <- LINE_COMMENT / SLASH_COMMENT
+LINE_COMMENT    <- '#' (' ' / &EOL) (!EOL .)*
+SLASH_COMMENT   <- '//' (!EOL .)*
+
+# ═══════════════════════════════════════════════════════════
+# 13. Whitespace and Terminals
+# ═══════════════════════════════════════════════════════════
+
+_               <- (WHITESPACE / COMMENT)*
+WHITESPACE      <- [ \t\r\n]+
+EOL             <- '\r\n' / '\n' / '\r'
+EOF             <- !.
+
+# ═══════════════════════════════════════════════════════════
+# Appendix: Reserved Words
+# ═══════════════════════════════════════════════════════════
+#
+# These keywords are matched by dedicated rules and take priority
+# over UPPER_IDENT / GENERIC_BLOCK:
+#
+# File-level:    BASE, EXTENSION, EXTENDS, NAME, VERSION,
+#                RELEASE_DATE, DEPENDS_ON
+# Definition:    DEF, ACTOR, PROPERTIES, RULES
+# Types:         STRING, INTEGER, BOOLEAN, ENUM, LIST, OF
+# Modifiers:     REQUIRED, FIXED, DEFAULT, MIN, MAX
+# Scope:         APPLIES, TO
+# Rule:          WHEN, THEN
+# Modification:  OVERRIDE, ADD, MODIFY, SET, ADD_TO, REMOVE_FROM
+# Text:          DESCRIPTION, TEXT
