@@ -63,8 +63,8 @@ def tokenize(text, fname, findings):
                 i += 1
             continue
         if c == '#':
-            # comment if '#' is followed by space or end-of-line; else a hash id
-            if i + 1 >= n or text[i + 1] in ' \t\r\n':
+            # a hash id is '#' + alphanumeric; anything else ('# ', EOL, '##', '#-') is a comment
+            if i + 1 >= n or not text[i + 1].isalnum():
                 while i < n and text[i] != '\n':
                     i += 1
                 continue
@@ -229,7 +229,8 @@ def analyze_file(fname, text, findings):
         if tk.kind == 'HASH' and len(tk.val) - 1 < HASH_MIN_BODY:
             findings.append(Finding(fname, 'lint', 'warning', tk.line,
                                     "hash id '%s' shorter than %d chars" % (tk.val, HASH_MIN_BODY)))
-    if not has_spec_version:
+    if not has_spec_version and not fname.endswith('.actor'):
+        # .actor files are bare single-DEF fragments with no metadata wrapper
         findings.append(Finding(fname, 'lint', 'warning', 1, "no SPEC_VERSION declared"))
 
     return {
@@ -291,16 +292,17 @@ def _all_hashes(files_data):
 
 def collect_paths(args):
     files = []
+    exts = ('.ttrpg', '.actor', '.arc')
     for p in args:
         if os.path.isdir(p):
             for root, _, names in os.walk(p):
                 for nm in names:
-                    if nm.endswith('.ttrpg'):
+                    if nm.endswith(exts):
                         files.append(os.path.join(root, nm))
-        elif p.endswith('.ttrpg'):
+        elif p.endswith(exts):
             files.append(p)
         else:
-            print("skipping non-.ttrpg path: %s" % p, file=sys.stderr)
+            print("skipping non-DSL path: %s" % p, file=sys.stderr)
     return sorted(files)
 
 
