@@ -1,12 +1,12 @@
 # ┌────────────────────────────────────────────────────────────────────┐
-# │ Titterpig DSL — PEG Grammar, v4 (aligned to titterpig-dsl-spec.md).  │
-# │ v4 additions: SPEC_VERSION metadata; FIAT (property-level modifier   │
+# │ Titterpig DSL — PEG Grammar, v0.4 (aligned to titterpig-dsl-spec.md).  │
+# │ v0.4 additions: SPEC_VERSION metadata; FIAT (property-level modifier   │
 # │ and element-level cascading statement). The hash-ID >=16-char rule   │
 # │ and cross-file coherence are enforced by the validator, not here.    │
 # └────────────────────────────────────────────────────────────────────┘
 #
 # Titterpig DSL — PEG Grammar (Bryan Ford notation)
-# Formal syntax specification for .ttrpg files (v4)
+# Formal syntax specification for .ttrpg files (v0.4)
 #
 # This grammar defines syntactically valid .ttrpg files. Semantic rules
 # (hash uniqueness, EXTENDS resolution, type consistency) are enforced

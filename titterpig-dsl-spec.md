@@ -1,12 +1,12 @@
-# Titterpig DSL Specification v4
+# Titterpig DSL Specification v0.4
 
-> **Status: v4 (current, canonical).** Supersedes v0.3. Historical docs live in `archive/`;
+> **Status: v0.4 (current, canonical).** Supersedes v0.3. Historical docs live in `archive/`;
 > `AUTHORING-GUIDELINES.md` holds system-specific authoring best-practices. The `ttrpg.peg`
-> grammar and `ttrpg_validator.py` are v0.3-era and **pending realignment** to v4.
+> grammar and `ttrpg_validator.py` are v0.3-era and **pending realignment** to v0.4.
 
-## 0. What changed in v4
+## 0. What changed in v0.4
 
-v4 is a consistency/clarity pass over v0.3's grammar — not a redesign. Key changes:
+v0.4 is a consistency/clarity pass over v0.3's grammar — not a redesign. Key changes:
 
 1. **Structure over prose (new core principle).** Mechanically-critical data must be structured,
    never buried in opaque strings or comments (§1 → *Structural Representation*;
@@ -53,7 +53,7 @@ Titterpig is a domain-specific language (DSL) for defining tabletop role-playing
 3. **Composable**: Definitions can be layered, extended, and combined across files
 4. **Type-safe**: Properties carry type information and constraints
 5. **System-agnostic**: The same grammar supports L5R, VTM, Ars Magica, and any other TTRPG — without changes to the base spec
-6. **Structured, not prose** *(v4)*: Mechanically-critical data is represented as structured DEFs/properties, never buried in opaque strings or comments (see *Structural Representation* below)
+6. **Structured, not prose** *(v0.4)*: Mechanically-critical data is represented as structured DEFs/properties, never buried in opaque strings or comments (see *Structural Representation* below)
 
 ### What the Base Spec Owns
 
@@ -70,7 +70,7 @@ Titterpig is a domain-specific language (DSL) for defining tabletop role-playing
 
 Everything else. Keywords like `CURRICULUM`, `SCHOOL_ABILITY`, `POWERS`, `AMALGAMS`, `CHARACTERISTICS`, `DISCIPLINE`, `PREDATOR_TEMPLATES` — these are vocabulary defined by each system's `.ttrpg` files, not reserved by the base spec.
 
-### Structural Representation *(v4)*
+### Structural Representation *(v0.4)*
 
 The base spec is permissive: the grammar accepts almost any well-formed block. That flexibility must **not** be used to bury data in prose. **Mechanically-critical data — anything a tool will read (bonuses, costs, dice, ranks, stats, prerequisites) — must be represented structurally, not packed into free-text strings or comments.**
 
@@ -103,11 +103,11 @@ The DSL uses multiple file extensions, each corresponding to a specific containe
 | `.arc` | ARC | Complete playable narrative adventures (DSL) |
 | `.campaign` | CAMPAIGN | Long-form multi-arc story collections (DSL) |
 | `.actor` | (single DEF) | A single character — PC or NPC — as a discrete file (DSL) |
-| `.lore` | (none — Markdown) | **Free narrative prose / flavor** — no DSL syntax *(v4)* |
+| `.lore` | (none — Markdown) | **Free narrative prose / flavor** — no DSL syntax *(v0.4)* |
 
 The `.actor` extension is a convenience alias: an `.actor` file is a `.ttrpg` file scoped to exactly one character definition (a single `DEF` block). It uses identical syntax to a DEF within an EXTENSION but exists as a standalone file, making it easy to share, version, or reference individual characters independently of the containers they appear in.
 
-### Structured Narrative vs. Free Prose (`.setting`/`.frame` vs `.lore`) *(v4)*
+### Structured Narrative vs. Free Prose (`.setting`/`.frame` vs `.lore`) *(v0.4)*
 
 Narrative content splits by whether tools need to *query* it:
 
@@ -141,7 +141,7 @@ A BASE defines a self-contained ruleset module. It has no parent.
 BASE "FileID" {
     NAME "Human-readable Name"
     VERSION "0.1"
-    SPEC_VERSION "4.0"
+    SPEC_VERSION "0.4"
     RELEASE_DATE "YYYY-MM-DD"
 
     # ... definitions ...
@@ -181,7 +181,7 @@ Both forms declare a parent. `EXTENDS` is concise; `DEPENDS_ON` allows specifyin
 - `FileID`: Unique identifier (e.g., `"L5R5e_Core_Core"`, `"VTM5e_Companion_Errata"`)
 - `NAME`: Full display name
 - `VERSION`: Content version of this file (semantic or date-based)
-- `SPEC_VERSION` *(v4)*: The DSL-spec version this file targets (e.g., `"4.0"`). Distinct from `VERSION`; lets tooling detect spec conformance.
+- `SPEC_VERSION` *(v0.4)*: The DSL-spec version this file targets (e.g., `"0.4"`). Distinct from `VERSION`; lets tooling detect spec conformance.
 - `RELEASE_DATE`: ISO date format
 
 **Errata files:** corrections live in dedicated `*-errata-*` EXTENSION files as machine-readable `MODIFY`/`OVERRIDE`/`ADD` (see §13), never as comments in source files.
@@ -205,7 +205,7 @@ Both forms declare a parent. `EXTENDS` is concise; `DEPENDS_ON` allows specifyin
 
 Comments are for human annotation only — mechanical notes, page references, source attributions, and TODO markers.
 
-**Rule (v4): comments MUST NOT carry data a tool needs.** Anything a parser or downstream tool must read — corrections, values, stats, cross-references — belongs in structured DSL, not a comment. Corrections in particular go in machine-readable errata files (§13), never as `# … should read …` notes. A comment must be safe to strip without losing meaning.
+**Rule (v0.4): comments MUST NOT carry data a tool needs.** Anything a parser or downstream tool must read — corrections, values, stats, cross-references — belongs in structured DSL, not a comment. Corrections in particular go in machine-readable errata files (§13), never as `# … should read …` notes. A comment must be safe to strip without losing meaning.
 
 ---
 
@@ -239,7 +239,7 @@ The `DEF` block is the core building block. Every named game concept — a schoo
 
 `ACTOR` is an optional semantic marker indicating this DEF represents a character template (PC or NPC archetype). It has no syntactic effect — it's documentation for humans and tooling. ACTOR DEFs typically have PROPERTIES and RULES blocks defining the character schema.
 
-### Hash IDs *(v4 rules)*
+### Hash IDs *(v0.4 rules)*
 
 Hash IDs are optional cross-reference anchors on any DEF or rule. When present:
 
@@ -266,7 +266,7 @@ A DEF body can contain any combination of:
 - System-defined sub-blocks (see §10)
 - Inline text strings
 
-### Definitions vs. Instances *(v4)*
+### Definitions vs. Instances *(v0.4)*
 
 A `DEF` serves two roles, distinguished by whether it `EXTENDS` an **actor type**:
 
@@ -309,7 +309,7 @@ A DEF that `EXTENDS` another inherits all of its PROPERTIES and RULES. The child
 }
 ```
 
-Both forms are valid. **`EXTENDS ^"Name"` (by name) is canonical and sufficient;** the hash is optional and adds cross-file traceability. When both are present they must refer to the same definition. *(v4: validation must accept the by-name form — the v0.3-era validator wrongly required a hash. That is a validator bug to fix, not a spec rule.)*
+Both forms are valid. **`EXTENDS ^"Name"` (by name) is canonical and sufficient;** the hash is optional and adds cross-file traceability. When both are present they must refer to the same definition. *(v0.4: validation must accept the by-name form — the v0.3-era validator wrongly required a hash. That is a validator bug to fix, not a spec rule.)*
 
 ---
 
@@ -317,7 +317,7 @@ Both forms are valid. **`EXTENDS ^"Name"` (by name) is canonical and sufficient;
 
 `APPLIES TO` declares which actor types a definition can be attached to. This is a scope constraint, not inheritance.
 
-> **DECISION-1 (resolved, v4):** `APPLIES TO` has historically been overloaded for three jobs — scope (attachment), type inheritance, and category tagging. **v4 restricts it to scope only.** Use `EXTENDS` for type / `is-a` relationships, and a dedicated tag (e.g. `^"Category" ENUM [...]` or `TAGS [...]`) for categorization. Files that used `APPLIES TO` for inheritance or tagging are migration targets.
+> **DECISION-1 (resolved, v0.4):** `APPLIES TO` has historically been overloaded for three jobs — scope (attachment), type inheritance, and category tagging. **v0.4 restricts it to scope only.** Use `EXTENDS` for type / `is-a` relationships, and a dedicated tag (e.g. `^"Category" ENUM [...]` or `TAGS [...]`) for categorization. Files that used `APPLIES TO` for inheritance or tagging are migration targets.
 
 ```
 ^"Hida Defender" DEF {
@@ -376,7 +376,7 @@ PROPERTIES {
 - `FIXED` — cannot be changed after creation
 - `DEFAULT value` — default value if not provided
 - `MIN n` / `MAX n` — range constraints (INTEGER)
-- `FIAT "reason"` *(v4)* — waive validation for this value (intentional exception; see *FIAT* below)
+- `FIAT "reason"` *(v0.4)* — waive validation for this value (intentional exception; see *FIAT* below)
 
 ### Inline Value Assignment
 
@@ -389,9 +389,9 @@ A property can include its value inline at declaration time:
 ^"In-Clan Disciplines" LIST OF STRING ["Celerity", "Potence", "Presence"]
 ```
 
-### FIAT — Intentional Exceptions *(v4)*
+### FIAT — Intentional Exceptions *(v0.4)*
 
-`FIAT` is an author's assertion that a value or element is **intentionally correct and complete**, even where it would otherwise fail validation. It suppresses validation findings — both **constraint** violations (`MIN`/`MAX`/`ENUM`/type) and **completeness** requirements (`REQUIRED` / missing fields) — within its scope. A **reason string is required**: `FIAT` is a documented, auditable exception, never a silent mute. (It is the machine-readable way to record intent — a `# this is fine` comment is not valid, since comments carry no data in v4.)
+`FIAT` is an author's assertion that a value or element is **intentionally correct and complete**, even where it would otherwise fail validation. It suppresses validation findings — both **constraint** violations (`MIN`/`MAX`/`ENUM`/type) and **completeness** requirements (`REQUIRED` / missing fields) — within its scope. A **reason string is required**: `FIAT` is a documented, auditable exception, never a silent mute. (It is the machine-readable way to record intent — a `# this is fine` comment is not valid, since comments carry no data in v0.4.)
 
 **Property level** — a trailing modifier; waives findings for that one value:
 
@@ -672,7 +672,7 @@ Extensions can also modify individual rules within a DEF:
 }
 ```
 
-### Errata & Corrections *(v4)*
+### Errata & Corrections *(v0.4)*
 
 Errata and corrections are **data, not commentary.** They MUST be expressed as machine-readable `MODIFY` / `OVERRIDE` / `ADD` inside a dedicated **errata EXTENSION file** named `*-errata-*` that depends on the corrected module. Source files stay pristine; tooling composes the overlay deterministically.
 
@@ -680,7 +680,7 @@ Errata and corrections are **data, not commentary.** They MUST be expressed as m
 EXTENSION "L5R5e_Core_Errata" EXTENDS "L5R5e_Core" {
     NAME "L5R5e Core — Errata"
     VERSION "2020.1"
-    SPEC_VERSION "4.0"
+    SPEC_VERSION "0.4"
 
     MODIFY ^"Hida Defender" {
         SET ^"Starting Honor" DEFAULT 45   # p.65 correction (annotation only)
@@ -865,7 +865,7 @@ SETTING "RichFrog" {
 
 A FRAME provides a starting point for GMs: a setting combined with enough mechanical scaffolding to begin play, without defining complete scenes or arcs. It requires a BASE system and optionally references a SETTING.
 
-> **DECISION-2 (resolved, v4):** NPCs are **instances** — write them with the canonical instance form (§5, *Definitions vs. Instances*): a `#hash ^"Name" DEF` that `EXTENDS` its actor type with a `PROPERTIES` block of inline typed values. The looser `DEF ^"Name" #id { TYPE "npc" … STATS { rings.air = 4 } }` form in the illustrative FRAME/ARC blocks below — reversed order, `=` assignment, dotted paths, `TYPE`-as-tag — is **deprecated** and left as-is only pending re-conversion. No new grammar is added.
+> **DECISION-2 (resolved, v0.4):** NPCs are **instances** — write them with the canonical instance form (§5, *Definitions vs. Instances*): a `#hash ^"Name" DEF` that `EXTENDS` its actor type with a `PROPERTIES` block of inline typed values. The looser `DEF ^"Name" #id { TYPE "npc" … STATS { rings.air = 4 } }` form in the illustrative FRAME/ARC blocks below — reversed order, `=` assignment, dotted paths, `TYPE`-as-tag — is **deprecated** and left as-is only pending re-conversion. No new grammar is added.
 
 ```
 FRAME "FrameID" {
@@ -1963,17 +1963,17 @@ These keywords are reserved by the base spec for use within narrative containers
 
 ---
 
-## 19. Versioning *(v4)*
+## 19. Versioning *(v0.4)*
 
 Three distinct version axes, kept separate:
 
-- **DSL-spec version** — the version of *this specification* (v4). Files pin the spec they target via `SPEC_VERSION`.
+- **DSL-spec version** — the version of *this specification* (v0.4). Files pin the spec they target via `SPEC_VERSION`.
 - **File content `VERSION`** — the version of a file's game content (semantic or date-based), independent of the spec version.
 - **Directory organization** — systems organize files under a content-version directory (e.g. `0.3/`, `1.0/`). Version lives in the directory, not re-encoded redundantly in every filename.
 
 `DEPENDS_ON "Parent" VERSION "x"` pins a required parent *content* version. Tooling treats `SPEC_VERSION` as the conformance target.
 
-## 20. Validation *(v4)*
+## 20. Validation *(v0.4)*
 
 Validation of `.ttrpg`/`.lore` files has two levels, both operating on the files themselves:
 
@@ -1986,6 +1986,6 @@ Validation of `.ttrpg`/`.lore` files has two levels, both operating on the files
 
 ---
 
-**Spec Version:** 4.0
+**Spec Version:** 0.4
 **Last Updated:** 2026-07-12
 **Status:** Canonical (supersedes v0.3)

@@ -1,6 +1,6 @@
 BASE "Demo_Core" {
     NAME "Demo System Core"
-    SPEC_VERSION "4.0"
+    SPEC_VERSION "0.4"
     VERSION "1.0"
     RELEASE_DATE "2026-07-12"
 

@@ -1,7 +1,7 @@
-# Titterpig DSL — Authoring Guidelines (v4)
+# Titterpig DSL — Authoring Guidelines (v0.4)
 
 > Advisory best-practices for writing **system-specific** `.ttrpg` and `.lore` files. The
-> *normative* rules live in [`titterpig-dsl-spec.md`](./titterpig-dsl-spec.md) (v4); this document
+> *normative* rules live in [`titterpig-dsl-spec.md`](./titterpig-dsl-spec.md) (v0.4); this document
 > is how to apply them well. When the two conflict, the spec wins.
 
 ## 1. Prime directive — structure over prose
@@ -45,7 +45,7 @@ in `.lore`) — mirror, don't duplicate.
 - Organize files under a **content-version directory** (`0.3/`, `1.0/`) — version lives in the
   directory, not re-encoded redundantly everywhere.
 - Consistent filenames within a system: `<system>-<version>-<book>-<facet>.ttrpg`.
-- Every file declares `NAME`, `VERSION` (content), `SPEC_VERSION` (DSL-spec targeted, e.g. `"4.0"`),
+- Every file declares `NAME`, `VERSION` (content), `SPEC_VERSION` (DSL-spec targeted, e.g. `"0.4"`),
   and `RELEASE_DATE`.
 
 ## 4. Identity & references
