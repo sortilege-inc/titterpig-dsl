@@ -14,8 +14,9 @@ v0.4 is a consistency/clarity pass over v0.3's grammar — not a redesign. Key c
 2. **Canonical instance form** is `^"Name" DEF { PROPERTIES { ... } }`. Flat `key: value` /
    `METADATA`-style property forms seen in some sourcebook files are **non-canonical** and are
    migration targets.
-3. **Hash IDs are opaque, globally unique, `≥16` chars, and carry no semantics** a tool relies on
-   (§5, §14). Short/prefixed IDs in the examples below are illustrative and predate this rule.
+3. **Hash IDs are opaque, `≥16` chars, carry no semantics** a tool relies on, and are **unique per
+   entity within an edition** (§5, §14, §19). Short/prefixed IDs in the examples below are
+   illustrative and predate this rule.
 4. **Versioning:** each file declares its content `VERSION` and a `SPEC_VERSION` pinning the
    DSL-spec version it targets; systems organize by version directory (§3, §19).
 5. **Errata is machine-readable** via `MODIFY`/`OVERRIDE`/`ADD` in dedicated `*-errata-*` EXTENSION
@@ -41,6 +42,12 @@ v0.4 is a consistency/clarity pass over v0.3's grammar — not a redesign. Key c
   constraints and completeness — at a single value or, cascading, an element and its subtree. The
   reason is **required**. Reserved for true exceptions; standard NPCs are defined against their own
   actor type and need no `FIAT`.
+- **DECISION-4 — Composition, editions & precedence** *(resolved)* (§5, §13, §19): consumers load an
+  **ordered composition set** from **one edition namespace**; later files override earlier ones by
+  load-order precedence, **explicitly** (`OVERRIDE`/`MODIFY`/`ADD`) or **implicitly** (re-stating a
+  hash). Hash identity is **edition-scoped** — stable within an edition, independent across editions
+  (edition changes are breaking). Forward-porting a stranded sourcebook is an explicit **derived
+  artifact**, not an automatic overlay.
 
 ## 1. Overview & Design Principles
 
@@ -244,12 +251,18 @@ The `DEF` block is the core building block. Every named game concept — a schoo
 Hash IDs are optional cross-reference anchors on any DEF or rule. When present:
 
 - **Opaque:** the ID carries no semantics a tool relies on. Do **not** encode system, category, or sequence meaning that code parses out of the ID — that information lives in fields.
-- **Globally unique** across the whole corpus.
+- **Unique per entity, within an edition/version namespace.** A hash names one entity; its
+  *canonical* definition appears once. **Recurrence of the same hash across files within an edition is
+  legal** — a later-loaded file (a sourcebook, an errata overlay) re-stating a hash **replaces or
+  amends** that entity by load-order precedence (the override mechanism, §13), not a collision.
+  **Across editions the namespace resets:** the "same" entity in a different edition is a **separate
+  definition with a different hash** (edition changes may be breaking — §19). Two *different* entities
+  must never share a hash.
 - **Format:** `#` followed by `≥16` alphanumeric characters (`[A-Za-z0-9]{16,}`).
-- A short, non-semantic readability prefix is *tolerated* (e.g. `#L5R…`) but must not be depended on; two files' IDs must never collide.
+- A short, non-semantic readability prefix is *tolerated* (e.g. `#L5R…`) but must not be depended on.
 
 ```
-#L5Rk3nP8mQ2vX7wZ9tB4cD1    ← opaque, ≥16 chars, globally unique
+#L5Rk3nP8mQ2vX7wZ9tB4cD1    ← opaque, ≥16 chars, unique per entity within its edition
 ```
 
 > Note: many inline examples in §§6–17 use short illustrative IDs that predate this rule; they show *structure*, not conformant IDs, and are regenerated during re-conversion.
@@ -689,6 +702,24 @@ EXTENSION "L5R5e_Core_Errata" EXTENDS "L5R5e_Core" {
 ```
 
 Writing a correction *as* a comment (`# p.65 … should read …`) is **non-conformant** — comment-only corrections are lost the moment a tool strips comments.
+
+### Composition & Precedence *(v0.4)*
+
+A downstream consumer loads a **selected, ordered set** of `.ttrpg` files — a *composition set* (a
+BASE + chosen EXTENSIONs + errata + homebrew), all drawn from **one edition namespace** (§19). **Load
+order is precedence:** when more than one loaded file defines the same entity, the **later one wins**.
+There are two ways for a later file to override an earlier one, both valid:
+
+- **Explicit** — it issues `OVERRIDE` / `MODIFY` / `ADD` (above) naming the target. Surgical and
+  auditable; the base definition stays put and the overlay is applied deterministically.
+- **Implicit** — it simply **re-states the target entity's hash** with new content; by load-order
+  precedence that replaces the earlier definition wholesale. No directive needed.
+
+Consumers normally load only **one** definition of a given entity; overlapping printings (a spell
+reprinted in two sourcebooks, a beta and a final ruleset, a draft and a definitive edition) are
+generally not co-loaded, and when they are, precedence silently resolves them. Precedence resolution
+itself is a **consumer / `.ttrpg → .json`** concern — the file-level validator checks *coherence*
+within an edition (§20), not which layer ultimately wins.
 
 ---
 
@@ -1973,12 +2004,27 @@ Three distinct version axes, kept separate:
 
 `DEPENDS_ON "Parent" VERSION "x"` pins a required parent *content* version. Tooling treats `SPEC_VERSION` as the conformance target.
 
+### Editions & version namespaces *(v0.4)*
+
+An **edition** (or a major/beta version line) is an **identity namespace**. Hash identity is **stable
+within** it and carries **no identity across** it: an edition change is a **breaking change**, so "the
+same" entity in a newer edition is a *new* definition with a *new* hash (§5), not an overlay on the
+old one. Editions are therefore kept as **separate systems** — e.g. `arm5e` (Ars Magica 5th) vs.
+`armdef` (the Definitive edition), or a system's beta lines vs. its final rules. Within one edition,
+core + sourcebooks + errata share the namespace and compose by precedence (§13).
+
+**Forward-porting.** A sourcebook published for an older edition does **not** automatically apply to a
+newer one — it references the old edition's hashes. To use it under a newer edition, generate a **new
+`.ttrpg` of that sourcebook converted to the newer edition**, targeting the newer edition's
+definitions and diffs — a derived artifact, not an automatic overlay. (A conversion tool for this is
+future work; it presupposes a machine-readable edition diff.)
+
 ## 20. Validation *(v0.4)*
 
 Validation of `.ttrpg`/`.lore` files has two levels, both operating on the files themselves:
 
 1. **Lint — spec adherence.** Does the file conform to this grammar/spec (structure, types, reserved-word usage, canonical forms)? One source of truth: the linter is derived from / checked against the grammar.
-2. **Coherence / consilience — referential integrity.** Across the corpus: is everything referenced actually defined? Do `^"Name"`, `#hash`, `EXTENDS`, `APPLIES TO`, `DEPENDS_ON` resolve to real, correctly-typed targets? No duplicate or dangling anchors.
+2. **Coherence / consilience — referential integrity.** Across **an edition's** corpus: is everything referenced actually defined? Do `^"Name"`, `#hash`, `EXTENDS`, `APPLIES TO`, `DEPENDS_ON` resolve to real, correctly-typed targets? No **dangling** anchors, and **no hash shared by two *different* entities**. (A hash *recurring* across files is a legal override (§13, DECISION-4), not a duplicate — so coherence is scoped to one edition and treats consistent recurrence as override, not error. *Note: the current `ttrpg_validator.py` still flags all recurrence as a duplicate-anchor error; scoping it to inconsistent-recurrence is a pending change — see `titterpig-mastra/TASKS.md`.*)
 
 **Intentional exceptions:** both levels honor `FIAT` (§8) — a value or element marked `FIAT "reason"` is exempt from the findings it would otherwise raise (constraint violations and, cascading, completeness). Because each `FIAT` carries a reason, the full set is reportable for audit.
 
