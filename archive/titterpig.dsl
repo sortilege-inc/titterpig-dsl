@@ -1,3 +1,10 @@
+<!-- ============================================================
+     SUPERSEDED / HISTORICAL — NOT part of the current v4 spec.
+     v0.1.3 prose spec (2025-01-17). The .dsl extension is historical
+     (this file is Markdown, not a grammar). Canonical spec:
+     ../titterpig-dsl-spec.md
+     ============================================================ -->
+
 # Titterpig DSL Specification
 **Version:** 0.1.3
 **Last Updated:** 2025-01-17

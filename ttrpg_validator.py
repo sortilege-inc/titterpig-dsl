@@ -1,479 +1,342 @@
 #!/usr/bin/env python3
 """
-TTRPG File Validator
+Titterpig DSL v4 validator.
 
-Validates .ttrpg files for syntax errors, structural issues, and DSL violations.
+Two levels of validation over one or more .ttrpg files (or directories):
 
-Usage:
-    python ttrpg_validator.py <file.ttrpg>
-    python ttrpg_validator.py <directory>  # validates all .ttrpg files in directory
+  LINT (spec adherence, per file)
+    - lexical correctness + brace/bracket balance
+    - hash IDs are >= 16 characters
+    - FIAT requires a reason string
+    - SPEC_VERSION is declared
+    - an inline INTEGER value lies within a same-declaration MIN/MAX
 
-Checks:
-- Brace matching and balance
-- Hash/UUID format validation
-- ACTOR/DEF/MODIFY syntax
-- APPLIES TO clause validation
-- EXTENDS clause validation
-- Property type validation
-- MIN/MAX/DEFAULT consistency
-- String quoting
-- Indentation consistency
-- Reserved keyword usage
-- Orphaned/unclosed blocks
+  COHERENCE (referential integrity, across the whole corpus)
+    - no duplicate definition anchors (#hash)
+    - EXTENDS / APPLIES TO / LIST OF targets resolve to a defined ^"Name"
+    - DEPENDS_ON targets resolve to a defined file id
+
+FIAT: a value or element marked  FIAT "reason"  is exempt from the COHERENCE and
+inline-range findings it would otherwise raise. An element-level FIAT (a `FIAT "reason"`
+statement alone on a line in a DEF body) cascades over that DEF's whole subtree; a
+property-level FIAT (trailing a property declaration) waives just that line. FIAT does
+NOT waive structural/lexical lint (unbalanced braces, a missing reason, etc.).
+
+Usage:  ttrpg_validator.py <file-or-dir> [more ...]
+Exit:   0 = no errors (warnings allowed); 1 = one or more errors; 2 = bad invocation.
 """
-
-import re
+from __future__ import annotations
 import sys
-from pathlib import Path
-from typing import List, Dict, Tuple, Set
-from dataclasses import dataclass, field
-from enum import Enum
+import os
+from dataclasses import dataclass
 
-
-class Severity(Enum):
-    ERROR = "ERROR"
-    WARNING = "WARNING"
-    INFO = "INFO"
+HASH_MIN_BODY = 16
 
 
 @dataclass
-class ValidationIssue:
-    line_number: int
-    severity: Severity
-    category: str
-    message: str
-    context: str = ""
+class Tok:
+    kind: str  # STR HASH CARET INT BOOL ID LBRACE RBRACE LBRACK RBRACK COMMA COLON
+    val: str
+    line: int
 
 
 @dataclass
-class ValidationResult:
-    file_path: Path
-    issues: List[ValidationIssue] = field(default_factory=list)
-    line_count: int = 0
-
-    @property
-    def error_count(self) -> int:
-        return sum(1 for i in self.issues if i.severity == Severity.ERROR)
-
-    @property
-    def warning_count(self) -> int:
-        return sum(1 for i in self.issues if i.severity == Severity.WARNING)
-
-    @property
-    def is_valid(self) -> bool:
-        return self.error_count == 0
+class Finding:
+    file: str
+    level: str  # 'lint' | 'coherence'
+    sev: str    # 'error' | 'warning'
+    line: int
+    msg: str
 
 
-class TTRPGValidator:
-    """Validator for Titterpig DSL .ttrpg files"""
-
-    # Hash pattern: #X followed by alphanumeric characters
-    HASH_PATTERN = re.compile(r'#[A-Za-z0-9]+')
-
-    # Valid hash format (starts with letter or digit, 16+ chars total)
-    VALID_HASH_PATTERN = re.compile(r'#[A-Za-z0-9]{16,}')
-
-    # ACTOR definition: ACTOR "Name" DEF {
-    ACTOR_DEF_PATTERN = re.compile(r'^\s*ACTOR\s+"([^"]+)"\s+DEF\s*\{?\s*$')
-
-    # Regular definition: ^"Name" DEF {
-    DEF_PATTERN = re.compile(r'^\s*\^"([^"]+)"\s+(DEF|MODIFY)\s*\{?\s*$')
-
-    # APPLIES TO clause: APPLIES TO [^"Name"] or APPLIES TO [^"Name1", ^"Name2"]
-    APPLIES_TO_PATTERN = re.compile(r'APPLIES TO\s+\[([^\]]+)\]')
-
-    # EXTENDS clause: EXTENDS #hash ^"Name"
-    EXTENDS_PATTERN = re.compile(r'EXTENDS\s+(#[A-Za-z0-9]+)\s+\^"([^"]+)"', re.IGNORECASE)
-
-    # Property types
-    PROPERTY_TYPES = {
-        'INTEGER', 'STRING', 'BOOLEAN', 'LIST OF', 'ENUM',
-        'DEF', 'MODIFY'
-    }
-
-    # Reserved keywords
-    KEYWORDS = {
-        'ACTOR', 'DEF', 'MODIFY', 'EXTENDS', 'APPLIES TO', 'PROPERTIES',
-        'INTEGER', 'STRING', 'BOOLEAN', 'LIST OF', 'ENUM',
-        'MIN', 'MAX', 'DEFAULT', 'METADATA', 'DESCRIPTION'
-    }
-
-    def __init__(self):
-        self.result = None
-        self.lines = []
-        self.brace_stack = []  # Stack to track opening braces
-
-    def validate_file(self, file_path: Path) -> ValidationResult:
-        """Validate a single .ttrpg file"""
-        self.result = ValidationResult(file_path=file_path)
-
-        try:
-            with open(file_path, 'r', encoding='utf-8') as f:
-                self.lines = f.readlines()
-                self.result.line_count = len(self.lines)
-        except Exception as e:
-            self.result.issues.append(ValidationIssue(
-                line_number=0,
-                severity=Severity.ERROR,
-                category="FILE_ACCESS",
-                message=f"Cannot read file: {e}"
-            ))
-            return self.result
-
-        # Run all validation checks
-        self._check_brace_balance()
-        self._check_syntax()
-        self._check_hash_format()
-        self._check_property_constraints()
-        self._check_indentation()
-        self._check_string_quoting()
-
-        # Sort issues by line number
-        self.result.issues.sort(key=lambda x: x.line_number)
-
-        return self.result
-
-    def _check_brace_balance(self):
-        """Check that all braces are properly matched"""
-        brace_count = 0
-        stack = []  # Track line numbers where braces open
-
-        for i, line in enumerate(self.lines, 1):
-            line_stripped = self._strip_comments(line)
-
-            for char in line_stripped:
-                if char == '{':
-                    brace_count += 1
-                    stack.append(i)
-                elif char == '}':
-                    brace_count -= 1
-                    if brace_count < 0:
-                        self.result.issues.append(ValidationIssue(
-                            line_number=i,
-                            severity=Severity.ERROR,
-                            category="BRACE_MISMATCH",
-                            message="Closing brace '}' without matching opening brace",
-                            context=line.strip()
-                        ))
-                        brace_count = 0  # Reset to continue checking
-                    elif stack:
-                        stack.pop()
-
-        # Check for unclosed braces
-        if brace_count > 0:
-            self.result.issues.append(ValidationIssue(
-                line_number=self.result.line_count,
-                severity=Severity.ERROR,
-                category="BRACE_MISMATCH",
-                message=f"{brace_count} unclosed brace(s) - missing closing '}}'"
-            ))
-
-    def _check_syntax(self):
-        """Check for syntax errors in ACTOR, DEF, MODIFY, EXTENDS, and APPLIES TO"""
-        for i, line in enumerate(self.lines, 1):
-            line_stripped = self._strip_comments(line).strip()
-
-            if not line_stripped:
-                continue
-
-            # Check ACTOR definitions
-            if line_stripped.startswith('ACTOR'):
-                if not self.ACTOR_DEF_PATTERN.match(line):
-                    self.result.issues.append(ValidationIssue(
-                        line_number=i,
-                        severity=Severity.ERROR,
-                        category="SYNTAX_ERROR",
-                        message='Invalid ACTOR syntax. Expected: ACTOR "Name" DEF {',
-                        context=line.strip()
-                    ))
-
-            # Check DEF/MODIFY definitions
-            if re.match(r'^\s*\^"', line):
-                if not self.DEF_PATTERN.match(line) and not 'APPLIES TO' in line:
-                    # Could be a property definition like ^"Name" INTEGER
-                    # Check if it has a valid property type
-                    if not any(ptype in line for ptype in self.PROPERTY_TYPES):
-                        if 'DEF' in line or 'MODIFY' in line:
-                            self.result.issues.append(ValidationIssue(
-                                line_number=i,
-                                severity=Severity.ERROR,
-                                category="SYNTAX_ERROR",
-                                message='Invalid DEF/MODIFY syntax. Expected: ^"Name" DEF { or ^"Name" MODIFY {',
-                                context=line.strip()
-                            ))
-
-            # Check EXTENDS clause (must start with EXTENDS keyword, not just contain it)
-            if re.match(r'^\s*EXTENDS\s+', line_stripped) and 'ACTOR' not in line_stripped:
-                # Must have both a hash and a quoted reference
-                has_hash = re.search(r'#[A-Za-z0-9]+', line_stripped)
-                has_ref = re.search(r'\^"[^"]+"', line_stripped)
-
-                if not (has_hash and has_ref):
-                    self.result.issues.append(ValidationIssue(
-                        line_number=i,
-                        severity=Severity.ERROR,
-                        category="SYNTAX_ERROR",
-                        message='Invalid EXTENDS syntax. Expected: EXTENDS #hash ^"Name"',
-                        context=line.strip()
-                    ))
-
-            # Check APPLIES TO clause
-            if 'APPLIES TO' in line_stripped:
-                match = self.APPLIES_TO_PATTERN.search(line_stripped)
-                if not match:
-                    self.result.issues.append(ValidationIssue(
-                        line_number=i,
-                        severity=Severity.ERROR,
-                        category="SYNTAX_ERROR",
-                        message='Invalid APPLIES TO syntax. Expected: APPLIES TO [^"Name"] or APPLIES TO [^"Name1", ^"Name2"]',
-                        context=line.strip()
-                    ))
-                else:
-                    # Check that actor references are properly quoted
-                    actor_list = match.group(1)
-                    actor_refs = re.findall(r'\^"([^"]+)"', actor_list)
-                    if not actor_refs:
-                        self.result.issues.append(ValidationIssue(
-                            line_number=i,
-                            severity=Severity.ERROR,
-                            category="SYNTAX_ERROR",
-                            message='APPLIES TO clause must contain at least one ^"ActorName" reference',
-                            context=line.strip()
-                        ))
-
-    def _check_hash_format(self):
-        """Check that hash IDs follow the expected format"""
-        for i, line in enumerate(self.lines, 1):
-            line_stripped = self._strip_comments(line)
-
-            # Find all hashes in the line
-            hashes = self.HASH_PATTERN.findall(line_stripped)
-
-            for hash_id in hashes:
-                if not self.VALID_HASH_PATTERN.match(hash_id):
-                    self.result.issues.append(ValidationIssue(
-                        line_number=i,
-                        severity=Severity.WARNING,
-                        category="HASH_FORMAT",
-                        message=f'Hash "{hash_id}" is too short (expected: 16+ alphanumeric chars after #)',
-                        context=line.strip()
-                    ))
-
-    def _check_property_constraints(self):
-        """Check MIN/MAX/DEFAULT consistency for INTEGER properties"""
-        for i, line in enumerate(self.lines, 1):
-            line_stripped = self._strip_comments(line).strip()
-
-            if 'INTEGER' not in line_stripped:
-                continue
-
-            # Extract MIN, MAX, DEFAULT values
-            min_match = re.search(r'MIN\s+(-?\d+)', line_stripped)
-            max_match = re.search(r'MAX\s+(-?\d+)', line_stripped)
-            default_match = re.search(r'DEFAULT\s+(-?\d+)', line_stripped)
-
-            min_val = int(min_match.group(1)) if min_match else None
-            max_val = int(max_match.group(1)) if max_match else None
-            default_val = int(default_match.group(1)) if default_match else None
-
-            # Check MIN <= MAX
-            if min_val is not None and max_val is not None:
-                if min_val > max_val:
-                    self.result.issues.append(ValidationIssue(
-                        line_number=i,
-                        severity=Severity.ERROR,
-                        category="CONSTRAINT_ERROR",
-                        message=f'MIN ({min_val}) cannot be greater than MAX ({max_val})',
-                        context=line.strip()
-                    ))
-
-            # Check MIN <= DEFAULT <= MAX
-            if default_val is not None:
-                if min_val is not None and default_val < min_val:
-                    self.result.issues.append(ValidationIssue(
-                        line_number=i,
-                        severity=Severity.ERROR,
-                        category="CONSTRAINT_ERROR",
-                        message=f'DEFAULT ({default_val}) cannot be less than MIN ({min_val})',
-                        context=line.strip()
-                    ))
-
-                if max_val is not None and default_val > max_val:
-                    self.result.issues.append(ValidationIssue(
-                        line_number=i,
-                        severity=Severity.ERROR,
-                        category="CONSTRAINT_ERROR",
-                        message=f'DEFAULT ({default_val}) cannot be greater than MAX ({max_val})',
-                        context=line.strip()
-                    ))
-
-    def _check_indentation(self):
-        """Check for inconsistent indentation (mixing tabs and spaces)"""
-        uses_tabs = False
-        uses_spaces = False
-
-        for i, line in enumerate(self.lines, 1):
-            if not line or line.strip() == '':
-                continue
-
-            # Check leading whitespace
-            leading = line[:len(line) - len(line.lstrip())]
-
-            if '\t' in leading:
-                uses_tabs = True
-            if ' ' in leading:
-                uses_spaces = True
-
-            # Warn if mixing tabs and spaces on same line
-            if '\t' in leading and ' ' in leading:
-                self.result.issues.append(ValidationIssue(
-                    line_number=i,
-                    severity=Severity.WARNING,
-                    category="INDENTATION",
-                    message='Mixed tabs and spaces in indentation',
-                    context=line.rstrip()
-                ))
-
-        # Warn if file mixes tabs and spaces
-        if uses_tabs and uses_spaces:
-            self.result.issues.append(ValidationIssue(
-                line_number=0,
-                severity=Severity.INFO,
-                category="INDENTATION",
-                message='File uses both tabs and spaces for indentation (inconsistent style)'
-            ))
-
-    def _check_string_quoting(self):
-        """Check for unquoted strings in definitions"""
-        for i, line in enumerate(self.lines, 1):
-            line_stripped = self._strip_comments(line).strip()
-
-            # Check for ACTOR/DEF/MODIFY with missing quotes
-            if re.match(r'^\s*ACTOR\s+[^"]', line_stripped):
-                self.result.issues.append(ValidationIssue(
-                    line_number=i,
-                    severity=Severity.ERROR,
-                    category="QUOTING_ERROR",
-                    message='ACTOR name must be quoted: ACTOR "Name" DEF {',
-                    context=line.strip()
-                ))
-
-            if re.match(r'^\s*\^[^"]', line_stripped) and not line_stripped.startswith('^"'):
-                # Could be a reference like ^OtherDef
-                if 'DEF' in line_stripped or 'MODIFY' in line_stripped:
-                    self.result.issues.append(ValidationIssue(
-                        line_number=i,
-                        severity=Severity.ERROR,
-                        category="QUOTING_ERROR",
-                        message='Definition name must be quoted: ^"Name" DEF {',
-                        context=line.strip()
-                    ))
-
-    @staticmethod
-    def _strip_comments(line: str) -> str:
-        """Remove comments from a line, preserving hash IDs"""
-        result = []
-        i = 0
-        while i < len(line):
-            if line[i] == '#':
-                # Check if this is a hash ID (no space after #, followed by alphanumeric)
-                # Hash IDs look like: #YD4PosFYGnnbWia88WUziU
-                # Comments look like: # This is a comment
-                if i + 1 < len(line) and line[i + 1] != ' ' and line[i + 1].isalnum():
-                    # This is likely a hash ID, keep it
-                    result.append(line[i])
-                    i += 1
-                else:
-                    # This is a comment, skip rest of line
-                    break
-            else:
-                result.append(line[i])
+def tokenize(text, fname, findings):
+    toks = []
+    i, n, line = 0, len(text), 1
+    while i < n:
+        c = text[i]
+        if c == '\n':
+            line += 1; i += 1; continue
+        if c in ' \t\r':
+            i += 1; continue
+        if c == '/' and i + 1 < n and text[i + 1] == '/':
+            while i < n and text[i] != '\n':
                 i += 1
-        return ''.join(result)
+            continue
+        if c == '#':
+            # comment if '#' is followed by space or end-of-line; else a hash id
+            if i + 1 >= n or text[i + 1] in ' \t\r\n':
+                while i < n and text[i] != '\n':
+                    i += 1
+                continue
+            j = i + 1
+            while j < n and (text[j].isalnum() or text[j] == '_'):
+                j += 1
+            toks.append(Tok('HASH', text[i:j], line)); i = j; continue
+        if c == '^' and i + 1 < n and text[i + 1] == '"':
+            j, start = i + 2, line
+            while j < n and text[j] != '"':
+                if text[j] == '\n':
+                    line += 1
+                j += 1
+            if j >= n:
+                findings.append(Finding(fname, 'lint', 'error', start, "unterminated caret reference"))
+                break
+            toks.append(Tok('CARET', text[i + 2:j], start)); i = j + 1; continue
+        if c == '"':
+            if text[i:i + 3] == '"""':
+                j = text.find('"""', i + 3)
+                if j < 0:
+                    findings.append(Finding(fname, 'lint', 'error', line, "unterminated triple-quoted string"))
+                    break
+                toks.append(Tok('STR', text[i + 3:j], line))
+                line += text[i:j + 3].count('\n'); i = j + 3; continue
+            j, start = i + 1, line
+            while j < n and text[j] != '"':
+                if text[j] == '\\' and j + 1 < n:
+                    j += 2; continue
+                if text[j] == '\n':
+                    line += 1
+                j += 1
+            if j >= n:
+                findings.append(Finding(fname, 'lint', 'error', start, "unterminated string"))
+                break
+            toks.append(Tok('STR', text[i + 1:j], start)); i = j + 1; continue
+        simple = {'{': 'LBRACE', '}': 'RBRACE', '[': 'LBRACK', ']': 'RBRACK', ',': 'COMMA', ':': 'COLON'}
+        if c in simple:
+            toks.append(Tok(simple[c], c, line)); i += 1; continue
+        if c.isdigit() or (c == '-' and i + 1 < n and text[i + 1].isdigit()):
+            j = i + 1
+            while j < n and text[j].isdigit():
+                j += 1
+            toks.append(Tok('INT', text[i:j], line)); i = j; continue
+        if c.isalpha() or c == '_':
+            j = i + 1
+            while j < n and (text[j].isalnum() or text[j] == '_'):
+                j += 1
+            w = text[i:j]
+            toks.append(Tok('BOOL' if w in ('true', 'false') else 'ID', w, line)); i = j; continue
+        i += 1  # unknown char — skip
+    return toks
 
 
-def print_validation_result(result: ValidationResult, verbose: bool = False):
-    """Print validation results to console"""
-    print(f"\n{'=' * 70}")
-    print(f"Validating: {result.file_path.name}")
-    print(f"{'=' * 70}")
-    print(f"Lines: {result.line_count}")
-    print(f"Errors: {result.error_count}")
-    print(f"Warnings: {result.warning_count}")
-    print(f"Status: {'[VALID]' if result.is_valid else '[INVALID]'}")
+def analyze_file(fname, text, findings):
+    toks = tokenize(text, fname, findings)
+    defined_names, anchors = {}, {}     # name/hash -> [lines]
+    refs, depends, file_ids = [], [], []
+    has_spec_version = False
+    frames = []                          # {open, is_def, waived}
+    waived_ranges, waived_lines = [], set()
+    next_lbrace_is_def = False
 
-    if result.issues:
-        print(f"\n{'-' * 70}")
-        print("ISSUES FOUND:")
-        print(f"{'-' * 70}")
+    def caret_earlier_on_line(idx):
+        ln = toks[idx].line
+        k = idx - 1
+        while k >= 0 and toks[k].line == ln:
+            if toks[k].kind == 'CARET':
+                return True
+            k -= 1
+        return False
 
-        for issue in result.issues:
-            severity_symbol = {
-                Severity.ERROR: "[X]",
-                Severity.WARNING: "[!]",
-                Severity.INFO: "[i]"
-            }[issue.severity]
+    for idx, t in enumerate(toks):
+        if t.kind == 'LBRACE':
+            frames.append({'open': t.line, 'is_def': next_lbrace_is_def, 'waived': False})
+            next_lbrace_is_def = False
+            continue
+        if t.kind == 'RBRACE':
+            if not frames:
+                findings.append(Finding(fname, 'lint', 'error', t.line, "unmatched '}'"))
+            else:
+                fr = frames.pop()
+                if fr['waived']:
+                    waived_ranges.append((fr['open'], t.line))
+            continue
+        if t.kind != 'ID':
+            continue
+        w = t.val
+        if w in ('BASE', 'EXTENSION'):
+            if idx + 1 < len(toks) and toks[idx + 1].kind == 'STR':
+                file_ids.append(toks[idx + 1].val)
+        elif w == 'SPEC_VERSION':
+            has_spec_version = True
+        elif w == 'DEF':
+            k = idx - 1
+            if k >= 0 and toks[k].kind in ('CARET', 'STR'):
+                name = toks[k].val; k -= 1
+                if k >= 0 and toks[k].kind == 'ID' and toks[k].val == 'ACTOR':
+                    k -= 1
+                hsh = toks[k].val if k >= 0 and toks[k].kind == 'HASH' else None
+                defined_names.setdefault(name, []).append(t.line)
+                if hsh:
+                    anchors.setdefault(hsh, []).append(t.line)
+                next_lbrace_is_def = True
+        elif w == 'EXTENDS':
+            k = idx + 1
+            hsh = None
+            if k < len(toks) and toks[k].kind == 'HASH':
+                hsh = toks[k].val; k += 1
+            if k < len(toks) and toks[k].kind == 'CARET':
+                refs.append(('extends', toks[k].val, hsh, t.line))
+        elif w == 'APPLIES':
+            k = idx + 1
+            if k < len(toks) and toks[k].kind == 'ID' and toks[k].val == 'TO':
+                k += 1
+                if k < len(toks) and toks[k].kind == 'LBRACK':
+                    k += 1
+                    while k < len(toks) and toks[k].kind != 'RBRACK':
+                        if toks[k].kind == 'CARET':
+                            refs.append(('applies to', toks[k].val, None, toks[k].line))
+                        k += 1
+        elif w == 'LIST':
+            k = idx + 1
+            if k < len(toks) and toks[k].kind == 'ID' and toks[k].val == 'OF' \
+               and k + 1 < len(toks) and toks[k + 1].kind == 'CARET':
+                refs.append(('list of', toks[k + 1].val, None, toks[k + 1].line))
+        elif w == 'DEPENDS_ON':
+            if idx + 1 < len(toks) and toks[idx + 1].kind == 'STR':
+                depends.append((toks[idx + 1].val, t.line))
+        elif w == 'FIAT':
+            nxt = toks[idx + 1] if idx + 1 < len(toks) else None
+            if nxt is None or nxt.kind != 'STR':
+                findings.append(Finding(fname, 'lint', 'error', t.line, "FIAT requires a reason string"))
+            if caret_earlier_on_line(idx):
+                waived_lines.add(t.line)                       # property-level
+            else:
+                for fr in reversed(frames):                    # element-level: nearest DEF
+                    if fr['is_def']:
+                        fr['waived'] = True
+                        break
+        elif w == 'INTEGER':
+            k = idx + 1
+            val = None
+            if k < len(toks) and toks[k].kind == 'INT':
+                val = int(toks[k].val); k += 1
+            mn = mx = None
+            while k < len(toks) and toks[k].line == t.line:
+                if toks[k].kind == 'ID' and toks[k].val in ('MIN', 'MAX') \
+                   and k + 1 < len(toks) and toks[k + 1].kind == 'INT':
+                    if toks[k].val == 'MIN':
+                        mn = int(toks[k + 1].val)
+                    else:
+                        mx = int(toks[k + 1].val)
+                    k += 2; continue
+                k += 1
+            if val is not None and ((mn is not None and val < mn) or (mx is not None and val > mx)):
+                refs.append(('__range__', f"{val} outside [{mn},{mx}]", None, t.line))
 
-            line_info = f"Line {issue.line_number}" if issue.line_number > 0 else "File"
-            print(f"\n{severity_symbol} {issue.severity.value} [{issue.category}] @ {line_info}")
-            print(f"   {issue.message}")
+    for fr in frames:
+        findings.append(Finding(fname, 'lint', 'error', fr['open'], "unclosed '{'"))
+    for tk in toks:
+        if tk.kind == 'HASH' and len(tk.val) - 1 < HASH_MIN_BODY:
+            findings.append(Finding(fname, 'lint', 'warning', tk.line,
+                                    "hash id '%s' shorter than %d chars" % (tk.val, HASH_MIN_BODY)))
+    if not has_spec_version:
+        findings.append(Finding(fname, 'lint', 'warning', 1, "no SPEC_VERSION declared"))
 
-            if issue.context and verbose:
-                print(f"   Context: {issue.context[:100]}")
-    else:
-        print("\n[OK] No issues found!")
-
-
-def main():
-    if len(sys.argv) < 2:
-        print("Usage: python ttrpg_validator.py <file.ttrpg|directory> [--verbose]")
-        print("\nValidates .ttrpg files for syntax errors and structural issues.")
-        return 1
-
-    path_arg = sys.argv[1]
-    verbose = '--verbose' in sys.argv or '-v' in sys.argv
-
-    path = Path(path_arg)
-
-    if not path.exists():
-        print(f"ERROR: Path does not exist: {path}")
-        return 1
-
-    validator = TTRPGValidator()
-    results = []
-
-    # Collect files to validate
-    if path.is_file():
-        files = [path]
-    elif path.is_dir():
-        files = list(path.glob('**/*.ttrpg'))
-        if not files:
-            print(f"No .ttrpg files found in {path}")
-            return 1
-    else:
-        print(f"ERROR: Invalid path: {path}")
-        return 1
-
-    # Validate each file
-    for file_path in files:
-        result = validator.validate_file(file_path)
-        results.append(result)
-        print_validation_result(result, verbose=verbose)
-
-    # Summary for multiple files
-    if len(results) > 1:
-        print(f"\n{'=' * 70}")
-        print("SUMMARY")
-        print(f"{'=' * 70}")
-        print(f"Total files: {len(results)}")
-        print(f"Valid: {sum(1 for r in results if r.is_valid)}")
-        print(f"Invalid: {sum(1 for r in results if not r.is_valid)}")
-        print(f"Total errors: {sum(r.error_count for r in results)}")
-        print(f"Total warnings: {sum(r.warning_count for r in results)}")
-
-    # Return exit code based on validation
-    return 0 if all(r.is_valid for r in results) else 1
+    return {
+        'file': fname, 'names': defined_names, 'anchors': anchors, 'refs': refs,
+        'depends': depends, 'file_ids': file_ids,
+        'waived_ranges': waived_ranges, 'waived_lines': waived_lines,
+    }
 
 
-if __name__ == "__main__":
-    exit(main())
+def is_waived(line, data):
+    if line in data['waived_lines']:
+        return True
+    return any(a <= line <= b for a, b in data['waived_ranges'])
+
+
+def coherence_pass(files_data, findings):
+    corpus_names, corpus_file_ids = set(), set()
+    all_anchors = {}  # hash -> [(file, line)]
+    for d in files_data:
+        corpus_names.update(d['names'])
+        corpus_file_ids.update(d['file_ids'])
+        for h, lines in d['anchors'].items():
+            for ln in lines:
+                all_anchors.setdefault(h, []).append((d['file'], ln))
+
+    for h, locs in all_anchors.items():
+        if len(locs) > 1:
+            where = ", ".join("%s:%d" % (os.path.basename(f), ln) for f, ln in locs)
+            f0, l0 = locs[0]
+            findings.append(Finding(f0, 'coherence', 'error', l0,
+                                    "duplicate anchor %s (%s)" % (h, where)))
+
+    for d in files_data:
+        for kind, name, hsh, line in d['refs']:
+            if kind == '__range__':
+                if not is_waived(line, d):
+                    findings.append(Finding(d['file'], 'coherence', 'error', line,
+                                            "value %s" % name))
+                continue
+            if name not in corpus_names and not is_waived(line, d):
+                findings.append(Finding(d['file'], 'coherence', 'error', line,
+                                        "%s references undefined ^\"%s\"" % (kind, name)))
+            if hsh and hsh not in d['anchors'] and hsh not in {a for a in _all_hashes(files_data)} \
+               and not is_waived(line, d):
+                findings.append(Finding(d['file'], 'coherence', 'error', line,
+                                        "extends references undefined hash %s" % hsh))
+        for fid, line in d['depends']:
+            if fid not in corpus_file_ids and not is_waived(line, d):
+                findings.append(Finding(d['file'], 'coherence', 'error', line,
+                                        "DEPENDS_ON references undefined file id \"%s\"" % fid))
+
+
+def _all_hashes(files_data):
+    out = set()
+    for d in files_data:
+        out.update(d['anchors'].keys())
+    return out
+
+
+def collect_paths(args):
+    files = []
+    for p in args:
+        if os.path.isdir(p):
+            for root, _, names in os.walk(p):
+                for nm in names:
+                    if nm.endswith('.ttrpg'):
+                        files.append(os.path.join(root, nm))
+        elif p.endswith('.ttrpg'):
+            files.append(p)
+        else:
+            print("skipping non-.ttrpg path: %s" % p, file=sys.stderr)
+    return sorted(files)
+
+
+def main(argv):
+    if len(argv) < 2:
+        print(__doc__.strip().splitlines()[0])
+        print("usage: ttrpg_validator.py <file-or-dir> [more ...]", file=sys.stderr)
+        return 2
+    paths = collect_paths(argv[1:])
+    if not paths:
+        print("no .ttrpg files found", file=sys.stderr)
+        return 2
+
+    findings, files_data = [], []
+    for path in paths:
+        try:
+            with open(path, encoding='utf-8') as fh:
+                text = fh.read()
+        except OSError as exc:
+            print("cannot read %s: %s" % (path, exc), file=sys.stderr)
+            return 2
+        files_data.append(analyze_file(path, text, findings))
+    coherence_pass(files_data, findings)
+
+    findings.sort(key=lambda f: (f.file, f.line, f.level, f.sev))
+    errors = sum(1 for f in findings if f.sev == 'error')
+    warnings = sum(1 for f in findings if f.sev == 'warning')
+    cur = None
+    for f in findings:
+        if f.file != cur:
+            cur = f.file
+            print("\n%s" % f.file)
+        print("  %-10s %-5s L%-4d %s" % (f.level, f.sev.upper(), f.line, f.msg))
+    print("\n%d file(s) checked — %d error(s), %d warning(s)." % (len(paths), errors, warnings))
+    return 1 if errors else 0
+
+
+if __name__ == '__main__':
+    sys.exit(main(sys.argv))

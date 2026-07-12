@@ -1,3 +1,5 @@
+<!-- SUPERSEDED / HISTORICAL — documents the v0.3-era validator; not part of v4. -->
+
 # TTRPG Validator Tool
 
 ## Overview

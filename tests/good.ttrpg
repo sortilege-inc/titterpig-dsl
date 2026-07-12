@@ -1,0 +1,46 @@
+BASE "Demo_Core" {
+    NAME "Demo System Core"
+    SPEC_VERSION "4.0"
+    VERSION "1.0"
+    RELEASE_DATE "2026-07-12"
+
+    #DemoEntity7k3nP8mQ2vX7wZ ACTOR "Entity" DEF {
+        PROPERTIES {
+            ^"Name" STRING REQUIRED
+        }
+    }
+
+    #DemoSamurai9tB4cD1eF6gH8i ACTOR "Samurai" DEF {
+        EXTENDS #DemoEntity7k3nP8mQ2vX7wZ ^"Entity"
+        PROPERTIES {
+            ^"Name" STRING REQUIRED
+            ^"Air" INTEGER MIN 1 MAX 5 DEFAULT 1
+        }
+    }
+
+    #DemoAdversaryJ0kL2mN4oP6qR ACTOR "Adversary" DEF {
+        EXTENDS #DemoEntity7k3nP8mQ2vX7wZ ^"Entity"
+        PROPERTIES {
+            ^"Name" STRING REQUIRED
+        }
+    }
+
+    # ordinary NPC instance — extends the (looser) Adversary type
+    #DemoNpcQ4sT6uW8xY0zA2bC4d ^"Kuni Watcher" DEF {
+        EXTENDS ^"Adversary"
+        PROPERTIES {
+            ^"Name" STRING "Kuni Watcher"
+            ^"Air" INTEGER 3
+        }
+    }
+
+    # FIAT exception — supernatural Air beyond the mortal MAX 5
+    #DemoOniLordC3dE5fG7hI9jK1l ^"Oni Lord" DEF {
+        EXTENDS ^"Adversary"
+        FIAT "Supernatural entity; stats intentionally exceed mortal limits"
+        PROPERTIES {
+            ^"Name" STRING "Oni Lord"
+            ^"Air" INTEGER 8 MIN 1 MAX 5 FIAT "supernatural Air"
+        }
+    }
+}

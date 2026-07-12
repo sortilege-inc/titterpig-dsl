@@ -1,3 +1,9 @@
+<!-- ============================================================
+     SUPERSEDED / HISTORICAL — NOT part of the current v4 spec.
+     Critique of the v0.2 state; historical rationale that informed v4.
+     Canonical spec: ../titterpig-dsl-spec.md
+     ============================================================ -->
+
 # Titterpig DSL v0.2 Critique & Proposals
 
 Based on analysis of:

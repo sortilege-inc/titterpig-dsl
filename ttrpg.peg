@@ -1,5 +1,12 @@
+# ┌────────────────────────────────────────────────────────────────────┐
+# │ Titterpig DSL — PEG Grammar, v4 (aligned to titterpig-dsl-spec.md).  │
+# │ v4 additions: SPEC_VERSION metadata; FIAT (property-level modifier   │
+# │ and element-level cascading statement). The hash-ID >=16-char rule   │
+# │ and cross-file coherence are enforced by the validator, not here.    │
+# └────────────────────────────────────────────────────────────────────┘
+#
 # Titterpig DSL — PEG Grammar (Bryan Ford notation)
-# Formal syntax specification for .ttrpg files (v0.3)
+# Formal syntax specification for .ttrpg files (v4)
 #
 # This grammar defines syntactically valid .ttrpg files. Semantic rules
 # (hash uniqueness, EXTENDS resolution, type consistency) are enforced
@@ -36,6 +43,7 @@ BODY_ENTRY      <- METADATA
                  / RULES_BLOCK
                  / APPLIES_TO_CLAUSE
                  / EXTENDS_DECL
+                 / FIAT_STATEMENT
                  / BARE_TYPE_CONSTRAINT
                  / MODIFY_STATEMENT
                  / OVERRIDE_STATEMENT
@@ -48,9 +56,10 @@ BODY_ENTRY      <- METADATA
 # 2. Metadata
 # ═══════════════════════════════════════════════════════════
 
-METADATA        <- NAME_DECL / VERSION_DECL / RELEASE_DATE_DECL / DEPENDS_ON_DECL
+METADATA        <- NAME_DECL / SPEC_VERSION_DECL / VERSION_DECL / RELEASE_DATE_DECL / DEPENDS_ON_DECL
 
 NAME_DECL       <- 'NAME' _ STRING
+SPEC_VERSION_DECL <- 'SPEC_VERSION' _ STRING
 VERSION_DECL    <- 'VERSION' _ STRING
 RELEASE_DATE_DECL <- 'RELEASE_DATE' _ STRING
 DEPENDS_ON_DECL <- 'DEPENDS_ON' _ STRING (_ 'VERSION' _ STRING)?
@@ -101,6 +110,7 @@ MODIFIER        <- 'REQUIRED' / 'FIXED'
                  / 'DEFAULT' _ VALUE
                  / 'MIN' _ INTEGER_LIT
                  / 'MAX' _ INTEGER_LIT
+                 / 'FIAT' _ STRING
 
 # ═══════════════════════════════════════════════════════════
 # 5. Bare Type Constraints (in DEF body, outside PROPERTIES)
@@ -122,6 +132,10 @@ EXTENDS_DECL    <- 'EXTENDS' _ HASH_ID? _ CARET_REF
 APPLIES_TO_CLAUSE <- 'APPLIES' _ 'TO' _ '[' _ CARET_REF_LIST _ ']'
 
 CARET_REF_LIST  <- CARET_REF (_ ',' _ CARET_REF)*
+
+# FIAT: element-level intentional-exception marker; cascades over the DEF subtree.
+# The reason STRING is required. (Property-level FIAT is a MODIFIER, section 4.)
+FIAT_STATEMENT  <- 'FIAT' _ STRING
 
 # ═══════════════════════════════════════════════════════════
 # 7. Rules Block
@@ -280,12 +294,13 @@ EOF             <- !.
 # These keywords are matched by dedicated rules and take priority
 # over UPPER_IDENT / GENERIC_BLOCK:
 #
-# File-level:    BASE, EXTENSION, EXTENDS, NAME, VERSION,
+# File-level:    BASE, EXTENSION, EXTENDS, NAME, VERSION, SPEC_VERSION,
 #                RELEASE_DATE, DEPENDS_ON
 # Definition:    DEF, ACTOR, PROPERTIES, RULES
 # Types:         STRING, INTEGER, BOOLEAN, ENUM, LIST, OF
-# Modifiers:     REQUIRED, FIXED, DEFAULT, MIN, MAX
+# Modifiers:     REQUIRED, FIXED, DEFAULT, MIN, MAX, FIAT
 # Scope:         APPLIES, TO
 # Rule:          WHEN, THEN
 # Modification:  OVERRIDE, ADD, MODIFY, SET, ADD_TO, REMOVE_FROM
 # Text:          DESCRIPTION, TEXT
+# Validation:    FIAT (also an element-level statement)
