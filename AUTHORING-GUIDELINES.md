@@ -26,6 +26,34 @@ The **shape** of a structure is yours to design (system-owned — there is no un
 type layer). The **discipline** of structuring over prose is universal. Genuine narrative flavor
 stays prose and goes in `.lore`.
 
+### The boundary (ratified 2026-07-14)
+
+Where exactly "structure over prose" starts and stops — the operational test used by authors and
+by validation tooling (the titterpig-mastra quality judge cites this section):
+
+Structure is **required** for:
+
+1. **Labeled stat-lines and roll formulas** — anything of the shape `LABEL: formula`
+   (`"CASTING TOTAL: Communication + Corpse Magic + Aura modifier + stress die"`) or a stat run
+   (`"Init +2, Attack +11, Damage +15"`). These go in typed fields or system sub-blocks
+   (`FORMULAS`, `COMBAT`, `LEVEL_CALCULATION`), never inside a `DESCRIPTION` string.
+2. **Enumerable lists** — specialties, virtues/flaws, attacks, spell parameters: one typed item
+   per element whenever a field or sub-block exists for them.
+3. **Whole stat blocks** — never serialize an entity's statistics into one string.
+
+Structure is **not** required for flowing rules prose that mentions numeric values inline
+("An Ease Factor of 9 will calm the upset, 12 will win someone's love…", "+5 damage every round
+while the spell lasts") — that is the book's own voice and stays in `DESCRIPTION`.
+
+**Completeness overrides structure.** RPG rules are pervasively "X always, except Y" — the
+exceptions are rife and *desired*. When a datum resists a clean typed shape, keep the **full
+as-authored text** (verbatim inside the structured field, or in prose) rather than trimming it to
+fit: a formula's exception rider travels with it
+(`"COMMANDING ROLL: Communication + Leadership + stress die; Leadership may be limited by Language
+Ability"`), and a value like "3 (5 against fire)" stays whole. Whatever difficulty that poses for
+functional implementations is not the `.ttrpg` file's concern — **completeness and correctness are
+the only objectives**. Structure must never cause content loss.
+
 ## 2. Choosing a file type
 
 | If the content is… | Use |
@@ -96,6 +124,7 @@ validator accepts it **and** the intent is on the record:
 ## 9. Pre-commit checklist
 
 - [ ] All mechanical data is structured (no data in strings or comments)
+- [ ] No content trimmed to fit a structure — exceptions and riders kept verbatim (completeness beats shape)
 - [ ] Correct file type for the content
 - [ ] `NAME` / `VERSION` / `SPEC_VERSION` / `RELEASE_DATE` present
 - [ ] Hash IDs are opaque, `≥16` chars, unique — on everything referenced
