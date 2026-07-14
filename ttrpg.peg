@@ -72,13 +72,14 @@ DEPENDS_ON_DECL <- 'DEPENDS_ON' _ STRING (_ 'VERSION' _ STRING)?
 #   ^"Name" DEF { ... }
 #   #hash ^"Name" DEF { ... }
 #   #hash ACTOR "Name" DEF { ... }
+#   #hash TEMPLATE "Name" DEF { ... }
 #   #hash "Name" DEF { ... }
 #   ^"Name" DEF { ... }          (no hash)
 #   "Name" DEF { ... }           (rare, no caret)
 
 DEF_BLOCK       <- HASH_ID? _ ACTOR_KW? _ DEF_NAME _ 'DEF' _ '{' _ BODY _ '}'
 
-ACTOR_KW        <- 'ACTOR'
+ACTOR_KW        <- 'ACTOR' / 'TEMPLATE'
 DEF_NAME        <- CARET_REF / STRING
 
 # ═══════════════════════════════════════════════════════════

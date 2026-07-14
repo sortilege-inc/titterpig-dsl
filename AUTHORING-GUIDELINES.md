@@ -67,6 +67,16 @@ the only objectives**. Structure must never cause content loss.
 to be read → `.lore`. The same subject can appear in both (mechanics in `.ttrpg`/`.setting`, story
 in `.lore`) — mirror, don't duplicate.
 
+### Templates vs. instances (DECISION-5)
+
+- A **specific character who exists in the world** (a named NPC, a published persona) is an
+  **instance**: `^"Name" DEF { EXTENDS ^"<actor type>" ... }`.
+- A **reusable starting point players or GMs instantiate from** — pregens, archetype packages,
+  modifier bundles — is a **`TEMPLATE`**: same DEF shape with the `TEMPLATE` marker, plus a
+  `CHOICES` block holding its customization points (keep the source's customization notes there,
+  verbatim, not in the description). Templates may `EXTENDS` other templates; sourcebooks refine
+  base templates that way instead of restating them.
+
 ## 3. Naming & organization
 
 - One repo per system (`titterpig-dsl-<system>`).

@@ -49,6 +49,16 @@ v0.4 is a consistency/clarity pass over v0.3's grammar — not a redesign. Key c
   (edition changes are breaking). Forward-porting a stranded sourcebook is an explicit **derived
   artifact**, not an automatic overlay.
 
+### Resolved decisions (2026-07-14)
+
+- **DECISION-5 — Templates are first-class** *(resolved)* (§5): a `TEMPLATE` is an **instantiable
+  archetype** — not an entity in play — that downstream applications instantiate instances from,
+  resolving its declared `CHOICES`. Templates `EXTENDS` an actor type (pre-generated characters) or
+  **another template** (sourcebooks that refine base templates, e.g. Grogs); instances created from
+  a template are instances of its underlying actor type. This models both full-statblock pregens
+  (ArM5 Definitive grog/companion/magus templates) and modifier-bundle archetypes (L5R5e NPC
+  templates) with one vocabulary, and enables quick, decisive instantiation by GMs at the table.
+
 ## 1. Overview & Design Principles
 
 Titterpig is a domain-specific language (DSL) for defining tabletop role-playing game (TTRPG) systems, content, and narrative structures. The base specification defines a **system-agnostic syntax toolkit** — it owns the grammar, while each game system owns its vocabulary.
@@ -236,7 +246,7 @@ The `DEF` block is the core building block. Every named game concept — a schoo
 }
 ```
 
-### ACTOR Definition (character template)
+### ACTOR Definition (character type)
 
 ```
 #hashID ACTOR "Name" DEF {
@@ -244,7 +254,37 @@ The `DEF` block is the core building block. Every named game concept — a schoo
 }
 ```
 
-`ACTOR` is an optional semantic marker indicating this DEF represents a character template (PC or NPC archetype). It has no syntactic effect — it's documentation for humans and tooling. ACTOR DEFs typically have PROPERTIES and RULES blocks defining the character schema.
+`ACTOR` is an optional semantic marker indicating this DEF declares a character **type** (the schema a PC or NPC conforms to). It has no syntactic effect — it's documentation for humans and tooling. ACTOR DEFs typically have PROPERTIES and RULES blocks defining the character schema.
+
+### TEMPLATE Definition (instantiable archetype) *(v0.4, DECISION-5)*
+
+```
+#hashID TEMPLATE "Name" DEF {
+    EXTENDS ^"Grog"                # an actor type, or another TEMPLATE
+    PROPERTIES { ... }             # the concrete values the template fixes
+    CHOICES {                      # declared open slots / customization options
+        "Swap Large for an Affinity or Puissant Ability with Great Weapons."
+    }
+    DESCRIPTION "..."
+}
+```
+
+`TEMPLATE` is a semantic marker (like `ACTOR`, no syntactic effect) declaring an **instantiable
+archetype**: a pre-generated character, an NPC bundle, or any reusable starting point a downstream
+application **instantiates** instances from. Semantics:
+
+- A template is **not an entity in play**. Consumers create instances from it: copy its concrete
+  values, resolve its `CHOICES`, and the result is an instance of the template's underlying actor
+  type.
+- A template `EXTENDS` either an **actor type** (a full pregen) or **another template** — child
+  values override inherited ones per normal inheritance (§6), which is how sourcebooks refine base
+  templates without restating them.
+- **`CHOICES`** declares the customization points the template leaves open. Entries may be faithful
+  prose (a source's "Customization Notes") or structured per-system shapes; either way they live
+  here, not buried in the description, so tooling can present them at instantiation time.
+- Relation to §13: `MODIFY`/`OVERRIDE`/`ADD` remain **load-order composition** against defined
+  entities (errata may patch a template like anything else). Template instantiation is
+  **consumer-time** and orthogonal.
 
 ### Hash IDs *(v0.4 rules)*
 
@@ -771,7 +811,7 @@ Only these keywords are reserved by the base spec:
 
 **File-level:** `BASE`, `EXTENSION`, `EXTENDS`, `NAME`, `VERSION`, `RELEASE_DATE`, `DEPENDS_ON`
 
-**Definition:** `DEF`, `ACTOR`, `PROPERTIES`, `RULES`
+**Definition:** `DEF`, `ACTOR`, `TEMPLATE`, `CHOICES`, `PROPERTIES`, `RULES`
 
 **Types:** `STRING`, `INTEGER`, `BOOLEAN`, `ENUM`, `LIST`, `OF`
 

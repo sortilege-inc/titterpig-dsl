@@ -162,7 +162,7 @@ def analyze_file(fname, text, findings):
             k = idx - 1
             if k >= 0 and toks[k].kind in ('CARET', 'STR'):
                 name = toks[k].val; k -= 1
-                if k >= 0 and toks[k].kind == 'ID' and toks[k].val == 'ACTOR':
+                if k >= 0 and toks[k].kind == 'ID' and toks[k].val in ('ACTOR', 'TEMPLATE'):
                     k -= 1
                 hsh = toks[k].val if k >= 0 and toks[k].kind == 'HASH' else None
                 defined_names.setdefault(name, []).append(t.line)
