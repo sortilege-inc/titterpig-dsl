@@ -38,8 +38,10 @@ EXTENDS_CLAUSE  <- 'EXTENDS' _ STRING
 BODY            <- (BODY_ENTRY _)*
 
 BODY_ENTRY      <- METADATA
+                 / ALIAS_STATEMENT
                  / DEF_BLOCK
                  / PROPERTIES_BLOCK
+                 / PARAMETERS_BLOCK
                  / RULES_BLOCK
                  / APPLIES_TO_CLAUSE
                  / EXTENDS_DECL
@@ -81,6 +83,23 @@ DEF_BLOCK       <- HASH_ID? _ ACTOR_KW? _ DEF_NAME _ 'DEF' _ '{' _ BODY _ '}'
 
 ACTOR_KW        <- 'ACTOR' / 'TEMPLATE'
 DEF_NAME        <- CARET_REF / STRING
+
+# ─────────────────────────────────────────────────────────────
+# 3b. Parameterized definitions & aliases (v0.4, DECISION-6)
+# ─────────────────────────────────────────────────────────────
+
+# A DEF may declare typed parameter slots that bound references fill.
+#   ^"Puissant" DEF { PARAMETERS { ^"subject" OF ^"Ability" } ... }
+# A parameter domain is a caret type (bound value must be an entity of that
+# type) or STRING (free text, e.g. a place name).
+PARAMETERS_BLOCK <- 'PARAMETERS' _ '{' _ (PARAM_DECL _)* '}'
+PARAM_DECL       <- CARET_REF _ 'OF' _ (CARET_REF / 'STRING')
+
+# ALIAS declares one name a display synonym of an existing entity — same
+# entity/hash, different label, no value change (distinct from MODIFY/OVERRIDE).
+#   ALIAS ^"Ride" FOR ^"Drive"
+# Ships in a setting's own extension file to re-skin vocabulary.
+ALIAS_STATEMENT  <- 'ALIAS' _ CARET_REF _ 'FOR' _ HASH_ID? _ CARET_REF
 
 # ═══════════════════════════════════════════════════════════
 # 4. Properties Block
@@ -232,12 +251,24 @@ DEF_INLINE_BLOCK <- 'DEF' _ '{' _ BODY _ '}'
 # 10. Values and Literals
 # ═══════════════════════════════════════════════════════════
 
-VALUE           <- STRING / INTEGER_LIT / BOOLEAN_LIT / CARET_REF / HASH_ID / BRACKET_LIST
+VALUE           <- CHOICE_VALUE / STRING / INTEGER_LIT / BOOLEAN_LIT / CARET_REF / HASH_ID / BRACKET_LIST
 
 INLINE_VALUE    <- STRING / CARET_REF
 
 BRACKET_LIST    <- '[' _ BRACKET_ITEM (_ ',' _ BRACKET_ITEM)* _ ']'
-BRACKET_ITEM    <- CARET_REF / HASH_ID / STRING / INTEGER_LIT / BOOLEAN_LIT
+BRACKET_ITEM    <- CHOICE_VALUE / CARET_REF / HASH_ID / STRING / INTEGER_LIT / BOOLEAN_LIT
+
+# CHOICE — a structured "pick from these" value (v0.4, DECISION-6). Options are
+# specific entities, verbatim strings (the completeness escape hatch), or
+# quantified typed slots ("N OF <type> WHERE {field value ...}"). Optional
+# PICK n sets how many options are taken (default 1).
+#   CHOICE [ ^"Demonic Might", ^"Demonic Powers" ]
+#   CHOICE [ 1 OF ^"Virtue" WHERE { ^"Size" "Major", ^"Category" "Supernatural" },
+#            3 OF ^"Virtue" WHERE { ^"Size" "Minor", ^"Category" "Supernatural" } ]
+CHOICE_VALUE    <- 'CHOICE' (_ 'PICK' _ INTEGER_LIT)? _ '[' _ CHOICE_OPTION (_ ',' _ CHOICE_OPTION)* _ ']'
+CHOICE_OPTION   <- CHOICE_SLOT / CARET_REF / STRING
+CHOICE_SLOT     <- INTEGER_LIT _ 'OF' _ CARET_REF (_ 'WHERE' _ '{' _ (WHERE_PAIR _)* '}')?
+WHERE_PAIR      <- CARET_REF _ (STRING / INTEGER_LIT)
 
 # ═══════════════════════════════════════════════════════════
 # 11. Terminals
@@ -257,8 +288,15 @@ INTEGER_LIT     <- '-'? [0-9]+
 # Boolean
 BOOLEAN_LIT     <- 'true' / 'false'
 
-# Caret reference: ^"Name"
-CARET_REF       <- '^' '"' (!'"' .)* '"'
+# Caret reference: ^"Name", optionally with a parameter binding (DECISION-6).
+# A bound ref fills a parameterized DEF's slots: ^"Puissant"(^"Single Weapon"),
+# ^"Great"(^"Stamina"), ^"Area Lore"("Normandy"). Arguments bind positionally
+# or by name (^"subject" = ^"Single Weapon"); each is a caret ref (an entity of
+# the declared parameter type) or a string (a free-text slot). The derived
+# display name ("Puissant Single Weapon") is rendered by consumers, not stored.
+CARET_REF       <- '^' '"' (!'"' .)* '"' PARAM_BINDING?
+PARAM_BINDING   <- _ '(' _ PARAM_ARG (_ ',' _ PARAM_ARG)* _ ')'
+PARAM_ARG       <- (CARET_REF _ '=' _)? (CARET_REF / STRING)
 
 # Hash ID: # followed by alphanumeric (no space after #)
 # Distinguished from comments by: # + alphanum = hash ID, # + space = comment
@@ -297,11 +335,13 @@ EOF             <- !.
 #
 # File-level:    BASE, EXTENSION, EXTENDS, NAME, VERSION, SPEC_VERSION,
 #                RELEASE_DATE, DEPENDS_ON
-# Definition:    DEF, ACTOR, PROPERTIES, RULES
+# Definition:    DEF, ACTOR, TEMPLATE, PROPERTIES, RULES
 # Types:         STRING, INTEGER, BOOLEAN, ENUM, LIST, OF
 # Modifiers:     REQUIRED, FIXED, DEFAULT, MIN, MAX, FIAT
 # Scope:         APPLIES, TO
 # Rule:          WHEN, THEN
 # Modification:  OVERRIDE, ADD, MODIFY, SET, ADD_TO, REMOVE_FROM
+# Parameterize:  PARAMETERS, OF (also a type keyword), ALIAS, FOR   (DECISION-6)
+# Choice:        CHOICE, PICK, OF, WHERE                            (DECISION-6)
 # Text:          DESCRIPTION, TEXT
 # Validation:    FIAT (also an element-level statement)

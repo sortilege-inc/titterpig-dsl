@@ -58,6 +58,16 @@ v0.4 is a consistency/clarity pass over v0.3's grammar — not a redesign. Key c
   a template are instances of its underlying actor type. This models both full-statblock pregens
   (ArM5 Definitive grog/companion/magus templates) and modifier-bundle archetypes (L5R5e NPC
   templates) with one vocabulary, and enables quick, decisive instantiation by GMs at the table.
+- **DECISION-6 — Parameterized references, aliases & choices** *(resolved)* (§5b): three ways a
+  reference can carry more than a bare name. **Parameterized DEFs** declare typed slots
+  (`PARAMETERS { ^"subject" OF ^"Ability" }`) that **bound references** fill
+  (`^"Puissant"(^"Single Weapon")`, `^"Area Lore"("Normandy")`) — one base entity, a family of
+  instances. **`ALIAS ^"Ride" FOR ^"Drive"`** makes one name a display synonym of an existing entity
+  (a setting-level rename; same entity/hash, no value change). **`CHOICE [ … ]`** is a structured
+  "pick from these" value — specific entities, verbatim strings, or quantified typed slots
+  (`1 OF ^"Virtue" WHERE { ^"Size" "Major" }`). Motivated by ArM5's pervasive parameterized virtues
+  (Puissant/Great/Affinity), "A or B" required virtues, and setting vocabulary re-skins. The bare
+  `^"Name"` form is unchanged; these are additive.
 
 ## 1. Overview & Design Principles
 
@@ -285,6 +295,88 @@ application **instantiates** instances from. Semantics:
 - Relation to §13: `MODIFY`/`OVERRIDE`/`ADD` remain **load-order composition** against defined
   entities (errata may patch a template like anything else). Template instantiation is
   **consumer-time** and orthogonal.
+
+### §5b — Parameterized references, aliases & choices *(v0.4, DECISION-6)*
+
+Three additive constructs let a reference carry more than a bare name. The plain `^"Name"` form is
+unchanged and remains the common case.
+
+#### Parameterized definitions and bound references
+
+A DEF may declare **parameters** — named, typed slots that a reference binds at the point of use.
+This models the pervasive "one base virtue, many specializations" pattern (`Puissant Single
+Weapon`, `Great Stamina`, `Affinity with Ignem`, `Area Lore` → `Normandy Lore`):
+
+```
+#hash ^"Puissant" DEF {
+    EXTENDS ^"Virtue"
+    PARAMETERS { ^"subject" OF ^"Ability" }     # one slot, ranges over Ability entities
+    PROPERTIES { ^"Size" STRING "Minor" FIXED }
+    DESCRIPTION "Add 2 to rolls using the chosen Ability."
+}
+
+#hash ^"Area Lore" DEF {
+    EXTENDS ^"Ability"
+    PARAMETERS { ^"area" OF STRING }             # free-text slot (no Land entities exist)
+}
+```
+
+- A parameter's **domain** is a caret type (`OF ^"Ability"` — the bound value must resolve to an
+  entity of that type) or `OF STRING` (any free text). A DEF may declare several parameters.
+- A **bound reference** appends a parenthesized argument list to a caret ref, wherever a caret ref
+  is legal (list items, values, `EXTENDS` targets):
+
+  ```
+  ^"Puissant"(^"Single Weapon")     ^"Great"(^"Stamina")     ^"Area Lore"("Normandy")
+  ```
+
+  Arguments bind **positionally**, or by name for clarity (`^"Puissant"(^"subject" = ^"Single
+  Weapon")`). A caret argument must resolve to an entity of the declared type; a string argument
+  fills a `STRING` slot.
+- **Rendering is the consumer's job.** The DSL stores the structured (base, bindings) form; the
+  derived display name (`Puissant Single Weapon`) is produced by downstream applications, not
+  encoded in the file. A bound reference whose base declares no `PARAMETERS`, or whose argument
+  count or types don't match, is a coherence error.
+
+#### Aliases — setting/edition renames
+
+`ALIAS` declares one name a **display synonym** of an existing entity — the same entity (same hash,
+same rules), a different label, and **no** change of value:
+
+```
+ALIAS ^"Ride" FOR ^"Drive"
+```
+
+References to `^"Ride"` resolve to the `Drive` entity but display as `Ride`. An alias is distinct
+from `MODIFY`/`OVERRIDE` (which patch an entity) and from a new DEF (a different entity); it adds
+nothing and changes nothing. Aliases are edition-scoped, so a setting ships an `*-aliases-*`
+extension file to re-skin vocabulary without touching base definitions (a VtM 1200s campaign
+renaming `Drive` to `Ride`). The `FOR` target must resolve; alias chains must be acyclic; an alias
+name must not already name a *different* entity. An alias may target a bound reference.
+
+#### Choices
+
+A `CHOICE` is a structured **value** — usable anywhere a value or bracket-list item is (inside a
+`^"Required Virtues"` list, a `CHOICES` block, a property). It models "A or B" and open-allotment
+requirements so consumers can present a decision rather than parse prose:
+
+```
+CHOICE [ ^"Demonic Might", ^"Demonic Powers" ]           # pick exactly one of these entities
+
+CHOICE [
+    1 OF ^"Virtue" WHERE { ^"Size" "Major", ^"Category" "Supernatural" },
+    3 OF ^"Virtue" WHERE { ^"Size" "Minor", ^"Category" "Supernatural" }
+]
+```
+
+- An option is a specific entity (`^"Name"`, possibly a bound reference), a **quantified typed
+  slot** (`<count> OF ^"Type" WHERE { <field> <value> … }` — pick N entities of that type matching
+  the field constraints), or a **verbatim string** (the completeness escape hatch when nothing
+  structured fits — completeness always wins over shape).
+- Optional `CHOICE PICK n [ … ]` sets how many options are chosen (default 1).
+- Coherence: option caret refs and slot types must resolve; slot `WHERE` fields must be real fields
+  of the named type; `PICK n` must not exceed the option count. Verbatim-string options are
+  unchecked.
 
 ### Hash IDs *(v0.4 rules)*
 

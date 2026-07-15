@@ -15,6 +15,9 @@ Two levels of validation over one or more .ttrpg files (or directories):
     - no duplicate definition anchors (#hash)
     - EXTENDS / APPLIES TO / LIST OF targets resolve to a defined ^"Name"
     - DEPENDS_ON targets resolve to a defined file id
+    - DECISION-6: bound-ref bases & arguments, PARAMETERS OF types, CHOICE
+      options, and ALIAS FOR targets all resolve (an ALIAS name is itself a
+      resolvable name)
 
 FIAT: a value or element marked  FIAT "reason"  is exempt from the COHERENCE and
 inline-range findings it would otherwise raise. An element-level FIAT (a `FIAT "reason"`
@@ -101,7 +104,8 @@ def tokenize(text, fname, findings):
                 findings.append(Finding(fname, 'lint', 'error', start, "unterminated string"))
                 break
             toks.append(Tok('STR', text[i + 1:j], start)); i = j + 1; continue
-        simple = {'{': 'LBRACE', '}': 'RBRACE', '[': 'LBRACK', ']': 'RBRACK', ',': 'COMMA', ':': 'COLON'}
+        simple = {'{': 'LBRACE', '}': 'RBRACE', '[': 'LBRACK', ']': 'RBRACK', ',': 'COMMA', ':': 'COLON',
+                  '(': 'LPAREN', ')': 'RPAREN', '=': 'EQ'}
         if c in simple:
             toks.append(Tok(simple[c], c, line)); i += 1; continue
         if c.isdigit() or (c == '-' and i + 1 < n and text[i + 1].isdigit()):
@@ -150,6 +154,28 @@ def analyze_file(fname, text, findings):
                 if fr['waived']:
                     waived_ranges.append((fr['open'], t.line))
             continue
+        if t.kind == 'CARET':
+            # bound reference (DECISION-6): ^"Base"(args). The base must resolve
+            # and declare PARAMETERS; caret arguments must resolve too. A caret
+            # immediately followed by '=' inside the parens is a parameter NAME
+            # (local), not a ref.
+            if idx + 1 < len(toks) and toks[idx + 1].kind == 'LPAREN':
+                refs.append(('bound ref', t.val, None, t.line))
+                depth, k = 0, idx + 1
+                while k < len(toks):
+                    tk = toks[k]
+                    if tk.kind == 'LPAREN':
+                        depth += 1
+                    elif tk.kind == 'RPAREN':
+                        depth -= 1
+                        if depth == 0:
+                            break
+                    elif tk.kind == 'CARET' and depth == 1 \
+                            and not (k + 1 < len(toks) and toks[k + 1].kind == 'EQ') \
+                            and not (k + 1 < len(toks) and toks[k + 1].kind == 'LPAREN'):
+                        refs.append(('bound argument', tk.val, None, tk.line))
+                    k += 1
+            continue
         if t.kind != 'ID':
             continue
         w = t.val
@@ -191,6 +217,62 @@ def analyze_file(fname, text, findings):
             if k < len(toks) and toks[k].kind == 'ID' and toks[k].val == 'OF' \
                and k + 1 < len(toks) and toks[k + 1].kind == 'CARET':
                 refs.append(('list of', toks[k + 1].val, None, toks[k + 1].line))
+        elif w == 'ALIAS':
+            # ALIAS ^"new" FOR ^"existing"  (DECISION-6): the alias name resolves
+            # as a defined name; the FOR target must resolve.
+            k = idx + 1
+            if k < len(toks) and toks[k].kind == 'CARET':
+                defined_names.setdefault(toks[k].val, []).append(t.line)
+                k += 1
+                if k < len(toks) and toks[k].kind == 'ID' and toks[k].val == 'FOR':
+                    k += 1
+                    hsh = None
+                    if k < len(toks) and toks[k].kind == 'HASH':
+                        hsh = toks[k].val; k += 1
+                    if k < len(toks) and toks[k].kind == 'CARET':
+                        refs.append(('alias target', toks[k].val, hsh, toks[k].line))
+        elif w == 'PARAMETERS':
+            # PARAMETERS { ^"slot" OF ^"Type" ... }  (DECISION-6): each OF type
+            # must resolve; the slot-name carets are local and not refs.
+            k = idx + 1
+            if k < len(toks) and toks[k].kind == 'LBRACE':
+                depth = 0
+                while k < len(toks):
+                    tk = toks[k]
+                    if tk.kind == 'LBRACE':
+                        depth += 1
+                    elif tk.kind == 'RBRACE':
+                        depth -= 1
+                        if depth == 0:
+                            break
+                    elif tk.kind == 'ID' and tk.val == 'OF' \
+                            and k + 1 < len(toks) and toks[k + 1].kind == 'CARET':
+                        refs.append(('parameter type', toks[k + 1].val, None, toks[k + 1].line))
+                    k += 1
+        elif w == 'CHOICE':
+            # CHOICE [ options ]  (DECISION-6): option/slot-type carets must
+            # resolve; carets inside a WHERE { } are field names (local, skipped).
+            k = idx + 1
+            if k < len(toks) and toks[k].kind == 'ID' and toks[k].val == 'PICK':
+                k += 2
+            if k < len(toks) and toks[k].kind == 'LBRACK':
+                depth, where_depth = 0, 0
+                while k < len(toks):
+                    tk = toks[k]
+                    if tk.kind == 'LBRACK':
+                        depth += 1
+                    elif tk.kind == 'RBRACK':
+                        depth -= 1
+                        if depth == 0:
+                            break
+                    elif tk.kind == 'LBRACE':
+                        where_depth += 1
+                    elif tk.kind == 'RBRACE':
+                        where_depth -= 1
+                    elif tk.kind == 'CARET' and where_depth == 0 \
+                            and not (k + 1 < len(toks) and toks[k + 1].kind == 'LPAREN'):
+                        refs.append(('choice option', tk.val, None, tk.line))
+                    k += 1
         elif w == 'DEPENDS_ON':
             if idx + 1 < len(toks) and toks[idx + 1].kind == 'STR':
                 depends.append((toks[idx + 1].val, t.line))

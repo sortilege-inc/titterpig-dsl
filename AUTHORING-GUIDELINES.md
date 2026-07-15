@@ -93,6 +93,26 @@ in `.lore`) — mirror, don't duplicate.
 - Use caret refs `^"Name"` for readability. **Define before you reference**, and keep every
   reference resolvable — coherence/consilience validation will flag danglers.
 
+### Parameterized refs, aliases & choices (DECISION-6)
+
+When a printed thing is a *family with a slot* rather than one fixed entity, or a *choice*, reach
+for these instead of burying the meaning in a verbatim string (spec §5b):
+
+- **Parameterize, don't enumerate.** A virtue like `Puissant Single Weapon` is `^"Puissant"` (a DEF
+  that declares `PARAMETERS { ^"subject" OF ^"Ability" }`) bound at use: `^"Puissant"(^"Single
+  Weapon")`. Don't mint 40 separate `Puissant X` DEFs, and don't leave it a dead string. The slot's
+  domain is a caret type (must resolve) or `STRING` (free text like a place — `^"Area Lore"("Normandy")`).
+  Don't parameterize what isn't actually variable.
+- **Alias for setting renames, not for variants.** `ALIAS ^"Ride" FOR ^"Drive"` when a setting
+  re-labels the *same* mechanic. It changes only the name — no value, no slot. If the value differs,
+  it's a `MODIFY`/`OVERRIDE` (errata) or a new DEF, not an alias. Ship aliases in a `*-aliases-*`
+  extension so base files stay pristine.
+- **`CHOICE` for "A or B" and open allotments** — `CHOICE [ ^"Demonic Might", ^"Demonic Powers" ]`,
+  or quantified slots `CHOICE [ 1 OF ^"Virtue" WHERE { ^"Size" "Major" }, … ]`. A verbatim-string
+  option is the escape hatch when nothing structured fits — completeness still beats shape.
+- **Rendering is the consumer's job.** Store the structured `(base, bindings)`; the display string
+  (`Puissant Single Weapon`) is produced downstream, not written into the file.
+
 ## 5. System vocabulary — be consistent with yourself
 
 Systems invent their own keywords; the base spec won't stop you. The failure mode is *internal*

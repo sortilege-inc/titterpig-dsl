@@ -1,0 +1,56 @@
+BASE "Demo_Decision6" {
+    NAME "DECISION-6 fixture — parameterized refs, aliases, choices"
+    SPEC_VERSION "0.4"
+    VERSION "1.0"
+    RELEASE_DATE "2026-07-14"
+
+    # --- base types --------------------------------------------------------
+    #Decision6Ability0aaaaaaaaaa ACTOR "Ability" DEF {
+        PROPERTIES { ^"Name" STRING REQUIRED }
+    }
+    #Decision6Charac00bbbbbbbbbb ^"Characteristic" DEF {
+        PROPERTIES { ^"Name" STRING REQUIRED }
+    }
+    #Decision6Virtue00cccccccccc ^"Virtue" DEF {
+        PROPERTIES { ^"Size" STRING  ^"Category" STRING }
+    }
+
+    # --- concrete entities the bindings/choices reference ------------------
+    #Decision6SingleWeap0dddddddd ^"Single Weapon" DEF { EXTENDS ^"Ability" }
+    #Decision6Stamina000eeeeeeeee ^"Stamina" DEF { EXTENDS ^"Characteristic" }
+    #Decision6DemonMight0ffffffff ^"Demonic Might" DEF { EXTENDS ^"Virtue" }
+    #Decision6DemonPower0gggggggg ^"Demonic Powers" DEF { EXTENDS ^"Virtue" }
+    #Decision6Drive00000hhhhhhhhh ^"Drive" DEF { EXTENDS ^"Ability" }
+
+    # --- parameterized DEFs (DECISION-6) -----------------------------------
+    #Decision6Puissant00iiiiiiiii ^"Puissant" DEF {
+        EXTENDS ^"Virtue"
+        PARAMETERS { ^"subject" OF ^"Ability" }
+        PROPERTIES { ^"Size" STRING "Minor" FIXED }
+    }
+    #Decision6Great0000jjjjjjjjjj ^"Great" DEF {
+        EXTENDS ^"Virtue"
+        PARAMETERS { ^"subject" OF ^"Characteristic" }
+    }
+    #Decision6AreaLore00kkkkkkkkk ^"Area Lore" DEF {
+        EXTENDS ^"Ability"
+        PARAMETERS { ^"area" OF STRING }
+    }
+
+    # --- alias (DECISION-6): Ride is a synonym of Drive --------------------
+    ALIAS ^"Ride" FOR ^"Drive"
+
+    # --- a template using bound refs, an alias ref, and choices ------------
+    #Decision6Template00lllllllll TEMPLATE "Sample Warrior" DEF {
+        EXTENDS ^"Ability"
+        PROPERTIES {
+            ^"Virtues" LIST [ ^"Puissant"(^"Single Weapon"), ^"Great"(^"Stamina") ]
+            ^"Abilities" LIST [ ^"Area Lore"("Normandy"), ^"Ride" ]
+            ^"Required" CHOICE [ ^"Demonic Might", ^"Demonic Powers" ]
+            ^"Allotment" CHOICE [
+                1 OF ^"Virtue" WHERE { ^"Size" "Major", ^"Category" "Supernatural" },
+                3 OF ^"Virtue" WHERE { ^"Size" "Minor", ^"Category" "Supernatural" }
+            ]
+        }
+    }
+}
