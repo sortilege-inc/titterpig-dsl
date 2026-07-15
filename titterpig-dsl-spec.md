@@ -322,7 +322,13 @@ Weapon`, `Great Stamina`, `Affinity with Ignem`, `Area Lore` → `Normandy Lore`
 ```
 
 - A parameter's **domain** is a caret type (`OF ^"Ability"` — the bound value must resolve to an
-  entity of that type) or `OF STRING` (any free text). A DEF may declare several parameters.
+  entity of that type), `OF STRING` (any free text), or `OF ["A", "B", …]` (an **enum** of literal
+  allowed values). The enum form selects among fixed alternatives — e.g. a virtue the book lets you
+  take at either severity declares `PARAMETERS { ^"Size" OF ["Major", "Minor"] }`, and a reference
+  binds the choice: `^"Wrathful"("Major")`. Naming the parameter after the property it fills
+  (`^"Size"`) tells consumers to apply the bound value there; the `OF [...]` bounds the legal values
+  so an invalid binding (`^"Wrathful"("Huge")`) is a coherence error. A DEF may declare several
+  parameters (a Story flaw might take `^"Size" OF ["Major","Minor"]` and `^"goal" OF STRING`).
 - A **bound reference** appends a parenthesized argument list to a caret ref, wherever a caret ref
   is legal (list items, values, `EXTENDS` targets):
 

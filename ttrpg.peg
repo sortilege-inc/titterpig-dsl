@@ -93,7 +93,10 @@ DEF_NAME        <- CARET_REF / STRING
 # A parameter domain is a caret type (bound value must be an entity of that
 # type) or STRING (free text, e.g. a place name).
 PARAMETERS_BLOCK <- 'PARAMETERS' _ '{' _ (PARAM_DECL _)* '}'
-PARAM_DECL       <- CARET_REF _ 'OF' _ (CARET_REF / 'STRING')
+# A parameter's domain is a caret type (bound value is an entity of that type),
+# STRING (free text), or a bracket list (an enum of literal allowed values,
+# e.g. selecting a Major-or-Minor virtue's severity: ^"Size" OF ["Major","Minor"]).
+PARAM_DECL       <- CARET_REF _ 'OF' _ (CARET_REF / 'STRING' / BRACKET_LIST)
 
 # ALIAS declares one name a display synonym of an existing entity — same
 # entity/hash, different label, no value change (distinct from MODIFY/OVERRIDE).
