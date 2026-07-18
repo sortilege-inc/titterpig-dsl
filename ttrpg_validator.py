@@ -374,7 +374,7 @@ def _all_hashes(files_data):
 
 def collect_paths(args):
     files = []
-    exts = ('.ttrpg', '.actor', '.arc')
+    exts = ('.ttrpg', '.actor', '.arc', '.frame', '.setting', '.campaign')
     for p in args:
         if os.path.isdir(p):
             for root, _, names in os.walk(p):
