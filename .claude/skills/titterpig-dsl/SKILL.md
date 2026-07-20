@@ -124,6 +124,33 @@ exit status, not the validator's — check the summary line, or run unpiped, to 
 **Goal: iterate to 0 errors / 0 warnings.** A genuine content omission the game's owner must resolve
 should be **flagged**, not silenced — don't paper over it with FIAT.
 
+## Completeness — validation status is NOT completeness
+
+**A file that validates 0/0 can still be missing half the source.** Validation checks that what you
+wrote is well-formed and internally coherent; it says nothing about whether you captured everything
+the source contains. Converting a *subset* of a source and reporting it "done" — even with a
+"follow-up / known limitations" note — is a **failure**, not a caveat. Coverage is measured against
+the **source's own enumerable sets**, never against validation status or your memory of what you did.
+
+This is enforced, not advisory:
+
+- **The coverage gate is hard-blocking.** A conversion is complete only when
+  `titterpig-mastra/scripts/coverageAudit.ts <manifest>` **exits 0** — i.e. every enumerable content
+  unit the source lists (its outline's `Table:` / `Adversary:` / `Loremaster Character:` /
+  `Text Box:` / `Map` tags, plus headings) is either **covered** by a corpus entity or explicitly
+  **deferred / excluded with a reason** in the coverage manifest. Run it before reporting any
+  conversion done; if it fails, the conversion is not done.
+- **Deferral is the owner's call, not yours.** Marking a unit `deferred`/`excluded` records a
+  decision *and its reason* in the manifest (bulk-dispositionable by pattern). You do not get to
+  silently drop content or unilaterally decide a bucket is "the clean subset" — surface it and get
+  sign-off. "Harder to structure" (heterogeneous rules prose) is a reason to *ask how to model it*,
+  never a reason to skip it.
+- **`sources.json` must be in sync** with the files on disk — an unregistered file is uncaptured
+  content as far as a consumer that reads the manifest is concerned.
+- Reuse the schema you already built. If a bucket's schema fits more of the source (e.g. more
+  roll-tables, more items), the remaining instances are *in scope by default* — narrowing to a
+  subset is a decision to surface, not a default to take.
+
 ## Migrating a system to a new SPEC_VERSION
 
 The recipe that worked for l5r5e, tor2e, vtm5e, and draw-steel (see `titterpig-mastra/RESUME.md` for
@@ -166,3 +193,5 @@ the full write-up and live loose threads):
 - [ ] Flavor prose in `.lore`, mechanics in `.ttrpg`
 - [ ] Deliberate deviations marked `FIAT "reason"` — and nothing else silenced
 - [ ] Validator reports 0 errors / 0 warnings (or every remaining finding is a flagged owner-decision)
+- [ ] **Source-coverage gate passes** (`coverageAudit.ts` exits 0) — every enumerable source unit is
+      covered or deferred/excluded-with-reason; `sources.json` in sync. Validation ≠ completeness.
