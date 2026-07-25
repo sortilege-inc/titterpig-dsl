@@ -28,6 +28,9 @@ v0.4 is a consistency/clarity pass over v0.3's grammar — not a redesign. Key c
 8. **`FIAT` — intentional exceptions** *(new)*: a required-reason marker that waives validation
    (constraint *and* completeness) for a value or, cascading, for an element and its whole subtree
    — the machine-readable way to assert a deliberate deviation (§8).
+9. **`.bridge` — cross-edition conversion** *(new)*: a first-class container for an edition-conversion
+   document. It is the only container with **two** dependency lineages (`ORIGIN` and `DESTINATION`)
+   and the only one whose coherence is checked against **two** corpora (§21, §20).
 
 ### Resolved decisions (2026-07-12)
 
@@ -130,6 +133,7 @@ The DSL uses multiple file extensions, each corresponding to a specific containe
 | `.arc` | ARC | Complete playable narrative adventures (DSL) |
 | `.campaign` | CAMPAIGN | Long-form multi-arc story collections (DSL) |
 | `.actor` | (single DEF) | A single character — PC or NPC — as a discrete file (DSL) |
+| `.bridge` | BRIDGE | **Cross-edition conversion** — a directed correspondence between two editions (DSL) *(v0.4, §21)* |
 | `.lore` | (none — Markdown) | **Free narrative prose / flavor** — no DSL syntax *(v0.4)* |
 
 The `.actor` extension is a convenience alias: an `.actor` file is a `.ttrpg` file scoped to exactly one character definition (a single `DEF` block). It uses identical syntax to a DEF within an EXTENSION but exists as a standalone file, making it easy to share, version, or reference individual characters independently of the containers they appear in.
@@ -153,6 +157,7 @@ Files are organized as:
 - `arcs/{system_id}/{arc_id}.arc` — Playable adventures
 - `campaigns/{system_id}/{campaign_id}.campaign` — Multi-arc campaigns
 - `actors/{character_id}.actor` — Individual character definitions (PC or NPC)
+- `bridges/{origin}-to-{destination}-{doc}.bridge` — Cross-edition conversions (§21); never inside either edition's corpus
 
 ---
 
@@ -924,6 +929,8 @@ Only these keywords are reserved by the base spec:
 **Text:** `DESCRIPTION`, `TEXT`
 
 **Narrative containers:** `SETTING`, `FRAME`, `ARC`, `CAMPAIGN`, `SCENE`, `LOCATION` (and their sub-keywords as defined in §16)
+
+**Bridge (§21):** `BRIDGE`, `ORIGIN`, `DESTINATION`, `EXTERNAL`, `DISPOSITIONS`, `DISPOSITION`, `ALIASES`, `CONVERSION`, `GUIDANCE`, `MAP`, `REMAINDER`, `PROCEDURE`, `SUBJECT`, `SCOPE`, `ASPECT`, `CONCERNS`, `TOPICS`, `EXHAUSTIVE`, `CONVERT`, `INTO`, `UNCHANGED`, `SCALE`, `OVER`, `RESTATE`, `MANUAL` (`ALIAS`/`FOR` are shared with §5b; `ENTRY` and `TEXT` with §16/§10)
 
 All other keywords — `CURRICULUM`, `SCHOOL_ABILITY`, `POWERS`, `AMALGAMS`, `TRIGGER`, `CHARACTERISTICS`, `HERITAGE_TABLE`, `FACES`, `ACTIVATION`, `OPPORTUNITIES`, `PREDATOR_TEMPLATES`, `DICE_POOL`, `COST`, `DURATION`, etc. — are **system-defined**. They belong to L5R5e, VTM5e, or whatever system uses them.
 
@@ -2154,8 +2161,13 @@ core + sourcebooks + errata share the namespace and compose by precedence (§13)
 **Forward-porting.** A sourcebook published for an older edition does **not** automatically apply to a
 newer one — it references the old edition's hashes. To use it under a newer edition, generate a **new
 `.ttrpg` of that sourcebook converted to the newer edition**, targeting the newer edition's
-definitions and diffs — a derived artifact, not an automatic overlay. (A conversion tool for this is
-future work; it presupposes a machine-readable edition diff.)
+definitions and diffs — a derived artifact, not an automatic overlay.
+
+The machine-readable edition diff this presupposes is a **`.bridge` file (§21)** — the one container
+with two dependency lineages, holding a *directed* correspondence between two namespaces. A bridge
+does not weaken the rule above: it asserts correspondence, explicitly and third-party, precisely
+because identity does not carry. (The generator that consumes a bridge to emit the derived artifact
+remains future work.)
 
 ## 20. Validation *(v0.4)*
 
@@ -2167,6 +2179,312 @@ Validation of `.ttrpg`/`.lore` files has two levels, both operating on the files
 **Intentional exceptions:** both levels honor `FIAT` (§8) — a value or element marked `FIAT "reason"` is exempt from the findings it would otherwise raise (constraint violations and, cascading, completeness). Because each `FIAT` carries a reason, the full set is reportable for audit.
 
 **Out of scope for the DSL:** *sophisticated rules validation* (evaluating whether game rules are internally consistent or produce legal characters) runs **downstream**, in the tools that consume `.ttrpg`/`.lore`, and is built later. The DSL guarantees a well-formed, coherent knowledge base — not a rules engine.
+
+### Bridges — two-corpus coherence *(v0.4)*
+
+A `.bridge` file (§21) is the one container whose references span **two** edition namespaces, so
+coherence for it is checked against **two** corpora, not one:
+
+- An `ORIGIN`-side caret reference must resolve in the **origin** edition's corpus.
+- A `DESTINATION`-side caret reference must resolve in the **destination** edition's corpus.
+- Neither side is checked against the other, and a bridge's own definitions (its declared
+  dispositions, its guidance entry labels) belong to **neither** edition — they are file-local.
+
+The validator is therefore given a corpus per edition id:
+
+```bash
+python3 ttrpg_validator.py bridges/0.4/ \
+    --corpus dnd5e="…/titterpig-dsl-dnd5e/0.4" \
+    --corpus dnd5.5e="…/titterpig-dsl-dnd5.5e/0.4"
+```
+
+A side declared `EXTERNAL "reason"` (§21) has no titterpig corpus, so its references cannot be
+resolved; they are counted and reported, never silently passed. A side that is **not** `EXTERNAL` and
+has **no** `--corpus` mapping is an **error**: an unchecked cross-edition reference is exactly the rot
+a bridge exists to prevent, and "not checked" must never read as "checked and fine."
+
+**Untyped referents.** A bridge slot may name its referent with a plain string instead of a caret
+reference, for things the target corpus has no `DEF` for (§21). Those are not gated — but if an
+untyped referent's text *would* have resolved to a real entity on its declared side, the validator
+raises a **warning**, so quoting cannot be used to dodge the reference gate.
+
+---
+
+## 21. BRIDGE — Cross-Edition Conversion *(v0.4)*
+
+§19 makes an edition an **identity namespace**: hash identity is stable within it and carries none
+across it. §13 scopes a composition set to one edition namespace, and §20 scopes coherence to one
+edition. Every container defined above has exactly **one** dependency lineage.
+
+A published *edition-conversion document* — "Converting to SRD 5.2.1", Ars Magica 5th's "Appendix I:
+Fourth Edition Conversion" — asserts precisely the thing §19 forbids inside a namespace: **this
+older-edition thing became that newer-edition thing.** It inherently has **two** lineages. That is
+the structural gap `.bridge` fills. It is *not* an `EXTENSION` (one lineage), *not* the §13
+`MODIFY`/`OVERRIDE`/`ADD` errata system (same edition, and errata *corrects* where a bridge
+*corresponds*), and *not* `FIAT` (which waives a check rather than recording a fact).
+
+A bridge does **not** re-establish identity across editions. It records a **directed, third-party
+assertion of correspondence** between two independent namespaces — an edition diff, machine-readable.
+§19's forward-porting note ("a derived artifact, not an automatic overlay") describes the *output* of
+consuming a bridge; the bridge is the input that makes that generation possible.
+
+### Directed, not symmetric
+
+`ORIGIN` and `DESTINATION` are **mandatory** and the direction is **load-bearing**. A bridge is
+**not reversible by inspection**: `Duergar → use Spy` does not invert (Spy did not become Duergar),
+several origin entities may collapse onto one destination entity, and a `DESTINATION`-only unit
+("this rule is new") has no origin to run back to. A tool that wants the reverse direction needs a
+separately authored bridge, not an inversion of this one.
+
+### File-level structure
+
+```
+BRIDGE "FileID" {
+    NAME "Converting to System Reference Document 5.2.1"
+    VERSION "2025.1"
+    SPEC_VERSION "0.4"
+    RELEASE_DATE "2025-04-22"
+
+    ORIGIN      "dnd5e"    VERSION "0.4"
+    DESTINATION "dnd5.5e"  VERSION "0.4"
+
+    DISPOSITIONS { … }     # the vocabulary this document uses
+    ALIASES      { … }     # names this document uses that its editions do not
+    CONVERSION   { … }     # the mechanizable correspondences and dispositions
+    GUIDANCE     { … }     # prose, taggable with what it concerns
+}
+```
+
+`ORIGIN` / `DESTINATION` name an **edition id** (the system id under which that edition's corpus
+lives, §19), optionally pinning a content `VERSION`. A side with no titterpig corpus is declared
+`EXTERNAL` with a **required reason**, exactly as `FIAT` requires one:
+
+```
+ORIGIN "arm4" VERSION "4" EXTERNAL "No titterpig corpus exists for Ars Magica Fourth Edition."
+```
+
+**Placement.** A `.bridge` file MUST NOT live inside either edition's corpus directory — its origin
+names would not resolve there and its presence would pollute that edition's namespace. Bridges live
+outside both, in the canonical DSL repo's `bridges/<specver>/`, named
+`<origin>-to-<destination>-<specver>-<document>.bridge`.
+
+### Sided references
+
+Every reference in a bridge is **side-qualified**; the side is never inferred. It comes either from
+the enclosing slot keyword (`ORIGIN`, `DESTINATION`) or from an explicit inline qualifier
+(`SCOPE DESTINATION ^"Barbarian"`, `CONCERNS [ ORIGIN ^"Virtue", DESTINATION ^"Virtue" ]`).
+
+A referent is one of two things:
+
+- **Typed** — `^"Name"`, a caret reference. **Gated** (§20): it must resolve in that side's corpus.
+- **Untyped** — `"Name"`, a plain string, for a thing the target corpus has no `DEF` for (a
+  subsystem, a section, a procedure: "Tiers of Play", "Character Generation"). **Not gated**, but the
+  validator warns if it *would* have resolved, so this is not an escape hatch from the gate.
+
+Prefer typed. An untyped referent is a statement that the corpus has nothing to point at. Where the
+corpus *does* have the entity but under a different name than the document uses, declare an `ALIAS`
+(below) rather than leaving the reference untyped.
+
+### DISPOSITIONS — the document's own vocabulary
+
+A conversion document declares what its change-tags mean; the bridge declares them too rather than
+inventing a spec-wide vocabulary, because the vocabularies differ per document. Each is a `DEF`, so
+`DISPOSITION` references resolve through ordinary coherence (§20) — a tag that was never declared is
+an error, not a typo that survives.
+
+```
+DISPOSITIONS {
+    ^"New Name" DEF {
+        ^"Description" STRING "New Name. This tag is applied to a rule that has a new name. Unless stated otherwise, the rule hasn't changed apart from its name."
+    }
+    ^"Revised Rule" DEF { … }
+}
+```
+
+**A disposition is a SET, not a single value.** Documents compose tags
+(`Magic Action [New Name, Revised Rule]`), so `DISPOSITION` always takes a list.
+
+### ALIASES — when the document and the edition disagree
+
+A conversion document is written *about* two editions, not generated from them, and real ones name
+things the edition they describe does not. SRD 5.2.1's own conversion guide calls a Warlock feature
+`Contract Patron`; the SRD it describes calls it `Contact Patron`. Neither silently retyping the
+reference nor leaving it untyped is right: the first loses the document's wording, the second loses a
+correspondence that genuinely exists.
+
+`ALIASES` reconciles the two, reusing §5b's `ALIAS` with a side qualifier:
+
+```
+ALIASES {
+    # Publisher typo: the SRD 5.2.1 feature is "Contact Patron".
+    ALIAS ^"Contract Patron" FOR DESTINATION ^"Level 9: Contact Patron"
+}
+```
+
+The alias name is then **resolvable on that side** — `DESTINATION ^"Contract Patron"` gates clean —
+so units keep the document's own vocabulary while the alias records, machine-readably, which entity
+that vocabulary denotes. As in §5b it is a naming statement only: same entity, no value change. The
+`FOR` target is gated like any other sided reference; an alias to nothing is an error.
+
+Reserve it for genuine document/edition disagreement. It is **not** a way to make a wrong
+correspondence resolve, and it is not the tool for a name the edition simply has no `DEF` for — that
+is an untyped referent.
+
+### CONVERSION — the mechanizable part
+
+Three unit kinds. Each carries `TEXT` — the source's own statement of the change, **verbatim**.
+
+#### MAP — one correspondence
+
+```
+MAP {
+    ORIGIN      ^"Flying Sword"
+    DESTINATION ^"Animated Flying Sword"
+    DISPOSITION [ ^"New Name", ^"Revised Rule" ]
+    TEXT "Animated Flying Sword (formerly Flying Sword)"
+}
+```
+
+Fields, all optional except `DISPOSITION` and at least one of `ORIGIN` / `DESTINATION`:
+
+| Field | Meaning |
+|---|---|
+| `ORIGIN` | Referent(s) in the origin edition. A bare list is side-qualified by the slot. |
+| `DESTINATION` | Referent(s) in the destination edition. |
+| `SCOPE` | A sided reference situating the correspondence — the entity these referents belong to. Required where a name is only unique within a parent (`Epic Boon` exists under twelve classes). |
+| `ASPECT` | A free string naming the *part* of the entity the disposition is about ("Starting Equipment", "Weapon Proficiencies"). Untyped by nature: a sub-part often has no `DEF`. |
+| `DISPOSITION` | The tag set, as caret references into `DISPOSITIONS`. |
+| `TEXT` | The source's verbatim statement. |
+
+**One MAP asserts exactly one correspondence.** When both sides carry more than one referent the
+correspondence is **joint** — `[^"Stillness of Mind", ^"Purity of Body"] → [^"Self-Restoration"]` is
+one merge, not two renames. Lists on only one side are unambiguous either way (six new features with
+no origin are six independent facts however you read them), so no distributive marker is needed.
+
+A `MAP` covers, with no extra vocabulary:
+
+| Source shape | Shape in the bridge |
+|---|---|
+| Rename — *Warrior Veteran (formerly Veteran)* | 1 origin → 1 destination |
+| Revision in place — *Rage [Revised Rule]* | same name on both sides |
+| Substitution — *Duergar (use Spy)* | 1 → 1, lossy; `DISPOSITION [^"Omitted Rule"]` |
+| Merge — *Silk Rope and Hemp Rope … into … Rope* | N origins → 1 destination |
+| Split — *the Search action and the new Study action* | 1 origin → N destinations |
+| Introduction — *Sorcerous Burst* | destination only |
+| Omission — *Vehicle proficiency has been removed* | origin only |
+| Restructure — *Incubus (no longer a Succubus variant)* | 1 → 1 with `SCOPE` / `TEXT` recording it |
+
+Substitution is **not** a rename and must not be modelled as one: it is lossy and many-to-one (five
+5.1 monsters collapse onto three 5.2.1 replacements). The `Omitted Rule` disposition is what
+distinguishes them; a consumer that treats them alike will silently mangle content.
+
+#### REMAINDER — a bulk disposition over what is not listed
+
+```
+REMAINDER {
+    SCOPE ORIGIN ^"Monster"
+    DISPOSITION [ ^"Revised Rule" ]
+    TEXT "All monsters not listed above have revisions to their presentations and statistics."
+}
+```
+
+This is essential, not a convenience: without it you cannot tell **"unmentioned means unchanged"**
+from **"unmentioned means not covered"** — the same job `dispositionRules` do in a coverage manifest.
+A `REMAINDER` applies its disposition to every member of `SCOPE` on that side that no `MAP` in this
+bridge names.
+
+`EXHAUSTIVE BOOLEAN` (default `true`) records whether the source claims the disposition for *all*
+unlisted members or hedges. `"All monsters not listed above …"` is exhaustive; `"Most magic items not
+listed above …"` is not, and a consumer must treat the latter as a presumption requiring a per-entity
+check rather than a fact.
+
+#### PROCEDURE — carrying a character's values across
+
+`MAP` corresponds *entities*. A `PROCEDURE` converts the *values on a sheet* — the table-facing half
+of the problem, and all that some conversion documents contain.
+
+```
+PROCEDURE {
+    SUBJECT ORIGIN ^"Ability"
+    TEXT "**Abilities:** Leave at the old value, and multiply remaining XP by five. Spread the XP from removed Abilities among the replacements, as desired."
+    CONVERT ORIGIN ^"Ability" UNCHANGED INTO DESTINATION ^"Ability"
+    CONVERT ORIGIN ^"Experience Points" SCALE 5 INTO DESTINATION ^"Using Experience Points"
+    CONVERT ORIGIN ^"Experience Points" MANUAL "Spread the XP from removed Abilities among the replacements, as desired."
+}
+```
+
+A `CONVERT` is `CONVERT <sided-ref> <operation> [INTO <sided-ref>]`. The operation vocabulary is
+closed — the DSL guarantees a knowledge base, not a rules engine (§20), so this is deliberately not
+an expression language:
+
+| Operation | Meaning |
+|---|---|
+| `UNCHANGED` | The value carries across as-is. |
+| `SCALE n [OVER d]` | Multiply by `n`, optionally divided by `d`. `SCALE 5` (×5); `SCALE 1 OVER 3` (÷3); `SCALE 6 OVER 5` (+20%). |
+| `RESTATE` | Take the destination edition's printed value; the old one is discarded. |
+| `MANUAL "instruction"` | Requires human judgement. The instruction is the source's own words, verbatim. |
+
+`INTO` retargets: `CONVERT ORIGIN ^"Twilight Points" SCALE 1 OVER 3 INTO DESTINATION ^"Warping Score"`.
+
+`MANUAL` is how a procedure records that the source **delegates to the reader** without pretending it
+mechanized something it did not. It is the honest encoding of "Convert each Virtue or Flaw to its new
+status" — and it stays in `CONVERSION`, not `GUIDANCE`, because it is keyed to a named field.
+
+### GUIDANCE — prose, taggable
+
+Free prose in the manner of a `.lore` file, but carrying machine-readable tags for what it concerns.
+
+```
+GUIDANCE {
+    ENTRY ^"Character Generation" {
+        TOPICS   [ "Character Generation" ]
+        CONCERNS [ ORIGIN ^"Virtue", ORIGIN ^"Flaw", DESTINATION ^"Virtue", DESTINATION ^"Flaw" ]
+        TEXT """
+        First, Virtues and Flaws no longer have point values; they are split into Major and Minor. …
+        """
+    }
+}
+```
+
+- An `ENTRY`'s caret is a **local label**, not a reference — it names the passage so a consumer can
+  link to it. Conventionally it is the source heading.
+- `CONCERNS` holds sided references and **goes through the same gate as conversion rules** (§20). A
+  guidance tag naming an entity that does not exist is silent rot; it is checked, not trusted.
+- **Guidance may name both sides.** "Virtues and Flaws no longer have point values" concerns the
+  origin's virtues *and* the destination's. There is no default side and none is inferred — that
+  would let an origin-side typo resolve against the destination corpus and disappear. Name every
+  side you mean.
+- `TOPICS` holds free strings for subsystem-scale subjects with no `DEF` to point at ("Character
+  Generation", "Combat", "Using This Guide"). Ungated by design; `CONCERNS` carries whatever *is*
+  typed. Using `TOPICS` where a `DEF` exists is the same warning as an untyped referent.
+
+### Rules or guidance? — the boundary
+
+> If it asserts a **correspondence or disposition about a named referent**, it is a conversion rule.
+> If it **explains why, or tells a human how to decide**, it is guidance.
+
+Real documents blur this constantly, and one source unit legitimately produces both. `Barbarian Class
+Features [New Rule]` is a disposition, a paragraph, and a list of six features: the six features
+become six `MAP`s carrying the paragraph verbatim as `TEXT`; the chapter's framing prose becomes a
+`GUIDANCE` entry. The test is not the prose's length — it is whether a tool could *act* on it. A
+sentence a tool can act on belongs in `CONVERSION` even when it is wrapped in explanation; a sentence
+that only a person can act on belongs in `GUIDANCE` even when it names entities (tag them with
+`CONCERNS`).
+
+Content that is a **style rule for the destination edition** rather than a correspondence — SRD
+5.2.1's ~60-category capitalization list — is guidance. It maps nothing; it tells an author how the
+destination edition presents its terms. Keeping it out of the mapping grammar is deliberate.
+
+### Consuming a bridge
+
+A bridge is a knowledge base, not a program. What it makes possible:
+
+1. **Auditing** an origin-edition artifact — which of its entities are renamed, revised, substituted,
+   or omitted downstream, and which are covered only by a `REMAINDER`.
+2. **Generating** the derived forward-port §19 describes, with every generated correspondence
+   traceable to a source unit's verbatim `TEXT`.
+3. **Refusing** to do either silently: a non-`EXHAUSTIVE` `REMAINDER`, a `MANUAL` `CONVERT`, and an
+   `Omitted Rule` substitution are each a machine-readable "a human must look at this."
 
 ---
 

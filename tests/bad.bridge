@@ -1,0 +1,78 @@
+// Intentionally-broken .bridge fixture (spec §21). Every unit below should raise
+// at least one finding. Run WITHOUT --corpus to also see the "no corpus" errors,
+// or with --corpus test2e=<dir> to exercise the reference gate.
+//
+// Expected findings:
+//   - DESTINATION never declared (a bridge is directed; both sides are mandatory)
+//   - ORIGIN edition has no corpus and is not EXTERNAL ("not checked" must never
+//     read as "checked and fine")
+//   - MAP with no referents / no DISPOSITION
+//   - a disposition that DISPOSITIONS never declares
+//   - a disposition written as a bare string instead of a caret reference
+//   - REMAINDER with no SCOPE / no DISPOSITION
+//   - PROCEDURE with no SUBJECT / no CONVERT
+//   - SUBJECT, SCOPE, CONVERT targets and CONCERNS entries not side-qualified
+//   - a CONVERT with no operation, a SCALE with no factor, a MANUAL with no text
+//   - GUIDANCE ENTRY with no label and one with no TEXT
+//   - FIAT with no reason
+//   - an ALIAS with no FOR target, and one whose target is not side-qualified
+BRIDGE "Test_Bad_Bridge" {
+    NAME "Broken bridge"
+    VERSION "1.0"
+    SPEC_VERSION "0.4"
+
+    ORIGIN "test1e"
+    // DESTINATION deliberately absent
+
+    DISPOSITIONS {
+        #testBadBridgeDispositionOne ^"Known" DEF {
+            ^"Description" STRING "A declared tag."
+        }
+    }
+
+    ALIASES {
+        ALIAS ^"Missing Name"
+        ALIAS ^"Unqualified Alias" FOR ^"Some Target"
+    }
+
+    CONVERSION {
+        MAP #testBadBridgeNoReferents1 {
+            TEXT "no ORIGIN, no DESTINATION, no DISPOSITION"
+        }
+        MAP #testBadBridgeUndeclaredTag {
+            DESTINATION ^"Something"
+            DISPOSITION [ ^"Never Declared" ]
+        }
+        MAP #testBadBridgeStringTag0001 {
+            DESTINATION ^"Something Else"
+            DISPOSITION [ "Known" ]
+        }
+        MAP #testBadBridgeUnqualScope01 {
+            DESTINATION ^"Something Third"
+            SCOPE       ^"Unqualified"
+            DISPOSITION [ ^"Known" ]
+            FIAT
+        }
+        REMAINDER #testBadBridgeBareRemainder {
+            TEXT "no SCOPE and no DISPOSITION"
+        }
+        PROCEDURE #testBadBridgeEmptyProcedur {
+            TEXT "no SUBJECT and no CONVERT"
+        }
+        PROCEDURE #testBadBridgeBadConverts01 {
+            SUBJECT ^"Unqualified Subject"
+            CONVERT ^"Unqualified Target" WOBBLE
+            CONVERT ORIGIN ^"Something" SCALE
+            CONVERT ORIGIN ^"Something" MANUAL
+        }
+    }
+
+    GUIDANCE {
+        ENTRY #testBadBridgeNoLabelEntry1 {
+            TEXT "this entry has no ^\"label\""
+        }
+        ENTRY ^"No Text Here" #testBadBridgeNoTextEntry1 {
+            CONCERNS [ ^"Bare Reference" ]
+        }
+    }
+}

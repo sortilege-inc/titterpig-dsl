@@ -151,7 +151,42 @@ validator accepts it **and** the intent is on the record:
   their own terms). Reach for `FIAT` only for true one-offs — if you're writing it a lot, the
   underlying type probably needs adjusting instead.
 
-## 9. Pre-commit checklist
+## 9. Cross-edition conversions — `.bridge`
+
+A published edition-conversion document ("Converting to SRD 5.2.1", Ars Magica 5e's Appendix I) is a
+`.bridge` (spec §21) — the one container with **two** dependency lineages. It is not an EXTENSION
+(one lineage), not errata (same edition), and not `FIAT`.
+
+- **Put it outside both corpora.** The canonical DSL repo's `bridges/<specver>/`, named
+  `<origin>-to-<destination>-<specver>-<document>.bridge`. Inside an edition's directory its origin
+  names would not resolve and it would pollute that namespace.
+- **Validate in two-corpus mode** — otherwise nothing cross-edition is actually checked:
+  `ttrpg_validator.py 0.4/ --corpus dnd5e=<dir> --corpus dnd5.5e=<dir>`
+- **Adopt the document's disposition vocabulary, don't invent one.** Declare its tags in
+  `DISPOSITIONS`; a tag it never declares is a coherence error. If the document declares none (ArM5's
+  Appendix I), the bridge has none — do not supply one.
+- **Type every referent you can.** A plain string is legal for something the corpus has no `DEF` for,
+  but the validator warns if it *would* have resolved. Where the name is genuinely taken by an
+  unrelated entity (the 5.1 weapon property `Light` versus the 5.1 *spell* `Light`), say so with
+  `FIAT "reason"` rather than mistyping it.
+- **When the document and the edition disagree, alias it.** A conversion guide is written *about*
+  its editions, not generated from them: SRD 5.2.1's guide calls a Warlock feature `Contract Patron`
+  where the SRD says `Contact Patron`. Declare
+  `ALIAS ^"Contract Patron" FOR DESTINATION ^"Level 9: Contact Patron"` in `ALIASES` and keep the
+  guide's wording in the unit — do not silently retype the reference, and do not leave a real
+  correspondence untyped. Not a way to make a wrong correspondence resolve.
+- **Rename ≠ substitution.** `Duergar (use Spy)` is lossy and many-to-one. Give it the source's
+  omission tag; a consumer that treats it as a rename will mangle content.
+- **Never drop the `REMAINDER`.** "All monsters not listed above have revisions" is what
+  distinguishes *unmentioned means unchanged* from *unmentioned means not covered*. Record
+  `EXHAUSTIVE false` when the source hedges ("Most magic items…") — that is the difference between a
+  fact and a presumption.
+- **Rules or guidance?** If it asserts a correspondence or disposition about a named referent, it is
+  a conversion rule; if it explains why or tells a human how to decide, it is guidance. One source
+  unit often produces both. Guidance tags go through the same reference gate — and may name **both**
+  sides, because no side is inferred.
+
+## 10. Pre-commit checklist
 
 - [ ] All mechanical data is structured (no data in strings or comments)
 - [ ] No content trimmed to fit a structure — exceptions and riders kept verbatim (completeness beats shape)

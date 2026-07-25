@@ -1,0 +1,157 @@
+// Conformant .bridge fixture (spec §21). Exercises every construct: both side
+// declarations, a declared disposition vocabulary, all three CONVERSION unit
+// kinds, every CONVERT operation, typed and untyped referents, a FIAT waiver,
+// and a GUIDANCE entry that names BOTH sides.
+//
+// It references no real corpus, so validate it with EXTERNAL sides:
+//   ttrpg_validator.py tests/good.bridge
+BRIDGE "Test_Good_Bridge" {
+    NAME "Converting from Testsystem 1e to Testsystem 2e"
+    VERSION "1.0"
+    SPEC_VERSION "0.4"
+    RELEASE_DATE "2026-07-25"
+
+    # ORIGIN and DESTINATION are mandatory and the direction is load-bearing: a
+    # bridge is NOT reversible by inspection. Both sides here are EXTERNAL so the
+    # fixture needs no corpus; a real bridge names editions that have one.
+    ORIGIN      "test1e" VERSION "1.0" EXTERNAL "Fixture: no corpus exists for the test origin edition."
+    DESTINATION "test2e" VERSION "2.0" EXTERNAL "Fixture: no corpus exists for the test destination edition."
+
+    # The document's own change-tag vocabulary, as DEFs, so that every DISPOSITION
+    # reference resolves through ordinary coherence.
+    DISPOSITIONS {
+        #testBridgeDispositionRenamed ^"Renamed" DEF {
+            ^"Description" STRING "The entity kept its rules and changed its name."
+        }
+        #testBridgeDispositionRevised ^"Revised" DEF {
+            ^"Description" STRING "The entity existed before and has new functionality."
+        }
+        #testBridgeDispositionAdded00 ^"Added" DEF {
+            ^"Description" STRING "The entity is new in the destination edition."
+        }
+        #testBridgeDispositionDropped ^"Dropped" DEF {
+            ^"Description" STRING "The entity is gone; a replacement is recommended."
+        }
+    }
+
+    # A name the DOCUMENT uses that the edition it describes does not — a publisher
+    # typo, an inconsistent printing. The alias name resolves on its declared side,
+    # so units keep the document's own wording while this records what it denotes.
+    ALIASES {
+        ALIAS ^"Contract Patron" FOR DESTINATION ^"Contact Patron"
+        ALIAS ^"Perfect Body"    FOR ORIGIN      ^"Perfect Self"
+    }
+
+    CONVERSION {
+        # a unit using the document's wording, resolved through the alias above
+        MAP #testBridgeMapAliasSample001 {
+            ORIGIN      ^"Perfect Body"
+            DESTINATION ^"Contract Patron"
+            DISPOSITION [ ^"Renamed" ]
+            TEXT "Contract Patron (formerly Perfect Body)"
+        }
+
+        # rename — one origin, one destination
+        MAP #testBridgeMapRenameSample01 {
+            ORIGIN      ^"Old Name"
+            DESTINATION ^"New Name"
+            DISPOSITION [ ^"Renamed" ]
+            TEXT "New Name (formerly Old Name)"
+        }
+
+        # revision in place — same name on both sides, scoped and aspect-qualified
+        MAP #testBridgeMapReviseSample01 {
+            ORIGIN      ^"Fury"
+            DESTINATION ^"Fury"
+            SCOPE       DESTINATION ^"Berserker"
+            ASPECT      "Class Features"
+            DISPOSITION [ ^"Revised" ]
+            TEXT "Fury"
+        }
+
+        # merge — N origins jointly correspond to one destination
+        MAP #testBridgeMapMergeSample001 {
+            ORIGIN      [ ^"Silk Rope", ^"Hemp Rope" ]
+            DESTINATION ^"Rope"
+            DISPOSITION [ ^"Revised" ]
+            TEXT "Silk Rope and Hemp Rope have been consolidated into a single piece of gear: Rope."
+        }
+
+        # introduction — destination only, no origin to run back to
+        MAP #testBridgeMapAddedSample001 {
+            DESTINATION ^"Sudden Insight"
+            DISPOSITION [ ^"Added" ]
+            TEXT "The following feature is new: Sudden Insight"
+        }
+
+        # substitution — lossy and NOT a rename; the disposition is what says so
+        MAP #testBridgeMapDroppedSample1 {
+            ORIGIN      ^"Cave Dwarf"
+            DESTINATION ^"Scout"
+            DISPOSITION [ ^"Dropped" ]
+            TEXT "Cave Dwarf (use Scout)"
+        }
+
+        # an UNTYPED referent: the destination corpus has no DEF for this section.
+        MAP #testBridgeMapUntypedSample1 {
+            DESTINATION "Tiers of Play"
+            DISPOSITION [ ^"Added" ]
+            TEXT "The description of tiers of play is new."
+        }
+
+        # FIAT: untyped on purpose, with the reason recorded (§8)
+        MAP #testBridgeMapFiatSample0001 {
+            ORIGIN      "Light"
+            DESTINATION ^"Light"
+            ASPECT      "Weapon Properties"
+            DISPOSITION [ ^"Revised" ]
+            TEXT "The Light weapon property is revised."
+            FIAT "Origin \"Light\" is the weapon property; the only ^\"Light\" in the origin edition is the spell."
+        }
+
+        # bulk disposition over everything the document did not list
+        REMAINDER #testBridgeRemainderAll01 {
+            SCOPE       ORIGIN ^"Monster"
+            DISPOSITION [ ^"Revised" ]
+            EXHAUSTIVE  true
+            TEXT "All monsters not listed above have revisions to their presentations and statistics."
+        }
+
+        # ...and a hedging one, which a consumer must treat as a presumption
+        REMAINDER #testBridgeRemainderMost1 {
+            SCOPE       ORIGIN ^"Magic Item"
+            DISPOSITION [ ^"Revised" ]
+            EXHAUSTIVE  false
+            TEXT "Most magic items not listed above have revisions to their presentation and statistics."
+        }
+
+        # value-level conversion: every CONVERT operation
+        PROCEDURE #testBridgeProcedureSample1 {
+            SUBJECT ORIGIN ^"Character"
+            ASPECT  "Advancement"
+            TEXT "Characteristics are unchanged. Multiply remaining XP by five. Divide Twilight Points by three. Add 20% to the character's age. Note new spell levels, and rebuild anything that no longer fits."
+            CONVERT ORIGIN ^"Characteristic" UNCHANGED
+            CONVERT ORIGIN ^"Experience Points" SCALE 5
+            CONVERT ORIGIN ^"Twilight Points" SCALE 1 OVER 3 INTO DESTINATION ^"Warping Score"
+            CONVERT ORIGIN ^"Age" SCALE 6 OVER 5
+            CONVERT ORIGIN ^"Spell Level" RESTATE INTO DESTINATION ^"Spell Level"
+            CONVERT ORIGIN ^"Spell" MANUAL "Rebuild anything that no longer fits."
+        }
+    }
+
+    GUIDANCE {
+        ENTRY ^"Character Generation" #testBridgeGuidanceEntry01 {
+            # A subsystem-scale subject with no DEF to point at goes in TOPICS
+            # (ungated); whatever IS typed goes in CONCERNS (gated). This passage
+            # concerns BOTH editions, so both sides are named — there is no
+            # default side and none is inferred.
+            TOPICS   [ "Character Generation", "Advancement" ]
+            CONCERNS [ ORIGIN ^"Virtue", ORIGIN ^"Flaw", DESTINATION ^"Virtue", DESTINATION ^"Flaw" ]
+            TEXT """
+            Virtues and Flaws no longer have point values; they are split into Major
+            and Minor. If converting a character leaves it unbalanced, discuss
+            suitable modifications with your group.
+            """
+        }
+    }
+}

@@ -61,6 +61,7 @@ If a tool must look something up in it → a **structured** container; if it's o
 | A single character (PC/NPC) as its own file | `.actor` |
 | Structured world-building a tool queries (locations, factions, scenes, hooks) | `.setting` / `.frame` / `.arc` / `.campaign` |
 | Free prose meant only to be read (history, color, fiction) | `.lore` (Markdown, no DSL) |
+| A published **edition-conversion** document (5.1→5.2.1, ArM4→ArM5) | `.bridge` (§21) |
 
 The same subject can appear in both — mechanics in `.ttrpg`, story in `.lore`. **Mirror, don't
 duplicate.**
@@ -150,6 +151,42 @@ This is enforced, not advisory:
 - Reuse the schema you already built. If a bucket's schema fits more of the source (e.g. more
   roll-tables, more items), the remaining instances are *in scope by default* — narrowing to a
   subset is a decision to surface, not a default to take.
+
+## Cross-edition conversions — `.bridge` (§21)
+
+An edition is an identity namespace (§19); every other container has ONE dependency lineage. A
+conversion document asserts correspondence ACROSS namespaces and inherently has **two** — that is the
+gap `.bridge` fills. Not an EXTENSION, not errata (same edition), not `FIAT`.
+
+- **`ORIGIN` / `DESTINATION` are mandatory and directed.** A bridge is *not reversible by
+  inspection*: `Duergar → use Spy` does not invert, several origin entities collapse onto one
+  destination, and a destination-only unit has no origin to run back to.
+- **Lives outside both corpora** — the canonical DSL repo's `bridges/<specver>/`, named
+  `<origin>-to-<destination>-<specver>-<document>.bridge`.
+- **Validate in two-corpus mode**, or nothing cross-edition is actually checked:
+  `ttrpg_validator.py 0.4/ --corpus <edition>=<dir> --corpus <edition>=<dir>`.
+  A non-`EXTERNAL` side with no corpus is an ERROR — "not checked" must never read as "checked and
+  fine". A side with no titterpig corpus is `EXTERNAL "reason"` and its unverifiable refs are counted
+  and reported.
+- **Three unit kinds** in `CONVERSION`: `MAP` (one correspondence — rename, revision, merge, split,
+  introduction, omission, substitution), `REMAINDER` (the bulk disposition over everything not
+  listed; `EXHAUSTIVE false` when the source hedges), `PROCEDURE` (+`CONVERT … UNCHANGED / SCALE n
+  [OVER d] / RESTATE / MANUAL "…"` — values on a sheet, not entities). Plus `GUIDANCE { ENTRY … }`
+  for prose, tagged with `CONCERNS` (gated, side-qualified, may name both sides) and `TOPICS`
+  (ungated free strings for subsystems with no DEF).
+- **Adopt the document's own disposition vocabulary**, declared in `DISPOSITIONS` as DEFs; an
+  undeclared tag is a coherence error. If the source declares none, the bridge has none.
+- **Untyped referents** (a plain `"Name"` instead of `^"Name"`) are legal for things the corpus has
+  no DEF for, but the validator WARNS if the name would have resolved. A genuine cross-category
+  collision gets `FIAT "reason"`.
+- **`ALIASES`** reconciles a name the DOCUMENT uses with the one its edition uses
+  (`ALIAS ^"Contract Patron" FOR DESTINATION ^"Level 9: Contact Patron"`) — the alias name then
+  resolves on that side, so units keep the document's wording. For genuine document/edition
+  disagreement only, never to force a wrong correspondence through.
+- **Gates:** `titterpig-mastra/scripts/bridge/gates.sh` — validator + coverage + verbatim.
+
+Worked examples: `titterpig-dsl/bridges/0.4/` (rich: SRD 5.2.1; sparse: ArM5 Appendix I) and the
+`tests/good.bridge` / `tests/bad.bridge` fixtures.
 
 ## Migrating a system to a new SPEC_VERSION
 

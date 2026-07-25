@@ -1,0 +1,4564 @@
+BRIDGE "Dnd5e_To_Dnd5_5e_Srd_Conversion" {
+    NAME "Converting to System Reference Document 5.2.1"
+    VERSION "2025.1"
+    SPEC_VERSION "0.4"
+    RELEASE_DATE "2025-05-23"
+
+    # A DIRECTED assertion of correspondence between two independent edition
+    # namespaces (spec §21). Not reversible by inspection: several 5.1 stat
+    # blocks collapse onto one 5.2.1 replacement, and every [New Rule] unit
+    # has no origin to run back to.
+    ORIGIN      "dnd5e"   VERSION "0.4"
+    DESTINATION "dnd5.5e" VERSION "0.4"
+
+    # The document declares its own change-tag vocabulary on page 1; these are
+    # its words, not a vocabulary invented here.
+    DISPOSITIONS {
+        #bdddbcd3714532df4b8e ^"New Name" DEF {
+            ^"Description" STRING "New Name. This tag is applied to a rule that has a new name. Unless stated otherwise, the rule hasn't changed apart from its name."
+        }
+        #bdffe0d5fb366b04eba6 ^"New Rule" DEF {
+            ^"Description" STRING "New Rule. This tag indicates a new rule."
+        }
+        #bd8eed76ee2f4d9738a3 ^"Revised Rule" DEF {
+            ^"Description" STRING "Revised Rule. This tag indicates a rule that appeared in SRD 5.1 but that has new functionality."
+        }
+        #bd178e78a95d3848bc12 ^"Omitted Rule" DEF {
+            ^"Description" STRING "Additionally, the tag \"Omitted Rule\" indicates stat blocks that are omitted in SRD 5.2.1 but have recommended replacements."
+        }
+    }
+
+    # Names this DOCUMENT uses that the edition it describes does not. The units
+    # below keep the guide's own wording; these say what it denotes (spec §21).
+    ALIASES {
+        ALIAS ^"Contract Patron" FOR DESTINATION ^"Level 9: Contact Patron"
+        ALIAS ^"Dark One’s Own Blessing" FOR DESTINATION ^"Level 3: Dark One's Blessing"
+        ALIAS ^"Dark One’s Own Blessing" FOR ORIGIN      ^"Dark One's Blessing"
+        ALIAS ^"Perfect Body" FOR ORIGIN      ^"Perfect Self"
+    }
+
+    CONVERSION {
+        MAP #bmd615bcff912924c739 {
+            ORIGIN      "D20 Test"
+            DESTINATION ^"D20 Test"
+            DISPOSITION [ ^"New Name" ]
+            TEXT        "“D20 Test” is the new umbrella term for ability checks, attack rolls, and saving throws. If a rule applies to all three, you now use this term rather than listing all three terms."
+        }
+        MAP #bm8b8e7e73767c3e68e0 {
+            DESTINATION ^"Heroic Inspiration"
+            DISPOSITION [ ^"New Rule" ]
+            TEXT        "The inspiration rule has been replaced by Heroic Inspiration, which is a reroll rather than Advantage."
+        }
+        MAP #bmcd7ede9fd1aed77397 {
+            ORIGIN      "Tool Proficiency"
+            DESTINATION "Tool Proficiency"
+            DISPOSITION [ ^"Revised Rule" ]
+            TEXT        "If you have proficiency with both the tool and the skill that are used for an ability check, you automatically have Advantage on the check, in addition to adding your Proficiency Bonus."
+            FIAT        "Origin referent \"Tool Proficiency\" is untyped on purpose: this edition has no DEF for it in its own category, and the name is taken by an unrelated ^\"Tool Proficiency\" in dnd5e-0.4-races.ttrpg."
+        }
+        MAP #bm9097484fdcf28eab25 {
+            ORIGIN      "Attack Action"
+            DESTINATION ^"Attack"
+            DISPOSITION [ ^"Revised Rule" ]
+            TEXT        "The Attack action contains several revisions: The action now specifies that it involves an attack with a weapon or an Unarmed Strike. The action now allows you to equip or unequip one weapon with each attack you make with the action. The ability to move between attacks during combat is now a function of the Attack action rather than a general rule."
+            FIAT        "Origin referent \"Attack Action\" is untyped on purpose: this edition has no DEF for it in its own category, and the name is taken by an unrelated ^\"Attack\" in dnd5e-0.4-monsters.ttrpg."
+        }
+        MAP #bm7317dd75a251b745d5 {
+            ORIGIN      "Help"
+            DESTINATION ^"Help"
+            DISPOSITION [ ^"Revised Rule" ]
+            TEXT        "Assisting an ally with an ability check is now limited by a creature’s skill and tool proficiencies as well as proximity to the ally."
+        }
+        MAP #bme00fcf7c191813669e {
+            ORIGIN      ^"Hide"
+            DESTINATION ^"Hide"
+            DISPOSITION [ ^"Revised Rule" ]
+            TEXT        "The rules for hiding have moved into the Hide action."
+        }
+        MAP #bmc5abae21acd5b5e16e {
+            DESTINATION ^"Influence"
+            DISPOSITION [ ^"New Rule" ]
+            TEXT        "The rules on influencing monsters through ability checks have moved into a new action: the Influence action."
+        }
+        MAP #bmad3efad118bf4d8bf0 {
+            ORIGIN      "Magic Action"
+            DESTINATION ^"Magic"
+            DISPOSITION [ ^"New Name", ^"Revised Rule" ]
+            TEXT        "The Magic action is used to cast a spell, use a magic item, or use a magical feature. The Cast a Spell action has been absorbed into this action. The descriptions of class features and magic items now use this action if they require an action to activate, and effects like Antimagic Field prevent this action’s use."
+        }
+        MAP #bm48618c75747b460379 {
+            ORIGIN      "Search Action"
+            DESTINATION ^"Search"
+            DISPOSITION [ ^"Revised Rule" ]
+            TEXT        "The previous Search action’s function has been divided into the Search action and the new Study action (see below). The new search action encompasses Wisdom checks to discern hidden things, such as Wisdom (Perception) checks to find a concealed creature."
+        }
+        MAP #bmdbdcf67ab8137b10c3 {
+            DESTINATION ^"Study"
+            DISPOSITION [ ^"New Rule" ]
+            TEXT        "The Study action encompasses Intelligence checks to recall something or study a book or other source of knowledge. Class features, such as the Wizard’s new Scholar feature, and other character benefits can now build on this action."
+        }
+        MAP #bm4a21fa835e812b631d {
+            ORIGIN      "Utilize Action"
+            DESTINATION ^"Utilize"
+            DISPOSITION [ ^"New Name" ]
+            TEXT        "The Use an Object action is now called the Utilize action."
+        }
+        MAP #bm2e6cac1a9b9ffb48ff {
+            ORIGIN      "Surprise"
+            DESTINATION ^"Surprise"
+            DISPOSITION [ ^"Revised Rule" ]
+            TEXT        "Being surprised no longer deprives you of the ability to act on your first turn of combat. Instead, being surprised causes you to have Disadvantage on your Initiative roll."
+        }
+        MAP #bm43b0e462e318048395 {
+            ORIGIN      "Dropping Prone"
+            DESTINATION "Dropping Prone"
+            DISPOSITION [ ^"Revised Rule" ]
+            TEXT        "A creature can’t make itself Prone if its Speed is 0."
+        }
+        MAP #bmb0b7235eb534ac65cc {
+            ORIGIN      "Moving around Other Creatures"
+            DESTINATION "Moving around Other Creatures"
+            DISPOSITION [ ^"Revised Rule" ]
+            TEXT        "Here are the changes to this rule: You can move through the space of an Incapacitated creature. An ally’s space no longer counts as Difficult Terrain for you. You can now move through the space of a Tiny creature that isn’t an ally, and that creature’s space doesn’t count as Difficult Terrain for you. If you somehow end a turn in a space with another creature, you have the Prone condition unless you are Tiny or are of a larger size than the other creature."
+        }
+        MAP #bm26d0fa74019b260fe9 {
+            ORIGIN      "Underwater Combat"
+            DESTINATION "Underwater Combat"
+            DISPOSITION [ ^"Revised Rule" ]
+            TEXT        "Previously, a list of specific weapons avoided the Disadvantage that is imposed on the attack rolls of a creature that lacks a Swim Speed. In the revised rule, any weapon that deals Piercing damage avoids the Disadvantage."
+        }
+        MAP #bm9b10f11fd3f4b2531c {
+            ORIGIN      "Saving Throws and Damage"
+            DESTINATION "Saving Throws and Damage"
+            DISPOSITION [ ^"Revised Rule" ]
+            TEXT        "Previously, any effect that dealt damage to a group of targets simultaneously required the damage to be rolled once for all the targets. In the revised rules, that rule—rolling once for all the targets—applies only to saving throw effects."
+        }
+        MAP #bm4dd56646fb9d72a447 {
+            ORIGIN      "Knocking Out a Creature"
+            DESTINATION ^"Knocking Out a Creature"
+            DISPOSITION [ ^"Revised Rule" ]
+            TEXT        "This rule now causes the Unconscious creature to have 1 Hit Point, not 0, and causes it to start a Short Rest. The Unconscious condition ends on the creature if it regains any Hit Points."
+        }
+        MAP #bm0d411c21f140b69659 {
+            ORIGIN      "Note Armor Training"
+            DESTINATION "Note Armor Training"
+            DISPOSITION [ ^"Revised Rule" ]
+            TEXT        "The ability to wear armor effectively is called armor training, not armor proficiency."
+        }
+        MAP #bm4e627a55141c837539 {
+            ORIGIN      "Character Origin"
+            DESTINATION "Character Origin"
+            DISPOSITION [ ^"Revised Rule" ]
+            TEXT        "Your character’s origin incorporates two items with revised rules: Choose a Background. Your choice of background provides several key rules elements: ability score increases, an Origin feat, skill and tool proficiencies, and some of your starting equipment. Choose a Species. Your choice of species, previously called race, provides certain traits and determines your character’s size and Speed. Species don’t provide ability score increases or languages, nor do species influence a character’s alignment. Additionally, the language tables are revised."
+        }
+        MAP #bma00ebf26bf924bc0cb {
+            DESTINATION "Character Origin"
+            DISPOSITION [ ^"New Rule" ]
+            TEXT        "Your character’s origin incorporates a new item: Choose Languages. All characters choose two languages in addition to Common. These choices are independent of background and species selection. The choices of standard languages and rare languages are revised. Additionally, Common Sign Language is a new language."
+        }
+        MAP #bmef30752c0d483ab272 {
+            ORIGIN      "Adjust Ability Scores"
+            DESTINATION "Adjust Ability Scores"
+            DISPOSITION [ ^"Revised Rule" ]
+            TEXT        "Ability score adjustments come from a character’s background, not from the character’s species."
+        }
+        MAP #bm064afc11cfaf398796 {
+            ORIGIN      "Step 5: Character Creation Details"
+            DESTINATION "Step 5: Character Creation Details"
+            DISPOSITION [ ^"New Name", ^"Revised Rule" ]
+            TEXT        "Several rules have been consolidated into this step under the name “Fill In Numbers.” These rules include noting proficiency in saving throws and skills, determining starting Hit Points, and explaining spellcasting rules that apply to all spellcasting classes."
+        }
+        MAP #bmc15537b6879390cedd {
+            ORIGIN      "Fixed Hit Points By Class"
+            DESTINATION "Fixed Hit Points By Class"
+            DISPOSITION [ ^"New Name" ]
+            TEXT        "Fixed Hit Points received by each class are presented here under this new name, rather than in each class’s features."
+        }
+        MAP #bma267831b4ac51d342b {
+            DESTINATION "Tiers of Play"
+            DISPOSITION [ ^"New Rule" ]
+            TEXT        "The description of tiers of play is new."
+        }
+        MAP #bm8d15b42d5212bec383 {
+            DESTINATION "Starting at Higher Levels"
+            DISPOSITION [ ^"New Rule" ]
+            TEXT        "This section, including the “Starting Equipment at Higher Levels” table and the “Bonus Feats at Level 20” sidebar, is new."
+        }
+        MAP #bm45e6f6614aadc77a72 {
+            ORIGIN      "Prerequisites"
+            DESTINATION "Prerequisites"
+            DISPOSITION [ ^"Revised Rule" ]
+            TEXT        "The ability score prerequisites for multiclassing now appear in each class description, so this rule refers to the class descriptions."
+        }
+        MAP #bm9c56709ed08b428673 {
+            ORIGIN      "Proficiencies"
+            DESTINATION ^"Proficiency"
+            DISPOSITION [ ^"Revised Rule" ]
+            TEXT        "The proficiencies and armor training you gain for multiclassing now appear in each class description, so this rule refers to the class descriptions."
+        }
+        MAP #bm3c3fae9cb14f8bbf78 {
+            ORIGIN      "Armor Class"
+            DESTINATION ^"Armor Class"
+            DISPOSITION [ ^"New Name", ^"Revised Rule" ]
+            TEXT        "This rule now clarifies that it applies to any feature that calculates your Armor Class differently, not just the Unarmored Defense class feature."
+        }
+        MAP #bm378e25101f8a495016 {
+            DESTINATION "Trinkets"
+            DISPOSITION [ ^"New Rule" ]
+            TEXT        "This section and its table are new."
+        }
+        MAP #bm6e159af90d3d32885f {
+            ORIGIN      ^"Barbarian"
+            DESTINATION ^"Barbarian"
+            ASPECT      "Starting Equipment"
+            DISPOSITION [ ^"Revised Rule" ]
+            TEXT        "This class’s starting equipment is different and includes an option to take GP instead of specific items."
+        }
+        MAP #bmff321dc41319f6f7ca {
+            ORIGIN      ^"Barbarian"
+            DESTINATION ^"Barbarian"
+            ASPECT      "As a Multiclass Character"
+            DISPOSITION [ ^"Revised Rule" ]
+            TEXT        "Specific traits and features gained from multiclassing into this class are presented here."
+        }
+        MAP #bm9cd92983534650bbee {
+            DESTINATION ^"Level 1: Weapon Mastery"
+            SCOPE       DESTINATION ^"Barbarian"
+            ASPECT      "Class Features"
+            DISPOSITION [ ^"New Rule" ]
+            TEXT        "Weapon Mastery"
+        }
+        MAP #bm688afdedc57cd437fb {
+            DESTINATION ^"Level 3: Primal Knowledge"
+            SCOPE       DESTINATION ^"Barbarian"
+            ASPECT      "Class Features"
+            DISPOSITION [ ^"New Rule" ]
+            TEXT        "Primal Knowledge"
+        }
+        MAP #bm661c399bc58e822240 {
+            DESTINATION ^"Level 7: Instinctive Pounce"
+            SCOPE       DESTINATION ^"Barbarian"
+            ASPECT      "Class Features"
+            DISPOSITION [ ^"New Rule" ]
+            TEXT        "Instinctive Pounce"
+        }
+        MAP #bm233ea5e2bc5b6e0dbc {
+            DESTINATION ^"Level 9: Brutal Strike"
+            SCOPE       DESTINATION ^"Barbarian"
+            ASPECT      "Class Features"
+            DISPOSITION [ ^"New Rule" ]
+            TEXT        "Brutal Strike"
+        }
+        MAP #bme457b8121c9c6d64e5 {
+            DESTINATION ^"Level 13: Improved Brutal Strike"
+            SCOPE       DESTINATION ^"Barbarian"
+            ASPECT      "Class Features"
+            DISPOSITION [ ^"New Rule" ]
+            TEXT        "Improved Brutal Strike"
+        }
+        MAP #bm1953bce9d17fecc6d5 {
+            DESTINATION ^"Level 19: Epic Boon"
+            SCOPE       DESTINATION ^"Barbarian"
+            ASPECT      "Class Features"
+            DISPOSITION [ ^"New Rule" ]
+            TEXT        "Epic Boon"
+        }
+        MAP #bm255123d0b1428d3fab {
+            ORIGIN      ^"Rage"
+            DESTINATION ^"Level 1: Rage"
+            SCOPE       DESTINATION ^"Barbarian"
+            ASPECT      "Class Features"
+            DISPOSITION [ ^"Revised Rule" ]
+            TEXT        "Rage"
+        }
+        MAP #bmdbf10ed500451d6cac {
+            ORIGIN      ^"Danger Sense"
+            DESTINATION ^"Level 2: Danger Sense"
+            SCOPE       DESTINATION ^"Barbarian"
+            ASPECT      "Class Features"
+            DISPOSITION [ ^"Revised Rule" ]
+            TEXT        "Danger Sense"
+        }
+        MAP #bm58c11e8f11d5cf58f7 {
+            ORIGIN      ^"Reckless Attack"
+            DESTINATION ^"Level 2: Reckless Attack"
+            SCOPE       DESTINATION ^"Barbarian"
+            ASPECT      "Class Features"
+            DISPOSITION [ ^"Revised Rule" ]
+            TEXT        "Reckless Attack"
+        }
+        MAP #bmcb9c2b4a72ef5a6973 {
+            ORIGIN      ^"Ability Score Improvement"
+            DESTINATION ^"Level 4: Ability Score Improvement"
+            SCOPE       DESTINATION ^"Barbarian"
+            ASPECT      "Class Features"
+            DISPOSITION [ ^"Revised Rule" ]
+            TEXT        "Ability Score Improvement"
+        }
+        MAP #bmd494872e89d5017e30 {
+            ORIGIN      ^"Feral Instinct"
+            DESTINATION ^"Level 7: Feral Instinct"
+            SCOPE       DESTINATION ^"Barbarian"
+            ASPECT      "Class Features"
+            DISPOSITION [ ^"Revised Rule" ]
+            TEXT        "Feral Instinct"
+        }
+        MAP #bmf7f2331057a0a076e3 {
+            ORIGIN      ^"Relentless Rage"
+            DESTINATION ^"Level 11: Relentless Rage"
+            SCOPE       DESTINATION ^"Barbarian"
+            ASPECT      "Class Features"
+            DISPOSITION [ ^"Revised Rule" ]
+            TEXT        "Relentless Rage"
+        }
+        MAP #bmf31bd60976558e9ece {
+            ORIGIN      ^"Persistent Rage"
+            DESTINATION ^"Level 15: Persistent Rage"
+            SCOPE       DESTINATION ^"Barbarian"
+            ASPECT      "Class Features"
+            DISPOSITION [ ^"Revised Rule" ]
+            TEXT        "Persistent Rage"
+        }
+        MAP #bm24fa395aba16f5333c {
+            ORIGIN      ^"Indomitable Might"
+            DESTINATION ^"Level 18: Indomitable Might"
+            SCOPE       DESTINATION ^"Barbarian"
+            ASPECT      "Class Features"
+            DISPOSITION [ ^"Revised Rule" ]
+            TEXT        "Indomitable Might"
+        }
+        MAP #bm2c44025b1c2afb46f3 {
+            ORIGIN      ^"Primal Champion"
+            DESTINATION ^"Level 20: Primal Champion"
+            SCOPE       DESTINATION ^"Barbarian"
+            ASPECT      "Class Features"
+            DISPOSITION [ ^"Revised Rule" ]
+            TEXT        "Primal Champion"
+        }
+        MAP #bmd4bd317099d4e13447 {
+            ORIGIN      ^"Frenzy"
+            DESTINATION ^"Level 3: Frenzy"
+            SCOPE       DESTINATION ^"Path of the Berserker"
+            ASPECT      "Subclass Features"
+            DISPOSITION [ ^"Revised Rule" ]
+            TEXT        "Frenzy"
+        }
+        MAP #bmab329e2ad1a4149832 {
+            ORIGIN      ^"Retaliation"
+            DESTINATION ^"Level 10: Retaliation"
+            SCOPE       DESTINATION ^"Path of the Berserker"
+            ASPECT      "Subclass Features"
+            DISPOSITION [ ^"Revised Rule" ]
+            TEXT        "Retaliation"
+        }
+        MAP #bm6d91eb86119543a11b {
+            ORIGIN      ^"Intimidating Presence"
+            DESTINATION ^"Level 14: Intimidating Presence"
+            SCOPE       DESTINATION ^"Path of the Berserker"
+            ASPECT      "Subclass Features"
+            DISPOSITION [ ^"Revised Rule" ]
+            TEXT        "Intimidating Presence"
+        }
+        MAP #bm3a681fe60f05511149 {
+            ORIGIN      ^"Bard"
+            DESTINATION ^"Bard"
+            ASPECT      "Weapon Proficiencies"
+            DISPOSITION [ ^"Revised Rule" ]
+            TEXT        "This class’s weapon proficiencies are revised."
+        }
+        MAP #bm5f45d2bd84c7afafb3 {
+            ORIGIN      ^"Bard"
+            DESTINATION ^"Bard"
+            ASPECT      "Starting Equipment"
+            DISPOSITION [ ^"Revised Rule" ]
+            TEXT        "This class’s starting equipment is different and includes an option to take GP instead of specific items."
+        }
+        MAP #bm55b537ed0c5e18e936 {
+            ORIGIN      ^"Bard"
+            DESTINATION ^"Bard"
+            ASPECT      "As a Multiclass Character"
+            DISPOSITION [ ^"Revised Rule" ]
+            TEXT        "Specific traits and features gained from multiclassing into this class are presented here."
+        }
+        MAP #bm1d9e98e3051394ce10 {
+            DESTINATION ^"Level 19: Epic Boon"
+            SCOPE       DESTINATION ^"Bard"
+            ASPECT      "Class Features"
+            DISPOSITION [ ^"New Rule" ]
+            TEXT        "Epic Boon"
+        }
+        MAP #bm8d445762ab3eafb6ed {
+            DESTINATION ^"Level 20: Words of Creation"
+            SCOPE       DESTINATION ^"Bard"
+            ASPECT      "Class Features"
+            DISPOSITION [ ^"New Rule" ]
+            TEXT        "Words of Creation"
+        }
+        MAP #bmf5b34493495824e304 {
+            ORIGIN      ^"Bardic Inspiration"
+            DESTINATION ^"Level 1: Bardic Inspiration"
+            SCOPE       DESTINATION ^"Bard"
+            ASPECT      "Class Features"
+            DISPOSITION [ ^"Revised Rule" ]
+            TEXT        "Bardic Inspiration"
+        }
+        MAP #bm35751df1228b8e7dfd {
+            ORIGIN      ^"Spellcasting"
+            DESTINATION ^"Level 1: Spellcasting"
+            SCOPE       DESTINATION ^"Bard"
+            ASPECT      "Class Features"
+            DISPOSITION [ ^"Revised Rule" ]
+            TEXT        "Spellcasting"
+        }
+        MAP #bme9d73220afa2265e98 {
+            ORIGIN      ^"Expertise"
+            DESTINATION ^"Expertise"
+            SCOPE       DESTINATION ^"Bard"
+            ASPECT      "Class Features"
+            DISPOSITION [ ^"Revised Rule" ]
+            TEXT        "Expertise"
+        }
+        MAP #bm287553f5f01a24a893 {
+            ORIGIN      ^"Ability Score Improvement"
+            DESTINATION ^"Level 4: Ability Score Improvement"
+            SCOPE       DESTINATION ^"Bard"
+            ASPECT      "Class Features"
+            DISPOSITION [ ^"Revised Rule" ]
+            TEXT        "Ability Score Improvement"
+        }
+        MAP #bm531786dee0f7b731b5 {
+            ORIGIN      ^"Font of Inspiration"
+            DESTINATION ^"Level 5: Font of Inspiration"
+            SCOPE       DESTINATION ^"Bard"
+            ASPECT      "Class Features"
+            DISPOSITION [ ^"Revised Rule" ]
+            TEXT        "Font of Inspiration"
+        }
+        MAP #bm1a01e1fe12ff12750e {
+            ORIGIN      ^"Countercharm"
+            DESTINATION ^"Level 7: Countercharm"
+            SCOPE       DESTINATION ^"Bard"
+            ASPECT      "Class Features"
+            DISPOSITION [ ^"Revised Rule" ]
+            TEXT        "Countercharm"
+        }
+        MAP #bm4cd7868d9d03256a3a {
+            ORIGIN      ^"Magical Secrets"
+            DESTINATION ^"Level 10: Magical Secrets"
+            SCOPE       DESTINATION ^"Bard"
+            ASPECT      "Class Features"
+            DISPOSITION [ ^"Revised Rule" ]
+            TEXT        "Magical Secrets"
+        }
+        MAP #bm36e6ada23d16a244fe {
+            ORIGIN      ^"Superior Inspiration"
+            DESTINATION ^"Level 18: Superior Inspiration"
+            SCOPE       DESTINATION ^"Bard"
+            ASPECT      "Class Features"
+            DISPOSITION [ ^"Revised Rule" ]
+            TEXT        "Superior Inspiration"
+        }
+        MAP #bm23b325ac11e65e4c03 {
+            ORIGIN      ^"Bard"
+            DESTINATION ^"Bard"
+            ASPECT      "Bard Spell List"
+            DISPOSITION [ ^"Revised Rule" ]
+            TEXT        "This class’s spell list now appears with the class and contains some revisions. See “Spells” below."
+        }
+        MAP #bm6ab913f1ff50c534e5 {
+            ORIGIN      ^"Cutting Words"
+            DESTINATION ^"Level 3: Cutting Words"
+            SCOPE       DESTINATION ^"College of Lore"
+            ASPECT      "Subclass Features"
+            DISPOSITION [ ^"Revised Rule" ]
+            TEXT        "Cutting Words"
+        }
+        MAP #bm068b2d999ae2470885 {
+            ORIGIN      ^"Additional Magical Secrets"
+            DESTINATION ^"Level 6: Magical Discoveries"
+            SCOPE       DESTINATION ^"College of Lore"
+            ASPECT      "Subclass Features"
+            DISPOSITION [ ^"Revised Rule" ]
+            TEXT        "Magical Discoveries (formerly Additional Magical Secrets)"
+        }
+        MAP #bm55a31e36e6c83733b7 {
+            ORIGIN      ^"Peerless Skill"
+            DESTINATION ^"Level 14: Peerless Skill"
+            SCOPE       DESTINATION ^"College of Lore"
+            ASPECT      "Subclass Features"
+            DISPOSITION [ ^"Revised Rule" ]
+            TEXT        "Peerless Skill"
+        }
+        MAP #bma3fba77f7ddd64923c {
+            ORIGIN      ^"Cleric"
+            DESTINATION ^"Cleric"
+            ASPECT      "Starting Equipment"
+            DISPOSITION [ ^"Revised Rule" ]
+            TEXT        "This class’s starting equipment is different and includes an option to take GP instead of specific items."
+        }
+        MAP #bm5968ded41f79a47e27 {
+            ORIGIN      ^"Cleric"
+            DESTINATION ^"Cleric"
+            ASPECT      "As a Multiclass Character"
+            DISPOSITION [ ^"Revised Rule" ]
+            TEXT        "Specific traits and features gained from multiclassing into this class are presented here."
+        }
+        MAP #bm207dc29748c5a92a76 {
+            DESTINATION ^"Level 5: Sear Undead"
+            SCOPE       DESTINATION ^"Cleric"
+            ASPECT      "Class Features"
+            DISPOSITION [ ^"New Rule" ]
+            TEXT        "Sear Undead"
+        }
+        MAP #bm2c671ec63643238cab {
+            DESTINATION ^"Level 14: Improved Blessed Strikes"
+            SCOPE       DESTINATION ^"Cleric"
+            ASPECT      "Class Features"
+            DISPOSITION [ ^"New Rule" ]
+            TEXT        "Improved Blessed Strikes"
+        }
+        MAP #bm5675c84dbd3d9a66c4 {
+            DESTINATION ^"Level 19: Epic Boon"
+            SCOPE       DESTINATION ^"Cleric"
+            ASPECT      "Class Features"
+            DISPOSITION [ ^"New Rule" ]
+            TEXT        "Epic Boon"
+        }
+        MAP #bmff80710e9860881241 {
+            DESTINATION ^"Level 20: Greater Divine Intervention"
+            SCOPE       DESTINATION ^"Cleric"
+            ASPECT      "Class Features"
+            DISPOSITION [ ^"New Rule" ]
+            TEXT        "Greater Divine Intervention"
+        }
+        MAP #bm6faf84710dfa63152d {
+            ORIGIN      ^"Spellcasting"
+            DESTINATION ^"Level 1: Spellcasting"
+            SCOPE       DESTINATION ^"Cleric"
+            ASPECT      "Class Features"
+            DISPOSITION [ ^"Revised Rule" ]
+            TEXT        "Spellcasting"
+        }
+        MAP #bm042ae2114e5f7f7324 {
+            ORIGIN      "Divine Order"
+            DESTINATION ^"Level 1: Divine Order"
+            SCOPE       DESTINATION ^"Cleric"
+            ASPECT      "Class Features"
+            DISPOSITION [ ^"Revised Rule" ]
+            TEXT        "Divine Order (this option is now provided by the Cleric class in place of the Bonus Proficiencies feature of the subclass)"
+        }
+        MAP #bm75f32fef1dc47bb1db {
+            ORIGIN      ^"Channel Divinity"
+            DESTINATION ^"Level 2: Channel Divinity"
+            SCOPE       DESTINATION ^"Cleric"
+            ASPECT      "Class Features"
+            DISPOSITION [ ^"Revised Rule" ]
+            TEXT        "Channel Divinity"
+        }
+        MAP #bm7d49cde596a3e7961b {
+            ORIGIN      "Cleric Subclass"
+            DESTINATION ^"Level 3: Cleric Subclass"
+            SCOPE       DESTINATION ^"Cleric"
+            ASPECT      "Class Features"
+            DISPOSITION [ ^"Revised Rule" ]
+            TEXT        "Cleric Subclass (you choose your domain at level 3 rather than level 1)"
+        }
+        MAP #bm5ea6241fba2968c88c {
+            ORIGIN      ^"Ability Score Improvement"
+            DESTINATION ^"Level 4: Ability Score Improvement"
+            SCOPE       DESTINATION ^"Cleric"
+            ASPECT      "Class Features"
+            DISPOSITION [ ^"Revised Rule" ]
+            TEXT        "Ability Score Improvement"
+        }
+        MAP #bmc05ac1b9e56463fca3 {
+            ORIGIN      "Blessed Strikes"
+            DESTINATION ^"Level 7: Blessed Strikes"
+            SCOPE       DESTINATION ^"Cleric"
+            ASPECT      "Class Features"
+            DISPOSITION [ ^"Revised Rule" ]
+            TEXT        "Blessed Strikes (this option is now provided by the Cleric class in place of the Divine Strike feature of the subclass)"
+        }
+        MAP #bm75b59ec2c8b313534e {
+            ORIGIN      ^"Divine Intervention"
+            DESTINATION ^"Level 10: Divine Intervention"
+            SCOPE       DESTINATION ^"Cleric"
+            ASPECT      "Class Features"
+            DISPOSITION [ ^"Revised Rule" ]
+            TEXT        "Divine Intervention"
+        }
+        MAP #bm78b8022c51771be3b0 {
+            ORIGIN      ^"Cleric"
+            DESTINATION ^"Cleric"
+            ASPECT      "Cleric Spell List"
+            DISPOSITION [ ^"Revised Rule" ]
+            TEXT        "This class’s spell list now appears with the class and contains some revisions. See “Spells” below."
+        }
+        MAP #bm7120945512bc0b1bc5 {
+            ORIGIN      ^"Disciple of Life"
+            DESTINATION ^"Level 3: Disciple of Life"
+            SCOPE       DESTINATION ^"Life Domain"
+            ASPECT      "Subclass Features"
+            DISPOSITION [ ^"Revised Rule" ]
+            TEXT        "Disciple of Life"
+        }
+        MAP #bmf2bbf9da69871ce9c9 {
+            ORIGIN      ^"Life Domain Spells"
+            DESTINATION ^"Level 3: Life Domain Spells"
+            SCOPE       DESTINATION ^"Life Domain"
+            ASPECT      "Subclass Features"
+            DISPOSITION [ ^"Revised Rule" ]
+            TEXT        "Life Domain Spells"
+        }
+        MAP #bm6934276a8c550a7841 {
+            ORIGIN      ^"Channel Divinity: Preserve Life"
+            DESTINATION ^"Level 3: Preserve Life"
+            SCOPE       DESTINATION ^"Life Domain"
+            ASPECT      "Subclass Features"
+            DISPOSITION [ ^"Revised Rule" ]
+            TEXT        "Preserve Life"
+        }
+        MAP #bm6d7383bd51b2eefc25 {
+            ORIGIN      ^"Supreme Healing"
+            DESTINATION ^"Level 17: Supreme Healing"
+            SCOPE       DESTINATION ^"Life Domain"
+            ASPECT      "Subclass Features"
+            DISPOSITION [ ^"Revised Rule" ]
+            TEXT        "Supreme Healing"
+        }
+        MAP #bm23d3409d65fef47709 {
+            ORIGIN      ^"Druid"
+            DESTINATION ^"Druid"
+            ASPECT      "Weapon Proficiencies"
+            DISPOSITION [ ^"Revised Rule" ]
+            TEXT        "This class’s weapon proficiencies are revised."
+        }
+        MAP #bm0ac9fa22b6bde1168f {
+            ORIGIN      ^"Druid"
+            DESTINATION ^"Druid"
+            ASPECT      "Armor Training"
+            DISPOSITION [ ^"Revised Rule" ]
+            TEXT        "This class’s armor training is revised."
+        }
+        MAP #bmcdf23736192a079538 {
+            ORIGIN      ^"Druid"
+            DESTINATION ^"Druid"
+            ASPECT      "Starting Equipment"
+            DISPOSITION [ ^"Revised Rule" ]
+            TEXT        "This class’s starting equipment is different and includes an option to take GP instead of specific items."
+        }
+        MAP #bm8dd023c575e624fda1 {
+            ORIGIN      ^"Druid"
+            DESTINATION ^"Druid"
+            ASPECT      "As a Multiclass Character"
+            DISPOSITION [ ^"Revised Rule" ]
+            TEXT        "Specific traits and features gained from multiclassing into this class are presented here."
+        }
+        MAP #bm460b4c57a4a147c43c {
+            DESTINATION ^"Level 2: Wild Companion"
+            SCOPE       DESTINATION ^"Druid"
+            ASPECT      "Class Features"
+            DISPOSITION [ ^"New Rule" ]
+            TEXT        "Wild Companion"
+        }
+        MAP #bmd5e7e4917a5fc8433a {
+            DESTINATION ^"Level 5: Wild Resurgence"
+            SCOPE       DESTINATION ^"Druid"
+            ASPECT      "Class Features"
+            DISPOSITION [ ^"New Rule" ]
+            TEXT        "Wild Resurgence"
+        }
+        MAP #bm13e6f02c9a3a4e97c3 {
+            DESTINATION ^"Level 7: Elemental Fury"
+            SCOPE       DESTINATION ^"Druid"
+            ASPECT      "Class Features"
+            DISPOSITION [ ^"New Rule" ]
+            TEXT        "Elemental Fury"
+        }
+        MAP #bm2c639a9260af17c529 {
+            DESTINATION ^"Level 15: Improved Elemental Fury"
+            SCOPE       DESTINATION ^"Druid"
+            ASPECT      "Class Features"
+            DISPOSITION [ ^"New Rule" ]
+            TEXT        "Improved Elemental Fury"
+        }
+        MAP #bmc103e38d2d227ab5a0 {
+            DESTINATION ^"Level 19: Epic Boon"
+            SCOPE       DESTINATION ^"Druid"
+            ASPECT      "Class Features"
+            DISPOSITION [ ^"New Rule" ]
+            TEXT        "Epic Boon"
+        }
+        MAP #bm8e9cc201cf307072f3 {
+            ORIGIN      ^"Spellcasting"
+            DESTINATION ^"Level 1: Spellcasting"
+            SCOPE       DESTINATION ^"Druid"
+            ASPECT      "Class Features"
+            DISPOSITION [ ^"Revised Rule" ]
+            TEXT        "Spellcasting"
+        }
+        MAP #bm82d344ceac405ae99d {
+            ORIGIN      ^"Druidic"
+            DESTINATION ^"Level 1: Druidic"
+            SCOPE       DESTINATION ^"Druid"
+            ASPECT      "Class Features"
+            DISPOSITION [ ^"Revised Rule" ]
+            TEXT        "Druidic"
+        }
+        MAP #bm2ae7c16f85080ed7fb {
+            ORIGIN      "Primal Order"
+            DESTINATION ^"Level 1: Primal Order"
+            SCOPE       DESTINATION ^"Druid"
+            ASPECT      "Class Features"
+            DISPOSITION [ ^"Revised Rule" ]
+            TEXT        "Primal Order (this option is now provided by the Druid class in place of the Bonus Cantrip feature of the subclass or Armor Training)"
+        }
+        MAP #bmaecea3239398a027fa {
+            ORIGIN      ^"Wild Shape"
+            DESTINATION ^"Level 2: Wild Shape"
+            SCOPE       DESTINATION ^"Druid"
+            ASPECT      "Class Features"
+            DISPOSITION [ ^"Revised Rule" ]
+            TEXT        "Wild Shape"
+        }
+        MAP #bm403d9343d6379b3f44 {
+            ORIGIN      "Druid Subclass"
+            DESTINATION ^"Level 3: Druid Subclass"
+            SCOPE       DESTINATION ^"Druid"
+            ASPECT      "Class Features"
+            DISPOSITION [ ^"Revised Rule" ]
+            TEXT        "Druid Subclass (you choose your circle at level 3 rather than level 2)"
+        }
+        MAP #bm7728c7cac5f21d19b4 {
+            ORIGIN      ^"Ability Score Improvement"
+            DESTINATION ^"Level 4: Ability Score Improvement"
+            SCOPE       DESTINATION ^"Druid"
+            ASPECT      "Class Features"
+            DISPOSITION [ ^"Revised Rule" ]
+            TEXT        "Ability Score Improvement"
+        }
+        MAP #bm96e47c7102a21764b8 {
+            ORIGIN      ^"Beast Spells"
+            DESTINATION ^"Level 18: Beast Spells"
+            SCOPE       DESTINATION ^"Druid"
+            ASPECT      "Class Features"
+            DISPOSITION [ ^"Revised Rule" ]
+            TEXT        "Beast Spells"
+        }
+        MAP #bm4fe8ffc2b772cd2b6b {
+            ORIGIN      ^"Archdruid"
+            DESTINATION ^"Level 20: Archdruid"
+            SCOPE       DESTINATION ^"Druid"
+            ASPECT      "Class Features"
+            DISPOSITION [ ^"Revised Rule" ]
+            TEXT        "Archdruid (also incorporates the previous Timeless Body class feature)"
+        }
+        MAP #bmd569591bc192542bbd {
+            ORIGIN      ^"Druid"
+            DESTINATION ^"Druid"
+            ASPECT      "Druid Spell List"
+            DISPOSITION [ ^"Revised Rule" ]
+            TEXT        "This class’s spell list now appears with the class and contains some revisions. See “Spells” below."
+        }
+        MAP #bm02092921381be465f9 {
+            DESTINATION ^"Level 3: Land’s Aid"
+            SCOPE       DESTINATION ^"Circle of the Land"
+            ASPECT      "Subclass Features"
+            DISPOSITION [ ^"New Rule" ]
+            TEXT        "Land’s Aid"
+        }
+        MAP #bm684f7ba80fdabddc95 {
+            ORIGIN      ^"Circle Spells"
+            DESTINATION ^"Level 3: Circle of the Land Spells"
+            SCOPE       DESTINATION ^"Circle of the Land"
+            ASPECT      "Subclass Features"
+            DISPOSITION [ ^"Revised Rule" ]
+            TEXT        "Circle of the Land Spells (formerly Circle Spells)"
+        }
+        MAP #bm302b1e88200badc934 {
+            ORIGIN      ^"Natural Recovery"
+            DESTINATION ^"Level 6: Natural Recovery"
+            SCOPE       DESTINATION ^"Circle of the Land"
+            ASPECT      "Subclass Features"
+            DISPOSITION [ ^"Revised Rule" ]
+            TEXT        "Natural Recovery"
+        }
+        MAP #bm7c59491c6ad3be3812 {
+            ORIGIN      ^"Nature's Ward"
+            DESTINATION ^"Level 10: Nature’s Ward"
+            SCOPE       DESTINATION ^"Circle of the Land"
+            ASPECT      "Subclass Features"
+            DISPOSITION [ ^"Revised Rule" ]
+            TEXT        "Nature’s Ward"
+        }
+        MAP #bmb769e51520bc25b20f {
+            ORIGIN      ^"Nature's Sanctuary"
+            DESTINATION ^"Level 14: Nature’s Sanctuary"
+            SCOPE       DESTINATION ^"Circle of the Land"
+            ASPECT      "Subclass Features"
+            DISPOSITION [ ^"Revised Rule" ]
+            TEXT        "Nature’s Sanctuary"
+        }
+        MAP #bm3cd6d189700f138e88 {
+            ORIGIN      ^"Fighter"
+            DESTINATION ^"Fighter"
+            ASPECT      "Skill Proficiencies"
+            DISPOSITION [ ^"Revised Rule" ]
+            TEXT        "This class’s skill proficiency choices are revised."
+        }
+        MAP #bmf689612c8e5de42d23 {
+            ORIGIN      ^"Fighter"
+            DESTINATION ^"Fighter"
+            ASPECT      "Starting Equipment"
+            DISPOSITION [ ^"Revised Rule" ]
+            TEXT        "This class’s starting equipment is different and includes an option to take GP instead of specific items."
+        }
+        MAP #bm10323bbd5a92808e9d {
+            ORIGIN      ^"Fighter"
+            DESTINATION ^"Fighter"
+            ASPECT      "As a Multiclass Character"
+            DISPOSITION [ ^"Revised Rule" ]
+            TEXT        "Specific traits and features gained from multiclassing into this class are presented here."
+        }
+        MAP #bm84a2379d6eb4514954 {
+            DESTINATION ^"Level 1: Weapon Mastery"
+            SCOPE       DESTINATION ^"Fighter"
+            ASPECT      "Class Features"
+            DISPOSITION [ ^"New Rule" ]
+            TEXT        "Weapon Mastery"
+        }
+        MAP #bmfca2e6f097e76ee808 {
+            DESTINATION ^"Level 2: Tactical Mind"
+            SCOPE       DESTINATION ^"Fighter"
+            ASPECT      "Class Features"
+            DISPOSITION [ ^"New Rule" ]
+            TEXT        "Tactical Mind"
+        }
+        MAP #bmfc2704ae9cef2c73f5 {
+            DESTINATION ^"Level 5: Tactical Shift"
+            SCOPE       DESTINATION ^"Fighter"
+            ASPECT      "Class Features"
+            DISPOSITION [ ^"New Rule" ]
+            TEXT        "Tactical Shift"
+        }
+        MAP #bm3e293e602df335c019 {
+            DESTINATION ^"Level 9: Tactical Master"
+            SCOPE       DESTINATION ^"Fighter"
+            ASPECT      "Class Features"
+            DISPOSITION [ ^"New Rule" ]
+            TEXT        "Tactical Master"
+        }
+        MAP #bm82dd72f200d4444617 {
+            DESTINATION ^"Level 13: Studied Attacks"
+            SCOPE       DESTINATION ^"Fighter"
+            ASPECT      "Class Features"
+            DISPOSITION [ ^"New Rule" ]
+            TEXT        "Studied Attacks"
+        }
+        MAP #bmd74612cb4c4bfc336a {
+            DESTINATION ^"Level 19: Epic Boon"
+            SCOPE       DESTINATION ^"Fighter"
+            ASPECT      "Class Features"
+            DISPOSITION [ ^"New Rule" ]
+            TEXT        "Epic Boon"
+        }
+        MAP #bm7397546b9b41ba3f82 {
+            ORIGIN      ^"Fighting Style"
+            DESTINATION ^"Level 1: Fighting Style"
+            SCOPE       DESTINATION ^"Fighter"
+            ASPECT      "Class Features"
+            DISPOSITION [ ^"Revised Rule" ]
+            TEXT        "Fighting Style"
+        }
+        MAP #bmf071d30385c24e9515 {
+            ORIGIN      ^"Second Wind"
+            DESTINATION ^"Level 1: Second Wind"
+            SCOPE       DESTINATION ^"Fighter"
+            ASPECT      "Class Features"
+            DISPOSITION [ ^"Revised Rule" ]
+            TEXT        "Second Wind"
+        }
+        MAP #bmcabdde9199f5c532ab {
+            ORIGIN      ^"Action Surge"
+            DESTINATION ^"Level 2: Action Surge"
+            SCOPE       DESTINATION ^"Fighter"
+            ASPECT      "Class Features"
+            DISPOSITION [ ^"Revised Rule" ]
+            TEXT        "Action Surge"
+        }
+        MAP #bma201832ea992fe9d05 {
+            ORIGIN      ^"Ability Score Improvement"
+            DESTINATION ^"Level 4: Ability Score Improvement"
+            SCOPE       DESTINATION ^"Fighter"
+            ASPECT      "Class Features"
+            DISPOSITION [ ^"Revised Rule" ]
+            TEXT        "Ability Score Improvement"
+        }
+        MAP #bmf9f9d210c173a62c34 {
+            ORIGIN      ^"Indomitable"
+            DESTINATION ^"Level 9: Indomitable"
+            SCOPE       DESTINATION ^"Fighter"
+            ASPECT      "Class Features"
+            DISPOSITION [ ^"Revised Rule" ]
+            TEXT        "Indomitable"
+        }
+        MAP #bm5fe76e3f77b21e946e {
+            DESTINATION ^"Level 10: Heroic Warrior"
+            SCOPE       DESTINATION ^"Champion"
+            ASPECT      "Subclass Features"
+            DISPOSITION [ ^"New Rule" ]
+            TEXT        "Heroic Warrior"
+        }
+        MAP #bmf4d02ba262e0e4a32e {
+            ORIGIN      ^"Remarkable Athlete"
+            DESTINATION ^"Level 3: Remarkable Athlete"
+            SCOPE       DESTINATION ^"Champion"
+            ASPECT      "Subclass Features"
+            DISPOSITION [ ^"Revised Rule" ]
+            TEXT        "Remarkable Athlete"
+        }
+        MAP #bm8f7c19d59aeca2053c {
+            ORIGIN      ^"Additional Fighting Style"
+            DESTINATION ^"Level 7: Additional Fighting Style"
+            SCOPE       DESTINATION ^"Champion"
+            ASPECT      "Subclass Features"
+            DISPOSITION [ ^"Revised Rule" ]
+            TEXT        "Additional Fighting Style"
+        }
+        MAP #bmc8a9f1688447348ecb {
+            ORIGIN      ^"Survivor"
+            DESTINATION ^"Level 18: Survivor"
+            SCOPE       DESTINATION ^"Champion"
+            ASPECT      "Subclass Features"
+            DISPOSITION [ ^"Revised Rule" ]
+            TEXT        "Survivor"
+        }
+        MAP #bm2fd7870d5694a60163 {
+            ORIGIN      ^"Monk"
+            DESTINATION ^"Monk"
+            ASPECT      "Weapon Proficiencies"
+            DISPOSITION [ ^"Revised Rule" ]
+            TEXT        "This class’s weapon proficiencies are revised."
+        }
+        MAP #bma004761bb1ddf292b8 {
+            ORIGIN      ^"Monk"
+            DESTINATION ^"Monk"
+            ASPECT      "Starting Equipment"
+            DISPOSITION [ ^"Revised Rule" ]
+            TEXT        "This class’s starting equipment is different and includes an option to take GP instead of specific items."
+        }
+        MAP #bmd15ff2760f9d4fd198 {
+            ORIGIN      ^"Monk"
+            DESTINATION ^"Monk"
+            ASPECT      "As a Multiclass Character"
+            DISPOSITION [ ^"Revised Rule" ]
+            TEXT        "Specific traits and features gained from multiclassing into this class are presented here."
+        }
+        MAP #bm77707f0ff64572e7de {
+            DESTINATION ^"Level 2: Uncanny Metabolism"
+            SCOPE       DESTINATION ^"Monk"
+            ASPECT      "Class Features"
+            DISPOSITION [ ^"New Rule" ]
+            TEXT        "Uncanny Metabolism"
+        }
+        MAP #bm340ffafba2b1da5906 {
+            DESTINATION ^"Level 10: Heightened Focus"
+            SCOPE       DESTINATION ^"Monk"
+            ASPECT      "Class Features"
+            DISPOSITION [ ^"New Rule" ]
+            TEXT        "Heightened Focus"
+        }
+        MAP #bm5338ef2b0e83b85336 {
+            DESTINATION ^"Level 13: Deflect Energy"
+            SCOPE       DESTINATION ^"Monk"
+            ASPECT      "Class Features"
+            DISPOSITION [ ^"New Rule" ]
+            TEXT        "Deflect Energy"
+        }
+        MAP #bm6351b77fba622faa3e {
+            DESTINATION ^"Level 18: Superior Defense"
+            SCOPE       DESTINATION ^"Monk"
+            ASPECT      "Class Features"
+            DISPOSITION [ ^"New Rule" ]
+            TEXT        "Superior Defense"
+        }
+        MAP #bma8cc9ca07d60b156eb {
+            DESTINATION ^"Level 19: Epic Boon"
+            SCOPE       DESTINATION ^"Monk"
+            ASPECT      "Class Features"
+            DISPOSITION [ ^"New Rule" ]
+            TEXT        "Epic Boon"
+        }
+        MAP #bm0e7800448c595029a6 {
+            DESTINATION ^"Level 20: Body and Mind"
+            SCOPE       DESTINATION ^"Monk"
+            ASPECT      "Class Features"
+            DISPOSITION [ ^"New Rule" ]
+            TEXT        "Body and Mind"
+        }
+        MAP #bmc6da9c2fce23ce95b5 {
+            ORIGIN      ^"Martial Arts"
+            DESTINATION ^"Level 1: Martial Arts"
+            SCOPE       DESTINATION ^"Monk"
+            ASPECT      "Class Features"
+            DISPOSITION [ ^"New Name", ^"Revised Rule" ]
+            TEXT        "Martial Arts"
+        }
+        MAP #bm61e8917b7e809b0dc6 {
+            ORIGIN      ^"Ki"
+            DESTINATION ^"Level 2: Monk's Focus"
+            SCOPE       DESTINATION ^"Monk"
+            ASPECT      "Class Features"
+            DISPOSITION [ ^"New Name", ^"Revised Rule" ]
+            TEXT        "Monk’s Focus (formerly Ki)"
+        }
+        MAP #bm8b781fefb0ed4c1d81 {
+            ORIGIN      ^"Unarmored Movement"
+            DESTINATION ^"Level 2: Unarmored Movement"
+            SCOPE       DESTINATION ^"Monk"
+            ASPECT      "Class Features"
+            DISPOSITION [ ^"New Name", ^"Revised Rule" ]
+            TEXT        "Unarmored Movement"
+        }
+        MAP #bmd4322cc93d3f8a9388 {
+            ORIGIN      ^"Deflect Missiles"
+            DESTINATION ^"Level 3: Deflect Attacks"
+            SCOPE       DESTINATION ^"Monk"
+            ASPECT      "Class Features"
+            DISPOSITION [ ^"New Name", ^"Revised Rule" ]
+            TEXT        "Deflect Attacks (formerly Deflect Missiles)"
+        }
+        MAP #bm6399e13acbac3ead56 {
+            ORIGIN      ^"Ability Score Improvement"
+            DESTINATION ^"Level 4: Ability Score Improvement"
+            SCOPE       DESTINATION ^"Monk"
+            ASPECT      "Class Features"
+            DISPOSITION [ ^"New Name", ^"Revised Rule" ]
+            TEXT        "Ability Score Improvement"
+        }
+        MAP #bm99887ab90e1ff92b21 {
+            ORIGIN      ^"Stunning Strike"
+            DESTINATION ^"Level 5: Stunning Strike"
+            SCOPE       DESTINATION ^"Monk"
+            ASPECT      "Class Features"
+            DISPOSITION [ ^"New Name", ^"Revised Rule" ]
+            TEXT        "Stunning Strike"
+        }
+        MAP #bmb715b0e4dae6054605 {
+            ORIGIN      ^"Ki-Empowered Strikes"
+            DESTINATION ^"Level 6: Empowered Strikes"
+            SCOPE       DESTINATION ^"Monk"
+            ASPECT      "Class Features"
+            DISPOSITION [ ^"New Name", ^"Revised Rule" ]
+            TEXT        "Empowered Strikes (formerly Ki-Empowered Strikes)"
+        }
+        MAP #bm34f34dcad1f204103e {
+            ORIGIN      ^"Evasion"
+            DESTINATION ^"Level 7: Evasion"
+            SCOPE       DESTINATION ^"Monk"
+            ASPECT      "Class Features"
+            DISPOSITION [ ^"New Name", ^"Revised Rule" ]
+            TEXT        "Evasion"
+        }
+        MAP #bma66e5935862ec83632 {
+            ORIGIN      ^"Unarmored Movement"
+            DESTINATION ^"Level 9: Acrobatic Movement"
+            SCOPE       DESTINATION ^"Monk"
+            ASPECT      "Class Features"
+            DISPOSITION [ ^"New Name", ^"Revised Rule" ]
+            TEXT        "Acrobatic Movement (formerly a part of Unarmored Movement)"
+        }
+        MAP #bm798672f0c44e8fbbc1 {
+            ORIGIN      [ ^"Stillness of Mind", ^"Purity of Body" ]
+            DESTINATION ^"Level 10: Self-Restoration"
+            SCOPE       DESTINATION ^"Monk"
+            ASPECT      "Class Features"
+            DISPOSITION [ ^"New Name", ^"Revised Rule" ]
+            TEXT        "Self-Restoration (formerly Stillness of Mind and Purity of Body)"
+        }
+        MAP #bmad39f32d9dfc25e2b4 {
+            ORIGIN      ^"Diamond Soul"
+            DESTINATION ^"Level 14: Disciplined Survivor"
+            SCOPE       DESTINATION ^"Monk"
+            ASPECT      "Class Features"
+            DISPOSITION [ ^"New Name", ^"Revised Rule" ]
+            TEXT        "Disciplined Survivor (formerly Diamond Soul)"
+        }
+        MAP #bmdee8e7c0a0d653785a {
+            ORIGIN      ^"Perfect Body"
+            DESTINATION ^"Level 15: Perfect Focus"
+            SCOPE       DESTINATION ^"Monk"
+            ASPECT      "Class Features"
+            DISPOSITION [ ^"New Name", ^"Revised Rule" ]
+            TEXT        "Perfect Focus (formerly Perfect Body)"
+        }
+        MAP #bm0d30bb9e36cc0e6bca {
+            ORIGIN      ^"Way of the Open Hand"
+            DESTINATION ^"Warrior of the Open Hand"
+            ASPECT      "Subclass Features"
+            DISPOSITION [ ^"New Name" ]
+            TEXT        "This subclass was previously named Way of the Open Hand."
+        }
+        MAP #bmeb845e3e68a3c83814 {
+            DESTINATION ^"Level 11: Fleet Step"
+            SCOPE       DESTINATION ^"Warrior of the Open Hand"
+            ASPECT      "Subclass Features"
+            DISPOSITION [ ^"New Rule" ]
+            TEXT        "Fleet Step"
+        }
+        MAP #bm95484dd29caba15562 {
+            ORIGIN      ^"Open Hand Technique"
+            DESTINATION ^"Level 3: Open Hand Technique"
+            SCOPE       DESTINATION ^"Warrior of the Open Hand"
+            ASPECT      "Subclass Features"
+            DISPOSITION [ ^"Revised Rule" ]
+            TEXT        "Open Hand Technique"
+        }
+        MAP #bm8ce540dc8505f1f4d1 {
+            ORIGIN      ^"Wholeness of Body"
+            DESTINATION ^"Level 6: Wholeness of Body"
+            SCOPE       DESTINATION ^"Warrior of the Open Hand"
+            ASPECT      "Subclass Features"
+            DISPOSITION [ ^"Revised Rule" ]
+            TEXT        "Wholeness of Body"
+        }
+        MAP #bm45014745c901abf7d2 {
+            ORIGIN      ^"Quivering Palm"
+            DESTINATION ^"Level 17: Quivering Palm"
+            SCOPE       DESTINATION ^"Warrior of the Open Hand"
+            ASPECT      "Subclass Features"
+            DISPOSITION [ ^"Revised Rule" ]
+            TEXT        "Quivering Palm"
+        }
+        MAP #bm8ff6573dff1a1f64e8 {
+            ORIGIN      ^"Paladin"
+            DESTINATION ^"Paladin"
+            ASPECT      "Starting Equipment"
+            DISPOSITION [ ^"Revised Rule" ]
+            TEXT        "This class’s starting equipment is different and includes an option to take GP instead of specific items."
+        }
+        MAP #bm4d71dabc0a4291e9ed {
+            ORIGIN      ^"Paladin"
+            DESTINATION ^"Paladin"
+            ASPECT      "As a Multiclass Character"
+            DISPOSITION [ ^"Revised Rule" ]
+            TEXT        "Specific traits and features gained from multiclassing into this class are presented here."
+        }
+        MAP #bm834bb589ead4fa0c4a {
+            DESTINATION ^"Level 1: Weapon Mastery"
+            SCOPE       DESTINATION ^"Paladin"
+            ASPECT      "Class Features"
+            DISPOSITION [ ^"New Rule" ]
+            TEXT        "Weapon Mastery"
+        }
+        MAP #bmdbfee06124180c25f8 {
+            DESTINATION ^"Level 5: Faithful Steed"
+            SCOPE       DESTINATION ^"Paladin"
+            ASPECT      "Class Features"
+            DISPOSITION [ ^"New Rule" ]
+            TEXT        "Faithful Steed"
+        }
+        MAP #bmd515b8d2f628b177a3 {
+            DESTINATION ^"Level 9: Abjure Foes"
+            SCOPE       DESTINATION ^"Paladin"
+            ASPECT      "Class Features"
+            DISPOSITION [ ^"New Rule" ]
+            TEXT        "Abjure Foes"
+        }
+        MAP #bmb97f4f0583ab13dd21 {
+            DESTINATION ^"Level 14: Restoring Touch"
+            SCOPE       DESTINATION ^"Paladin"
+            ASPECT      "Class Features"
+            DISPOSITION [ ^"New Rule" ]
+            TEXT        "Restoring Touch"
+        }
+        MAP #bm3af37906a6cbfc8c1d {
+            DESTINATION ^"Level 19: Epic Boon"
+            SCOPE       DESTINATION ^"Paladin"
+            ASPECT      "Class Features"
+            DISPOSITION [ ^"New Rule" ]
+            TEXT        "Epic Boon"
+        }
+        MAP #bmf3aed4c976ca2021fa {
+            ORIGIN      ^"Lay on Hands"
+            DESTINATION ^"Level 1: Lay On Hands"
+            SCOPE       DESTINATION ^"Paladin"
+            ASPECT      "Class Features"
+            DISPOSITION [ ^"New Name", ^"Revised Rule" ]
+            TEXT        "Lay on Hands"
+        }
+        MAP #bma64d31f9804bf3272f {
+            ORIGIN      ^"Spellcasting"
+            DESTINATION ^"Level 1: Spellcasting"
+            SCOPE       DESTINATION ^"Paladin"
+            ASPECT      "Class Features"
+            DISPOSITION [ ^"New Name", ^"Revised Rule" ]
+            TEXT        "Spellcasting"
+        }
+        MAP #bmd7da4a90ac29977214 {
+            ORIGIN      ^"Fighting Style"
+            DESTINATION ^"Level 2: Fighting Style"
+            SCOPE       DESTINATION ^"Paladin"
+            ASPECT      "Class Features"
+            DISPOSITION [ ^"New Name", ^"Revised Rule" ]
+            TEXT        "Fighting Style"
+        }
+        MAP #bmf2cee56e8575cc93a2 {
+            ORIGIN      ^"Divine Smite"
+            DESTINATION ^"Level 2: Paladin’s Smite"
+            SCOPE       DESTINATION ^"Paladin"
+            ASPECT      "Class Features"
+            DISPOSITION [ ^"New Name", ^"Revised Rule" ]
+            TEXT        "Paladin’s Smite (formerly Divine Smite)"
+        }
+        MAP #bmcdae144c0d8c85b42c {
+            ORIGIN      ^"Channel Divinity"
+            DESTINATION ^"Level 3: Channel Divinity"
+            SCOPE       DESTINATION ^"Paladin"
+            ASPECT      "Class Features"
+            DISPOSITION [ ^"New Name", ^"Revised Rule" ]
+            TEXT        "Channel Divinity (this option is now provided by the Paladin class instead of the subclass and incorporates the previous Divine Sense class feature)"
+        }
+        MAP #bmcdb0956439521bb3cb {
+            ORIGIN      ^"Ability Score Improvement"
+            DESTINATION ^"Level 4: Ability Score Improvement"
+            SCOPE       DESTINATION ^"Paladin"
+            ASPECT      "Class Features"
+            DISPOSITION [ ^"New Name", ^"Revised Rule" ]
+            TEXT        "Ability Score Improvement"
+        }
+        MAP #bm8bbda2b8ce4021f7e4 {
+            ORIGIN      ^"Aura of Protection"
+            DESTINATION ^"Level 6: Aura of Protection"
+            SCOPE       DESTINATION ^"Paladin"
+            ASPECT      "Class Features"
+            DISPOSITION [ ^"New Name", ^"Revised Rule" ]
+            TEXT        "Aura of Protection"
+        }
+        MAP #bma8f81fc2eacdee80c7 {
+            ORIGIN      ^"Aura of Courage"
+            DESTINATION ^"Level 10: Aura of Courage"
+            SCOPE       DESTINATION ^"Paladin"
+            ASPECT      "Class Features"
+            DISPOSITION [ ^"New Name", ^"Revised Rule" ]
+            TEXT        "Aura of Courage"
+        }
+        MAP #bm6aa5f553b577dde170 {
+            ORIGIN      ^"Improved Divine Smite"
+            DESTINATION ^"Level 11: Radiant Strikes"
+            SCOPE       DESTINATION ^"Paladin"
+            ASPECT      "Class Features"
+            DISPOSITION [ ^"New Name", ^"Revised Rule" ]
+            TEXT        "Radiant Strikes (formerly Improved Divine Smite)"
+        }
+        MAP #bmf6780f2cac755a9b44 {
+            ORIGIN      ^"Aura of Protection"
+            DESTINATION ^"Level 18: Aura Expansion"
+            SCOPE       DESTINATION ^"Paladin"
+            ASPECT      "Class Features"
+            DISPOSITION [ ^"New Name", ^"Revised Rule" ]
+            TEXT        "Aura Expansion (formerly a part of the Aura of Protection feature)"
+        }
+        MAP #bm0c08dd912189102e69 {
+            ORIGIN      ^"Paladin"
+            DESTINATION ^"Paladin"
+            ASPECT      "Paladin Spell List"
+            DISPOSITION [ ^"Revised Rule" ]
+            TEXT        "This class’s spell list now appears with the class and contains some revisions. See “Spells” below."
+        }
+        MAP #bmd99dd2d9fe98d6ca8b {
+            DESTINATION ^"Level 7: Aura of Devotion"
+            SCOPE       DESTINATION ^"Oath of Devotion"
+            ASPECT      "Subclass Features"
+            DISPOSITION [ ^"New Rule" ]
+            TEXT        "Aura of Devotion"
+        }
+        MAP #bmcb50b3010f42ffbb3c {
+            DESTINATION ^"Level 15: Smite of Protection"
+            SCOPE       DESTINATION ^"Oath of Devotion"
+            ASPECT      "Subclass Features"
+            DISPOSITION [ ^"New Rule" ]
+            TEXT        "Smite of Protection"
+        }
+        MAP #bm55994ddeb6bab7c96a {
+            ORIGIN      ^"Oath Spells"
+            DESTINATION ^"Level 3: Oath of Devotion Spells"
+            SCOPE       DESTINATION ^"Oath of Devotion"
+            ASPECT      "Subclass Features"
+            DISPOSITION [ ^"Revised Rule" ]
+            TEXT        "Oath of Devotion Spells (formerly Oath Spells)"
+        }
+        MAP #bm2feb2658a3ca000206 {
+            ORIGIN      "Sacred Weapon"
+            DESTINATION ^"Level 3: Sacred Weapon"
+            SCOPE       DESTINATION ^"Oath of Devotion"
+            ASPECT      "Subclass Features"
+            DISPOSITION [ ^"Revised Rule" ]
+            TEXT        "Sacred Weapon"
+        }
+        MAP #bm18a5363ad943de9a8b {
+            ORIGIN      ^"Holy Nimbus"
+            DESTINATION ^"Level 20: Holy Nimbus"
+            SCOPE       DESTINATION ^"Oath of Devotion"
+            ASPECT      "Subclass Features"
+            DISPOSITION [ ^"Revised Rule" ]
+            TEXT        "Holy Nimbus"
+        }
+        MAP #bmea1e3b437f9e1ed5dc {
+            ORIGIN      ^"Ranger"
+            DESTINATION ^"Ranger"
+            ASPECT      "Starting Equipment"
+            DISPOSITION [ ^"Revised Rule" ]
+            TEXT        "This class’s starting equipment is different and includes an option to take GP instead of specific items."
+        }
+        MAP #bmc157f98b4c475d96ce {
+            ORIGIN      ^"Ranger"
+            DESTINATION ^"Ranger"
+            ASPECT      "As a Multiclass Character"
+            DISPOSITION [ ^"Revised Rule" ]
+            TEXT        "Specific traits and features gained from multiclassing into this class are presented here."
+        }
+        MAP #bm58206799f8c0ace982 {
+            DESTINATION ^"Level 1: Weapon Mastery"
+            SCOPE       DESTINATION ^"Ranger"
+            ASPECT      "Class Features"
+            DISPOSITION [ ^"New Rule" ]
+            TEXT        "Weapon Mastery"
+        }
+        MAP #bma5d9d4a5bd1e0bbe6e {
+            DESTINATION ^"Level 2: Deft Explorer"
+            SCOPE       DESTINATION ^"Ranger"
+            ASPECT      "Class Features"
+            DISPOSITION [ ^"New Rule" ]
+            TEXT        "Deft Explorer"
+        }
+        MAP #bm22a1811333941a32db {
+            DESTINATION ^"Level 6: Roving"
+            SCOPE       DESTINATION ^"Ranger"
+            ASPECT      "Class Features"
+            DISPOSITION [ ^"New Rule" ]
+            TEXT        "Roving"
+        }
+        MAP #bm4f7a0c26680ef4a946 {
+            DESTINATION ^"Expertise"
+            SCOPE       DESTINATION ^"Ranger"
+            ASPECT      "Class Features"
+            DISPOSITION [ ^"New Rule" ]
+            TEXT        "Expertise"
+        }
+        MAP #bm766a077cdf10da0bea {
+            DESTINATION ^"Level 10: Tireless"
+            SCOPE       DESTINATION ^"Ranger"
+            ASPECT      "Class Features"
+            DISPOSITION [ ^"New Rule" ]
+            TEXT        "Tireless"
+        }
+        MAP #bm10dfa4cb9e8fb4fb8d {
+            DESTINATION ^"Level 13: Relentless Hunter"
+            SCOPE       DESTINATION ^"Ranger"
+            ASPECT      "Class Features"
+            DISPOSITION [ ^"New Rule" ]
+            TEXT        "Relentless Hunter"
+        }
+        MAP #bm13b5aa3130512b6cc5 {
+            DESTINATION ^"Level 14: Nature's Veil"
+            SCOPE       DESTINATION ^"Ranger"
+            ASPECT      "Class Features"
+            DISPOSITION [ ^"New Rule" ]
+            TEXT        "Nature’s Veil"
+        }
+        MAP #bm04f660e9e962873d4a {
+            DESTINATION ^"Level 17: Precise Hunter"
+            SCOPE       DESTINATION ^"Ranger"
+            ASPECT      "Class Features"
+            DISPOSITION [ ^"New Rule" ]
+            TEXT        "Precise Hunter"
+        }
+        MAP #bmcc91a947662f7075db {
+            DESTINATION ^"Level 19: Epic Boon"
+            SCOPE       DESTINATION ^"Ranger"
+            ASPECT      "Class Features"
+            DISPOSITION [ ^"New Rule" ]
+            TEXT        "Epic Boon"
+        }
+        MAP #bma64572211c99e89b08 {
+            ORIGIN      ^"Spellcasting"
+            DESTINATION ^"Level 1: Spellcasting"
+            SCOPE       DESTINATION ^"Ranger"
+            ASPECT      "Class Features"
+            DISPOSITION [ ^"Revised Rule" ]
+            TEXT        "Spellcasting"
+        }
+        MAP #bm6c6c817fb221758587 {
+            ORIGIN      ^"Favored Enemy"
+            DESTINATION ^"Level 1: Favored Enemy"
+            SCOPE       DESTINATION ^"Ranger"
+            ASPECT      "Class Features"
+            DISPOSITION [ ^"Revised Rule" ]
+            TEXT        "Favored Enemy"
+        }
+        MAP #bm3d2265a9337a2fa684 {
+            ORIGIN      ^"Fighting Style"
+            DESTINATION ^"Level 2: Fighting Style"
+            SCOPE       DESTINATION ^"Ranger"
+            ASPECT      "Class Features"
+            DISPOSITION [ ^"Revised Rule" ]
+            TEXT        "Fighting Style"
+        }
+        MAP #bm0809b3a09df841c60f {
+            ORIGIN      ^"Ability Score Improvement"
+            DESTINATION ^"Level 4: Ability Score Improvement"
+            SCOPE       DESTINATION ^"Ranger"
+            ASPECT      "Class Features"
+            DISPOSITION [ ^"Revised Rule" ]
+            TEXT        "Ability Score Improvement"
+        }
+        MAP #bm2b30f9ef7e555705fa {
+            ORIGIN      ^"Feral Senses"
+            DESTINATION ^"Level 18: Feral Senses"
+            SCOPE       DESTINATION ^"Ranger"
+            ASPECT      "Class Features"
+            DISPOSITION [ ^"Revised Rule" ]
+            TEXT        "Feral Senses"
+        }
+        MAP #bm9a42ab0d2d5d3e6a92 {
+            ORIGIN      ^"Foe Slayer"
+            DESTINATION ^"Level 20: Foe Slayer"
+            SCOPE       DESTINATION ^"Ranger"
+            ASPECT      "Class Features"
+            DISPOSITION [ ^"Revised Rule" ]
+            TEXT        "Foe Slayer"
+        }
+        MAP #bm5e88b92fd411f54fa7 {
+            ORIGIN      ^"Ranger"
+            DESTINATION ^"Ranger"
+            ASPECT      "Ranger Spell List"
+            DISPOSITION [ ^"Revised Rule" ]
+            TEXT        "This class’s spell list now appears with the class and contains some revisions. See “Spells” below."
+        }
+        MAP #bm7751cd2bb9539b9793 {
+            DESTINATION ^"Level 3: Hunter's Lore"
+            SCOPE       DESTINATION ^"Hunter"
+            ASPECT      "Subclass Features"
+            DISPOSITION [ ^"New Rule" ]
+            TEXT        "Hunter’s Lore"
+        }
+        MAP #bm2f0ae61159777fcfb3 {
+            DESTINATION ^"Level 11: Superior Hunter's Prey"
+            SCOPE       DESTINATION ^"Hunter"
+            ASPECT      "Subclass Features"
+            DISPOSITION [ ^"New Rule" ]
+            TEXT        "Superior Hunter’s Prey"
+        }
+        MAP #bm481c16d680a71e8aad {
+            ORIGIN      ^"Hunter's Prey"
+            DESTINATION ^"Level 3: Hunter's Prey"
+            SCOPE       DESTINATION ^"Hunter"
+            ASPECT      "Subclass Features"
+            DISPOSITION [ ^"Revised Rule" ]
+            TEXT        "Hunter’s Prey"
+        }
+        MAP #bm0176d7932654fe2bb2 {
+            ORIGIN      ^"Defensive Tactics"
+            DESTINATION ^"Level 7: Defensive Tactics"
+            SCOPE       DESTINATION ^"Hunter"
+            ASPECT      "Subclass Features"
+            DISPOSITION [ ^"Revised Rule" ]
+            TEXT        "Defensive Tactics"
+        }
+        MAP #bm7991ff41868fc1e0b9 {
+            ORIGIN      ^"Superior Hunter's Defense"
+            DESTINATION ^"Level 15: Superior Hunter's Defense"
+            SCOPE       DESTINATION ^"Hunter"
+            ASPECT      "Subclass Features"
+            DISPOSITION [ ^"Revised Rule" ]
+            TEXT        "Superior Hunter’s Defense"
+        }
+        MAP #bm3b23f0c62a60b09f08 {
+            ORIGIN      ^"Rogue"
+            DESTINATION ^"Rogue"
+            ASPECT      "Skill Proficiencies"
+            DISPOSITION [ ^"Revised Rule" ]
+            TEXT        "This class’s skill proficiency choices are revised."
+        }
+        MAP #bm062c238fb149f378d3 {
+            ORIGIN      ^"Rogue"
+            DESTINATION ^"Rogue"
+            ASPECT      "Weapon Proficiencies"
+            DISPOSITION [ ^"Revised Rule" ]
+            TEXT        "This class’s weapon proficiencies are revised."
+        }
+        MAP #bmead0f31f11ec2a26c7 {
+            ORIGIN      ^"Rogue"
+            DESTINATION ^"Rogue"
+            ASPECT      "Starting Equipment"
+            DISPOSITION [ ^"Revised Rule" ]
+            TEXT        "This class’s starting equipment is different and includes an option to take GP instead of specific items."
+        }
+        MAP #bma38105ddaff51b188b {
+            ORIGIN      ^"Rogue"
+            DESTINATION ^"Rogue"
+            ASPECT      "As a Multiclass Character"
+            DISPOSITION [ ^"Revised Rule" ]
+            TEXT        "Specific traits and features gained from multiclassing into this class are presented here."
+        }
+        MAP #bm65f0062052ac70d21d {
+            DESTINATION ^"Level 1: Weapon Mastery"
+            SCOPE       DESTINATION ^"Rogue"
+            ASPECT      "Class Features"
+            DISPOSITION [ ^"New Rule" ]
+            TEXT        "Weapon Mastery"
+        }
+        MAP #bm18b4e7ee5f747e79d4 {
+            DESTINATION ^"Level 3: Steady Aim"
+            SCOPE       DESTINATION ^"Rogue"
+            ASPECT      "Class Features"
+            DISPOSITION [ ^"New Rule" ]
+            TEXT        "Steady Aim"
+        }
+        MAP #bm24f886bfabfbf19fc3 {
+            DESTINATION ^"Level 5: Cunning Strike"
+            SCOPE       DESTINATION ^"Rogue"
+            ASPECT      "Class Features"
+            DISPOSITION [ ^"New Rule" ]
+            TEXT        "Cunning Strike"
+        }
+        MAP #bm35ea27b4d42c83f523 {
+            DESTINATION ^"Level 11: Improved Cunning Strike"
+            SCOPE       DESTINATION ^"Rogue"
+            ASPECT      "Class Features"
+            DISPOSITION [ ^"New Rule" ]
+            TEXT        "Improved Cunning Strike"
+        }
+        MAP #bm51e258f1d4bf8ce7d2 {
+            DESTINATION ^"Level 14: Devious Strikes"
+            SCOPE       DESTINATION ^"Rogue"
+            ASPECT      "Class Features"
+            DISPOSITION [ ^"New Rule" ]
+            TEXT        "Devious Strikes"
+        }
+        MAP #bm3981875c27813a2c2b {
+            DESTINATION ^"Level 19: Epic Boon"
+            SCOPE       DESTINATION ^"Rogue"
+            ASPECT      "Class Features"
+            DISPOSITION [ ^"New Rule" ]
+            TEXT        "Epic Boon"
+        }
+        MAP #bm8ecb1853064f197ce0 {
+            ORIGIN      ^"Sneak Attack"
+            DESTINATION ^"Level 1: Sneak Attack"
+            SCOPE       DESTINATION ^"Rogue"
+            ASPECT      "Class Features"
+            DISPOSITION [ ^"Revised Rule" ]
+            TEXT        "Sneak Attack"
+        }
+        MAP #bm03f4b905b2c15a8434 {
+            ORIGIN      ^"Thieves' Cant"
+            DESTINATION ^"Level 1: Thieves' Cant"
+            SCOPE       DESTINATION ^"Rogue"
+            ASPECT      "Class Features"
+            DISPOSITION [ ^"Revised Rule" ]
+            TEXT        "Thieves’ Cant"
+        }
+        MAP #bm1352213c895ebe997e {
+            ORIGIN      ^"Ability Score Improvement"
+            DESTINATION ^"Level 4: Ability Score Improvement"
+            SCOPE       DESTINATION ^"Rogue"
+            ASPECT      "Class Features"
+            DISPOSITION [ ^"Revised Rule" ]
+            TEXT        "Ability Score Improvement"
+        }
+        MAP #bm0caf244af69c77ebc2 {
+            ORIGIN      ^"Evasion"
+            DESTINATION ^"Level 7: Evasion"
+            SCOPE       DESTINATION ^"Rogue"
+            ASPECT      "Class Features"
+            DISPOSITION [ ^"Revised Rule" ]
+            TEXT        "Evasion"
+        }
+        MAP #bmb415c50b5e279f375b {
+            ORIGIN      ^"Reliable Talent"
+            DESTINATION ^"Level 7: Reliable Talent"
+            SCOPE       DESTINATION ^"Rogue"
+            ASPECT      "Class Features"
+            DISPOSITION [ ^"Revised Rule" ]
+            TEXT        "Reliable Talent"
+        }
+        MAP #bm123dd12fe87a98c1df {
+            ORIGIN      ^"Slippery Mind"
+            DESTINATION ^"Level 15: Slippery Mind"
+            SCOPE       DESTINATION ^"Rogue"
+            ASPECT      "Class Features"
+            DISPOSITION [ ^"Revised Rule" ]
+            TEXT        "Slippery Mind"
+        }
+        MAP #bmbfe6cddcee0bdf564b {
+            ORIGIN      ^"Stroke of Luck"
+            DESTINATION ^"Level 20: Stroke of Luck"
+            SCOPE       DESTINATION ^"Rogue"
+            ASPECT      "Class Features"
+            DISPOSITION [ ^"Revised Rule" ]
+            TEXT        "Stroke of Luck"
+        }
+        MAP #bm2da61ae38dc0a8e548 {
+            ORIGIN      ^"Fast Hands"
+            DESTINATION ^"Level 3: Fast Hands"
+            SCOPE       DESTINATION ^"Thief"
+            ASPECT      "Subclass Features"
+            DISPOSITION [ ^"Revised Rule" ]
+            TEXT        "Fast Hands"
+        }
+        MAP #bm38842c53032da59115 {
+            ORIGIN      ^"Second-Story Work"
+            DESTINATION ^"Level 3: Second-Story Work"
+            SCOPE       DESTINATION ^"Thief"
+            ASPECT      "Subclass Features"
+            DISPOSITION [ ^"Revised Rule" ]
+            TEXT        "Second-Story Work"
+        }
+        MAP #bm31275233738c1ad942 {
+            ORIGIN      ^"Supreme Sneak"
+            DESTINATION ^"Level 9: Supreme Sneak"
+            SCOPE       DESTINATION ^"Thief"
+            ASPECT      "Subclass Features"
+            DISPOSITION [ ^"Revised Rule" ]
+            TEXT        "Supreme Sneak"
+        }
+        MAP #bm1461c1a4144536ff41 {
+            ORIGIN      ^"Use Magic Device"
+            DESTINATION ^"Level 13: Use Magic Device"
+            SCOPE       DESTINATION ^"Thief"
+            ASPECT      "Subclass Features"
+            DISPOSITION [ ^"Revised Rule" ]
+            TEXT        "Use Magic Device"
+        }
+        MAP #bmde9bce1a3d6fb832d4 {
+            ORIGIN      ^"Sorcerer"
+            DESTINATION ^"Sorcerer"
+            ASPECT      "Weapon Proficiencies"
+            DISPOSITION [ ^"Revised Rule" ]
+            TEXT        "This class’s weapon proficiencies are revised."
+        }
+        MAP #bm6b6eb58f6ce3bfd1b3 {
+            ORIGIN      ^"Sorcerer"
+            DESTINATION ^"Sorcerer"
+            ASPECT      "Starting Equipment"
+            DISPOSITION [ ^"Revised Rule" ]
+            TEXT        "This class’s starting equipment is different and includes an option to take GP instead of specific items."
+        }
+        MAP #bm2ca6337fd05785d4f4 {
+            ORIGIN      ^"Sorcerer"
+            DESTINATION ^"Sorcerer"
+            ASPECT      "As a Multiclass Character"
+            DISPOSITION [ ^"Revised Rule" ]
+            TEXT        "Specific traits and features gained from multiclassing into this class are presented here."
+        }
+        MAP #bm3673dd79eaceb9c4e0 {
+            DESTINATION ^"Level 1: Innate Sorcery"
+            SCOPE       DESTINATION ^"Sorcerer"
+            ASPECT      "Class Features"
+            DISPOSITION [ ^"New Rule" ]
+            TEXT        "Innate Sorcery"
+        }
+        MAP #bm9652cc6fe7030a89c0 {
+            DESTINATION ^"Level 7: Sorcery Incarnate"
+            SCOPE       DESTINATION ^"Sorcerer"
+            ASPECT      "Class Features"
+            DISPOSITION [ ^"New Rule" ]
+            TEXT        "Sorcery Incarnate"
+        }
+        MAP #bm504d28f92d6094b07f {
+            DESTINATION ^"Level 19: Epic Boon"
+            SCOPE       DESTINATION ^"Sorcerer"
+            ASPECT      "Class Features"
+            DISPOSITION [ ^"New Rule" ]
+            TEXT        "Epic Boon"
+        }
+        MAP #bmf4b2bbe913bfb3f67d {
+            DESTINATION ^"Level 20: Arcane Apotheosis"
+            SCOPE       DESTINATION ^"Sorcerer"
+            ASPECT      "Class Features"
+            DISPOSITION [ ^"New Rule" ]
+            TEXT        "Arcane Apotheosis"
+        }
+        MAP #bm1c530d6464ae0017c4 {
+            ORIGIN      ^"Spellcasting"
+            DESTINATION ^"Level 1: Spellcasting"
+            SCOPE       DESTINATION ^"Sorcerer"
+            ASPECT      "Class Features"
+            DISPOSITION [ ^"Revised Rule" ]
+            TEXT        "Spellcasting"
+        }
+        MAP #bmae0beb93b6f85e8534 {
+            ORIGIN      ^"Font of Magic"
+            DESTINATION ^"Level 2: Font of Magic"
+            SCOPE       DESTINATION ^"Sorcerer"
+            ASPECT      "Class Features"
+            DISPOSITION [ ^"Revised Rule" ]
+            TEXT        "Font of Magic"
+        }
+        MAP #bm626ead86a7784c8dc8 {
+            ORIGIN      ^"Metamagic"
+            DESTINATION ^"Level 2: Metamagic"
+            SCOPE       DESTINATION ^"Sorcerer"
+            ASPECT      "Class Features"
+            DISPOSITION [ ^"Revised Rule" ]
+            TEXT        "Metamagic (and see “Metamagic Options” below)"
+        }
+        MAP #bmf45069d236fa31ac5d {
+            ORIGIN      "Sorcerer Subclass"
+            DESTINATION ^"Level 3: Sorcerer Subclass"
+            SCOPE       DESTINATION ^"Sorcerer"
+            ASPECT      "Class Features"
+            DISPOSITION [ ^"Revised Rule" ]
+            TEXT        "Sorcerer Subclass (you choose your sorcerous origin at level 3 rather than level 1)"
+        }
+        MAP #bmf7d8cbd1addb7483e0 {
+            ORIGIN      ^"Ability Score Improvement"
+            DESTINATION ^"Level 4: Ability Score Improvement"
+            SCOPE       DESTINATION ^"Sorcerer"
+            ASPECT      "Class Features"
+            DISPOSITION [ ^"Revised Rule" ]
+            TEXT        "Ability Score Improvement"
+        }
+        MAP #bm5e463e7bf78caa31e1 {
+            ORIGIN      ^"Sorcerous Restoration"
+            DESTINATION ^"Level 5: Sorcerous Restoration"
+            SCOPE       DESTINATION ^"Sorcerer"
+            ASPECT      "Class Features"
+            DISPOSITION [ ^"Revised Rule" ]
+            TEXT        "Sorcerous Restoration"
+        }
+        MAP #bmb85e7411be80318c8c {
+            DESTINATION "Seeking Spell"
+            SCOPE       DESTINATION ^"Sorcerer"
+            ASPECT      "Metamagic Options"
+            DISPOSITION [ ^"New Rule" ]
+            TEXT        "Seeking Spell"
+        }
+        MAP #bm1b43e4ecd27f75d3cc {
+            DESTINATION "Transmuted Spell"
+            SCOPE       DESTINATION ^"Sorcerer"
+            ASPECT      "Metamagic Options"
+            DISPOSITION [ ^"New Rule" ]
+            TEXT        "Transmuted Spell"
+        }
+        MAP #bmff932dd73429d8c8ce {
+            ORIGIN      "Careful Spell"
+            DESTINATION "Careful Spell"
+            SCOPE       DESTINATION ^"Sorcerer"
+            ASPECT      "Metamagic Options"
+            DISPOSITION [ ^"Revised Rule" ]
+            TEXT        "Careful Spell"
+        }
+        MAP #bmb2a56e42857afbeb48 {
+            ORIGIN      "Extended Spell"
+            DESTINATION "Extended Spell"
+            SCOPE       DESTINATION ^"Sorcerer"
+            ASPECT      "Metamagic Options"
+            DISPOSITION [ ^"Revised Rule" ]
+            TEXT        "Extended Spell"
+        }
+        MAP #bmfee6cd37c8470e490f {
+            ORIGIN      "Heightened Spell"
+            DESTINATION "Heightened Spell"
+            SCOPE       DESTINATION ^"Sorcerer"
+            ASPECT      "Metamagic Options"
+            DISPOSITION [ ^"Revised Rule" ]
+            TEXT        "Heightened Spell"
+        }
+        MAP #bm30af19b322b8c22867 {
+            ORIGIN      "Quickened Spell"
+            DESTINATION "Quickened Spell"
+            SCOPE       DESTINATION ^"Sorcerer"
+            ASPECT      "Metamagic Options"
+            DISPOSITION [ ^"Revised Rule" ]
+            TEXT        "Quickened Spell"
+        }
+        MAP #bm2229211fc9360e373a {
+            ORIGIN      "Subtle Spell"
+            DESTINATION "Subtle Spell"
+            SCOPE       DESTINATION ^"Sorcerer"
+            ASPECT      "Metamagic Options"
+            DISPOSITION [ ^"Revised Rule" ]
+            TEXT        "Subtle Spell"
+        }
+        MAP #bm4ae7acf0f4740832ba {
+            ORIGIN      "Twinned Spell"
+            DESTINATION "Twinned Spell"
+            SCOPE       DESTINATION ^"Sorcerer"
+            ASPECT      "Metamagic Options"
+            DISPOSITION [ ^"Revised Rule" ]
+            TEXT        "Twinned Spell"
+        }
+        MAP #bmc6d7838638feee7dc7 {
+            ORIGIN      ^"Sorcerer"
+            DESTINATION ^"Sorcerer"
+            ASPECT      "Sorcerer Spell List"
+            DISPOSITION [ ^"Revised Rule" ]
+            TEXT        "This class’s spell list now appears with the class and contains some revisions. See “Spells” below."
+        }
+        MAP #bm8bbf3c4890db725b23 {
+            ORIGIN      ^"Draconic Bloodline"
+            DESTINATION ^"Draconic Sorcery"
+            ASPECT      "Subclass Features"
+            DISPOSITION [ ^"New Name" ]
+            TEXT        "This subclass was previously named Draconic Bloodline."
+        }
+        MAP #bm28a352c2611e6566bb {
+            DESTINATION ^"Level 3: Draconic Spells"
+            SCOPE       DESTINATION ^"Draconic Sorcery"
+            ASPECT      "Subclass Features"
+            DISPOSITION [ ^"New Rule" ]
+            TEXT        "Draconic Spells"
+        }
+        MAP #bmcf6f6710020ab30fad {
+            DESTINATION ^"Level 18: Dragon Companion"
+            SCOPE       DESTINATION ^"Draconic Sorcery"
+            ASPECT      "Subclass Features"
+            DISPOSITION [ ^"New Rule" ]
+            TEXT        "Dragon Companion"
+        }
+        MAP #bm23c9bd6584cae44537 {
+            ORIGIN      ^"Draconic Resilience"
+            DESTINATION ^"Level 3: Draconic Resilience"
+            SCOPE       DESTINATION ^"Draconic Sorcery"
+            ASPECT      "Subclass Features"
+            DISPOSITION [ ^"Revised Rule" ]
+            TEXT        "Draconic Resilience"
+        }
+        MAP #bmdd66a1b87809dee277 {
+            ORIGIN      ^"Elemental Affinity"
+            DESTINATION ^"Level 6: Elemental Affinity"
+            SCOPE       DESTINATION ^"Draconic Sorcery"
+            ASPECT      "Subclass Features"
+            DISPOSITION [ ^"Revised Rule" ]
+            TEXT        "Elemental Affinity"
+        }
+        MAP #bmbb7df8d0f8d8c4401b {
+            ORIGIN      ^"Dragon Wings"
+            DESTINATION ^"Level 14: Dragon Wings"
+            SCOPE       DESTINATION ^"Draconic Sorcery"
+            ASPECT      "Subclass Features"
+            DISPOSITION [ ^"Revised Rule" ]
+            TEXT        "Dragon Wings"
+        }
+        MAP #bmf368a1e6ef0e259ad5 {
+            ORIGIN      ^"Warlock"
+            DESTINATION ^"Warlock"
+            ASPECT      "Starting Equipment"
+            DISPOSITION [ ^"Revised Rule" ]
+            TEXT        "This class’s starting equipment is different and includes an option to take GP instead of specific items."
+        }
+        MAP #bm21260ccc200a5a651f {
+            ORIGIN      ^"Warlock"
+            DESTINATION ^"Warlock"
+            ASPECT      "As a Multiclass Character"
+            DISPOSITION [ ^"Revised Rule" ]
+            TEXT        "Specific traits and features gained from multiclassing into this class are presented here."
+        }
+        MAP #bmc4377b3ed7f7b34937 {
+            DESTINATION ^"Level 2: Magical Cunning"
+            SCOPE       DESTINATION ^"Warlock"
+            ASPECT      "Class Features"
+            DISPOSITION [ ^"New Rule" ]
+            TEXT        "Magical Cunning"
+        }
+        MAP #bmb1c49d903451461e9a {
+            DESTINATION ^"Contract Patron"
+            SCOPE       DESTINATION ^"Warlock"
+            ASPECT      "Class Features"
+            DISPOSITION [ ^"New Rule" ]
+            TEXT        "Contract Patron"
+        }
+        MAP #bm8281a578efa1777e64 {
+            DESTINATION ^"Level 19: Epic Boon"
+            SCOPE       DESTINATION ^"Warlock"
+            ASPECT      "Class Features"
+            DISPOSITION [ ^"New Rule" ]
+            TEXT        "Epic Boon"
+        }
+        MAP #bm67063be97ccdfd67a4 {
+            ORIGIN      ^"Eldritch Invocations"
+            DESTINATION ^"Level 1: Eldritch Invocations"
+            SCOPE       DESTINATION ^"Warlock"
+            ASPECT      "Class Features"
+            DISPOSITION [ ^"Revised Rule" ]
+            TEXT        "Eldritch Invocations"
+        }
+        MAP #bm6bc39d696e56ece967 {
+            ORIGIN      ^"Pact Magic"
+            DESTINATION ^"Level 1: Pact Magic"
+            SCOPE       DESTINATION ^"Warlock"
+            ASPECT      "Class Features"
+            DISPOSITION [ ^"Revised Rule" ]
+            TEXT        "Pact Magic"
+        }
+        MAP #bmd993267ef6117ee83c {
+            ORIGIN      "Warlock Subclass"
+            DESTINATION ^"Level 3: Warlock Subclass"
+            SCOPE       DESTINATION ^"Warlock"
+            ASPECT      "Class Features"
+            DISPOSITION [ ^"Revised Rule" ]
+            TEXT        "Warlock Subclass (you choose your patron at level 3 rather than level 1)"
+        }
+        MAP #bmab8e583790d71944f0 {
+            ORIGIN      ^"Ability Score Improvement"
+            DESTINATION ^"Level 4: Ability Score Improvement"
+            SCOPE       DESTINATION ^"Warlock"
+            ASPECT      "Class Features"
+            DISPOSITION [ ^"Revised Rule" ]
+            TEXT        "Ability Score Improvement"
+        }
+        MAP #bm6b7ae7a210e3e548da {
+            ORIGIN      ^"Mystic Arcanum"
+            DESTINATION ^"Level 11: Mystic Arcanum"
+            SCOPE       DESTINATION ^"Warlock"
+            ASPECT      "Class Features"
+            DISPOSITION [ ^"Revised Rule" ]
+            TEXT        "Mystic Arcanum"
+        }
+        MAP #bma5bdacb422d941c9a5 {
+            ORIGIN      ^"Eldritch Master"
+            DESTINATION ^"Level 20: Eldritch Master"
+            SCOPE       DESTINATION ^"Warlock"
+            ASPECT      "Class Features"
+            DISPOSITION [ ^"Revised Rule" ]
+            TEXT        "Eldritch Master"
+        }
+        MAP #bm523518e9bb396a8d54 {
+            DESTINATION ^"Eldritch Invocation: Devouring Blade"
+            SCOPE       DESTINATION ^"Warlock"
+            ASPECT      "Eldritch Invocation Options"
+            DISPOSITION [ ^"New Rule" ]
+            TEXT        "Devouring Blade"
+        }
+        MAP #bm6a7eaf8781c597b9e2 {
+            DESTINATION ^"Eldritch Invocation: Eldritch Mind"
+            SCOPE       DESTINATION ^"Warlock"
+            ASPECT      "Eldritch Invocation Options"
+            DISPOSITION [ ^"New Rule" ]
+            TEXT        "Eldritch Mind"
+        }
+        MAP #bm692f1bd608d783306e {
+            DESTINATION ^"Eldritch Invocation: Eldritch Smite"
+            SCOPE       DESTINATION ^"Warlock"
+            ASPECT      "Eldritch Invocation Options"
+            DISPOSITION [ ^"New Rule" ]
+            TEXT        "Eldritch Smite"
+        }
+        MAP #bmedbfa3178cc51afe02 {
+            DESTINATION ^"Eldritch Invocation: Gift of the Depths"
+            SCOPE       DESTINATION ^"Warlock"
+            ASPECT      "Eldritch Invocation Options"
+            DISPOSITION [ ^"New Rule" ]
+            TEXT        "Gift of the Depths"
+        }
+        MAP #bm36df7f678ce74a2b89 {
+            DESTINATION ^"Eldritch Invocation: Gift of the Protectors"
+            SCOPE       DESTINATION ^"Warlock"
+            ASPECT      "Eldritch Invocation Options"
+            DISPOSITION [ ^"New Rule" ]
+            TEXT        "Gift of the Protectors"
+        }
+        MAP #bmb8290b26bfb54d2274 {
+            DESTINATION ^"Eldritch Invocation: Investment of the Chain Master"
+            SCOPE       DESTINATION ^"Warlock"
+            ASPECT      "Eldritch Invocation Options"
+            DISPOSITION [ ^"New Rule" ]
+            TEXT        "Investment of the Chain Master"
+        }
+        MAP #bm4f2e5600b6f32b02ea {
+            DESTINATION ^"Eldritch Invocation: Lessons of the First Ones"
+            SCOPE       DESTINATION ^"Warlock"
+            ASPECT      "Eldritch Invocation Options"
+            DISPOSITION [ ^"New Rule" ]
+            TEXT        "Lessons of the First Ones"
+        }
+        MAP #bm85e08c0c3c04937219 {
+            ORIGIN      "Agonizing Blast"
+            DESTINATION ^"Eldritch Invocation: Agonizing Blast"
+            SCOPE       DESTINATION ^"Warlock"
+            ASPECT      "Eldritch Invocation Options"
+            DISPOSITION [ ^"Revised Rule" ]
+            TEXT        "Agonizing Blast"
+        }
+        MAP #bmbe8e0f234d07dc2855 {
+            ORIGIN      "Ascendant Step"
+            DESTINATION ^"Eldritch Invocation: Ascendant Step"
+            SCOPE       DESTINATION ^"Warlock"
+            ASPECT      "Eldritch Invocation Options"
+            DISPOSITION [ ^"Revised Rule" ]
+            TEXT        "Ascendant Step"
+        }
+        MAP #bm2044506824f1ee45f8 {
+            ORIGIN      "Eldritch Spear"
+            DESTINATION ^"Eldritch Invocation: Eldritch Spear"
+            SCOPE       DESTINATION ^"Warlock"
+            ASPECT      "Eldritch Invocation Options"
+            DISPOSITION [ ^"Revised Rule" ]
+            TEXT        "Eldritch Spear"
+        }
+        MAP #bm5e3407d88432cc27af {
+            ORIGIN      "Fiendish Vigor"
+            DESTINATION ^"Eldritch Invocation: Fiendish Vigor"
+            SCOPE       DESTINATION ^"Warlock"
+            ASPECT      "Eldritch Invocation Options"
+            DISPOSITION [ ^"Revised Rule" ]
+            TEXT        "Fiendish Vigor"
+        }
+        MAP #bmf605635c24091c489d {
+            ORIGIN      "Gaze of Two Minds"
+            DESTINATION ^"Eldritch Invocation: Gaze of Two Minds"
+            SCOPE       DESTINATION ^"Warlock"
+            ASPECT      "Eldritch Invocation Options"
+            DISPOSITION [ ^"Revised Rule" ]
+            TEXT        "Gaze of Two Minds"
+        }
+        MAP #bmb6e4d3c51ebcc84090 {
+            ORIGIN      "Lifedrinker"
+            DESTINATION ^"Eldritch Invocation: Lifedrinker"
+            SCOPE       DESTINATION ^"Warlock"
+            ASPECT      "Eldritch Invocation Options"
+            DISPOSITION [ ^"Revised Rule" ]
+            TEXT        "Lifedrinker"
+        }
+        MAP #bm59b82465e5a04ddce2 {
+            ORIGIN      "Master of Myriad Forms"
+            DESTINATION ^"Eldritch Invocation: Master of Myriad Forms"
+            SCOPE       DESTINATION ^"Warlock"
+            ASPECT      "Eldritch Invocation Options"
+            DISPOSITION [ ^"Revised Rule" ]
+            TEXT        "Master of Myriad Forms"
+        }
+        MAP #bm9efea1e4e1913be6c3 {
+            ORIGIN      "One with Shadows"
+            DESTINATION ^"Eldritch Invocation: One with Shadows"
+            SCOPE       DESTINATION ^"Warlock"
+            ASPECT      "Eldritch Invocation Options"
+            DISPOSITION [ ^"Revised Rule" ]
+            TEXT        "One with Shadows"
+        }
+        MAP #bm47a9cb992587d4ec8f {
+            ORIGIN      "Otherworldly Leap"
+            DESTINATION ^"Eldritch Invocation: Otherworldly Leap"
+            SCOPE       DESTINATION ^"Warlock"
+            ASPECT      "Eldritch Invocation Options"
+            DISPOSITION [ ^"Revised Rule" ]
+            TEXT        "Otherworldly Leap"
+        }
+        MAP #bm4c7d45410fa8939284 {
+            ORIGIN      "Pact of the Blade"
+            DESTINATION ^"Eldritch Invocation: Pact of the Blade"
+            SCOPE       DESTINATION ^"Warlock"
+            ASPECT      "Eldritch Invocation Options"
+            DISPOSITION [ ^"Revised Rule" ]
+            TEXT        "Pact of the Blade (this option is provided as an eldritch invocation option rather than from the Pact Boon class feature)"
+        }
+        MAP #bmee1e4411ca869adbd0 {
+            ORIGIN      "Pact of the Chain"
+            DESTINATION ^"Eldritch Invocation: Pact of the Chain"
+            SCOPE       DESTINATION ^"Warlock"
+            ASPECT      "Eldritch Invocation Options"
+            DISPOSITION [ ^"Revised Rule" ]
+            TEXT        "Pact of the Chain (this option is provided as an eldritch invocation option rather than from the Pact Boon class feature)"
+        }
+        MAP #bmd1f0d464d9fdee3a8c {
+            ORIGIN      "Pact of the Tome"
+            DESTINATION ^"Eldritch Invocation: Pact of the Tome"
+            SCOPE       DESTINATION ^"Warlock"
+            ASPECT      "Eldritch Invocation Options"
+            DISPOSITION [ ^"Revised Rule" ]
+            TEXT        "Pact of the Tome (this option is provided as an eldritch invocation option rather than from the Pact Boon class feature)"
+        }
+        MAP #bmde334d82401a753b06 {
+            ORIGIN      "Repelling Blast"
+            DESTINATION ^"Eldritch Invocation: Repelling Blast"
+            SCOPE       DESTINATION ^"Warlock"
+            ASPECT      "Eldritch Invocation Options"
+            DISPOSITION [ ^"Revised Rule" ]
+            TEXT        "Repelling Blast"
+        }
+        MAP #bme06eb04f333b64b79d {
+            ORIGIN      "Thirsting Blade"
+            DESTINATION ^"Eldritch Invocation: Thirsting Blade"
+            SCOPE       DESTINATION ^"Warlock"
+            ASPECT      "Eldritch Invocation Options"
+            DISPOSITION [ ^"Revised Rule" ]
+            TEXT        "Thirsting Blade"
+        }
+        MAP #bm3972f494bb170dec79 {
+            ORIGIN      "Visions of Distant Realms"
+            DESTINATION ^"Eldritch Invocation: Visions of Distant Realms"
+            SCOPE       DESTINATION ^"Warlock"
+            ASPECT      "Eldritch Invocation Options"
+            DISPOSITION [ ^"Revised Rule" ]
+            TEXT        "Visions of Distant Realms"
+        }
+        MAP #bmb8e6b156fc7fe5dbdb {
+            ORIGIN      "Whispers of the Grave"
+            DESTINATION ^"Eldritch Invocation: Whispers of the Grave"
+            SCOPE       DESTINATION ^"Warlock"
+            ASPECT      "Eldritch Invocation Options"
+            DISPOSITION [ ^"Revised Rule" ]
+            TEXT        "Whispers of the Grave"
+        }
+        MAP #bm4f6983550ccd72b3ac {
+            ORIGIN      "Witch Sight"
+            DESTINATION ^"Eldritch Invocation: Witch Sight"
+            SCOPE       DESTINATION ^"Warlock"
+            ASPECT      "Eldritch Invocation Options"
+            DISPOSITION [ ^"Revised Rule" ]
+            TEXT        "Witch Sight"
+        }
+        MAP #bmb50147d32387d55f73 {
+            ORIGIN      ^"Warlock"
+            DESTINATION ^"Warlock"
+            ASPECT      "Warlock Spell List"
+            DISPOSITION [ ^"Revised Rule" ]
+            TEXT        "This class’s spell list now appears with the class and contains some revisions. See “Spells” below."
+        }
+        MAP #bm8731b6767978824812 {
+            ORIGIN      ^"The Fiend"
+            DESTINATION ^"Fiend Patron"
+            ASPECT      "Subclass Features"
+            DISPOSITION [ ^"New Name" ]
+            TEXT        "This subclass was previously named The Fiend."
+        }
+        MAP #bmae1684b5a69088c443 {
+            ORIGIN      ^"Dark One’s Own Blessing"
+            DESTINATION ^"Dark One’s Own Blessing"
+            SCOPE       DESTINATION ^"Fiend Patron"
+            ASPECT      "Subclass Features"
+            DISPOSITION [ ^"Revised Rule" ]
+            TEXT        "Dark One’s Own Blessing"
+        }
+        MAP #bm6458c95a1aa33ab469 {
+            ORIGIN      "Fiend Expanded Spells"
+            DESTINATION ^"Level 3: Fiend Spells"
+            SCOPE       DESTINATION ^"Fiend Patron"
+            ASPECT      "Subclass Features"
+            DISPOSITION [ ^"Revised Rule" ]
+            TEXT        "Fiend Spells (formerly Fiend Expanded Spells)"
+        }
+        MAP #bma456165ebd4fd114ff {
+            ORIGIN      ^"Dark One's Own Luck"
+            DESTINATION ^"Level 6: Dark One's Own Luck"
+            SCOPE       DESTINATION ^"Fiend Patron"
+            ASPECT      "Subclass Features"
+            DISPOSITION [ ^"Revised Rule" ]
+            TEXT        "Dark One’s Own Luck"
+        }
+        MAP #bmed05dd0fcefdfa03b6 {
+            ORIGIN      ^"Fiendish Resilience"
+            DESTINATION ^"Level 10: Fiendish Resilience"
+            SCOPE       DESTINATION ^"Fiend Patron"
+            ASPECT      "Subclass Features"
+            DISPOSITION [ ^"Revised Rule" ]
+            TEXT        "Fiendish Resilience"
+        }
+        MAP #bm36664469611577961f {
+            ORIGIN      ^"Hurl Through Hell"
+            DESTINATION ^"Level 14: Hurl Through Hell"
+            SCOPE       DESTINATION ^"Fiend Patron"
+            ASPECT      "Subclass Features"
+            DISPOSITION [ ^"Revised Rule" ]
+            TEXT        "Hurl Through Hell"
+        }
+        MAP #bm9162ed16eb006a5874 {
+            ORIGIN      ^"Wizard"
+            DESTINATION ^"Wizard"
+            ASPECT      "Skill Proficiencies"
+            DISPOSITION [ ^"Revised Rule" ]
+            TEXT        "This class’s skill proficiency choices are revised."
+        }
+        MAP #bm94445f88496a7e53ec {
+            ORIGIN      ^"Wizard"
+            DESTINATION ^"Wizard"
+            ASPECT      "Weapon Proficiencies"
+            DISPOSITION [ ^"Revised Rule" ]
+            TEXT        "This class’s weapon proficiencies are revised."
+        }
+        MAP #bm8e06dc3fc11524629c {
+            ORIGIN      ^"Wizard"
+            DESTINATION ^"Wizard"
+            ASPECT      "Starting Equipment"
+            DISPOSITION [ ^"Revised Rule" ]
+            TEXT        "This class’s starting equipment is different and includes an option to take GP instead of specific items."
+        }
+        MAP #bmcf025345aeda75b4ef {
+            ORIGIN      ^"Wizard"
+            DESTINATION ^"Wizard"
+            ASPECT      "As a Multiclass Character"
+            DISPOSITION [ ^"Revised Rule" ]
+            TEXT        "Specific traits and features gained from multiclassing into this class are presented here."
+        }
+        MAP #bm664b5860849a82472e {
+            DESTINATION ^"Level 2: Scholar"
+            SCOPE       DESTINATION ^"Wizard"
+            ASPECT      "Class Features"
+            DISPOSITION [ ^"New Rule" ]
+            TEXT        "Scholar"
+        }
+        MAP #bm5ff30fba1ee8b19a75 {
+            DESTINATION ^"Level 5: Memorize Spell"
+            SCOPE       DESTINATION ^"Wizard"
+            ASPECT      "Class Features"
+            DISPOSITION [ ^"New Rule" ]
+            TEXT        "Memorize Spell"
+        }
+        MAP #bm803198c07c360fe98a {
+            DESTINATION ^"Level 19: Epic Boon"
+            SCOPE       DESTINATION ^"Wizard"
+            ASPECT      "Class Features"
+            DISPOSITION [ ^"New Rule" ]
+            TEXT        "Epic Boon"
+        }
+        MAP #bme35248239b6da6c0e6 {
+            ORIGIN      ^"Spellcasting"
+            DESTINATION ^"Level 1: Spellcasting"
+            SCOPE       DESTINATION ^"Wizard"
+            ASPECT      "Class Features"
+            DISPOSITION [ ^"Revised Rule" ]
+            TEXT        "Spellcasting"
+        }
+        MAP #bm396fe5c82076bf6aa7 {
+            ORIGIN      "Ritual Adept"
+            DESTINATION ^"Level 1: Ritual Adept"
+            SCOPE       DESTINATION ^"Wizard"
+            ASPECT      "Class Features"
+            DISPOSITION [ ^"Revised Rule" ]
+            TEXT        "Ritual Adept (this is now a separate class feature rather than part of the Spellcasting feature)"
+        }
+        MAP #bm5692ed93626b1c0896 {
+            ORIGIN      "Wizard Subclass"
+            DESTINATION ^"Level 3: Wizard Subclass"
+            SCOPE       DESTINATION ^"Wizard"
+            ASPECT      "Class Features"
+            DISPOSITION [ ^"Revised Rule" ]
+            TEXT        "Wizard Subclass (you choose your arcane tradition at level 3 rather than level 1)"
+        }
+        MAP #bmcdae3d90ea797f12a1 {
+            ORIGIN      ^"Ability Score Improvement"
+            DESTINATION ^"Level 4: Ability Score Improvement"
+            SCOPE       DESTINATION ^"Wizard"
+            ASPECT      "Class Features"
+            DISPOSITION [ ^"Revised Rule" ]
+            TEXT        "Ability Score Improvement"
+        }
+        MAP #bmdc9133d00f3b7b1219 {
+            ORIGIN      ^"Spell Mastery"
+            DESTINATION ^"Level 18: Spell Mastery"
+            SCOPE       DESTINATION ^"Wizard"
+            ASPECT      "Class Features"
+            DISPOSITION [ ^"Revised Rule" ]
+            TEXT        "Spell Mastery"
+        }
+        MAP #bmac05802185d0b3fa21 {
+            ORIGIN      ^"Wizard"
+            DESTINATION ^"Wizard"
+            ASPECT      "Wizard Spell List"
+            DISPOSITION [ ^"Revised Rule" ]
+            TEXT        "This class’s spell list now appears with the class and contains some revisions. See “Spells” below."
+        }
+        MAP #bm74ed21d26345a7629c {
+            ORIGIN      ^"School of Evocation"
+            DESTINATION ^"Evoker"
+            ASPECT      "Subclass Features"
+            DISPOSITION [ ^"New Name" ]
+            TEXT        "This subclass was previously named School of Evocation."
+        }
+        MAP #bm1f90a7d70d90a1da25 {
+            ORIGIN      ^"Evocation Savant"
+            DESTINATION ^"Level 3: Evocation Savant"
+            SCOPE       DESTINATION ^"Evoker"
+            ASPECT      "Subclass Features"
+            DISPOSITION [ ^"Revised Rule" ]
+            TEXT        "Evocation Savant"
+        }
+        MAP #bmcfdcf7a9adfa5001ff {
+            ORIGIN      ^"Potent Cantrip"
+            DESTINATION ^"Level 3: Potent Cantrip"
+            SCOPE       DESTINATION ^"Evoker"
+            ASPECT      "Subclass Features"
+            DISPOSITION [ ^"Revised Rule" ]
+            TEXT        "Potent Cantrip"
+        }
+        MAP #bm2e6abd2f8e25a619e9 {
+            ORIGIN      ^"Sculpt Spells"
+            DESTINATION ^"Level 6: Sculpt Spells"
+            SCOPE       DESTINATION ^"Evoker"
+            ASPECT      "Subclass Features"
+            DISPOSITION [ ^"Revised Rule" ]
+            TEXT        "Sculpt Spells"
+        }
+        MAP #bm179126a5bd2f10607c {
+            ORIGIN      ^"Overchannel"
+            DESTINATION ^"Level 14: Overchannel"
+            SCOPE       DESTINATION ^"Evoker"
+            ASPECT      "Subclass Features"
+            DISPOSITION [ ^"Revised Rule" ]
+            TEXT        "Overchannel"
+        }
+        MAP #bm5f36fc5cdbfb067c16 {
+            ORIGIN      "determined by race"
+            DESTINATION ^"Ability Score"
+            DISPOSITION [ ^"New Rule" ]
+            TEXT        "Ability Scores (formerly determined by race)"
+        }
+        MAP #bm7c79264b69cf942279 {
+            DESTINATION ^"Feat"
+            DISPOSITION [ ^"New Rule" ]
+            TEXT        "Feat"
+        }
+        MAP #bmcede1a62d8e4d1cb58 {
+            ORIGIN      "Equipment"
+            DESTINATION ^"Equipment"
+            DISPOSITION [ ^"Revised Rule" ]
+            TEXT        "The Equipment rule now includes an option to take GP instead of specific items."
+        }
+        MAP #bmcc7d80918d937484b9 {
+            DESTINATION ^"Criminal"
+            DISPOSITION [ ^"New Rule" ]
+            TEXT        "Criminal"
+        }
+        MAP #bm9418cd7f3548368ccf {
+            DESTINATION ^"Sage"
+            DISPOSITION [ ^"New Rule" ]
+            TEXT        "Sage"
+        }
+        MAP #bmd9bce42dc4bfe2133a {
+            DESTINATION ^"Soldier"
+            DISPOSITION [ ^"New Rule" ]
+            TEXT        "Soldier"
+        }
+        MAP #bm53490a196b9990d6bc {
+            ORIGIN      ^"Acolyte"
+            DESTINATION ^"Acolyte"
+            DISPOSITION [ ^"Revised Rule" ]
+            TEXT        "This background is revised to utilize the new rules."
+        }
+        MAP #bm1363b9de0badf1e7ce {
+            ORIGIN      "Parts of a Species"
+            DESTINATION "Parts of a Species"
+            DISPOSITION [ ^"Revised Rule" ]
+            TEXT        "This rule describes the revised components of a species, which was formerly called race."
+        }
+        MAP #bmb8532d1b79b5aa1aac {
+            DESTINATION ^"Goliath"
+            DISPOSITION [ ^"New Rule" ]
+            TEXT        "Goliath"
+        }
+        MAP #bm333bdb8e8f05442bba {
+            DESTINATION ^"Orc"
+            DISPOSITION [ ^"New Rule" ]
+            TEXT        "Orc"
+        }
+        MAP #bm3a0d5d15f1502bfd93 {
+            ORIGIN      ^"Dragonborn"
+            DESTINATION ^"Dragonborn"
+            DISPOSITION [ ^"Revised Rule" ]
+            TEXT        "Dragonborn"
+        }
+        MAP #bm7d7f1ae63a67fafb46 {
+            ORIGIN      ^"Dwarf"
+            DESTINATION ^"Dwarf"
+            DISPOSITION [ ^"Revised Rule" ]
+            TEXT        "Dwarf"
+        }
+        MAP #bmc734b0d835a7a434cc {
+            ORIGIN      ^"Elf"
+            DESTINATION ^"Elf"
+            DISPOSITION [ ^"Revised Rule" ]
+            TEXT        "Elf"
+        }
+        MAP #bm9a35bde97677e22158 {
+            ORIGIN      ^"Gnome"
+            DESTINATION ^"Gnome"
+            DISPOSITION [ ^"Revised Rule" ]
+            TEXT        "Gnome"
+        }
+        MAP #bmcb45e85e72ee241fda {
+            ORIGIN      ^"Halfling"
+            DESTINATION ^"Halfling"
+            DISPOSITION [ ^"Revised Rule" ]
+            TEXT        "Halfling"
+        }
+        MAP #bm1423633e9a522c0a61 {
+            ORIGIN      ^"Human"
+            DESTINATION ^"Human"
+            DISPOSITION [ ^"Revised Rule" ]
+            TEXT        "Human"
+        }
+        MAP #bmcd6392891a3725e4af {
+            ORIGIN      ^"Tiefling"
+            DESTINATION ^"Tiefling"
+            DISPOSITION [ ^"Revised Rule" ]
+            TEXT        "Tiefling"
+        }
+        MAP #bm9b13f7d89b222dc5f6 {
+            DESTINATION "Feat Descriptions"
+            DISPOSITION [ ^"New Rule" ]
+            TEXT        "Feats are now divided into categories, including Origin, General, Fighting Style, and Epic Boon. All feats in this section are new except for the following revised rules."
+        }
+        MAP #bmb0d511d5fabbfdb281 {
+            ORIGIN      ^"Ability Score Improvement"
+            DESTINATION ^"Ability Score Improvement"
+            DISPOSITION [ ^"Revised Rule" ]
+            TEXT        "This rule is now a feat rather than a class feature."
+        }
+        MAP #bm7458af526efad86869 {
+            ORIGIN      ^"Grappler"
+            DESTINATION ^"Grappler"
+            DISPOSITION [ ^"Revised Rule" ]
+            TEXT        "This feat is revised and is now a General feat."
+        }
+        MAP #bmf0770ee82473cd040e {
+            ORIGIN      "Fighting Style Feats"
+            DESTINATION "Fighting Style Feats"
+            DISPOSITION [ ^"Revised Rule" ]
+            TEXT        "These rules are now feats rather than class features."
+        }
+        MAP #bmada040d2da5803d141 {
+            ORIGIN      "Selling Equipment"
+            DESTINATION "Selling Equipment"
+            DISPOSITION [ ^"Revised Rule" ]
+            TEXT        "The rules for selling equipment are revised and now refer to “Magic Items” for the value of magic items."
+        }
+        MAP #bm07803b5f35bd67aa4d {
+            ORIGIN      "Heavy"
+            DESTINATION ^"Heavy"
+            DISPOSITION [ ^"Revised Rule" ]
+            TEXT        "Heavy"
+        }
+        MAP #bm6a53ffb4840fa1a68a {
+            ORIGIN      "Light"
+            DESTINATION ^"Light"
+            DISPOSITION [ ^"Revised Rule" ]
+            TEXT        "Light"
+            FIAT        "Origin referent \"Light\" is untyped on purpose: this edition has no DEF for it in its own category, and the name is taken by an unrelated ^\"Light\" in dnd5e-0.4-spells.ttrpg."
+        }
+        MAP #bme11a8dbf0715d97da9 {
+            ORIGIN      "Thrown"
+            DESTINATION ^"Thrown"
+            DISPOSITION [ ^"Revised Rule" ]
+            TEXT        "Thrown"
+        }
+        MAP #bmefe94ce8982e127cee {
+            DESTINATION "Mastery Properties"
+            DISPOSITION [ ^"New Rule" ]
+            TEXT        "Weapon mastery properties are new."
+        }
+        MAP #bm88fd6711630ca91eb3 {
+            ORIGIN      "Weapons Table"
+            DESTINATION "Weapons Table"
+            DISPOSITION [ ^"Revised Rule" ]
+            TEXT        "The weapons table has been reorganized and has some changes, including an increase to the Trident damage, a change to the Lance’s properties, and removal of the Net (which is now adventuring gear rather than a weapon)."
+        }
+        MAP #bm51cf960832ab380a1a {
+            DESTINATION "Weapons Table"
+            DISPOSITION [ ^"New Rule" ]
+            TEXT        "The Musket and Pistol are new."
+        }
+        MAP #bm57990354f86f9d01e1 {
+            ORIGIN      "armor proficiency"
+            DESTINATION ^"Armor Training"
+            DISPOSITION [ ^"New Name" ]
+            TEXT        "Armor training was previously called “armor proficiency.” It has been renamed because it doesn’t use a character’s Proficiency Bonus in any way."
+        }
+        MAP #bm3e56333250e3de3f46 {
+            ORIGIN      ^"Padded"
+            DESTINATION ^"Padded Armor"
+            DISPOSITION [ ^"New Name" ]
+            TEXT        "Padded Armor (formerly padded)"
+        }
+        MAP #bmcda2a7080ff0862f95 {
+            ORIGIN      ^"Leather"
+            DESTINATION ^"Leather Armor"
+            DISPOSITION [ ^"New Name" ]
+            TEXT        "Leather Armor (formerly leather)"
+        }
+        MAP #bmbbe187f0b95be7ae99 {
+            ORIGIN      ^"Studded leather"
+            DESTINATION ^"Studded Leather Armor"
+            DISPOSITION [ ^"New Name" ]
+            TEXT        "Studded Leather Armor (formerly studded leather)"
+        }
+        MAP #bm47dde55c707bf8ca61 {
+            ORIGIN      ^"Hide"
+            DESTINATION ^"Hide Armor"
+            DISPOSITION [ ^"New Name" ]
+            TEXT        "Hide Armor (formerly hide)"
+        }
+        MAP #bm39ad0fe4ab4108794d {
+            ORIGIN      ^"Half plate"
+            DESTINATION ^"Half Plate Armor"
+            DISPOSITION [ ^"New Name" ]
+            TEXT        "Half Plate Armor (formerly half plate)"
+        }
+        MAP #bmba7e412d940b490d18 {
+            ORIGIN      ^"Splint"
+            DESTINATION ^"Splint Armor"
+            DISPOSITION [ ^"New Name" ]
+            TEXT        "Splint Armor (formerly splint)"
+        }
+        MAP #bm556950d1a8ea05c1fe {
+            ORIGIN      ^"Plate"
+            DESTINATION ^"Plate Armor"
+            DISPOSITION [ ^"New Name" ]
+            TEXT        "Plate Armor (formerly plate)"
+        }
+        MAP #bm4c49baa689d2193ad8 {
+            ORIGIN      "Tool Proficiency"
+            DESTINATION "Tool Proficiency"
+            DISPOSITION [ ^"Revised Rule" ]
+            TEXT        "The rule about having Advantage on checks when you have proficiency in both the tool and the skill is new."
+            FIAT        "Origin referent \"Tool Proficiency\" is untyped on purpose: this edition has no DEF for it in its own category, and the name is taken by an unrelated ^\"Tool Proficiency\" in dnd5e-0.4-races.ttrpg."
+        }
+        MAP #bm78749e1305a63b85d0 {
+            DESTINATION "Artisan’s Tools"
+            DISPOSITION [ ^"New Rule" ]
+            TEXT        "The rules for all of these tools are new."
+        }
+        MAP #bm7a99716385b172101c {
+            DESTINATION "Other Tools"
+            DISPOSITION [ ^"New Rule" ]
+            TEXT        "The rules for all of these tools are new."
+        }
+        MAP #bmf688337e3fec5e17be {
+            ORIGIN      ^"Adventuring Gear"
+            DESTINATION ^"Adventuring Gear"
+            DISPOSITION [ ^"New Name" ]
+            TEXT        "Silk Rope and Hemp Rope have been consolidated into a single piece of gear: Rope."
+        }
+        MAP #bmcf33db92450851017c {
+            DESTINATION ^"Map"
+            DISPOSITION [ ^"New Rule" ]
+            TEXT        "Map"
+        }
+        MAP #bm262944ef299d2ac8c0 {
+            DESTINATION ^"Net"
+            DISPOSITION [ ^"New Rule" ]
+            TEXT        "Net"
+        }
+        MAP #bm9e9c7f833f8259491c {
+            DESTINATION ^"Spell Scroll (Cantrip)"
+            DISPOSITION [ ^"New Rule" ]
+            TEXT        "Spell Scroll (Cantrip)"
+        }
+        MAP #bm08617ef94556fad058 {
+            DESTINATION ^"Spell Scroll (Level 1)"
+            DISPOSITION [ ^"New Rule" ]
+            TEXT        "Spell Scroll (Level 1)"
+        }
+        MAP #bm352b02b7f45feadd33 {
+            DESTINATION ^"String"
+            DISPOSITION [ ^"New Rule" ]
+            TEXT        "String"
+        }
+        MAP #bm4ba96b3f8364aa3620 {
+            ORIGIN      "Saddles"
+            DESTINATION "Saddles"
+            DISPOSITION [ ^"Revised Rule" ]
+            TEXT        "The items included with a Saddle are revised and include items previously listed separately."
+        }
+        MAP #bm0747c7d54068d5a6d0 {
+            DESTINATION "Large Vehicles"
+            DISPOSITION [ ^"New Rule" ]
+            TEXT        "The rules for vehicle crew, passengers, cargo, AC, HP, Damage Threshold, and repair are new."
+        }
+        MAP #bmd0c054c5726f541261 {
+            ORIGIN      "Vehicle Proficiency"
+            DESTINATION "Vehicle Proficiency"
+            DISPOSITION [ ^"Revised Rule" ]
+            TEXT        "Vehicle proficiency has been removed."
+        }
+        MAP #bm448fe5dd0486cce194 {
+            ORIGIN      "Spellcasting Services"
+            DESTINATION "Spellcasting"
+            DISPOSITION [ ^"New Name" ]
+            TEXT        "This rule was previously named Spellcasting Services."
+            FIAT        "Destination referent \"Spellcasting\" is untyped on purpose: this edition has no DEF for it in its own category, and the name is taken by an unrelated ^\"Spellcasting\" in dnd5.5e-0.4-monsters.ttrpg."
+        }
+        MAP #bm7071d7f27f8e7fc572 {
+            DESTINATION "Spellcasting"
+            DISPOSITION [ ^"New Rule" ]
+            TEXT        "The Spellcasting Services table is new."
+            FIAT        "Destination referent \"Spellcasting\" is untyped on purpose: this edition has no DEF for it in its own category, and the name is taken by an unrelated ^\"Spellcasting\" in dnd5.5e-0.4-monsters.ttrpg."
+        }
+        MAP #bm08a9f33e7b6e8310e0 {
+            DESTINATION "Identifying a Magic Item"
+            DISPOSITION [ ^"New Rule" ]
+            TEXT        "This rule is new."
+        }
+        MAP #bm562495d025e9b09852 {
+            ORIGIN      "Crafting Nonmagical Items"
+            DESTINATION "Crafting Nonmagical Items"
+            DISPOSITION [ ^"Revised Rule" ]
+            TEXT        "The rules for crafting nonmagical items are revised."
+        }
+        MAP #bm46a6b5c25f396585fa {
+            DESTINATION "Brewing Potions of Healing"
+            DISPOSITION [ ^"New Rule" ]
+            TEXT        "This rule is new."
+        }
+        MAP #bm32a290783faa5334e1 {
+            DESTINATION "Scribing Spell Scrolls"
+            DISPOSITION [ ^"New Rule" ]
+            TEXT        "These rules are new."
+        }
+        MAP #bm03f08d0eeb3ea6ffa1 {
+            ORIGIN      "Preparing Spells"
+            DESTINATION "Preparing Spells"
+            DISPOSITION [ ^"Revised Rule" ]
+            TEXT        "The rules for changing new spells has been revised for the Paladin and the Ranger."
+        }
+        MAP #bmb080a862c86ed7bde2 {
+            ORIGIN      "Always-Prepared Spells"
+            DESTINATION "Always-Prepared Spells"
+            DISPOSITION [ ^"Revised Rule" ]
+            TEXT        "The rules for spells that are always prepared is now a general rule, rather than a rule specific to a class like Cleric, Druid, or Warlock."
+        }
+        MAP #bmb35056fdc6b0a38f8c {
+            ORIGIN      "Casting without Slots"
+            DESTINATION "Casting without Slots"
+            DISPOSITION [ ^"Revised Rule" ]
+            TEXT        "No special class feature is required to cast a spell with the Ritual tag as a Ritual."
+        }
+        MAP #bm76fc4d671d0cb3c534 {
+            DESTINATION "One Spell with a Spell Slot per Turn"
+            DISPOSITION [ ^"New Rule" ]
+            TEXT        "This rule is new."
+        }
+        MAP #bmb361868520827bffd6 {
+            DESTINATION "Identifying an Ongoing Spell"
+            DISPOSITION [ ^"New Rule" ]
+            TEXT        "This rule in this sidebar is new."
+        }
+        MAP #bm708e943544a6d7d294 {
+            ORIGIN      ^"Feeblemind"
+            DESTINATION ^"Befuddlement"
+            DISPOSITION [ ^"New Name", ^"Revised Rule" ]
+            TEXT        "Befuddlement (formerly Feeblemind)"
+        }
+        MAP #bmc9d2e96a7ced94b1d4 {
+            ORIGIN      ^"Branding Smite"
+            DESTINATION ^"Shining Smite"
+            DISPOSITION [ ^"New Name", ^"Revised Rule" ]
+            TEXT        "Shining Smite (formerly Branding Smite)"
+        }
+        MAP #bmb5ac6c80f5cb1a17ad {
+            DESTINATION ^"Aura of Life"
+            DISPOSITION [ ^"New Rule" ]
+            TEXT        "Aura of Life"
+        }
+        MAP #bmb8d3ac501439ba4412 {
+            DESTINATION ^"Charm Monster"
+            DISPOSITION [ ^"New Rule" ]
+            TEXT        "Charm Monster"
+        }
+        MAP #bm6382b8eff684b9d3d1 {
+            DESTINATION ^"Chromatic Orb"
+            DISPOSITION [ ^"New Rule" ]
+            TEXT        "Chromatic Orb"
+        }
+        MAP #bma696cb79e5881ac87f {
+            DESTINATION ^"Dissonant Whispers"
+            DISPOSITION [ ^"New Rule" ]
+            TEXT        "Dissonant Whispers"
+        }
+        MAP #bmc23ef34565f253e934 {
+            DESTINATION ^"Divine Smite"
+            DISPOSITION [ ^"New Rule" ]
+            TEXT        "Divine Smite"
+        }
+        MAP #bm32c33802f441fb164b {
+            DESTINATION ^"Dragon’s Breath"
+            DISPOSITION [ ^"New Rule" ]
+            TEXT        "Dragon’s Breath"
+        }
+        MAP #bm05187a219551737646 {
+            DESTINATION ^"Elementalism"
+            DISPOSITION [ ^"New Rule" ]
+            TEXT        "Elementalism"
+        }
+        MAP #bm850751d65a7078f62a {
+            DESTINATION ^"Ensnaring Strike"
+            DISPOSITION [ ^"New Rule" ]
+            TEXT        "Ensnaring Strike"
+        }
+        MAP #bmf3d2f79bf9636eb0cf {
+            DESTINATION ^"Hex"
+            DISPOSITION [ ^"New Rule" ]
+            TEXT        "Hex"
+        }
+        MAP #bm98c07c305054323a46 {
+            DESTINATION ^"Ice Knife"
+            DISPOSITION [ ^"New Rule" ]
+            TEXT        "Ice Knife"
+        }
+        MAP #bme96e1fcd367ad1f6ac {
+            DESTINATION ^"Mind Spike"
+            DISPOSITION [ ^"New Rule" ]
+            TEXT        "Mind Spike"
+        }
+        MAP #bm78ab6c2251e8891602 {
+            DESTINATION ^"Phantasmal Force"
+            DISPOSITION [ ^"New Rule" ]
+            TEXT        "Phantasmal Force"
+        }
+        MAP #bm2dc8ae1db9eae9e99d {
+            DESTINATION ^"Power Word Heal"
+            DISPOSITION [ ^"New Rule" ]
+            TEXT        "Power Word Heal"
+        }
+        MAP #bmce9bd920d95429f1fd {
+            DESTINATION ^"Ray of Sickness"
+            DISPOSITION [ ^"New Rule" ]
+            TEXT        "Ray of Sickness"
+        }
+        MAP #bmfc715427edc7eac67a {
+            DESTINATION ^"Searing Smite"
+            DISPOSITION [ ^"New Rule" ]
+            TEXT        "Searing Smite"
+        }
+        MAP #bma0017e703ddba96ee4 {
+            DESTINATION ^"Sorcerous Burst"
+            DISPOSITION [ ^"New Rule" ]
+            TEXT        "Sorcerous Burst"
+        }
+        MAP #bm1469ef17287cb1349a {
+            DESTINATION ^"Starry Wisp"
+            DISPOSITION [ ^"New Rule" ]
+            TEXT        "Starry Wisp"
+        }
+        MAP #bm98da054b6bd333c22d {
+            DESTINATION ^"Summon Dragon"
+            DISPOSITION [ ^"New Rule" ]
+            TEXT        "Summon Dragon"
+        }
+        MAP #bmf2b6f799d8535287af {
+            DESTINATION ^"Tsunami"
+            DISPOSITION [ ^"New Rule" ]
+            TEXT        "Tsunami"
+        }
+        MAP #bm8c1ff5cdc7780fb176 {
+            DESTINATION ^"Vitriolic Sphere"
+            DISPOSITION [ ^"New Rule" ]
+            TEXT        "Vitriolic Sphere"
+        }
+        MAP #bm583abbdf57779a8e04 {
+            DESTINATION "Glossary Conventions"
+            DISPOSITION [ ^"New Rule" ]
+            TEXT        "This section is new. Many of the abbreviations referenced in this section aren’t new but are now capitalized."
+        }
+        MAP #bme3d7da563e480692de {
+            ORIGIN      "Walking Speed"
+            DESTINATION ^"Speed"
+            DISPOSITION [ ^"New Name" ]
+            TEXT        "Speed (formerly Walking Speed)"
+        }
+        MAP #bm990993839e744abd02 {
+            ORIGIN      "Use an Object"
+            DESTINATION ^"Utilize"
+            ASPECT      "Action"
+            DISPOSITION [ ^"New Name" ]
+            TEXT        "Utilize [Action] (formerly Use an Object)"
+        }
+        MAP #bmc5fa617bd8079a5c01 {
+            ORIGIN      "armor proficiency"
+            DESTINATION ^"Armor Training"
+            DISPOSITION [ ^"New Name", ^"Revised Rule" ]
+            TEXT        "Armor Training (formerly armor proficiency)"
+        }
+        MAP #bmb41deb10473a804924 {
+            ORIGIN      "Interacting with Objects"
+            DESTINATION ^"Breaking Objects"
+            DISPOSITION [ ^"New Name", ^"Revised Rule" ]
+            TEXT        "Breaking Objects (formerly Interacting with Objects)"
+        }
+        MAP #bme9783786666306d568 {
+            ORIGIN      "Water"
+            DESTINATION ^"Dehydration"
+            DISPOSITION [ ^"New Name", ^"Revised Rule" ]
+            TEXT        "Dehydration (formerly Water)"
+        }
+        MAP #bm1b23048fc8bd15988f {
+            ORIGIN      "inspiration"
+            DESTINATION ^"Heroic Inspiration"
+            DISPOSITION [ ^"New Name", ^"Revised Rule" ]
+            TEXT        "Heroic Inspiration (formerly inspiration)"
+        }
+        MAP #bm9ec96fb8fd780d4730 {
+            ORIGIN      "Hit Dice"
+            DESTINATION ^"Hit Point Dice"
+            DISPOSITION [ ^"New Name", ^"Revised Rule" ]
+            TEXT        "Hit Point Dice (formerly Hit Dice)"
+        }
+        MAP #bmba5dd4548cdca1f736 {
+            ORIGIN      "Magic"
+            DESTINATION ^"Magic"
+            ASPECT      "Action"
+            DISPOSITION [ ^"New Name", ^"Revised Rule" ]
+            TEXT        "Magic [Action] (this incorporates the former Cast a Spell action)"
+        }
+        MAP #bm75dd9561186d79bb57 {
+            ORIGIN      "Food"
+            DESTINATION ^"Malnutrition"
+            DISPOSITION [ ^"New Name", ^"Revised Rule" ]
+            TEXT        "Malnutrition (formerly Food)"
+        }
+        MAP #bmd8aadb02a6bd583df5 {
+            DESTINATION ^"Ally"
+            DISPOSITION [ ^"New Rule" ]
+            TEXT        "Ally"
+        }
+        MAP #bmb95a5fad0afa8fde70 {
+            DESTINATION ^"Attitude"
+            DISPOSITION [ ^"New Rule" ]
+            TEXT        "Attitude"
+        }
+        MAP #bm8015c693671856de3a {
+            DESTINATION ^"Bloodied"
+            DISPOSITION [ ^"New Rule" ]
+            TEXT        "Bloodied"
+        }
+        MAP #bm73e1b5c21836b13be1 {
+            DESTINATION ^"Burning"
+            ASPECT      "Hazard"
+            DISPOSITION [ ^"New Rule" ]
+            TEXT        "Burning [Hazard]"
+        }
+        MAP #bm6af82feb814be7124c {
+            DESTINATION ^"Character Sheet"
+            DISPOSITION [ ^"New Rule" ]
+            TEXT        "Character Sheet"
+        }
+        MAP #bm20d092a4f0816bd0c5 {
+            DESTINATION ^"Curses"
+            DISPOSITION [ ^"New Rule" ]
+            TEXT        "Curses"
+        }
+        MAP #bmfbd78b90b0f12bcf56 {
+            DESTINATION ^"D20 Test"
+            DISPOSITION [ ^"New Rule" ]
+            TEXT        "D20 Test"
+        }
+        MAP #bm1510d7683211225690 {
+            DESTINATION ^"Dead"
+            DISPOSITION [ ^"New Rule" ]
+            TEXT        "Dead"
+        }
+        MAP #bm9a3f64fb4a04e6292e {
+            DESTINATION ^"Emanation"
+            ASPECT      "Area of Effect"
+            DISPOSITION [ ^"New Rule" ]
+            TEXT        "Emanation [Area of Effect]"
+        }
+        MAP #bmd64d66f232c58c9272 {
+            DESTINATION ^"Enemy"
+            DISPOSITION [ ^"New Rule" ]
+            TEXT        "Enemy"
+        }
+        MAP #bm5ddad098e502d201e2 {
+            DESTINATION ^"Expertise"
+            DISPOSITION [ ^"New Rule" ]
+            TEXT        "Expertise (this is now a defined rule instead of a class feature)"
+        }
+        MAP #bm44ff9b798e64e7f5b5 {
+            DESTINATION ^"Friendly"
+            ASPECT      "Attitude"
+            DISPOSITION [ ^"New Rule" ]
+            TEXT        "Friendly [Attitude]"
+        }
+        MAP #bm0d103dd486ddc1c088 {
+            DESTINATION ^"Hazard"
+            DISPOSITION [ ^"New Rule" ]
+            TEXT        "Hazard"
+        }
+        MAP #bm419c71d45356a15514 {
+            DESTINATION ^"Hostile"
+            ASPECT      "Attitude"
+            DISPOSITION [ ^"New Rule" ]
+            TEXT        "Hostile [Attitude]"
+        }
+        MAP #bm8f160ac51319bee74f {
+            DESTINATION ^"Illusions"
+            DISPOSITION [ ^"New Rule" ]
+            TEXT        "Illusions"
+        }
+        MAP #bmb4df141be315c52193 {
+            DESTINATION ^"Indifferent"
+            ASPECT      "Attitude"
+            DISPOSITION [ ^"New Rule" ]
+            TEXT        "Indifferent [Attitude]"
+        }
+        MAP #bmf46b2e109b8623a2aa {
+            DESTINATION ^"Influence"
+            ASPECT      "Action"
+            DISPOSITION [ ^"New Rule" ]
+            TEXT        "Influence [Action]"
+        }
+        MAP #bmdf8467aca5296972e1 {
+            DESTINATION ^"Magical Effect"
+            DISPOSITION [ ^"New Rule" ]
+            TEXT        "Magical Effect"
+        }
+        MAP #bm6b7dfe4016e6bd83f5 {
+            DESTINATION ^"Object"
+            DISPOSITION [ ^"New Rule" ]
+            TEXT        "Object"
+        }
+        MAP #bm555e53e3104963552a {
+            DESTINATION ^"Occupied Space"
+            DISPOSITION [ ^"New Rule" ]
+            TEXT        "Occupied Space"
+        }
+        MAP #bmfe4218ca11bd199358 {
+            DESTINATION ^"Per Day"
+            DISPOSITION [ ^"New Rule" ]
+            TEXT        "Per Day"
+        }
+        MAP #bm5ded254a3efc93b665 {
+            DESTINATION ^"Possession"
+            DISPOSITION [ ^"New Rule" ]
+            TEXT        "Possession"
+        }
+        MAP #bm0c144875b96c437de1 {
+            DESTINATION ^"Round Down"
+            DISPOSITION [ ^"New Rule" ]
+            TEXT        "Round Down"
+        }
+        MAP #bm9990a762bfcb9ad8de {
+            DESTINATION ^"Shape-Shifting"
+            DISPOSITION [ ^"New Rule" ]
+            TEXT        "Shape-Shifting"
+        }
+        MAP #bmd260c22edc396c71eb {
+            DESTINATION ^"Simultaneous Effects"
+            DISPOSITION [ ^"New Rule" ]
+            TEXT        "Simultaneous Effect"
+        }
+        MAP #bm0e5b2e8a640a277e6c {
+            DESTINATION ^"Study"
+            ASPECT      "Action"
+            DISPOSITION [ ^"New Rule" ]
+            TEXT        "Study [Action]"
+        }
+        MAP #bm70ea69685b54395e9c {
+            DESTINATION ^"Target"
+            DISPOSITION [ ^"New Rule" ]
+            TEXT        "Target"
+        }
+        MAP #bm0dd4708a36edf4859d {
+            DESTINATION ^"Teleportation"
+            DISPOSITION [ ^"New Rule" ]
+            TEXT        "Teleportation"
+        }
+        MAP #bmc77c8fa4e50169eda1 {
+            DESTINATION ^"Unoccupied Space"
+            DISPOSITION [ ^"New Rule" ]
+            TEXT        "Unoccupied Space"
+        }
+        MAP #bmf43da8c2f041be3f07 {
+            ORIGIN      "Action"
+            DESTINATION ^"Action"
+            DISPOSITION [ ^"Revised Rule" ]
+            TEXT        "Action"
+        }
+        MAP #bm30bb2d537314ad2152 {
+            ORIGIN      "Area of Effect"
+            DESTINATION ^"Area of Effect"
+            DISPOSITION [ ^"Revised Rule" ]
+            TEXT        "Area of Effect"
+        }
+        MAP #bmfc81f799d2773fe947 {
+            ORIGIN      "Armor Class"
+            DESTINATION ^"Armor Class"
+            DISPOSITION [ ^"Revised Rule" ]
+            TEXT        "Armor Class (you now choose between different base AC calculations)"
+        }
+        MAP #bm99c94345fd15f4d350 {
+            ORIGIN      "Attack"
+            DESTINATION ^"Attack"
+            ASPECT      "Action"
+            DISPOSITION [ ^"Revised Rule" ]
+            TEXT        "Attack [Action]"
+            FIAT        "Origin referent \"Attack\" is untyped on purpose: this edition has no DEF for it in its own category, and the name is taken by an unrelated ^\"Attack\" in dnd5e-0.4-monsters.ttrpg."
+        }
+        MAP #bme59eadf7c3927c06ff {
+            ORIGIN      "Blindsight"
+            DESTINATION ^"Blindsight"
+            DISPOSITION [ ^"Revised Rule" ]
+            TEXT        "Blindsight"
+        }
+        MAP #bmd22202c45e975e6b8c {
+            ORIGIN      ^"Charmed"
+            DESTINATION ^"Charmed"
+            ASPECT      "Condition"
+            DISPOSITION [ ^"Revised Rule" ]
+            TEXT        "Charmed [Condition]"
+        }
+        MAP #bmf445e752a3aee95f04 {
+            ORIGIN      "Concentration"
+            DESTINATION ^"Concentration"
+            DISPOSITION [ ^"Revised Rule" ]
+            TEXT        "Concentration (the saving throw now has a maximum DC of 30)"
+        }
+        MAP #bm67aac5a154dde624c1 {
+            ORIGIN      "Cylinder"
+            DESTINATION ^"Cylinder"
+            DISPOSITION [ ^"Revised Rule" ]
+            TEXT        "Cylinder"
+        }
+        MAP #bm33eb7c7c441afac6cb {
+            ORIGIN      "Dash"
+            DESTINATION ^"Dash"
+            DISPOSITION [ ^"Revised Rule" ]
+            TEXT        "Dash"
+        }
+        MAP #bm482849aa050ddfb784 {
+            ORIGIN      "Difficult Terrain"
+            DESTINATION ^"Difficult Terrain"
+            DISPOSITION [ ^"Revised Rule" ]
+            TEXT        "Difficult Terrain"
+        }
+        MAP #bmbb6ae9d7474d35967d {
+            ORIGIN      ^"Exhaustion"
+            DESTINATION ^"Exhaustion"
+            ASPECT      "Condition"
+            DISPOSITION [ ^"Revised Rule" ]
+            TEXT        "Exhaustion [Condition]"
+        }
+        MAP #bmdaf70911625e4ecdad {
+            ORIGIN      "Falling"
+            DESTINATION ^"Falling"
+            ASPECT      "Hazard"
+            DISPOSITION [ ^"Revised Rule" ]
+            TEXT        "Falling [Hazard]"
+        }
+        MAP #bm3743ca37ac5d5ba001 {
+            ORIGIN      "Flying"
+            DESTINATION ^"Flying"
+            DISPOSITION [ ^"Revised Rule" ]
+            TEXT        "Flying"
+        }
+        MAP #bm50a6d771bf2f48f6d1 {
+            ORIGIN      ^"Grappled"
+            DESTINATION ^"Grappled"
+            ASPECT      "Condition"
+            DISPOSITION [ ^"Revised Rule" ]
+            TEXT        "Grappled [Condition]"
+        }
+        MAP #bmecdc94cf8bff46df6a {
+            ORIGIN      "Grappling"
+            DESTINATION ^"Grappling"
+            DISPOSITION [ ^"Revised Rule" ]
+            TEXT        "Grappling"
+        }
+        MAP #bm3749fb3eb151d99830 {
+            ORIGIN      "Help"
+            DESTINATION ^"Help"
+            ASPECT      "Action"
+            DISPOSITION [ ^"Revised Rule" ]
+            TEXT        "Help [Action]"
+        }
+        MAP #bm4a27a4cc01684bb821 {
+            ORIGIN      ^"Hide"
+            DESTINATION ^"Hide"
+            ASPECT      "Action"
+            DISPOSITION [ ^"Revised Rule" ]
+            TEXT        "Hide [Action]"
+        }
+        MAP #bmb7ffa30812c22c9ada {
+            ORIGIN      "Improvised Weapons"
+            DESTINATION ^"Improvised Weapons"
+            DISPOSITION [ ^"Revised Rule" ]
+            TEXT        "Improvised Weapons"
+        }
+        MAP #bm24c160c48fe96f019c {
+            ORIGIN      ^"Incapacitated"
+            DESTINATION ^"Incapacitated"
+            ASPECT      "Condition"
+            DISPOSITION [ ^"Revised Rule" ]
+            TEXT        "Incapacitated [Condition]"
+        }
+        MAP #bmf0124b4b1849b2d9ba {
+            ORIGIN      "Initiative"
+            DESTINATION ^"Initiative"
+            DISPOSITION [ ^"Revised Rule" ]
+            TEXT        "Initiative"
+        }
+        MAP #bmbb32293be34774d1c0 {
+            ORIGIN      ^"Invisible"
+            DESTINATION ^"Invisible"
+            ASPECT      "Condition"
+            DISPOSITION [ ^"Revised Rule" ]
+            TEXT        "Invisible [Condition]"
+        }
+        MAP #bm3ec7eb7d7a9022de59 {
+            ORIGIN      "Knocking Out a Creature"
+            DESTINATION ^"Knocking Out a Creature"
+            DISPOSITION [ ^"Revised Rule" ]
+            TEXT        "Knocking Out a Creature"
+        }
+        MAP #bmc22f9445ea477644da {
+            ORIGIN      "Long Rest"
+            DESTINATION ^"Long Rest"
+            DISPOSITION [ ^"Revised Rule" ]
+            TEXT        "Long Rest"
+        }
+        MAP #bmbfeb5245f6fbe68b72 {
+            ORIGIN      "Opportunity Attacks"
+            DESTINATION ^"Opportunity Attacks"
+            DISPOSITION [ ^"Revised Rule" ]
+            TEXT        "Opportunity Attacks"
+        }
+        MAP #bm849cece20b7bd2b4f8 {
+            ORIGIN      ^"Petrified"
+            DESTINATION ^"Petrified"
+            ASPECT      "Condition"
+            DISPOSITION [ ^"Revised Rule" ]
+            TEXT        "Petrified [Condition]"
+        }
+        MAP #bm51eabb145e0bcbcd1d {
+            ORIGIN      "Saving Throw"
+            DESTINATION ^"Saving Throw"
+            DISPOSITION [ ^"Revised Rule" ]
+            TEXT        "Saving Throw (you can now decide to fail the save without rolling)"
+        }
+        MAP #bmab229d6894448991c5 {
+            ORIGIN      "Search"
+            DESTINATION ^"Search"
+            ASPECT      "Action"
+            DISPOSITION [ ^"Revised Rule" ]
+            TEXT        "Search [Action]"
+        }
+        MAP #bm7b1219a66cc0edd465 {
+            ORIGIN      "Short Rest"
+            DESTINATION ^"Short Rest"
+            DISPOSITION [ ^"Revised Rule" ]
+            TEXT        "Short Rest"
+        }
+        MAP #bm1c6a0c4d11f4726322 {
+            ORIGIN      "Speed"
+            DESTINATION ^"Speed"
+            DISPOSITION [ ^"Revised Rule" ]
+            TEXT        "Speed"
+        }
+        MAP #bmfe75f5f8875945663e {
+            ORIGIN      "Stable"
+            DESTINATION ^"Stable"
+            DISPOSITION [ ^"Revised Rule" ]
+            TEXT        "Stable"
+        }
+        MAP #bm70f5b61eaab0f8aeff {
+            ORIGIN      "Stat Block"
+            DESTINATION ^"Stat Block"
+            DISPOSITION [ ^"Revised Rule" ]
+            TEXT        "Stat Block"
+        }
+        MAP #bm8a449d3dc6de645bc0 {
+            ORIGIN      ^"Stunned"
+            DESTINATION ^"Stunned"
+            ASPECT      "Condition"
+            DISPOSITION [ ^"Revised Rule" ]
+            TEXT        "Stunned [Condition] (you can now move, but can’t speak)"
+        }
+        MAP #bm1dc31d53808ed6f6cd {
+            ORIGIN      "Suffocation"
+            DESTINATION ^"Suffocation"
+            ASPECT      "Hazard"
+            DISPOSITION [ ^"Revised Rule" ]
+            TEXT        "Suffocation [Hazard]"
+        }
+        MAP #bm32cf98327902b12231 {
+            ORIGIN      "Surprise"
+            DESTINATION ^"Surprise"
+            DISPOSITION [ ^"Revised Rule" ]
+            TEXT        "Surprise"
+        }
+        MAP #bmb97a397b33c9e60b1f {
+            ORIGIN      "Tremorsense"
+            DESTINATION ^"Tremorsense"
+            DISPOSITION [ ^"Revised Rule" ]
+            TEXT        "Tremorsense"
+        }
+        MAP #bm477957bf054a534ea4 {
+            ORIGIN      "Truesight"
+            DESTINATION ^"Truesight"
+            DISPOSITION [ ^"Revised Rule" ]
+            TEXT        "Truesight"
+        }
+        MAP #bm96dc510437f72a01c1 {
+            ORIGIN      "Unarmed Strike"
+            DESTINATION ^"Unarmed Strike"
+            DISPOSITION [ ^"Revised Rule" ]
+            TEXT        "Unarmed Strike (options for grappling and shoving a target now appear as part of these rules, rather than as a special function of the Attack action)"
+            FIAT        "Origin referent \"Unarmed Strike\" is untyped on purpose: this edition has no DEF for it in its own category, and the name is taken by an unrelated ^\"Unarmed Strike\" in dnd5e-0.4-monsters.ttrpg."
+        }
+        MAP #bm5bf55e680735952e24 {
+            DESTINATION ^"Good Roads"
+            DISPOSITION [ ^"New Rule" ]
+            TEXT        "This rule is new."
+        }
+        MAP #bm1ee8ef245617931fac {
+            DESTINATION ^"Slower Travelers"
+            DISPOSITION [ ^"New Rule" ]
+            TEXT        "This rule is new."
+        }
+        MAP #bm9966ff1155e6af4188 {
+            ORIGIN      "Forced March"
+            DESTINATION ^"Extended Travel"
+            DISPOSITION [ ^"New Name", ^"Revised Rule" ]
+            TEXT        "This rule is revised, and was previously named Forced March."
+        }
+        MAP #bma92c6b07a8a2a2a5af {
+            DESTINATION "Travel Terrain"
+            DISPOSITION [ ^"New Rule" ]
+            TEXT        "This table consolidating travel rules is new."
+        }
+        MAP #bmd4fa18c105c5540b52 {
+            DESTINATION "Creating a Background"
+            DISPOSITION [ ^"New Rule" ]
+            TEXT        "These rules are new."
+        }
+        MAP #bm57f05f01042fb9d068 {
+            DESTINATION ^"Curses"
+            DISPOSITION [ ^"New Rule" ]
+            TEXT        "These curse rules are new."
+        }
+        MAP #bm4a0c97782532540868 {
+            ORIGIN      "diseases"
+            DESTINATION "Magical Contagions"
+            DISPOSITION [ ^"New Name" ]
+            TEXT        "These rules were previously named diseases."
+        }
+        MAP #bm4e4589cea703aa36cf {
+            ORIGIN      "Example Contagions"
+            DESTINATION "Example Contagions"
+            DISPOSITION [ ^"Revised Rule" ]
+            TEXT        "The contagions are revised in their presentation and rules, which include closer ties to the game’s conditions."
+        }
+        MAP #bm84cf51e7f80b266985 {
+            DESTINATION "Environmental Effects"
+            DISPOSITION [ ^"New Rule" ]
+            TEXT        "These rules are new."
+        }
+        MAP #bm4801fd830decb68ab6 {
+            ORIGIN      "madness rules"
+            DESTINATION ^"Fear and Mental Stress"
+            DISPOSITION [ ^"New Name" ]
+            TEXT        "These rules were previously called madness rules."
+        }
+        MAP #bm9a5608062a8b0e374f {
+            ORIGIN      "Fear Effects"
+            DESTINATION ^"Fear Effects"
+            DISPOSITION [ ^"Revised Rule" ]
+            TEXT        "These rules are revised."
+        }
+        MAP #bmb709bb5900afbf36e3 {
+            ORIGIN      "Mental Stress Effects"
+            DESTINATION ^"Mental Stress Effects"
+            DISPOSITION [ ^"Revised Rule" ]
+            TEXT        "These rules are revised."
+        }
+        MAP #bm235581df89d20551cb {
+            DESTINATION "Purchasing Poison"
+            DISPOSITION [ ^"New Rule" ]
+            TEXT        "This rule is new."
+        }
+        MAP #bm6d1c8ac08cfef5abba {
+            DESTINATION "Harvesting Poison"
+            DISPOSITION [ ^"New Rule" ]
+            TEXT        "This rule is new."
+        }
+        MAP #bm6a3b34081d384a8244 {
+            ORIGIN      "drow poison"
+            DESTINATION ^"Spider's Sting"
+            DISPOSITION [ ^"New Name", ^"Revised Rule" ]
+            TEXT        "Spider’s Sting (formerly drow poison)"
+        }
+        MAP #bm807081d4c26391c66c {
+            ORIGIN      "Parts of a Trap"
+            DESTINATION ^"Parts of a Trap"
+            DISPOSITION [ ^"Revised Rule" ]
+            TEXT        "These rules have been standardized and streamlined. Rather than being designated as a setback, dangerous, or deadly, traps are now designated as a nuisance trap or a deadly trap."
+        }
+        MAP #bm628d21fff33bed5276 {
+            ORIGIN      "fire-breathing statue"
+            DESTINATION ^"Fire-Casting Statue"
+            DISPOSITION [ ^"New Name", ^"Revised Rule" ]
+            TEXT        "Fire-casting statue (formerly fire-breathing statue)"
+        }
+        MAP #bmb2fe4794df45bbaa2f {
+            ORIGIN      "among pits"
+            DESTINATION ^"Hidden Pit"
+            DISPOSITION [ ^"New Name", ^"Revised Rule" ]
+            TEXT        "Hidden pit (formerly among pits)"
+        }
+        MAP #bme19483761339698444 {
+            ORIGIN      "poison darts"
+            DESTINATION ^"Poisoned Darts"
+            DISPOSITION [ ^"New Name", ^"Revised Rule" ]
+            TEXT        "Poisoned darts (formerly poison darts)"
+        }
+        MAP #bm5d61628a916d93c34e {
+            ORIGIN      "poison needle"
+            DESTINATION ^"Poisoned Needle"
+            DISPOSITION [ ^"New Name", ^"Revised Rule" ]
+            TEXT        "Poisoned needle (formerly poison needle)"
+        }
+        MAP #bm0f52923afc07868af6 {
+            ORIGIN      "rolling sphere"
+            DESTINATION ^"Rolling Stone"
+            DISPOSITION [ ^"New Name", ^"Revised Rule" ]
+            TEXT        "Rolling stone (formerly rolling sphere)"
+        }
+        MAP #bm6823b9c553ab461aaf {
+            ORIGIN      "among pits"
+            DESTINATION ^"Spiked Pit"
+            DISPOSITION [ ^"New Name", ^"Revised Rule" ]
+            TEXT        "Spiked pit (formerly among pits)"
+        }
+        MAP #bm6528b0a00a51ac6c70 {
+            ORIGIN      "Sample Traps"
+            DESTINATION "Example Traps"
+            DISPOSITION [ ^"New Name" ]
+            TEXT        "This section was previously named Sample Traps. The following traps have new names, in addition to having a revised presentation:"
+        }
+        MAP #bmd544e74fea49d69515 {
+            DESTINATION ^"Combat Encounters"
+            DISPOSITION [ ^"New Rule" ]
+            TEXT        "These rules are new."
+        }
+        MAP #bmabb166c65593fd5a95 {
+            ORIGIN      "By Category"
+            DESTINATION "By Category"
+            DISPOSITION [ ^"Revised Rule" ]
+            TEXT        "The presentation of magic items by category, and the description of rules applicable to each category, are a consolidation and revision. Additionally, drinking or administering a potion now takes a Bonus Action."
+        }
+        MAP #bm5955b6fcabec72e79f {
+            DESTINATION "Potion Miscibility Table"
+            DISPOSITION [ ^"New Rule" ]
+            TEXT        "The rules about mixing two potions together are new."
+        }
+        MAP #bm42f842ff413b33d0ff {
+            DESTINATION "Magic Item Values By Rarity"
+            DISPOSITION [ ^"New Rule" ]
+            TEXT        "The rules and table for magic item rarities and values are new."
+        }
+        MAP #bma750bb7fd9319b4611 {
+            DESTINATION "Crafting Magic Items"
+            DISPOSITION [ ^"New Rule" ]
+            TEXT        "The rules for crafting magic items are new."
+        }
+        MAP #bm734a5ff68d383e7fd4 {
+            ORIGIN      "Sentient Magic Items"
+            DESTINATION "Sentient Magic Items"
+            DISPOSITION [ ^"Revised Rule" ]
+            TEXT        "The rules for sentient magic items have been revised and clarified."
+        }
+        MAP #bm7a6045a7e29ad7fa51 {
+            ORIGIN      ^"Arrow of Slaying"
+            DESTINATION ^"Ammunition of Slaying"
+            DISPOSITION [ ^"New Name", ^"Revised Rule" ]
+            TEXT        "Ammunition of Slaying (formerly arrow of slaying)"
+        }
+        MAP #bm381e5c212c336e4dc5 {
+            ORIGIN      "Orb of Dragonkind"
+            DESTINATION ^"Dragon Orb"
+            DISPOSITION [ ^"New Name", ^"Revised Rule" ]
+            TEXT        "Dragon Orb (formerly Orb of Dragonkind)"
+        }
+        MAP #bmfb56bb97d746f0da94 {
+            ORIGIN      ^"Iron Bands of Binding"
+            DESTINATION ^"Iron Bands"
+            DISPOSITION [ ^"New Name", ^"Revised Rule" ]
+            TEXT        "Iron Bands (formerly iron bands of binding)"
+        }
+        MAP #bm0399bafcdfa48eeaa9 {
+            ORIGIN      ^"Deck of Many Things"
+            DESTINATION ^"Mysterious Deck"
+            DISPOSITION [ ^"New Name", ^"Revised Rule" ]
+            TEXT        "Mysterious Deck (formerly Deck of Many Things)"
+        }
+        MAP #bmddf6b79778725ea1be {
+            DESTINATION ^"Bead of Nourishment"
+            DISPOSITION [ ^"New Rule" ]
+            TEXT        "Bead of Nourishment"
+        }
+        MAP #bm23d8fdf963071fc051 {
+            DESTINATION ^"Cloak of Invisibility"
+            DISPOSITION [ ^"New Rule" ]
+            TEXT        "Cloak of Invisibility"
+        }
+        MAP #bm84a8b095ded9c9ff6b {
+            DESTINATION ^"Crystal Ball of Mind Reading"
+            DISPOSITION [ ^"New Rule" ]
+            TEXT        "Crystal Ball of Mind Reading (this is no longer a Crystal Ball variant)"
+        }
+        MAP #bm3a23e6ffdb293ffed9 {
+            DESTINATION ^"Crystal Ball of Telepathy"
+            DISPOSITION [ ^"New Rule" ]
+            TEXT        "Crystal Ball of Telepathy (this is no longer a Crystal Ball variant)"
+        }
+        MAP #bmf0295babe3d5631ce9 {
+            DESTINATION ^"Crystal Ball of True Seeing"
+            DISPOSITION [ ^"New Rule" ]
+            TEXT        "Crystal Ball of True Seeing (this is no longer a Crystal Ball variant)"
+        }
+        MAP #bmd00c972f56dd6ea441 {
+            DESTINATION ^"Elixir of Health"
+            DISPOSITION [ ^"New Rule" ]
+            TEXT        "Elixir of Health"
+        }
+        MAP #bm40a28305d4ccab291a {
+            DESTINATION ^"Energy Bow"
+            DISPOSITION [ ^"New Rule" ]
+            TEXT        "Energy Bow"
+        }
+        MAP #bmec83b81fe9b64dc24b {
+            DESTINATION ^"Gloves of Thievery"
+            DISPOSITION [ ^"New Rule" ]
+            TEXT        "Gloves of Thievery"
+        }
+        MAP #bmf872b0462304cb614a {
+            DESTINATION ^"Hat of Many Spells"
+            DISPOSITION [ ^"New Rule" ]
+            TEXT        "Hat of Many Spells"
+        }
+        MAP #bm164c80af4be6fd643f {
+            DESTINATION ^"Potion of Invulnerability"
+            DISPOSITION [ ^"New Rule" ]
+            TEXT        "Potion of Invulnerability"
+        }
+        MAP #bm40d02dd1e591c4a000 {
+            DESTINATION ^"Potion of Longevity"
+            DISPOSITION [ ^"New Rule" ]
+            TEXT        "Potion of Longevity"
+        }
+        MAP #bm451cf80a893eb3a6f7 {
+            DESTINATION ^"Potion of Vitality"
+            DISPOSITION [ ^"New Rule" ]
+            TEXT        "Potion of Vitality"
+        }
+        MAP #bm44ad81b16373087118 {
+            DESTINATION ^"Quarterstaff of the Acrobat"
+            DISPOSITION [ ^"New Rule" ]
+            TEXT        "Quarterstaff of the Acrobat"
+        }
+        MAP #bm4583ef60f4d3a5a61d {
+            DESTINATION ^"Rod of Resurrection"
+            DISPOSITION [ ^"New Rule" ]
+            TEXT        "Rod of Resurrection"
+        }
+        MAP #bm6d1e6ede9581bdad56 {
+            DESTINATION ^"Sending Stones"
+            DISPOSITION [ ^"New Rule" ]
+            TEXT        "Sending Stones"
+        }
+        MAP #bm7b764877f35e51e793 {
+            DESTINATION ^"Sentinel Shield"
+            DISPOSITION [ ^"New Rule" ]
+            TEXT        "Sentinel Shield"
+        }
+        MAP #bm53ef1857ff5a5f2338 {
+            DESTINATION ^"Shield of the Cavalier"
+            DISPOSITION [ ^"New Rule" ]
+            TEXT        "Shield of the Cavalier"
+        }
+        MAP #bm23c92e00e3eeb9b946 {
+            DESTINATION ^"Thunderous Greatclub"
+            DISPOSITION [ ^"New Rule" ]
+            TEXT        "Thunderous Greatclub"
+        }
+        MAP #bm10f05334a817c0583d {
+            DESTINATION ^"Weapon of Warning"
+            DISPOSITION [ ^"New Rule" ]
+            TEXT        "Weapon of Warning"
+        }
+        MAP #bm457900837996dc7e8a {
+            ORIGIN      ^"Alignment"
+            DESTINATION ^"Alignment"
+            DISPOSITION [ ^"Revised Rule" ]
+            TEXT        "Monsters are no longer presented with “any alignment.” Instead, the Neutral alignment is an invitation to give a monster any alignment you prefer."
+        }
+        MAP #bm634a1f56df018d2d4c {
+            DESTINATION ^"Initiative"
+            DISPOSITION [ ^"New Rule" ]
+            TEXT        "The presentation of a monster’s Initiative modifier and Initiative score are new."
+        }
+        MAP #bm0b2fb08088ff9cd9f8 {
+            ORIGIN      ^"Ability Score"
+            DESTINATION ^"Ability Score"
+            DISPOSITION [ ^"Revised Rule" ]
+            TEXT        "All of a monster’s saving throw modifiers are now listed with its ability score modifiers."
+        }
+        MAP #bmb6f6cfbf11fad92cdb {
+            DESTINATION "Running a Monster"
+            DISPOSITION [ ^"New Rule" ]
+            TEXT        "This new sidebar provides clear instructions for helping ensure a monster meets its intended Challenge Rating in combat."
+        }
+        MAP #bm5ab9f73549f0fbc370 {
+            ORIGIN      "Immunities"
+            DESTINATION ^"Immunity"
+            DISPOSITION [ ^"Revised Rule" ]
+            TEXT        "A monster’s damage type Immunities now appear alongside its condition Immunities, rather than having a separate entry."
+        }
+        MAP #bmc3fba923c0b38822f0 {
+            DESTINATION "Gear"
+            DISPOSITION [ ^"New Rule" ]
+            TEXT        "This new entry in a monster’s stat block provides more clarity about a monster’s equipment."
+        }
+        MAP #bm8a49f094d923a3b2f3 {
+            ORIGIN      "Actions"
+            DESTINATION ^"Action"
+            DISPOSITION [ ^"Revised Rule" ]
+            TEXT        "The presentation of a monster’s Actions has been revised and standardized. For example, Spellcasting now appears under the relevant heading (normally Actions, but occasionally Bonus Actions or Reactions), and Innate Spellcasting no longer exists."
+        }
+        MAP #bmc75c1dbd4edb57d9ab {
+            ORIGIN      "Bonus Actions"
+            DESTINATION ^"Bonus Action"
+            DISPOSITION [ ^"Revised Rule" ]
+            TEXT        "If a monster has available Bonus Actions, they now appear under a dedicated heading."
+        }
+        MAP #bm130ec4a6203e701e45 {
+            ORIGIN      ^"Flying Sword"
+            DESTINATION ^"Animated Flying Sword"
+            DISPOSITION [ ^"New Name", ^"Revised Rule" ]
+            TEXT        "Animated Flying Sword (formerly Flying Sword)"
+        }
+        MAP #bm3946f52c4caa039f99 {
+            ORIGIN      ^"Rug of Smothering"
+            DESTINATION ^"Animated Rug of Smothering"
+            DISPOSITION [ ^"New Name", ^"Revised Rule" ]
+            TEXT        "Animated Rug of Smothering (formerly Rug of Smothering)"
+        }
+        MAP #bm27fdf526484c9dd84c {
+            ORIGIN      ^"Azer"
+            DESTINATION ^"Azer Sentinel"
+            DISPOSITION [ ^"New Name", ^"Revised Rule" ]
+            TEXT        "Azer Sentinel (formerly Azer)"
+        }
+        MAP #bm0dc5fb1d597262b066 {
+            ORIGIN      ^"Bugbear"
+            DESTINATION ^"Bugbear Warrior"
+            DISPOSITION [ ^"New Name", ^"Revised Rule" ]
+            TEXT        "Bugbear Warrior (formerly Bugbear)"
+        }
+        MAP #bmb8fc940186edbac31b {
+            ORIGIN      ^"Centaur"
+            DESTINATION ^"Centaur Trooper"
+            DISPOSITION [ ^"New Name", ^"Revised Rule" ]
+            TEXT        "Centaur Trooper (formerly Centaur)"
+        }
+        MAP #bme97e70f866abd57a42 {
+            ORIGIN      ^"Cult Fanatic"
+            DESTINATION ^"Cultist Fanatic"
+            DISPOSITION [ ^"New Name", ^"Revised Rule" ]
+            TEXT        "Cultist Fanatic (formerly Cult Fanatic)"
+        }
+        MAP #bm1e73328978641bac6e {
+            ORIGIN      ^"Gnoll"
+            DESTINATION ^"Gnoll Warrior"
+            DISPOSITION [ ^"New Name", ^"Revised Rule" ]
+            TEXT        "Gnoll Warrior (formerly Gnoll)"
+        }
+        MAP #bmc12090254be68a0a1d {
+            ORIGIN      ^"Goblin"
+            DESTINATION ^"Goblin Warrior"
+            DISPOSITION [ ^"New Name", ^"Revised Rule" ]
+            TEXT        "Goblin Warrior (formerly Goblin)"
+        }
+        MAP #bm06746c74e66e3e8652 {
+            ORIGIN      ^"Half-Red Dragon Veteran"
+            DESTINATION ^"Half-Dragon"
+            DISPOSITION [ ^"New Name", ^"Revised Rule" ]
+            TEXT        "Half-Dragon (formerly Half-Red Dragon Veteran)"
+        }
+        MAP #bm2921f4e6af68ac0408 {
+            ORIGIN      ^"Hobgoblin"
+            DESTINATION ^"Hobgoblin Warrior"
+            DISPOSITION [ ^"New Name", ^"Revised Rule" ]
+            TEXT        "Hobgoblin Warrior (formerly Hobgoblin)"
+        }
+        MAP #bma4dc5e81a5eeb6445b {
+            ORIGIN      ^"Kobold"
+            DESTINATION ^"Kobold Warrior"
+            DISPOSITION [ ^"New Name", ^"Revised Rule" ]
+            TEXT        "Kobold Warrior (formerly Kobold)"
+        }
+        MAP #bmdbe7ea52ffeeea4fb7 {
+            ORIGIN      ^"Merfolk"
+            DESTINATION ^"Merfolk Skirmisher"
+            DISPOSITION [ ^"New Name", ^"Revised Rule" ]
+            TEXT        "Merfolk Skirmisher (formerly Merfolk)"
+        }
+        MAP #bm4ceeca80dc57842cf8 {
+            ORIGIN      ^"Minotaur"
+            DESTINATION ^"Minotaur of Baphomet"
+            DISPOSITION [ ^"New Name", ^"Revised Rule" ]
+            TEXT        "Minotaur of Baphomet (formerly Minotaur)"
+        }
+        MAP #bm44ea407d6295b4c49e {
+            ORIGIN      ^"Acolyte"
+            DESTINATION ^"Priest Acolyte"
+            DISPOSITION [ ^"New Name", ^"Revised Rule" ]
+            TEXT        "Priest Acolyte (formerly Acolyte)"
+        }
+        MAP #bm23a487873d908ef2ee {
+            ORIGIN      ^"Sahuagin"
+            DESTINATION ^"Sahuagin Warrior"
+            DISPOSITION [ ^"New Name", ^"Revised Rule" ]
+            TEXT        "Sahuagin Warrior (formerly Sahuagin)"
+        }
+        MAP #bm0f2bbcf60a6a9830c0 {
+            ORIGIN      ^"Gynosphinx"
+            DESTINATION ^"Sphinx of Lore"
+            DISPOSITION [ ^"New Name", ^"Revised Rule" ]
+            TEXT        "Sphinx of Lore (formerly Gynosphinx)"
+        }
+        MAP #bm0d61262546c1c27782 {
+            ORIGIN      ^"Androsphinx"
+            DESTINATION ^"Sphinx of Valor"
+            DISPOSITION [ ^"New Name", ^"Revised Rule" ]
+            TEXT        "Sphinx of Valor (formerly Androsphinx)"
+        }
+        MAP #bm49713fb3f588bae81d {
+            ORIGIN      ^"Thug"
+            DESTINATION ^"Tough"
+            DISPOSITION [ ^"New Name", ^"Revised Rule" ]
+            TEXT        "Tough (formerly Thug)"
+        }
+        MAP #bm95e08dfe8143e7aa44 {
+            ORIGIN      ^"Tribal Warrior"
+            DESTINATION ^"Warrior Infantry"
+            DISPOSITION [ ^"New Name", ^"Revised Rule" ]
+            TEXT        "Warrior Infantry (formerly Tribal Warrior)"
+        }
+        MAP #bmb514a24f6667ec4266 {
+            ORIGIN      ^"Veteran"
+            DESTINATION ^"Warrior Veteran"
+            DISPOSITION [ ^"New Name", ^"Revised Rule" ]
+            TEXT        "Warrior Veteran (formerly Veteran)"
+        }
+        MAP #bmd70619cd7705ebfdba {
+            DESTINATION ^"Bugbear Stalker"
+            DISPOSITION [ ^"New Rule" ]
+            TEXT        "Bugbear Stalker"
+        }
+        MAP #bmfc25bd8ebe18279d11 {
+            DESTINATION ^"Goblin Boss"
+            DISPOSITION [ ^"New Rule" ]
+            TEXT        "Goblin Boss"
+        }
+        MAP #bm8073ff9d035bbfa20f {
+            DESTINATION ^"Goblin Minion"
+            DISPOSITION [ ^"New Rule" ]
+            TEXT        "Goblin Minion"
+        }
+        MAP #bm7c9ae35b25df502e0a {
+            DESTINATION ^"Guard Captain"
+            DISPOSITION [ ^"New Rule" ]
+            TEXT        "Guard Captain"
+        }
+        MAP #bm2404774a3cac1485c5 {
+            DESTINATION ^"Hobgoblin Captain"
+            DISPOSITION [ ^"New Rule" ]
+            TEXT        "Hobgoblin Captain"
+        }
+        MAP #bm9d89948263e030e93d {
+            DESTINATION ^"Incubus"
+            DISPOSITION [ ^"New Rule" ]
+            TEXT        "Incubus (no longer a Succubus variant)"
+        }
+        MAP #bm24bc97fca4d36fa093 {
+            DESTINATION ^"Pirate"
+            DISPOSITION [ ^"New Rule" ]
+            TEXT        "Pirate"
+        }
+        MAP #bm5d82853b5cafbadd87 {
+            DESTINATION ^"Pirate Captain"
+            DISPOSITION [ ^"New Rule" ]
+            TEXT        "Pirate Captain"
+        }
+        MAP #bma7057e9cd45881c796 {
+            DESTINATION ^"Sphinx of Wonder"
+            DISPOSITION [ ^"New Rule" ]
+            TEXT        "Sphinx of Wonder"
+        }
+        MAP #bm8e0476ce68ded31cf5 {
+            DESTINATION ^"Swarm of Crawling Claws"
+            DISPOSITION [ ^"New Rule" ]
+            TEXT        "Swarm of Crawling Claws"
+        }
+        MAP #bm14318e8227c5f71180 {
+            DESTINATION ^"Tough Boss"
+            DISPOSITION [ ^"New Rule" ]
+            TEXT        "Tough Boss"
+        }
+        MAP #bmf757675c65905190cf {
+            DESTINATION ^"Troll Limb"
+            DISPOSITION [ ^"New Rule" ]
+            TEXT        "Troll Limb"
+        }
+        MAP #bmfbbd6fae8e4bb6a9d1 {
+            DESTINATION ^"Vampire Familiar"
+            DISPOSITION [ ^"New Rule" ]
+            TEXT        "Vampire Familiar"
+        }
+        MAP #bm78759703c1e241d541 {
+            ORIGIN      ^"Duergar"
+            DESTINATION ^"Spy"
+            DISPOSITION [ ^"Omitted Rule" ]
+            TEXT        "Duergar (use Spy)"
+        }
+        MAP #bm7d7276e45aa5b7569d {
+            ORIGIN      ^"Elf, Drow"
+            DESTINATION ^"Priest Acolyte"
+            DISPOSITION [ ^"Omitted Rule" ]
+            TEXT        "Elf, Drow (use Priest Acolyte)"
+        }
+        MAP #bm00bcdc9c9dcecf6fdc {
+            ORIGIN      ^"Gnome, Deep (Svirfneblin)"
+            DESTINATION ^"Scout"
+            DISPOSITION [ ^"Omitted Rule" ]
+            TEXT        "Gnome, Deep (Svirfneblin) (use Scout)"
+        }
+        MAP #bm3ce317ac4b38a5b20d {
+            ORIGIN      ^"Lizardfolk"
+            DESTINATION ^"Scout"
+            DISPOSITION [ ^"Omitted Rule" ]
+            TEXT        "Lizardfolk (use Scout)"
+        }
+        MAP #bmb23531f93b2048a271 {
+            ORIGIN      ^"Orc"
+            DESTINATION ^"Tough"
+            DISPOSITION [ ^"Omitted Rule" ]
+            TEXT        "Orc (use Tough)"
+        }
+        MAP #bm5dcafb53052a28ca9d {
+            ORIGIN      ^"Giant Sea Horse"
+            DESTINATION ^"Giant Seahorse"
+            DISPOSITION [ ^"New Name", ^"Revised Rule" ]
+            TEXT        "Giant Seahorse (formerly Giant Sea Horse)"
+        }
+        MAP #bm6da58e271b92d4cbad {
+            ORIGIN      ^"Giant Poisonous Snake"
+            DESTINATION ^"Giant Venomous Snake"
+            DISPOSITION [ ^"New Name", ^"Revised Rule" ]
+            TEXT        "Giant Venomous Snake (formerly Giant Poisonous Snake)"
+        }
+        MAP #bmd4412042ce82fed763 {
+            ORIGIN      ^"Quipper"
+            DESTINATION ^"Piranha"
+            DISPOSITION [ ^"New Name", ^"Revised Rule" ]
+            TEXT        "Piranha (formerly Quipper)"
+        }
+        MAP #bmae9488ba8297c4da93 {
+            ORIGIN      ^"Sea Horse"
+            DESTINATION ^"Seahorse"
+            DISPOSITION [ ^"New Name", ^"Revised Rule" ]
+            TEXT        "Seahorse (formerly Sea Horse)"
+        }
+        MAP #bm4d0e025637925c0af8 {
+            ORIGIN      ^"Swarm of Quippers"
+            DESTINATION ^"Swarm of Piranhas"
+            DISPOSITION [ ^"New Name", ^"Revised Rule" ]
+            TEXT        "Swarm of Piranhas (formerly Swarm of Quippers)"
+        }
+        MAP #bm6be024f5ab27ff5637 {
+            ORIGIN      ^"Swarm of Poisonous Snakes"
+            DESTINATION ^"Swarm of Venomous Snakes"
+            DISPOSITION [ ^"New Name", ^"Revised Rule" ]
+            TEXT        "Swarm of Venomous Snakes (formerly Swarm of Poisonous Snakes)"
+        }
+        MAP #bmf1a029763380ede3dd {
+            ORIGIN      ^"Poisonous Snake"
+            DESTINATION ^"Venomous Snake"
+            DISPOSITION [ ^"New Name", ^"Revised Rule" ]
+            TEXT        "Venomous Snake (formerly Poisonous Snake)"
+        }
+        MAP #bm2a70cbe0764102144f {
+            DESTINATION ^"Allosaurus"
+            DISPOSITION [ ^"New Rule" ]
+            TEXT        "Allosaurus"
+        }
+        MAP #bm57702638978dbe0d26 {
+            DESTINATION ^"Ankylosaurus"
+            DISPOSITION [ ^"New Rule" ]
+            TEXT        "Ankylosaurus"
+        }
+        MAP #bmee34909d515935ec5b {
+            DESTINATION ^"Archelon"
+            DISPOSITION [ ^"New Rule" ]
+            TEXT        "Archelon"
+        }
+        MAP #bmfe05106d2e36a57ee0 {
+            DESTINATION ^"Hippopotamus"
+            DISPOSITION [ ^"New Rule" ]
+            TEXT        "Hippopotamus"
+        }
+        MAP #bmb280f52439512a7749 {
+            DESTINATION ^"Pteranodon"
+            DISPOSITION [ ^"New Rule" ]
+            TEXT        "Pteranodon"
+        }
+        REMAINDER #brade92f45b84d230998 {
+            SCOPE       ORIGIN ^"Adventuring Gear"
+            DISPOSITION [ ^"Revised Rule" ]
+            EXHAUSTIVE  true
+            TEXT        "All adventuring gear not listed above has revisions to its presentations and rules. Notable revisions include the Potion of Healing, which you can now drink or administer as a Bonus Action."
+        }
+        REMAINDER #brc94407fc31307e24cc {
+            SCOPE       ORIGIN ^"Spell"
+            DISPOSITION [ ^"New Name", ^"Revised Rule" ]
+            EXHAUSTIVE  true
+            TEXT        "In addition, all spells not listed in “Spells [New Rule]” below have revisions to their presentation and statistics."
+        }
+        REMAINDER #br66a4a6aa317eaf2007 {
+            SCOPE       DESTINATION "Poison"
+            DISPOSITION [ ^"Revised Rule" ]
+            EXHAUSTIVE  true
+            TEXT        "All poisons here have revisions to their presentation and statistics."
+        }
+        REMAINDER #brfc50134bfa6039901d {
+            SCOPE       DESTINATION ^"Traps"
+            DISPOSITION [ ^"New Name", ^"Revised Rule" ]
+            EXHAUSTIVE  true
+            TEXT        "All traps have revisions to their presentation and statistics."
+        }
+        REMAINDER #br470fd136c58331fe83 {
+            SCOPE       ORIGIN ^"Magic Item"
+            DISPOSITION [ ^"Revised Rule" ]
+            EXHAUSTIVE  false
+            TEXT        "Most magic items not listed above have revisions to their presentation and statistics."
+        }
+        REMAINDER #brea83b4f20a851aa89e {
+            SCOPE       ORIGIN ^"Monster"
+            DISPOSITION [ ^"Revised Rule" ]
+            EXHAUSTIVE  true
+            TEXT        "All monsters not listed above have revisions to their presentations and statistics."
+        }
+        REMAINDER #br580b732793fe2b34af {
+            SCOPE       ORIGIN ^"Monster"
+            DISPOSITION [ ^"Revised Rule" ]
+            EXHAUSTIVE  true
+            TEXT        "All animals not listed above have revisions to their presentations and statistics."
+        }
+    }
+
+    GUIDANCE {
+        ENTRY ^"Converting to System Reference Document 5.2.1" #bg1b78eb3be0ae3f0e19 {
+            TOPICS   [ "Using This Guide" ]
+            TEXT """
+            This document highlights new and revised elements in each section of System Resource Document 5.2.1 (SRD 5.2.1):
+
+            Those elements were first introduced in the Player’s Handbook (2024), Dungeon Master’s Guide (2024), and Monster Manual (2025).
+
+            In this document, each element of the new or revised elements has one or more of the following tags so you can see at a glance how it has changed: New Name. This tag is applied to a rule that has a new name. Unless stated otherwise, the rule hasn’t changed apart from its name. New Rule. This tag indicates a new rule. Revised Rule. This tag indicates a rule that appeared in SRD 5.1 but that has new functionality. Additionally, the tag “Omitted Rule” indicates stat blocks that are omitted in SRD 5.2.1 but have recommended replacements. Following these sections is guidance on capitalization.
+            """
+        }
+        ENTRY ^"Barbarian Class Features [New Rule]" #bgf3645d4b28d9bec58a {
+            TOPICS   [ "Classes", "Barbarian" ]
+            CONCERNS [ DESTINATION ^"Barbarian" ]
+            TEXT """
+            The following class features are new:
+            """
+        }
+        ENTRY ^"Barbarian Class Features [Revised Rule]" #bgb83938fe0f760f886e {
+            TOPICS   [ "Classes", "Barbarian" ]
+            CONCERNS [ DESTINATION ^"Barbarian" ]
+            TEXT """
+            The following class features are revised:
+            """
+        }
+        ENTRY ^"Barbarian Subclass: Path of the Berserker [Revised Rule]" #bg95326273503c53f353 {
+            TOPICS   [ "Classes", "Barbarian" ]
+            CONCERNS [ DESTINATION ^"Path of the Berserker" ]
+            TEXT """
+            The following subclass features are revised:
+            """
+        }
+        ENTRY ^"Bard Class Features [New Rule]" #bg4c4b5a60dc012e839c {
+            TOPICS   [ "Classes", "Bard" ]
+            CONCERNS [ DESTINATION ^"Bard" ]
+            TEXT """
+            The following class features are new:
+            """
+        }
+        ENTRY ^"Bard Class Features [Revised Rule]" #bg09e00bc80af5797e35 {
+            TOPICS   [ "Classes", "Bard" ]
+            CONCERNS [ DESTINATION ^"Bard" ]
+            TEXT """
+            The following class features are revised:
+            """
+        }
+        ENTRY ^"Bard Subclass: College of Lore [Revised Rule]" #bgfb0f607cad5ce316e1 {
+            TOPICS   [ "Classes", "Bard" ]
+            CONCERNS [ DESTINATION ^"College of Lore" ]
+            TEXT """
+            The following subclass features are revised:
+            """
+        }
+        ENTRY ^"Cleric Class Features [New Rule]" #bg3eb77288acc893fe26 {
+            TOPICS   [ "Classes", "Cleric" ]
+            CONCERNS [ DESTINATION ^"Cleric" ]
+            TEXT """
+            The following class features are new:
+            """
+        }
+        ENTRY ^"Cleric Class Features [Revised Rule]" #bgd0d4dceab261283afa {
+            TOPICS   [ "Classes", "Cleric" ]
+            CONCERNS [ DESTINATION ^"Cleric" ]
+            TEXT """
+            The following class features are revised:
+            """
+        }
+        ENTRY ^"Cleric Subclass: Life Domain [Revised Rule]" #bg88970df5a3eabe2f76 {
+            TOPICS   [ "Classes", "Cleric" ]
+            CONCERNS [ DESTINATION ^"Life Domain" ]
+            TEXT """
+            The following subclass features are revised:
+            """
+        }
+        ENTRY ^"Druid Class Features [New Rule]" #bgb878f53532078466ef {
+            TOPICS   [ "Classes", "Druid" ]
+            CONCERNS [ DESTINATION ^"Druid" ]
+            TEXT """
+            The following class features are new:
+            """
+        }
+        ENTRY ^"Druid Class Features [Revised Rule]" #bgd38697d3a3da4eab8a {
+            TOPICS   [ "Classes", "Druid" ]
+            CONCERNS [ DESTINATION ^"Druid" ]
+            TEXT """
+            The following class features are revised:
+            """
+        }
+        ENTRY ^"Druid Subclass: Circle of the Land [New Rule]" #bg2a29c160ffea3bcbf9 {
+            TOPICS   [ "Classes", "Druid" ]
+            CONCERNS [ DESTINATION ^"Circle of the Land" ]
+            TEXT """
+            The following subclass feature is new:
+            """
+        }
+        ENTRY ^"Druid Subclass: Circle of the Land [Revised Rule]" #bg85d9768292f2172588 {
+            TOPICS   [ "Classes", "Druid" ]
+            CONCERNS [ DESTINATION ^"Circle of the Land" ]
+            TEXT """
+            The following subclass features are revised:
+            """
+        }
+        ENTRY ^"Fighter Class Features [New Rule]" #bgd872fb1e4d665bcf0c {
+            TOPICS   [ "Classes", "Fighter" ]
+            CONCERNS [ DESTINATION ^"Fighter" ]
+            TEXT """
+            The following class features are new:
+            """
+        }
+        ENTRY ^"Fighter Class Features [Revised Rule]" #bg3b5caa09584adbdabd {
+            TOPICS   [ "Classes", "Fighter" ]
+            CONCERNS [ DESTINATION ^"Fighter" ]
+            TEXT """
+            The following class features are revised:
+            """
+        }
+        ENTRY ^"Fighter Subclass: Champion [New Rule]" #bg179d88cb5f870a2c63 {
+            TOPICS   [ "Classes", "Fighter" ]
+            CONCERNS [ DESTINATION ^"Champion" ]
+            TEXT """
+            The following subclass feature is new:
+            """
+        }
+        ENTRY ^"Fighter Subclass: Champion [Revised Rule]" #bgb78344e25972dc37cb {
+            TOPICS   [ "Classes", "Fighter" ]
+            CONCERNS [ DESTINATION ^"Champion" ]
+            TEXT """
+            The following subclass features are revised:
+            """
+        }
+        ENTRY ^"Monk Class Features [New Rule]" #bg21ee81808f4d991e1c {
+            TOPICS   [ "Classes", "Monk" ]
+            CONCERNS [ DESTINATION ^"Monk" ]
+            TEXT """
+            The following class features are new:
+            """
+        }
+        ENTRY ^"Monk Class Features [New Name, Revised Rule]" #bgc2046231557e90ce0e {
+            TOPICS   [ "Classes", "Monk" ]
+            CONCERNS [ DESTINATION ^"Monk" ]
+            TEXT """
+            The following class features are revised. Several of these revised class features also have new names:
+            """
+        }
+        ENTRY ^"Monk Subclass: Warrior of the Open Hand [New Rule]" #bgccf5c905bef016b8e0 {
+            TOPICS   [ "Classes", "Monk" ]
+            CONCERNS [ DESTINATION ^"Warrior of the Open Hand" ]
+            TEXT """
+            The following subclass feature is new:
+            """
+        }
+        ENTRY ^"Monk Subclass: Warrior of the Open Hand [Revised Rule]" #bgc1da9c6d94256a222b {
+            TOPICS   [ "Classes", "Monk" ]
+            CONCERNS [ DESTINATION ^"Warrior of the Open Hand" ]
+            TEXT """
+            The following subclass features are revised:
+            """
+        }
+        ENTRY ^"Paladin Class Features [New Rule]" #bgb86c1d2b3e8761ace7 {
+            TOPICS   [ "Classes", "Paladin" ]
+            CONCERNS [ DESTINATION ^"Paladin" ]
+            TEXT """
+            The following class features are new:
+            """
+        }
+        ENTRY ^"Paladin Class Features [New Name, Revised Rule]" #bg68920fe0e2067f28c7 {
+            TOPICS   [ "Classes", "Paladin" ]
+            CONCERNS [ DESTINATION ^"Paladin" ]
+            TEXT """
+            The following class features are revised. Several of these revised class features also have new names:
+            """
+        }
+        ENTRY ^"Paladin Subclass: Oath of Devotion [New Rule]" #bgee768bdd969c0e469f {
+            TOPICS   [ "Classes", "Paladin" ]
+            CONCERNS [ DESTINATION ^"Oath of Devotion" ]
+            TEXT """
+            The following subclass feature is new:
+            """
+        }
+        ENTRY ^"Paladin Subclass: Oath of Devotion [Revised Rule]" #bg15ba3377004b52a097 {
+            TOPICS   [ "Classes", "Paladin" ]
+            CONCERNS [ DESTINATION ^"Oath of Devotion" ]
+            TEXT """
+            The following subclass features are revised:
+            """
+        }
+        ENTRY ^"Ranger Class Features [New Rule]" #bgd5fd4191d4d5f9733c {
+            TOPICS   [ "Classes", "Ranger" ]
+            CONCERNS [ DESTINATION ^"Ranger" ]
+            TEXT """
+            The following class features are new:
+            """
+        }
+        ENTRY ^"Ranger Class Features [Revised Rule]" #bgc7ac69edadf8fdbfc8 {
+            TOPICS   [ "Classes", "Ranger" ]
+            CONCERNS [ DESTINATION ^"Ranger" ]
+            TEXT """
+            The following class features are revised:
+            """
+        }
+        ENTRY ^"Ranger Subclass: Hunter [New Rule]" #bg5b72e51f92b038d323 {
+            TOPICS   [ "Classes", "Ranger" ]
+            CONCERNS [ DESTINATION ^"Hunter" ]
+            TEXT """
+            The following subclass features are new:
+            """
+        }
+        ENTRY ^"Ranger Subclass: Hunter [Revised Rule]" #bg7867854fd1fb8c43f7 {
+            TOPICS   [ "Classes", "Ranger" ]
+            CONCERNS [ DESTINATION ^"Hunter" ]
+            TEXT """
+            The following subclass features are revised:
+            """
+        }
+        ENTRY ^"Rogue Class Features [New Rule]" #bg3eefa59d1de0e8af66 {
+            TOPICS   [ "Classes", "Rogue" ]
+            CONCERNS [ DESTINATION ^"Rogue" ]
+            TEXT """
+            The following class features are new:
+            """
+        }
+        ENTRY ^"Rogue Class Features [Revised Rule]" #bgcdae2a62911f2c6696 {
+            TOPICS   [ "Classes", "Rogue" ]
+            CONCERNS [ DESTINATION ^"Rogue" ]
+            TEXT """
+            The following class features are revised:
+            """
+        }
+        ENTRY ^"Rogue Subclass: Thief [Revised Rule]" #bg3ee1391f7a58341922 {
+            TOPICS   [ "Classes", "Rogue" ]
+            CONCERNS [ DESTINATION ^"Thief" ]
+            TEXT """
+            The following subclass features are revised:
+            """
+        }
+        ENTRY ^"Sorcerer Class Features [New Rule]" #bg4acc2a31fe8ed808c8 {
+            TOPICS   [ "Classes", "Sorcerer" ]
+            CONCERNS [ DESTINATION ^"Sorcerer" ]
+            TEXT """
+            The following class features are new:
+            """
+        }
+        ENTRY ^"Sorcerer Class Features [Revised Rule]" #bgc3cb0d300ca53e6695 {
+            TOPICS   [ "Classes", "Sorcerer" ]
+            CONCERNS [ DESTINATION ^"Sorcerer" ]
+            TEXT """
+            The following class features are revised:
+            """
+        }
+        ENTRY ^"Metamagic Options [New Rule]" #bg2adb93d952f7127d5a {
+            TOPICS   [ "Classes", "Sorcerer" ]
+            CONCERNS [ DESTINATION ^"Sorcerer" ]
+            TEXT """
+            The following options are new:
+            """
+        }
+        ENTRY ^"Metamagic Options [Revised Rule]" #bg0b9cc3332809343a25 {
+            TOPICS   [ "Classes", "Sorcerer" ]
+            CONCERNS [ DESTINATION ^"Sorcerer" ]
+            TEXT """
+            The following options are revised:
+            """
+        }
+        ENTRY ^"Sorcerer Subclass: Draconic Sorcery [New Rule]" #bg38d9b60c2a8e252eb6 {
+            TOPICS   [ "Classes", "Sorcerer" ]
+            CONCERNS [ DESTINATION ^"Draconic Sorcery" ]
+            TEXT """
+            The following subclass features are new:
+            """
+        }
+        ENTRY ^"Sorcerer Subclass: Draconic Sorcery [Revised Rule]" #bg99af1b6e3554c63160 {
+            TOPICS   [ "Classes", "Sorcerer" ]
+            CONCERNS [ DESTINATION ^"Draconic Sorcery" ]
+            TEXT """
+            The following subclass features are revised:
+            """
+        }
+        ENTRY ^"Warlock Class Features [New Rule]" #bg04043b49c7a8f4878e {
+            TOPICS   [ "Classes", "Warlock" ]
+            CONCERNS [ DESTINATION ^"Warlock" ]
+            TEXT """
+            The following class features are new:
+            """
+        }
+        ENTRY ^"Warlock Class Features [Revised Rule]" #bgbd053d50a13a57c8dc {
+            TOPICS   [ "Classes", "Warlock" ]
+            CONCERNS [ DESTINATION ^"Warlock" ]
+            TEXT """
+            The following class features are revised:
+            """
+        }
+        ENTRY ^"Eldritch Invocation Options [New Rule]" #bg0f5dc77cac5386486c {
+            TOPICS   [ "Classes", "Warlock" ]
+            CONCERNS [ DESTINATION ^"Warlock" ]
+            TEXT """
+            The following options are new:
+            """
+        }
+        ENTRY ^"Eldritch Invocation Options [Revised Rule]" #bgc7527f2a153658bfd1 {
+            TOPICS   [ "Classes", "Warlock" ]
+            CONCERNS [ DESTINATION ^"Warlock" ]
+            TEXT """
+            The following options are revised:
+            """
+        }
+        ENTRY ^"Warlock Subclass: Fiend Patron [Revised Rule]" #bg9fae6354c220a11109 {
+            TOPICS   [ "Classes", "Warlock" ]
+            CONCERNS [ DESTINATION ^"Fiend Patron" ]
+            TEXT """
+            The following subclass features are revised:
+            """
+        }
+        ENTRY ^"Wizard Class Features [New Rule]" #bgf6c0cd4392b0579386 {
+            TOPICS   [ "Classes", "Wizard" ]
+            CONCERNS [ DESTINATION ^"Wizard" ]
+            TEXT """
+            The following class features are new:
+            """
+        }
+        ENTRY ^"Wizard Class Features [Revised Rule]" #bg7aebbfdd8a19948714 {
+            TOPICS   [ "Classes", "Wizard" ]
+            CONCERNS [ DESTINATION ^"Wizard" ]
+            TEXT """
+            The following class features are revised:
+            """
+        }
+        ENTRY ^"Wizard Subclass: Evoker [Revised Rule]" #bg479f1ca983a5be215e {
+            TOPICS   [ "Classes", "Wizard" ]
+            CONCERNS [ DESTINATION ^"Evoker" ]
+            TEXT """
+            The following subclass features are revised:
+            """
+        }
+        ENTRY ^"Parts of a Background [New Rule]" #bg04799cc69e798c18df {
+            TOPICS   [ "Character Origins", "Character Backgrounds" ]
+            TEXT """
+            The following components of the Parts of a Background rule are new:
+            """
+        }
+        ENTRY ^"Background Descriptions [New Rule]" #bgab64346ca29ccbba54 {
+            TOPICS   [ "Character Origins", "Character Backgrounds" ]
+            TEXT """
+            The following backgrounds are new:
+            """
+        }
+        ENTRY ^"Species Descriptions [New Rule]" #bg84a274f4507c795506 {
+            TOPICS   [ "Character Origins", "Character Species" ]
+            TEXT """
+            The following species are new:
+            """
+        }
+        ENTRY ^"Species Descriptions [Revised Rule]" #bg66fc0e038ab75baf0f {
+            TOPICS   [ "Character Origins", "Character Species" ]
+            TEXT """
+            The following species are revised:
+            """
+        }
+        ENTRY ^"Properties [Revised Rule]" #bgd91b61a5d6abb5d66b {
+            TOPICS   [ "Equipment", "Weapons" ]
+            TEXT """
+            The following properties are revised.
+            """
+        }
+        ENTRY ^"Armor Training [New Name]" #bg57990354f86f9d01e1 {
+            TOPICS   [ "Equipment", "Armor" ]
+            TEXT """
+            The following armor types have new names:
+            """
+        }
+        ENTRY ^"Adventuring Gear [New Rule]" #bg3a00c5fc54dc2b03ff {
+            TOPICS   [ "Equipment", "Adventuring Gear" ]
+            TEXT """
+            The following items of adventuring gear are new:
+            """
+        }
+        ENTRY ^"Spells [New Name, Revised Rule]" #bgc94407fc31307e24cc {
+            TOPICS   [ "Spells", "Spell Descriptions" ]
+            TEXT """
+            The following spells have new names:
+            """
+        }
+        ENTRY ^"Spells [New Rule]" #bg6078658af6853fd66e {
+            TOPICS   [ "Spells", "Spell Descriptions" ]
+            TEXT """
+            The following spells are new:
+            """
+        }
+        ENTRY ^"Rules Definitions [New Name]" #bg7c96470e88a7617511 {
+            TOPICS   [ "Rules Glossary" ]
+            TEXT """
+            The following rule has a new name:
+            """
+        }
+        ENTRY ^"Rules Definitions [New Name, Revised Rule]" #bg83a9dc678d0ed7fa18 {
+            TOPICS   [ "Rules Glossary" ]
+            TEXT """
+            The following rules have new names in addition to revisions to their rules:
+            """
+        }
+        ENTRY ^"Rules Definitions [New Rule]" #bg9d397a043bc9b3e56b {
+            TOPICS   [ "Rules Glossary" ]
+            TEXT """
+            Some of the following terms appeared previously, but all of the below have a specific rules definition that is new:
+            """
+        }
+        ENTRY ^"Rules Definitions [Revised Rule]" #bg21c4c9efd9e790867a {
+            TOPICS   [ "Rules Glossary" ]
+            TEXT """
+            The following rules are revised:
+            """
+        }
+        ENTRY ^"Sample Poisons [New Name, Revised Rule]" #bgb69b366c0a1abcfffe {
+            TOPICS   [ "Gameplay Toolbox", "Poison" ]
+            TEXT """
+            The following poison has a new name in addition to revisions to its rules.
+            """
+        }
+        ENTRY ^"Example Traps [New Name, Revised Rule]" #bgfc50134bfa6039901d {
+            TOPICS   [ "Gameplay Toolbox", "Traps" ]
+            TEXT """
+            This section was previously named Sample Traps. The following traps have new names, in addition to having a revised presentation:
+            """
+        }
+        ENTRY ^"Magic Items [New Name, Revised Rule]" #bgc6be6a7e4331962c64 {
+            TOPICS   [ "Magic Items", "Magic Items A–Z" ]
+            TEXT """
+            The following magic items have new names in addition to revisions to their rules.
+            """
+        }
+        ENTRY ^"Magic Items [New Rule]" #bgcba9ccda2ff9e4ffbe {
+            TOPICS   [ "Magic Items", "Magic Items A–Z" ]
+            TEXT """
+            The following magic items are new:
+            """
+        }
+        ENTRY ^"Monsters [New Name, Revised Rule]" #bg735397266899e94c7d {
+            TOPICS   [ "Monsters A–Z" ]
+            TEXT """
+            The following monsters have new names and revisions to their presentation and statistics:
+            """
+        }
+        ENTRY ^"Monsters [New Rule]" #bgf7b3fdb3a39be56502 {
+            TOPICS   [ "Monsters A–Z" ]
+            TEXT """
+            The following monsters are new:
+            """
+        }
+        ENTRY ^"Monsters [Omitted Rule]" #bg97a7e7eb5a2382afd7 {
+            TOPICS   [ "Monsters A–Z" ]
+            TEXT """
+            The following monsters are omitted; use the listed equivalents:
+            """
+        }
+        ENTRY ^"Animals [New Name, Revised Rule]" #bga3e69da03fadc26905 {
+            TOPICS   [ "Animals" ]
+            TEXT """
+            The following animals have new names and revisions to their presentation and statistics:
+            """
+        }
+        ENTRY ^"Animals [New Rule]" #bga7076c25f0243d6a95 {
+            TOPICS   [ "Animals" ]
+            TEXT """
+            The following animals are new:
+            """
+        }
+        ENTRY ^"Using This Guide" #bgbc2d9f7362c692fbaf {
+            TOPICS   [ "Using This Guide" ]
+            TEXT """
+            When you’re updating content from SRD 5.1 to SRD 5.2.1, follow these steps: 1: Apply New Names. Check the new names here and update any renamed terms in your content accordingly. 2: Check for Rules Changes by Content Type. Consider the kind of content you’re updating, and check for changes to the kind of rules it depends on. For example, if you’re publishing subclasses, make sure they still match the structure of the classes they’re meant for. If you’re publishing monsters, apply the changes to the stat block format. 3: Update Capitalization. Many more game terms are capitalized in SRD 5.2.1 than in 5.1; update their capitalization in your content to match.
+            """
+        }
+        ENTRY ^"Playing the Game" #bgbed1ec8085e5e65fa2 {
+            TOPICS   [ "Playing the Game", "D20 Tests", "Proficiency", "Actions", "Combat", "Damage and Healing" ]
+            TEXT """
+            The “Playing the Game” section includes the following new and revised elements, which are presented in the order in which they appear in that section.
+            """
+        }
+        ENTRY ^"Character Creation" #bg82bd7d9e2718e13b4a {
+            TOPICS   [ "Character Creation", "Create Your Character", "Level Advancement", "Multiclassing" ]
+            TEXT """
+            “Character Creation” contains new and revised elements. The order of steps differs from in SRD 5.1; they are presented in the order in which they now appear.
+            """
+        }
+        ENTRY ^"Character Creation: Create Your Character" #bgf5f355e78a3a5714bd {
+            TOPICS   [ "Character Creation", "Create Your Character", "Level Advancement", "Multiclassing" ]
+            TEXT """
+            This new section sets forth the steps to create a character in an order different from previous rules.
+            """
+        }
+        ENTRY ^"Classes" #bgbeb3fb7264fa5becea {
+            TOPICS   [ "Classes", "Barbarian", "Bard", "Cleric", "Druid", "Fighter", "Monk", "Paladin", "Ranger", "Rogue", "Sorcerer", "Warlock", "Wizard" ]
+            TEXT """
+            “Classes” includes the following new and revised elements, which are presented in the order in which they appear in that section.
+            """
+        }
+        ENTRY ^"Character Origins" #bg3ce9da6ccb5ac3c80a {
+            TOPICS   [ "Character Origins", "Character Backgrounds", "Character Species" ]
+            TEXT """
+            “Character Origins” includes the following new and revised elements, which are presented in the order in which they appear in that section.
+            """
+        }
+        ENTRY ^"Feats" #bg4252885a16e23464de {
+            TOPICS   [ "Feats" ]
+            TEXT """
+            “Feats” includes the following new and revised elements, which are presented in the order in which they appear in that section.
+            """
+        }
+        ENTRY ^"Equipment" #bgf0c833a873fc2f2507 {
+            TOPICS   [ "Equipment", "Weapons", "Armor", "Tools", "Adventuring Gear", "Mounts and Vehicles", "Spellcasting", "Magic Items" ]
+            TEXT """
+            “Equipment” includes the following new and revised elements, which are presented in the order in which they appear in that section.
+            """
+        }
+        ENTRY ^"Spells" #bg52e3b891c925bb2fb1 {
+            TOPICS   [ "Spells", "Gaining Spells", "Casting Spells", "Spell Descriptions" ]
+            TEXT """
+            “Spells” includes the following new and revised elements, which are presented in the order in which they appear in that section.
+            """
+        }
+        ENTRY ^"Rules Glossary" #bgcfd4ca15468640ce21 {
+            TOPICS   [ "Rules Glossary" ]
+            TEXT """
+            “Rules Glossary” includes the following new and revised elements, which are presented in the order in which they appear in that section.
+            """
+        }
+        ENTRY ^"Gameplay Toolbox" #bg10a31d65fca9827e0e {
+            TOPICS   [ "Gameplay Toolbox", "Travel Pace", "Curses and Magical Contagions", "Fear and Mental Stress", "Poison", "Traps" ]
+            TEXT """
+            “Gameplay Toolbox” includes the following new and revised elements, which are presented in the order in which they appear in that section.
+            """
+        }
+        ENTRY ^"Magic Items" #bgb6708a254e8539cf47 {
+            TOPICS   [ "Magic Items", "Magic Item Categories", "Magic Item Rarity", "Magic Items A–Z" ]
+            TEXT """
+            “Magic Items” includes the following new and revised elements, which are presented in the order in which they appear in that section.
+            """
+        }
+        ENTRY ^"Monsters" #bg5d09e8ac90ee6863cb {
+            TOPICS   [ "Monsters", "Parts of a Stat Block" ]
+            TEXT """
+            “Monsters” includes the following new and revised elements, which are presented in the order in which they appear in that section.
+            """
+        }
+        ENTRY ^"Monsters A–Z" #bge7bcef1021d5af9bb1 {
+            TOPICS   [ "Monsters A–Z" ]
+            TEXT """
+            “Monsters A–Z” has been reorganized, such as by including NPCs alphabetically among the other monster stat blocks. This section includes the following new and revised elements, which are presented in the order in which they appear in that section.
+            """
+        }
+        ENTRY ^"Animals" #bge1c7154ab6e9973766 {
+            TOPICS   [ "Animals" ]
+            TEXT """
+            “Animals” includes the following new and revised elements, which are presented in the order in which they appear in that section.
+            """
+        }
+        ENTRY ^"Capitalization" #bg8922d9a491fff13474 {
+            TOPICS   [ "Capitalization" ]
+            TEXT """
+            Game objects are more rigorously capitalized. The following terms are capitalized:
+
+            Abilities {Strength, Intelligence}
+
+            Action names {the Attack action, the Dash action}
+
+            Action types {Bonus Action, Legendary Action, Reaction}
+
+            Advantage
+
+            Adventuring gear that has rules {Arrow, Map}
+
+            Alignments {Chaotic Neutral, Lawful Good}
+
+            Areas of effect {Cone, Cylinder, Line}
+
+            Armor Class (AC)
+
+            Armor categories {Light, Medium}
+
+            Armors {Breastplate, Hide Armor}
+
+            Attitudes {Friendly, Hostile}
+
+            Attunement
+
+            Bloodied
+
+            Challenge Rating (CR)
+
+            Classes {Fighter, Wizard}
+
+            Class features {Sneak Attack, Rage}
+
+            Coin currencies {GP, SP, PP}
+
+            Concentration
+
+            Conditions {Poisoned, Prone}
+
+            Cover {Half Cover, Three-Quarters Cover}
+
+            Creature type (Fey, Humanoid, Undead)
+
+            Critical Hit
+
+            Curses {Demonic Possession}
+
+            Damage susceptibility {Immunity, Resistance, Vulnerability}
+
+            Damage types {Acid, Piercing, Thunder}
+
+            Death Saving Throw
+
+            Difficult Terrain
+
+            Difficulty Class (DC)
+
+            Disadvantage
+
+            D20 Test
+
+            Experience Points (XP)
+
+            Feat categories {General Feat, Origin Feat}
+
+            Feats {Alert, Boon of Fate, Grappler}
+
+            Game Master (GM)
+
+            Heroic Inspiration
+
+            Hit Point Dice
+
+            Hit Points (HP)
+
+            Initiative
+
+            Languages {Common, Dwarvish, Elvish}
+
+            Lifestyles {Modest, Wealthy}
+
+            Light levels {Bright Light, Dim Light}
+
+            Magical contagions {Cackle Fever, Sewer Plague}
+
+            Magic item categories {the Wand category}
+
+            Magic items {Bag of Holding, Feather Token}
+
+            Magic item rarities {Common, Very Rare}
+
+            Mastery properties {Cleave, Slow}
+
+            Obscurement {Heavily Obscured, Lightly Obscured}
+
+            Opportunity Attack
+
+            Passive Perception
+
+            Planes of existence {Elemental Planes, Upper Planes}
+
+            Poisons {Crawler Mucus, Midnight Tears}
+
+            Proficiency Bonus
+
+            Rests {Short Rest, Long Rest}
+
+            Ritual
+
+            Schools of magic {Abjuration, Evocation}
+
+            Size {Medium, Tiny}
+
+            Skills {Arcana, Perception}
+
+            Special senses {Darkvision, Tremorsense}
+
+            Species for player characters {Dwarf, Elf}
+
+            Speeds {Climb Speed, Fly Speed, Speed}
+
+            Spells {Command, Fireball}
+
+            Spell components {Verbal, Material, Somatic}
+
+            Stable
+
+            Stat block names {Ankheg, Goblin Boss}
+
+            Subclass features {Blessed Healer, Improved Critical}
+
+            Subclasses {Champion, Draconic Sorcery}
+
+            Temporary Hit Points
+
+            Tools {Disguise Kit, Thieves’ Tools}
+
+            Traits in species and monsters {Resourceful, Siege Monster}
+
+            Travel paces {Fast, Slow}
+
+            Vehicles {Airship, Rowboat}
+
+            Weapon categories {Melee, Simple}
+
+            Weapon properties {Finesse, Light}
+
+            Weapons {Heavy Crossbow, Longsword}
+
+            Named parts of actions, class features, magic items, spells, etc. {the Break Enchantment feature of the Dispel Evil and Good spell}
+            """
+        }
+    }
+}

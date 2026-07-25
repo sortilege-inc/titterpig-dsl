@@ -1,0 +1,42 @@
+{
+  "system_id": "bridges",
+  "name": "Titterpig cross-edition bridges",
+  "dsl_dir": "titterpig-dsl/bridges",
+  "content_version": "0.4.0",
+  "spec_version": "0.4",
+  "note": "A .bridge (spec §21) is the one container with TWO dependency lineages: it records a DIRECTED, third-party assertion of correspondence between two independent edition namespaces. It belongs to NEITHER edition and must never live inside either edition's corpus directory — its ORIGIN names would not resolve there and its presence would pollute that namespace. Validate with the two-corpus mode: ttrpg_validator.py 0.4/ --corpus <edition>=<dir> ...",
+  "sources": [
+    {
+      "file": "0.4/dnd5e-to-dnd5.5e-0.4-srd-conversion.bridge",
+      "origin": { "edition": "dnd5e", "version": "0.4", "repo": "titterpig-dsl-dnd5e" },
+      "destination": { "edition": "dnd5.5e", "version": "0.4", "repo": "titterpig-dsl-dnd5.5e" },
+      "source": {
+        "title": "Converting to System Reference Document 5.2.1",
+        "publisher": "Wizards of the Coast LLC",
+        "date": "2025-05-23",
+        "license": "CC-BY-4.0",
+        "pdf": "~/Downloads/converting-to-srd-5.2.1.pdf"
+      },
+      "coverage_manifest": "titterpig-mastra/coverage/dnd5e-to-dnd5.5e-bridge.manifest.json",
+      "generator": "titterpig-mastra/scripts/bridge/ (parse_srd521.py -> units_srd521.py -> gen_bridge.py)",
+      "description": "The RICH case: entity-keyed throughout. 573 MAPs, 7 REMAINDERs, 85 GUIDANCE entries, the document's own four-tag disposition vocabulary."
+    },
+    {
+      "file": "0.4/arm4-to-arm5e-0.4-appendix-i.bridge",
+      "origin": {
+        "edition": "arm4",
+        "version": "4",
+        "external": "No titterpig corpus exists for Ars Magica Fourth Edition (Atlas Games, 1996)."
+      },
+      "destination": { "edition": "arm5e", "version": "0.4", "repo": "titterpig-dsl-arm5e/arm5e" },
+      "source": {
+        "title": "Ars Magica Fifth Edition, Appendix I: Fourth Edition Conversion (pp.223-224)",
+        "publisher": "Atlas Games",
+        "date": "2004",
+        "html": "~/Working/arm5e-corebook-conversion/Ars Magica Fifth Edition - Extracted Data.html"
+      },
+      "coverage_manifest": "titterpig-mastra/coverage/arm5e-corebook.manifest.json",
+      "description": "The SPARSE case: ~85% prose, no entity-mapping table. No MAP, no REMAINDER, no DISPOSITIONS (the document declares no change-tag vocabulary, so none is invented). 7 field-level PROCEDUREs + 11 GUIDANCE entries."
+    }
+  ]
+}

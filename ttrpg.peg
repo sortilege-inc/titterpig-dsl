@@ -28,7 +28,7 @@
 # 1. File-Level Structure
 # ═══════════════════════════════════════════════════════════
 
-FILE            <- _ (BASE_BLOCK / EXTENSION_BLOCK) _ EOF
+FILE            <- _ (BASE_BLOCK / EXTENSION_BLOCK / BRIDGE_BLOCK) _ EOF
 
 BASE_BLOCK      <- 'BASE' _ STRING _ '{' _ BODY _ '}'
 EXTENSION_BLOCK <- 'EXTENSION' _ STRING _ EXTENDS_CLAUSE? _ '{' _ BODY _ '}'
@@ -251,6 +251,112 @@ HASH_ENTRY      <- HASH_ID _ (CARET_REF _ (STRING / BRACKET_LIST)?)?
 DEF_INLINE_BLOCK <- 'DEF' _ '{' _ BODY _ '}'
 
 # ═══════════════════════════════════════════════════════════
+# 9b. BRIDGE — cross-edition conversion (v0.4, §21)
+#
+# The only container with TWO dependency lineages. ORIGIN/DESTINATION are
+# mandatory and the direction is load-bearing (a bridge is not reversible by
+# inspection). Every reference is side-qualified — by the enclosing slot
+# keyword or by an inline ORIGIN/DESTINATION qualifier; the side is never
+# inferred. A referent is TYPED (caret ref, gated against that side's corpus
+# by the validator) or UNTYPED (plain string, for a thing the corpus has no
+# DEF for). Two-corpus coherence is the validator's job, not this grammar's.
+# ═══════════════════════════════════════════════════════════
+
+BRIDGE_BLOCK    <- 'BRIDGE' _ STRING _ '{' _ BRIDGE_BODY _ '}'
+
+BRIDGE_BODY     <- (BRIDGE_ENTRY _)*
+
+BRIDGE_ENTRY    <- METADATA
+                 / SIDE_DECL
+                 / DISPOSITIONS_BLOCK
+                 / ALIASES_BLOCK
+                 / CONVERSION_BLOCK
+                 / GUIDANCE_BLOCK
+                 / COMMENT
+
+# A side names an EDITION ID (the system id its corpus lives under, §19).
+# EXTERNAL marks a side with no titterpig corpus; the reason is REQUIRED.
+SIDE_DECL       <- SIDE_KW _ STRING (_ 'VERSION' _ STRING)? (_ 'EXTERNAL' _ STRING)?
+SIDE_KW         <- 'ORIGIN' / 'DESTINATION'
+
+# The document's own change-tag vocabulary, as ordinary DEFs so that every
+# DISPOSITION reference resolves through normal coherence.
+DISPOSITIONS_BLOCK <- 'DISPOSITIONS' _ '{' _ (DEF_BLOCK _)* '}'
+
+# Names the DOCUMENT uses that the edition it describes does not (a publisher
+# typo, an inconsistent printing). §5b's ALIAS with a side qualifier: same
+# entity, no value change. The alias name then resolves on that side, so units
+# keep the document's own vocabulary while the alias records what it denotes.
+#   ALIAS ^"Contract Patron" FOR DESTINATION ^"Level 9: Contact Patron"
+ALIASES_BLOCK   <- 'ALIASES' _ '{' _ (BRIDGE_ALIAS _)* '}'
+BRIDGE_ALIAS    <- 'ALIAS' _ CARET_REF _ 'FOR' _ SIDED_REF
+                 / COMMENT
+
+# ── Conversion rules ──────────────────────────────────────────
+CONVERSION_BLOCK <- 'CONVERSION' _ '{' _ (CONVERSION_UNIT _)* '}'
+CONVERSION_UNIT  <- MAP_UNIT / REMAINDER_UNIT / PROCEDURE_UNIT / COMMENT
+
+MAP_UNIT        <- 'MAP' _ HASH_ID? _ '{' _ (MAP_FIELD _)* '}'
+MAP_FIELD       <- SIDE_KW _ REFERENT_SET        # slot supplies the side
+                 / 'SCOPE' _ SIDED_REF
+                 / 'ASPECT' _ STRING
+                 / DISPOSITION_FIELD
+                 / TEXT_FIELD
+                 / COMMENT
+
+# A bulk disposition over every member of SCOPE that no MAP names.
+# EXHAUSTIVE false records a hedging source ("Most magic items not listed…").
+REMAINDER_UNIT  <- 'REMAINDER' _ HASH_ID? _ '{' _ (REMAINDER_FIELD _)* '}'
+REMAINDER_FIELD <- 'SCOPE' _ SIDED_REF
+                 / 'EXHAUSTIVE' _ BOOLEAN_LIT
+                 / DISPOSITION_FIELD
+                 / TEXT_FIELD
+                 / COMMENT
+
+# Converts the VALUES on a character sheet (MAP corresponds ENTITIES).
+PROCEDURE_UNIT  <- 'PROCEDURE' _ HASH_ID? _ '{' _ (PROCEDURE_FIELD _)* '}'
+PROCEDURE_FIELD <- 'SUBJECT' _ SIDED_REF
+                 / 'ASPECT' _ STRING
+                 / CONVERT_STMT
+                 / DISPOSITION_FIELD
+                 / TEXT_FIELD
+                 / COMMENT
+
+CONVERT_STMT    <- 'CONVERT' _ SIDED_REF _ CONVERT_OP (_ 'INTO' _ SIDED_REF)?
+
+# Closed operation vocabulary — deliberately NOT an expression language
+# (the DSL guarantees a knowledge base, not a rules engine, §20).
+CONVERT_OP      <- 'UNCHANGED'
+                 / 'SCALE' _ INTEGER_LIT (_ 'OVER' _ INTEGER_LIT)?
+                 / 'RESTATE'
+                 / 'MANUAL' _ STRING
+
+# ── Guidance ──────────────────────────────────────────────────
+GUIDANCE_BLOCK  <- 'GUIDANCE' _ '{' _ (GUIDANCE_ENTRY _)* '}'
+
+# The ENTRY caret is a LOCAL LABEL naming the passage, not a reference.
+GUIDANCE_ENTRY  <- 'ENTRY' _ CARET_REF _ HASH_ID? _ '{' _ (GUIDANCE_FIELD _)* '}'
+                 / COMMENT
+GUIDANCE_FIELD  <- 'CONCERNS' _ '[' _ SIDED_REF (_ ',' _ SIDED_REF)* _ ']'
+                 / 'TOPICS' _ BRACKET_LIST
+                 / DISPOSITION_FIELD
+                 / TEXT_FIELD
+                 / COMMENT
+
+# ── Shared bridge pieces ──────────────────────────────────────
+# A disposition is a SET, not a single value: documents compose tags
+# ("Magic Action [New Name, Revised Rule]").
+DISPOSITION_FIELD <- 'DISPOSITION' _ '[' _ CARET_REF (_ ',' _ CARET_REF)* _ ']'
+
+TEXT_FIELD      <- 'TEXT' _ STRING
+
+# Inside an ORIGIN/DESTINATION slot the side is already fixed, so referents
+# are bare; SIDED_REF is for slots that could mean either side.
+REFERENT_SET    <- REFERENT / '[' _ REFERENT (_ ',' _ REFERENT)* _ ']'
+REFERENT        <- CARET_REF / STRING
+SIDED_REF       <- SIDE_KW _ REFERENT
+
+# ═══════════════════════════════════════════════════════════
 # 10. Values and Literals
 # ═══════════════════════════════════════════════════════════
 
@@ -336,7 +442,7 @@ EOF             <- !.
 # These keywords are matched by dedicated rules and take priority
 # over UPPER_IDENT / GENERIC_BLOCK:
 #
-# File-level:    BASE, EXTENSION, EXTENDS, NAME, VERSION, SPEC_VERSION,
+# File-level:    BASE, EXTENSION, BRIDGE, EXTENDS, NAME, VERSION, SPEC_VERSION,
 #                RELEASE_DATE, DEPENDS_ON
 # Definition:    DEF, ACTOR, TEMPLATE, PROPERTIES, RULES
 # Types:         STRING, INTEGER, BOOLEAN, ENUM, LIST, OF
@@ -348,3 +454,7 @@ EOF             <- !.
 # Choice:        CHOICE, PICK, OF, WHERE                            (DECISION-6)
 # Text:          DESCRIPTION, TEXT
 # Validation:    FIAT (also an element-level statement)
+# Bridge (§21):  ORIGIN, DESTINATION, EXTERNAL, DISPOSITIONS, DISPOSITION, ALIASES,
+#                CONVERSION, GUIDANCE, MAP, REMAINDER, PROCEDURE, SUBJECT,
+#                SCOPE, ASPECT, CONCERNS, TOPICS, ENTRY, EXHAUSTIVE, CONVERT,
+#                INTO, UNCHANGED, SCALE, OVER, RESTATE, MANUAL
