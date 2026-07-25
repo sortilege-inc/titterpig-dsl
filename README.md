@@ -9,7 +9,7 @@ A Domain Specific Language for encoding Tabletop Roleplaying Game Sourcebooks
 | `AUTHORING-GUIDELINES.md` | v0.4 authoring best-practices for system-specific `.ttrpg`/`.lore` |
 | `ttrpg.peg` | **v0.4 grammar** — aligned to the spec (adds `SPEC_VERSION`, `FIAT`) |
 | `ttrpg_validator.py` | **v0.4 validator** — two levels: lint (spec adherence) + coherence (referential integrity), with FIAT waivers. Run: `python3 ttrpg_validator.py <file-or-dir>` |
-| `tests/` | Validator fixtures — `good.ttrpg` (conformant) and `bad.ttrpg` (intentional findings) |
+| `tests/` | Validator fixtures — `good.*` (conformant) and `bad.*` (intentional findings), plus `mods-good.ttrpg` / `mods-bad.ttrpg` for the §13 modification system (validate each against `good.ttrpg`) |
 | `archive/` | **Historical / superseded** — not part of the current spec |
 
 `titterpig-dsl-spec.md` is the single source of truth; `ttrpg.peg` and `ttrpg_validator.py` are

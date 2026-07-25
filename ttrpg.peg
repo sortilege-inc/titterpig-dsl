@@ -189,15 +189,27 @@ RULE_TEXT_INNER <- (!']' .)*
 # 8. Modification System (Extensions)
 # ═══════════════════════════════════════════════════════════
 
-MODIFY_STATEMENT   <- (CARET_REF / STRING) _ 'MODIFY' _ '{' _ MODIFY_BODY _ '}'
-OVERRIDE_STATEMENT <- 'OVERRIDE' _ (CARET_REF / STRING) _ '{' _ BODY _ '}'
+# Both spellings of MODIFY are legal and equivalent (spec S13); the prefix form is
+# the one the spec's own examples use, the postfix form is what the vtm5e errata uses.
+MODIFY_STATEMENT   <- 'MODIFY' _ HASH_ID? _ (CARET_REF / STRING) _ '{' _ MODIFY_BODY _ '}'
+                    / (CARET_REF / STRING) _ 'MODIFY' _ '{' _ MODIFY_BODY _ '}'
+
+# OVERRIDE with a block replaces a definition; the bare form is a statement inside a
+# DEF body naming the definition this one supersedes. Either way the target is a
+# reference and must resolve.
+OVERRIDE_STATEMENT <- 'OVERRIDE' _ HASH_ID? _ (CARET_REF / STRING) _ '{' _ BODY _ '}'
+                    / 'OVERRIDE' _ HASH_ID? _ (CARET_REF / STRING)
 ADD_STATEMENT      <- 'ADD' _ DEF_BLOCK
 
+# PROPERTIES inside a MODIFY INTRODUCES properties the target lacks; SET may only
+# change one it already declares (spec S13, "Changing vs. introducing a property").
 MODIFY_BODY     <- (MODIFY_ENTRY _)*
 MODIFY_ENTRY    <- SET_ENTRY / ADD_TO_ENTRY / REMOVE_FROM_ENTRY
-                 / RULES_BLOCK / COMMENT
+                 / PROPERTIES_BLOCK / RULES_BLOCK / COMMENT
 
-SET_ENTRY       <- 'SET' _ CARET_REF _ PROPERTY_TYPE
+# A SET may restate the whole type (`SET ^"Magnitude" ENUM [...]`) or just adjust a
+# constraint on it (`SET ^"Starting Honor" DEFAULT 45`, as in the spec's own example).
+SET_ENTRY       <- 'SET' _ CARET_REF _ (PROPERTY_TYPE / (MODIFIER _)+)
 ADD_TO_ENTRY    <- 'ADD_TO' _ CARET_REF _ VALUE
 REMOVE_FROM_ENTRY <- 'REMOVE_FROM' _ CARET_REF _ VALUE
 

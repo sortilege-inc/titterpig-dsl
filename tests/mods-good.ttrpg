@@ -1,0 +1,50 @@
+# Conformant §13 modification system — every directive in its legal form.
+# Validate together with good.ttrpg, which declares the targets:
+#     python3 ttrpg_validator.py tests/good.ttrpg tests/mods-good.ttrpg
+# Expected: 0 error(s), 0 warning(s).
+
+EXTENSION "Demo_Core_Ext" {
+    NAME "Demo System — conformant overlay"
+    SPEC_VERSION "0.4"
+    VERSION "1.0"
+    RELEASE_DATE "2026-07-25"
+    DEPENDS_ON "Demo_Core"
+
+    MODIFY ^"Technique" {
+        # SET changes a property the target already declares. Adding a value to an
+        # ENUM orphans nothing, so it raises nothing.
+        SET ^"Ring" ENUM ["Air", "Earth", "Fire", "Water", "Void"]
+
+        ADD_TO ^"Tags" "invocation"
+        REMOVE_FROM ^"Tags" "ritual"
+
+        # a PROPERTIES block introduces properties the target never had — the only
+        # way to widen a type with a new field
+        PROPERTIES {
+            ^"Source Book" STRING
+            ^"Source Page" STRING
+        }
+    }
+
+    # the postfix spelling of the same statement; `Rank` resolves through EXTENDS
+    ^"Crossing Blade" MODIFY {
+        SET ^"Rank" INTEGER 3
+    }
+
+    # OVERRIDE replaces a parent definition wholesale
+    OVERRIDE ^"Kuni Watcher" {
+        EXTENDS ^"Adversary"
+        PROPERTIES {
+            ^"Name" STRING "Kuni Watcher"
+        }
+    }
+
+    # ADD introduces content the parent does not have
+    ADD #DemoRisingBladeX2yZ4aB6cD ^"Rising Blade" DEF {
+        EXTENDS ^"Technique"
+        PROPERTIES {
+            ^"Name" STRING "Rising Blade"
+            ^"Ring" STRING "Fire"
+        }
+    }
+}

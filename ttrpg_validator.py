@@ -18,6 +18,33 @@ Two levels of validation over one or more .ttrpg files (or directories):
     - DECISION-6: bound-ref bases & arguments, PARAMETERS OF types, CHOICE
       options, and ALIAS FOR targets all resolve (an ALIAS name is itself a
       resolvable name)
+    - MODIFICATION SYSTEM (spec §13) — see below
+
+MODIFICATION SYSTEM (spec §13). An overlay that names a target which does not exist
+modifies nothing, silently, forever; these checks are the gate against that.
+
+  - MODIFY ^"X" { } / OVERRIDE ^"X" { } / bare OVERRIDE ^"X" — X must resolve to a
+    definition somewhere in the loaded corpus (normally the DEPENDS_ON parent).
+    Unresolvable target = ERROR.
+  - ADD ^"X" DEF { } introduces content the parent does not have; if X is already
+    defined elsewhere in the corpus it is a WARNING, not an error — the loaded set is
+    not necessarily the consumer's composition set (§13 Composition & Precedence), so
+    the collision may be with a sourcebook that would never be co-loaded. The message
+    points at OVERRIDE / MODIFY, which is what a deliberate replacement should say.
+  - Inside MODIFY (§13, decided 2026-07-25):
+      SET ^"P" <type>       changes a property the target ALREADY declares (its own,
+                            or one inherited through EXTENDS). Naming an undeclared
+                            property is an ERROR — that is how a typo'd SET is caught.
+      PROPERTIES { ... }    introduces new properties on the target. This is the form
+                            the l5r5e errata corpus already uses, and it is the only
+                            way to widen a type with a field it never had.
+      ADD_TO ^"P" v         P must exist and be a LIST (ERROR otherwise).
+      REMOVE_FROM ^"P" v    P must exist and be a LIST (ERROR otherwise); if P declares
+                            literal members and v is not among them, WARNING — an
+                            earlier layer's ADD_TO may legitimately have put it there.
+  - SET ^"P" ENUM [...] that DROPS a value warns for every loaded definition extending
+    the target that still assigns a dropped value — narrowing an enum is legal, but
+    orphaning a live instance with it is a mistake.
 
 FIAT: a value or element marked  FIAT "reason"  is exempt from the COHERENCE and
 inline-range findings it would otherwise raise. An element-level FIAT (a `FIAT "reason"`
@@ -49,6 +76,10 @@ import os
 from dataclasses import dataclass
 
 HASH_MIN_BODY = 16
+
+# Property types the spec declares (§8). A caret followed by one of these inside a
+# PROPERTIES block is a property declaration; anything else is not.
+PROP_TYPE_KW = ('STRING', 'INTEGER', 'BOOLEAN', 'ENUM', 'LIST', 'DEF', 'TEXT')
 
 
 @dataclass
@@ -520,6 +551,127 @@ def load_corpus_names(path):
     return names
 
 
+# ═══════════════════════════════════════════════════════════════════════════
+# Property declarations (§8) — the table the §13 modification checks read
+# ═══════════════════════════════════════════════════════════════════════════
+
+def _bracket_strings(toks, k):
+    """toks[k] is '['. Return (list of STR values at bracket depth 1, index past ']')."""
+    vals, depth = [], 0
+    while k < len(toks):
+        if toks[k].kind == 'LBRACK':
+            depth += 1
+        elif toks[k].kind == 'RBRACK':
+            depth -= 1
+            if depth == 0:
+                return vals, k + 1
+        elif toks[k].kind == 'STR' and depth == 1:
+            vals.append(toks[k].val)
+        k += 1
+    return vals, k
+
+
+def parse_prop_decl(toks, k):
+    """toks[k] is the CARET naming a property. Returns (record, next index), or
+    (None, k+1) when this caret does not open a property declaration.
+
+    The record captures what the §13 checks need: the declared type, an ENUM's
+    permitted values, whether it is a list (and its literal members, if any), and
+    an inline value — an *instance* restates a parent's ENUM field as a concrete
+    `^"Size" STRING "Minor"`, which is what an enum-narrowing check must look at."""
+    name = toks[k].val
+    j = k + 1
+    if j >= len(toks) or toks[j].kind != 'ID' or toks[j].val not in PROP_TYPE_KW:
+        return None, k + 1
+    ty = toks[j].val
+    rec = {'name': name, 'type': ty, 'enum': None, 'is_list': False,
+           'members': None, 'value': None, 'line': toks[k].line}
+    j += 1
+    if ty == 'ENUM':
+        if j < len(toks) and toks[j].kind == 'LBRACK':
+            rec['enum'], j = _bracket_strings(toks, j)
+        elif j < len(toks) and toks[j].kind == 'STR':
+            rec['value'] = toks[j].val
+            j += 1
+    elif ty == 'LIST':
+        rec['is_list'] = True
+        if j < len(toks) and toks[j].kind == 'ID' and toks[j].val == 'OF':
+            j += 1
+            if j < len(toks) and toks[j].kind in ('CARET', 'ID'):
+                j += 1          # LIST OF ^"Type" | LIST OF STRING
+        if j < len(toks) and toks[j].kind == 'LBRACK':
+            rec['members'], j = _bracket_strings(toks, j)
+    elif ty in ('STRING', 'TEXT'):
+        if j < len(toks) and toks[j].kind == 'STR':
+            rec['value'] = toks[j].val
+            j += 1
+    elif ty == 'INTEGER':
+        if j < len(toks) and toks[j].kind == 'INT':
+            rec['value'] = toks[j].val
+            j += 1
+    elif ty == 'BOOLEAN':
+        if j < len(toks) and toks[j].kind == 'BOOL':
+            rec['value'] = toks[j].val
+            j += 1
+    return rec, j
+
+
+def parse_properties_block(toks, k):
+    """toks[k] is 'PROPERTIES' and toks[k+1] is '{'. Return the declarations at the
+    block's own level; a nested `^"Rings" DEF { ... }` is one property here, and its
+    interior fields belong to *it*, not to the enclosing DEF."""
+    out = {}
+    if k + 1 >= len(toks) or toks[k + 1].kind != 'LBRACE':
+        return out
+    depth, j = 0, k + 1
+    while j < len(toks):
+        t = toks[j]
+        if t.kind == 'LBRACE':
+            depth += 1
+        elif t.kind == 'RBRACE':
+            depth -= 1
+            if depth == 0:
+                break
+        elif t.kind == 'CARET' and depth == 1:
+            rec, j = parse_prop_decl(toks, j)
+            if rec is not None:
+                out[rec['name']] = rec
+            continue
+        j += 1
+    return out
+
+
+def scan_modify_body(toks, lb):
+    """toks[lb] is a MODIFY block's '{'. Collect the SET / ADD_TO / REMOVE_FROM
+    operations at the block's own level. A `PROPERTIES { }` inside the block is not an
+    operation — it declares new properties on the target and is picked up by the normal
+    §8 handling, which is exactly the split §13 draws between changing and introducing."""
+    ops, depth, j = [], 0, lb
+    while j < len(toks):
+        t = toks[j]
+        if t.kind == 'LBRACE':
+            depth += 1
+        elif t.kind == 'RBRACE':
+            depth -= 1
+            if depth == 0:
+                break
+        elif depth == 1 and t.kind == 'ID' and t.val in ('SET', 'ADD_TO', 'REMOVE_FROM') \
+                and j + 1 < len(toks) and toks[j + 1].kind == 'CARET':
+            prop = toks[j + 1].val
+            if t.val == 'SET':
+                # `SET ^"P" ENUM [...]` parses as a declaration; `SET ^"P" DEFAULT 45`
+                # does not, and simply carries no type information.
+                rec, j = parse_prop_decl(toks, j + 1)
+                ops.append({'op': 'SET', 'prop': prop, 'rec': rec, 'line': t.line})
+                continue
+            val = None
+            if j + 2 < len(toks) and toks[j + 2].kind in ('STR', 'INT', 'BOOL'):
+                val = toks[j + 2].val
+            ops.append({'op': t.val, 'prop': prop, 'value': val, 'line': t.line})
+        j += 1
+    return ops
+
+
 def analyze_file(fname, text, findings):
     if fname.endswith('.bridge'):
         return analyze_bridge(fname, text, findings)
@@ -527,9 +679,20 @@ def analyze_file(fname, text, findings):
     defined_names, anchors = {}, {}     # name/hash -> [lines]
     refs, depends, file_ids = [], [], []
     has_spec_version = False
-    frames = []                          # {open, is_def, waived}
+    frames = []                          # {open, is_def, waived, def_name}
     waived_ranges, waived_lines = [], set()
     next_lbrace_is_def = False
+    next_lbrace_def_name = None
+    def_props = {}                       # name -> {prop -> record}   (§8 declarations)
+    def_extends = {}                     # name -> [parent names]
+    mods = []                            # §13 MODIFY blocks and their operations
+    adds = []                            # §13 ADD ^"X" DEF sites: (name, line)
+
+    def cur_def():
+        for fr in reversed(frames):
+            if fr['def_name']:
+                return fr['def_name']
+        return None
 
     def caret_earlier_on_line(idx):
         ln = toks[idx].line
@@ -542,8 +705,10 @@ def analyze_file(fname, text, findings):
 
     for idx, t in enumerate(toks):
         if t.kind == 'LBRACE':
-            frames.append({'open': t.line, 'is_def': next_lbrace_is_def, 'waived': False})
+            frames.append({'open': t.line, 'is_def': next_lbrace_is_def, 'waived': False,
+                           'def_name': next_lbrace_def_name})
             next_lbrace_is_def = False
+            next_lbrace_def_name = None
             continue
         if t.kind == 'RBRACE':
             if not frames:
@@ -594,6 +759,14 @@ def analyze_file(fname, text, findings):
                 if hsh:
                     anchors.setdefault(hsh, []).append(t.line)
                 next_lbrace_is_def = True
+                next_lbrace_def_name = name
+        elif w == 'PROPERTIES':
+            # §8 declarations. The owner is the nearest enclosing DEF — or, when this
+            # block sits inside a MODIFY/OVERRIDE, the entity being modified, which is
+            # how §13 introduces a property the target never had.
+            owner = cur_def()
+            if owner:
+                def_props.setdefault(owner, {}).update(parse_properties_block(toks, idx))
         elif w == 'EXTENDS':
             k = idx + 1
             hsh = None
@@ -601,6 +774,9 @@ def analyze_file(fname, text, findings):
                 hsh = toks[k].val; k += 1
             if k < len(toks) and toks[k].kind == 'CARET':
                 refs.append(('extends', toks[k].val, hsh, t.line))
+                owner = cur_def()
+                if owner:
+                    def_extends.setdefault(owner, []).append(toks[k].val)
         elif w == 'APPLIES':
             k = idx + 1
             if k < len(toks) and toks[k].kind == 'ID' and toks[k].val == 'TO':
@@ -672,6 +848,47 @@ def analyze_file(fname, text, findings):
                             and not (k + 1 < len(toks) and toks[k + 1].kind == 'LPAREN'):
                         refs.append(('choice option', tk.val, None, tk.line))
                     k += 1
+        elif w == 'MODIFY':
+            # §13 has two block spellings — `MODIFY ^"X" { }` and `^"X" MODIFY { }` —
+            # and one non-statement use, `#hash MODIFY: rule text` inside RULES, which
+            # names no target and must not be mistaken for either.
+            nxt = toks[idx + 1] if idx + 1 < len(toks) else None
+            tgt, hsh, lb = None, None, None
+            if nxt is None or nxt.kind == 'COLON':
+                pass
+            elif nxt.kind in ('CARET', 'HASH'):
+                k = idx + 1
+                if toks[k].kind == 'HASH':
+                    hsh = toks[k].val; k += 1
+                if k + 1 < len(toks) and toks[k].kind == 'CARET' \
+                        and toks[k + 1].kind == 'LBRACE':
+                    tgt, lb = toks[k].val, k + 1
+            elif nxt.kind == 'LBRACE' and idx > 0 and toks[idx - 1].kind == 'CARET':
+                tgt, lb = toks[idx - 1].val, idx + 1
+            if tgt is not None:
+                refs.append(('modify target', tgt, hsh, t.line))
+                mods.append({'target': tgt, 'line': t.line, 'ops': scan_modify_body(toks, lb)})
+                next_lbrace_is_def = True
+                next_lbrace_def_name = tgt
+        elif w == 'OVERRIDE':
+            # Both the §13 block form and the bare `OVERRIDE ^"X"` statement the corpus
+            # uses inside a variant DEF: either way the target has to exist.
+            k = idx + 1
+            hsh = None
+            if k < len(toks) and toks[k].kind == 'HASH':
+                hsh = toks[k].val; k += 1
+            if k < len(toks) and toks[k].kind == 'CARET':
+                refs.append(('override target', toks[k].val, hsh, t.line))
+                if k + 1 < len(toks) and toks[k + 1].kind == 'LBRACE':
+                    next_lbrace_is_def = True
+                    next_lbrace_def_name = toks[k].val
+        elif w == 'ADD':
+            k = idx + 1
+            if k < len(toks) and toks[k].kind == 'HASH':
+                k += 1
+            if k + 1 < len(toks) and toks[k].kind == 'CARET' \
+                    and toks[k + 1].kind == 'ID' and toks[k + 1].val == 'DEF':
+                adds.append((toks[k].val, toks[k + 1].line))
         elif w == 'DEPENDS_ON':
             if idx + 1 < len(toks) and toks[idx + 1].kind == 'STR':
                 depends.append((toks[idx + 1].val, t.line))
@@ -718,6 +935,7 @@ def analyze_file(fname, text, findings):
         'file': fname, 'kind': 'ttrpg', 'names': defined_names, 'anchors': anchors, 'refs': refs,
         'depends': depends, 'file_ids': file_ids,
         'waived_ranges': waived_ranges, 'waived_lines': waived_lines,
+        'def_props': def_props, 'def_extends': def_extends, 'mods': mods, 'adds': adds,
     }
 
 
@@ -767,6 +985,134 @@ def coherence_pass(files_data, findings):
             if fid not in corpus_file_ids and not is_waived(line, d):
                 findings.append(Finding(d['file'], 'coherence', 'error', line,
                                         "DEPENDS_ON references undefined file id \"%s\"" % fid))
+
+
+def _resolve_prop(name, prop, props, extends, seen=None):
+    """A property declaration on `name`, or on anything up its EXTENDS chain."""
+    if seen is None:
+        seen = set()
+    if name in seen:
+        return None
+    seen.add(name)
+    rec = props.get(name, {}).get(prop)
+    if rec is not None:
+        return rec
+    for parent in extends.get(name, ()):
+        rec = _resolve_prop(parent, prop, props, extends, seen)
+        if rec is not None:
+            return rec
+    return None
+
+
+def _descendants(name, children, seen=None):
+    """Every definition that extends `name`, transitively."""
+    if seen is None:
+        seen = set()
+    for child in children.get(name, ()):
+        if child in seen:
+            continue
+        seen.add(child)
+        _descendants(child, children, seen)
+    return seen
+
+
+def modification_pass(files_data, findings):
+    """Coherence for the §13 modification system.
+
+    Target resolution itself rides on the ordinary reference machinery (the
+    'modify target' / 'override target' refs raised in analyze_file), so it is checked
+    — and FIAT-waivable — exactly like EXTENDS. What is left for this pass is what
+    happens *inside* a MODIFY, and whether an ADD is really adding anything."""
+    props, extends, name_sites, by_file = {}, {}, {}, {}
+    for d in files_data:
+        if d.get('kind') != 'ttrpg':
+            continue
+        by_file[d['file']] = d
+        for nm, table in d['def_props'].items():
+            bucket = props.setdefault(nm, {})
+            for pname, rec in table.items():
+                rec = dict(rec, file=d['file'])
+                bucket.setdefault(pname, rec)   # the first declaration is the prior one
+        for nm, parents in d['def_extends'].items():
+            extends.setdefault(nm, []).extend(parents)
+        for nm, lines in d['names'].items():
+            for ln in lines:
+                name_sites.setdefault(nm, []).append((d['file'], ln))
+
+    children = {}
+    for child, parents in extends.items():
+        for parent in parents:
+            children.setdefault(parent, []).append(child)
+
+    for d in files_data:
+        if d.get('kind') != 'ttrpg':
+            continue
+        for m in d['mods']:
+            tgt = m['target']
+            if tgt not in name_sites:
+                continue        # unresolvable target: already reported, once, as a ref
+            for op in m['ops']:
+                if is_waived(op['line'], d):
+                    continue
+                rec = _resolve_prop(tgt, op['prop'], props, extends)
+                if op['op'] == 'SET':
+                    if rec is None:
+                        findings.append(Finding(
+                            d['file'], 'coherence', 'error', op['line'],
+                            "SET names ^\"%s\", which ^\"%s\" does not declare (directly or "
+                            "through EXTENDS) — a MODIFY that introduces a new property "
+                            "declares it in a PROPERTIES block (§13)" % (op['prop'], tgt)))
+                        continue
+                    widened = op['rec']['enum'] if op['rec'] else None
+                    if widened is None or not rec.get('enum'):
+                        continue
+                    dropped = [v for v in rec['enum'] if v not in widened]
+                    if not dropped:
+                        continue
+                    # Narrowing an enum is legal; orphaning a live instance with it is not.
+                    for inst in sorted(_descendants(tgt, children)):
+                        irec = props.get(inst, {}).get(op['prop'])
+                        if irec is None or irec.get('value') not in dropped:
+                            continue
+                        di = by_file.get(irec['file'])
+                        if di is not None and is_waived(irec['line'], di):
+                            continue
+                        findings.append(Finding(
+                            irec['file'], 'coherence', 'warning', irec['line'],
+                            "^\"%s\" assigns ^\"%s\" = \"%s\", which %s:%d drops from the enum"
+                            % (inst, op['prop'], irec['value'],
+                               os.path.basename(d['file']), op['line'])))
+                elif rec is None:
+                    findings.append(Finding(
+                        d['file'], 'coherence', 'error', op['line'],
+                        "%s names ^\"%s\", which ^\"%s\" does not declare (directly or through "
+                        "EXTENDS)" % (op['op'], op['prop'], tgt)))
+                elif not rec['is_list']:
+                    findings.append(Finding(
+                        d['file'], 'coherence', 'error', op['line'],
+                        "%s ^\"%s\": ^\"%s\" declares it %s, not a LIST"
+                        % (op['op'], op['prop'], tgt, rec['type'])))
+                elif op['op'] == 'REMOVE_FROM' and rec.get('members') is not None \
+                        and op['value'] is not None and op['value'] not in rec['members']:
+                    # A warning, not an error: an earlier layer's ADD_TO may legitimately
+                    # have put the value there (§13 Composition & Precedence).
+                    findings.append(Finding(
+                        d['file'], 'coherence', 'warning', op['line'],
+                        "REMOVE_FROM ^\"%s\" removes \"%s\", which ^\"%s\" does not list"
+                        % (op['prop'], op['value'], tgt)))
+
+        for nm, line in d['adds']:
+            if is_waived(line, d):
+                continue
+            others = [(f, ln) for f, ln in name_sites.get(nm, [])
+                      if not (f == d['file'] and ln == line)]
+            if not others:
+                continue
+            where = ", ".join("%s:%d" % (os.path.basename(f), ln) for f, ln in others)
+            findings.append(Finding(
+                d['file'], 'coherence', 'warning', line,
+                "ADD ^\"%s\" introduces content the corpus already defines (%s) — say "
+                "OVERRIDE or MODIFY if replacing it is the intent (§13)" % (nm, where)))
 
 
 def _all_hashes(files_data):
@@ -833,6 +1179,7 @@ def main(argv):
             return 2
         files_data.append(analyze_file(path, text, findings))
     coherence_pass(files_data, findings)
+    modification_pass(files_data, findings)
     bridge_coherence(files_data, corpora, findings, notes)
 
     findings.sort(key=lambda f: (f.file, f.line, f.level, f.sev))

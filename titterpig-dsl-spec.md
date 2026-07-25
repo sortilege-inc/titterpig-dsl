@@ -797,6 +797,13 @@ EXTENSION "Sourcebook" EXTENDS "L5R5e_Core" {
 }
 ```
 
+`ADD` asserts the content is *new*. If the name is already defined in the loaded corpus the
+assertion is false, and the validator raises a **warning** — pointing at `OVERRIDE` / `MODIFY`,
+which is what a deliberate replacement should say. It is a warning rather than an error because the
+loaded set is not necessarily the consumer's composition set: the collision may be with an optional
+sourcebook that would never be co-loaded with this one, and precedence would resolve it either way
+(*Composition & Precedence*, below).
+
 ### MODIFY — Partial Changes
 
 Surgical modifications to existing definitions:
@@ -811,10 +818,43 @@ EXTENSION "Errata2020" EXTENDS "L5R5e_Core" {
 }
 ```
 
+Both spellings of the statement are legal and mean the same thing: `MODIFY ^"X" { … }` and
+`^"X" MODIFY { … }`.
+
 Within a `MODIFY` block:
 - `SET` — change a property value or constraint
 - `ADD_TO` — append to a list property
 - `REMOVE_FROM` — remove from a list property
+- `PROPERTIES { … }` — **introduce** properties the target does not have
+- `RULES { … }` — modify individual rules (below)
+
+### Changing vs. introducing a property *(v0.4, decided 2026-07-25)*
+
+`SET` **changes**; a `PROPERTIES` block **introduces**. The two are not interchangeable:
+
+```
+MODIFY ^"Covenant Boon" {
+    SET ^"Magnitude" ENUM ["Minor", "Major", "Free"]   # widens a field the target has
+    PROPERTIES {
+        ^"Category" ENUM ["Site", "Buildings", "Resources"]   # a field it never had
+        ^"Requires" STRING
+    }
+}
+```
+
+`SET` naming a property the target does not declare — neither its own nor one inherited through
+`EXTENDS` — is an **error**. That is the whole point of the split: a mistyped `SET ^"Magnitud"`
+would otherwise be indistinguishable from a deliberate new field, and would silently create a
+property nothing reads instead of widening the one that was meant. Widening a type with a genuinely
+new field is normal and expected — it just has to say so, in a `PROPERTIES` block.
+
+`ADD_TO` / `REMOVE_FROM` require the named property to exist **and be a `LIST`** (error otherwise).
+`REMOVE_FROM` naming a value the list does not carry is a **warning**, not an error: an earlier
+layer's `ADD_TO` may legitimately have put it there.
+
+**Narrowing an enum.** `SET ^"P" ENUM [...]` that *drops* a permitted value is legal — but a
+loaded definition that still assigns a dropped value is orphaned by it, and each such instance
+raises a **warning** against the instance, naming the `SET` responsible.
 
 ### MODIFY in Rules
 
@@ -2175,6 +2215,21 @@ Validation of `.ttrpg`/`.lore` files has two levels, both operating on the files
 
 1. **Lint — spec adherence.** Does the file conform to this grammar/spec (structure, types, reserved-word usage, canonical forms)? One source of truth: the linter is derived from / checked against the grammar.
 2. **Coherence / consilience — referential integrity.** Across **an edition's** corpus: is everything referenced actually defined? Do `^"Name"`, `#hash`, `EXTENDS`, `APPLIES TO`, `DEPENDS_ON` resolve to real, correctly-typed targets? No **dangling** anchors, and **no hash shared by two *different* entities**. (A hash *recurring* across files is a legal override (§13, DECISION-4), not a duplicate — so coherence is scoped to one edition and treats consistent recurrence as override, not error. *Note: the current `ttrpg_validator.py` still flags all recurrence as a duplicate-anchor error; scoping it to inconsistent-recurrence is a pending change — see `titterpig-mastra/TASKS.md`.*)
+
+**The modification system is part of coherence** *(v0.4, 2026-07-25)*. A `MODIFY` / `OVERRIDE`
+naming a target that does not exist modifies nothing, silently and permanently — rename the parent
+definition, or mistype the target, and the overlay simply stops applying with no diagnostic. So
+every `MODIFY ^"X"` / `OVERRIDE ^"X"` target must resolve in the loaded corpus (**error** if not),
+alongside the per-directive rules in §13: `SET` against an undeclared property and `ADD_TO` /
+`REMOVE_FROM` against a non-`LIST` are errors; a colliding `ADD`, a `REMOVE_FROM` of an absent
+value, and an enum narrowed out from under a live instance are warnings.
+
+**What counts as "defined."** Name resolution collects `^"Name" DEF` (including nested and `ADD`-ed
+ones), `ACTOR` / `TEMPLATE` definitions, and `ALIAS` names — and nothing else. A bare
+`^"Name" { … }` block declares no name: §5 is the only spelling of a definition, and a caret that
+opens a statement without `DEF` resolves nothing. Frozen pre-0.4 content directories (§19) that
+still use the old spelling are historical artifacts and are not expected to validate against this
+spec version.
 
 **Intentional exceptions:** both levels honor `FIAT` (§8) — a value or element marked `FIAT "reason"` is exempt from the findings it would otherwise raise (constraint violations and, cascading, completeness). Because each `FIAT` carries a reason, the full set is reportable for audit.
 

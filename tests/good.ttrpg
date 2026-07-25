@@ -34,6 +34,28 @@ BASE "Demo_Core" {
         }
     }
 
+    # a type an EXTENSION will widen (§13). The ENUM and LIST properties are what
+    # give SET / ADD_TO / REMOVE_FROM something to act on; see tests/mods-*.ttrpg
+    #DemoTechniqueM5nO7pQ9rS1tU3v ^"Technique" DEF {
+        PROPERTIES {
+            ^"Name" STRING REQUIRED
+            ^"Ring" ENUM ["Air", "Earth", "Fire", "Water"]
+            ^"Tags" LIST ["kata", "shuji", "ritual"]
+            ^"Rank" INTEGER MIN 1 MAX 5
+        }
+    }
+
+    # an instance of it — restates the parent's ENUM field as a concrete value, which
+    # is what an enum-narrowing check has to notice
+    #DemoCrossingBladeW7xY9zA1bC3 ^"Crossing Blade" DEF {
+        EXTENDS ^"Technique"
+        PROPERTIES {
+            ^"Name" STRING "Crossing Blade"
+            ^"Ring" STRING "Water"
+            ^"Rank" INTEGER 2
+        }
+    }
+
     # FIAT exception — supernatural Air beyond the mortal MAX 5
     #DemoOniLordC3dE5fG7hI9jK1l ^"Oni Lord" DEF {
         EXTENDS ^"Adversary"

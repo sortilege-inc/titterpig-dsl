@@ -1,0 +1,55 @@
+# Intentionally-broken §13 modification system — one instance of each finding.
+# Validate together with good.ttrpg, which declares the targets:
+#     python3 ttrpg_validator.py tests/good.ttrpg tests/mods-bad.ttrpg
+# Expected: 4 error(s), 3 warning(s).
+#
+#   ERROR    MODIFY names a target that does not exist
+#   ERROR    OVERRIDE names a target that does not exist
+#   ERROR    SET names a property the target does not declare
+#   ERROR    ADD_TO names a property that is not a LIST
+#   WARNING  REMOVE_FROM removes a value the list does not carry
+#   WARNING  ADD collides with a name the corpus already defines
+#   WARNING  SET narrows an ENUM that a loaded instance still assigns
+#            (reported against good.ttrpg, where ^"Crossing Blade" lives)
+
+EXTENSION "Demo_Core_Broken_Ext" {
+    NAME "Demo System — broken overlay"
+    SPEC_VERSION "0.4"
+    VERSION "1.0"
+    RELEASE_DATE "2026-07-25"
+    DEPENDS_ON "Demo_Core"
+
+    # the probe case: an overlay that modifies nothing at all, silently
+    MODIFY ^"Entity That Does Not Exist Anywhere" {
+        SET ^"Ring" ENUM ["Air"]
+    }
+
+    OVERRIDE ^"Adversary That Does Not Exist Anywhere" {
+        PROPERTIES {
+            ^"Name" STRING "Nobody"
+        }
+    }
+
+    MODIFY ^"Technique" {
+        # typo'd property name — without this check it would silently create a new
+        # property rather than change the intended one
+        SET ^"Rnig" ENUM ["Air", "Earth"]
+
+        # ^"Name" is a STRING; there is nothing to append to
+        ADD_TO ^"Name" "extra"
+
+        # ^"Tags" carries no "kihou", so this removes nothing
+        REMOVE_FROM ^"Tags" "kihou"
+
+        # drops "Water", which ^"Crossing Blade" still assigns
+        SET ^"Ring" ENUM ["Air", "Earth", "Fire"]
+    }
+
+    # ^"Crossing Blade" already exists; this should say OVERRIDE
+    ADD ^"Crossing Blade" DEF {
+        EXTENDS ^"Technique"
+        PROPERTIES {
+            ^"Name" STRING "Crossing Blade"
+        }
+    }
+}
