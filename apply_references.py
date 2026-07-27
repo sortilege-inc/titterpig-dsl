@@ -92,11 +92,21 @@ def find_references(desc, rx, names, self_key):
     return hits
 
 
-def process(root, dry, exclude=()):
+def process(root, dry, exclude=(), only=None):
+    # `only` = a single subdir to WRITE (e.g. a supplement); anchors still resolve
+    # against core-root + that subdir (the other supplement subdirs are excluded, since
+    # a consumer loading this supplement loads core + it, not the sibling supplements).
+    # This hashes the supplement's refs without re-touching core (which would regress the
+    # manual core disambiguation).
+    if only:
+        subs = [d for d in os.listdir(root) if os.path.isdir(os.path.join(root, d))]
+        exclude = tuple(d for d in subs if d != only)
     names, anchors = declared_maps(root, exclude)
     rx = build_matcher(names)
     n_files = n_defs = n_stripped = n_refs = n_hashed = n_hashless = 0
     for f in edition_files(root, exclude):
+        if only and os.path.relpath(f, root).split(os.sep)[0] != only:
+            continue
         lines = open(f, encoding='utf-8').read().split('\n')
         out = []
         cur_key = None
@@ -158,7 +168,10 @@ if __name__ == '__main__':
     if not args:
         sys.exit('usage: apply_references.py <edition-dir> [--dry] [--exclude=sub1,sub2]')
     exclude = ()
+    only = None
     for a in sys.argv[1:]:
         if a.startswith('--exclude='):
             exclude = tuple(x for x in a.split('=', 1)[1].split(',') if x)
-    process(args[0], '--dry' in sys.argv, exclude)
+        elif a.startswith('--only='):
+            only = a.split('=', 1)[1] or None
+    process(args[0], '--dry' in sys.argv, exclude, only)
