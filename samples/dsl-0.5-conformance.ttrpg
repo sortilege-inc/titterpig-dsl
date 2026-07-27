@@ -1,0 +1,66 @@
+BASE "DSL_0_5_Conformance" {
+    NAME "DSL 0.5 Conformance Fixture"
+    VERSION "0.5.0"
+    SPEC_VERSION "0.5"
+    RELEASE_DATE "2026-07-26"
+
+    # ── Base entities the constructs reference ──────────────────────────────
+    ^"Character" DEF { }
+    ^"Rune Spell" DEF { APPLIES TO [^"Character"] }
+    ^"Combat Option" DEF { }
+    ^"Dragon" DEF { }
+
+    # A parent mechanic whose sub-components (Light Wound, Medium Wound, …) are
+    # referenced in prose but are NOT their own DEFs (#4 mechanical-parent target).
+    #tWounds000000000000000001 ^"Wounds" DEF {
+        APPLIES TO [^"Character"]
+        DESCRIPTION "Characters suffer wounds of increasing severity: Light, Medium, Heavy, Incapacitating. Each imposes a Wound Penalty."
+    }
+    #tRecoveryRoll000000000001 ^"Recovery Roll" DEF {
+        APPLIES TO [^"Character"]
+        DESCRIPTION "A roll made at a wound's recovery interval to improve, stabilise, or worsen it."
+        # #4 REFERENCED BY — optional inverse mirror of the REFERENCES below.
+        REFERENCED BY {
+            "recovery roll" <- #tCloseTheFlesh00000001 ^"Close the Flesh"
+        }
+    }
+
+    # ── #4 REFERENCES (parent target + strict hash) and #2 HOOKS ────────────
+    #tCloseTheFlesh00000001 ^"Close the Flesh" DEF {
+        EXTENDS ^"Rune Spell"
+        PROPERTIES { ^"Rune" STRING "Berkanan" FIXED  ^"Level" INTEGER 20 }
+        DESCRIPTION "The target heals a Light Wound, and as long as the runes last for at least a week the effect is permanent. If the amulet is removed or damaged during this time, before the wound would have healed naturally, the character must make an immediate recovery roll for that injury."
+        REFERENCES {
+            "Light Wound"   -> #tWounds000000000000000001 ^"Wounds"
+            "recovery roll" -> #tRecoveryRoll000000000001 ^"Recovery Roll"
+        }
+        HOOKS {
+            HOOK #tHookAmulet0000000001 {
+                FORMALITY CONDITIONAL
+                WHEN "the amulet is removed or damaged before the wound would have healed naturally"
+                TRIGGER { ANY [ "amulet removed", "amulet damaged" ] }
+                THEN [ #tRecoveryRoll000000000001 ^"Recovery Roll" ]
+            }
+        }
+    }
+
+    # ── #3 OPTIONAL / variant rule (default posture + scope) ────────────────
+    #tConstriction00000000001 ^"Constriction Attack" DEF {
+        EXTENDS ^"Combat Option"
+        OPTIONAL {
+            DEFAULT off
+            SCOPE [ ^"Dragon" ]
+            TEXT "Optional rule: a dragon that has grappled an opponent may constrict it, inflicting damage each round without a further attack roll."
+        }
+        DESCRIPTION "A dragon may attempt to constrict a grappled opponent."
+    }
+
+    # ── #1 GUIDANCE (generalized from bridge; module-level, concerns entities) ─
+    GUIDANCE {
+        ENTRY ^"on-constriction" #tGuidance00000000000001 {
+            CONCERNS [ ^"Constriction Attack" ]
+            TOPICS [ "optional rules", "combat" ]
+            TEXT "Sidebar: whether to allow constriction is a troupe decision. It favours large creatures and can slow drawn-out fights; consider it only when a dragon fight would otherwise be a foregone conclusion."
+        }
+    }
+}

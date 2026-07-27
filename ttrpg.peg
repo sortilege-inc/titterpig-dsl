@@ -1,12 +1,15 @@
 # ┌────────────────────────────────────────────────────────────────────┐
-# │ Titterpig DSL — PEG Grammar, v0.4 (aligned to titterpig-dsl-spec.md).  │
+# │ Titterpig DSL — PEG Grammar, v0.5 (aligned to titterpig-dsl-spec.md).  │
 # │ v0.4 additions: SPEC_VERSION metadata; FIAT (property-level modifier   │
 # │ and element-level cascading statement). The hash-ID >=16-char rule   │
 # │ and cross-file coherence are enforced by the validator, not here.    │
 # └────────────────────────────────────────────────────────────────────┘
 #
 # Titterpig DSL — PEG Grammar (Bryan Ford notation)
-# Formal syntax specification for .ttrpg files (v0.4)
+# Formal syntax specification for .ttrpg files (v0.5)
+# v0.5 additions (§3c): REFERENCES (renames MENTIONS) + REFERENCED BY; GUIDANCE in a
+# DEF/module body (generalized from BRIDGE); HOOKS + FORMALITY; OPTIONAL; the
+# SELECTIONS container for .selections files.
 #
 # This grammar defines syntactically valid .ttrpg files. Semantic rules
 # (hash uniqueness, EXTENDS resolution, type consistency) are enforced
@@ -28,7 +31,7 @@
 # 1. File-Level Structure
 # ═══════════════════════════════════════════════════════════
 
-FILE            <- _ (BASE_BLOCK / EXTENSION_BLOCK / BRIDGE_BLOCK) _ EOF
+FILE            <- _ (BASE_BLOCK / EXTENSION_BLOCK / BRIDGE_BLOCK / SELECTIONS_BLOCK) _ EOF
 
 BASE_BLOCK      <- 'BASE' _ STRING _ '{' _ BODY _ '}'
 EXTENSION_BLOCK <- 'EXTENSION' _ STRING _ EXTENDS_CLAUSE? _ '{' _ BODY _ '}'
@@ -43,6 +46,11 @@ BODY_ENTRY      <- METADATA
                  / PROPERTIES_BLOCK
                  / PARAMETERS_BLOCK
                  / RULES_BLOCK
+                 / REFERENCES_BLOCK          # v0.5, §5c — renamed from MENTIONS
+                 / REFERENCED_BY_BLOCK       # v0.5, §5c — optional inverse mirror
+                 / GUIDANCE_BLOCK            # v0.5, §22 — generalized from BRIDGE
+                 / HOOKS_BLOCK               # v0.5, §23 — conditional emit hooks
+                 / OPTIONAL_BLOCK            # v0.5, §24 — optional/variant rule marker
                  / APPLIES_TO_CLAUSE
                  / EXTENDS_DECL
                  / FIAT_STATEMENT
@@ -103,6 +111,62 @@ PARAM_DECL       <- CARET_REF _ 'OF' _ (CARET_REF / 'STRING' / BRACKET_LIST)
 #   ALIAS ^"Ride" FOR ^"Drive"
 # Ships in a setting's own extension file to re-skin vocabulary.
 ALIAS_STATEMENT  <- 'ALIAS' _ CARET_REF _ 'FOR' _ HASH_ID? _ CARET_REF
+
+# ─────────────────────────────────────────────────────────────
+# 3c. v0.5 constructs (§§5c, 22-24). GUIDANCE_BLOCK is defined in §9b (BRIDGE)
+# and reused here; the others are new. Semantics/coherence are the validator's job.
+# ─────────────────────────────────────────────────────────────
+
+# §5c — REFERENCES (renamed from MENTIONS): stand-off in-prose refs to other DEFs.
+# Links a surface form in the enclosing DESCRIPTION to a target, which may (and per the
+# strict rule SHOULD) carry the target's #hash. Targeting a mechanic's PARENT DEF
+# (Light Wound -> ^"Wounds") is the norm when the mechanic is not its own DEF.
+# MENTIONS is accepted as a deprecated alias.
+REFERENCES_BLOCK    <- ('REFERENCES' / 'MENTIONS') _ '{' _ (REFERENCE_ENTRY _)* '}'
+REFERENCE_ENTRY     <- STRING OCC_INDEX? _ '->' _ HASH_ID? _ CARET_REF
+                     / COMMENT
+OCC_INDEX           <- '@' [0-9]+
+
+# Optional inverse mirror: what references THIS entry. Tool-derivable; when present,
+# each entry must correspond to a real REFERENCES pointing here (validator gate).
+REFERENCED_BY_BLOCK <- 'REFERENCED' _ 'BY' _ '{' _ (REFERENCED_BY_ENTRY _)* '}'
+REFERENCED_BY_ENTRY <- (STRING _)? '<-' _ HASH_ID? _ CARET_REF
+                     / COMMENT
+
+# §23 — HOOKS: stand-off "a narrative situation has an otherwise-untracked mechanical
+# consequence." FORMALITY declares how formal the hook is (author uses the highest
+# level the source supports, no higher). WHEN is prose (any level) or a structured
+# TRIGGER at higher levels; THEN names the mechanic(s) implicated.
+HOOKS_BLOCK     <- 'HOOKS' _ '{' _ (HOOK_ENTRY _)* '}'
+HOOK_ENTRY      <- 'HOOK' _ HASH_ID? _ '{' _ (HOOK_FIELD _)* '}'
+                 / COMMENT
+HOOK_FIELD      <- 'FORMALITY' _ FORMALITY_LEVEL
+                 / 'WHEN' _ (STRING / GENERIC_VALUE)
+                 / 'TRIGGER' _ GENERIC_VALUE
+                 / 'THEN' _ '[' _ HOOK_REF (_ ',' _ HOOK_REF)* _ ']'
+                 / COMMENT
+FORMALITY_LEVEL <- 'PROSE' / 'TAGGED' / 'CONDITIONAL' / 'FORMAL'
+HOOK_REF        <- HASH_ID? _ CARET_REF
+
+# §24 — OPTIONAL: marks the enclosing DEF an optional/variant rule with a default
+# posture and a scope (types/entities, or GLOBAL). User choices live in a .selections file.
+OPTIONAL_BLOCK  <- 'OPTIONAL' _ '{' _ (OPTIONAL_FIELD _)* '}'
+OPTIONAL_FIELD  <- 'DEFAULT' _ POSTURE
+                 / 'SCOPE' _ '[' _ SCOPE_ITEM (_ ',' _ SCOPE_ITEM)* _ ']'
+                 / TEXT_FIELD
+                 / COMMENT
+POSTURE         <- 'on' / 'off'
+SCOPE_ITEM      <- 'GLOBAL' / (HASH_ID? _ CARET_REF)
+
+# §24 — SELECTIONS: a `.selections` FILE (user's optional-rule choices for a corpus),
+# a DSL container so it round-trips through the same parser/validator. Each SELECT
+# names an OPTIONAL DEF's #hash and a posture; the validator checks the hash is a real
+# OPTIONAL (see FILE, §1).
+SELECTIONS_BLOCK <- 'SELECTIONS' _ STRING _ '{' _ (SELECTIONS_ENTRY _)* '}'
+SELECTIONS_ENTRY <- METADATA
+                  / 'FOR' _ STRING (_ 'VERSION' _ STRING)?
+                  / 'SELECT' _ HASH_ID _ POSTURE (_ STRING)?
+                  / COMMENT
 
 # ═══════════════════════════════════════════════════════════
 # 4. Properties Block
@@ -349,11 +413,14 @@ GUIDANCE_BLOCK  <- 'GUIDANCE' _ '{' _ (GUIDANCE_ENTRY _)* '}'
 # The ENTRY caret is a LOCAL LABEL naming the passage, not a reference.
 GUIDANCE_ENTRY  <- 'ENTRY' _ CARET_REF _ HASH_ID? _ '{' _ (GUIDANCE_FIELD _)* '}'
                  / COMMENT
-GUIDANCE_FIELD  <- 'CONCERNS' _ '[' _ SIDED_REF (_ ',' _ SIDED_REF)* _ ']'
+# CONCERNS refs are SIDED_REF in a .bridge, or a (hash-qualified) caret in a .ttrpg
+# (v0.5 generalization). DISPOSITION only occurs in a .bridge.
+GUIDANCE_FIELD  <- 'CONCERNS' _ '[' _ GUIDANCE_REF (_ ',' _ GUIDANCE_REF)* _ ']'
                  / 'TOPICS' _ BRACKET_LIST
                  / DISPOSITION_FIELD
                  / TEXT_FIELD
                  / COMMENT
+GUIDANCE_REF    <- SIDED_REF / (HASH_ID? _ CARET_REF)
 
 # ── Shared bridge pieces ──────────────────────────────────────
 # A disposition is a SET, not a single value: documents compose tags
@@ -464,6 +531,12 @@ EOF             <- !.
 # Modification:  OVERRIDE, ADD, MODIFY, SET, ADD_TO, REMOVE_FROM
 # Parameterize:  PARAMETERS, OF (also a type keyword), ALIAS, FOR   (DECISION-6)
 # Choice:        CHOICE, PICK, OF, WHERE                            (DECISION-6)
+# References:    REFERENCES, MENTIONS (deprecated alias), REFERENCED, BY       (v0.5, §5c)
+# Hooks:         HOOKS, HOOK, FORMALITY, WHEN, TRIGGER, THEN,
+#                PROSE, TAGGED, CONDITIONAL, FORMAL                            (v0.5, §23)
+# Optional:      OPTIONAL, DEFAULT, SCOPE, GLOBAL, on, off                    (v0.5, §24)
+# Selections:    SELECTIONS, SELECT, FOR (also alias kw), VERSION             (v0.5, §24)
+# Guidance:      GUIDANCE, ENTRY, CONCERNS, TOPICS, TEXT (in a DEF/module now) (v0.5, §22)
 # Text:          DESCRIPTION, TEXT
 # Validation:    FIAT (also an element-level statement)
 # Bridge (§21):  ORIGIN, DESTINATION, EXTERNAL, DISPOSITIONS, DISPOSITION, ALIASES,

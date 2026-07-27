@@ -1,0 +1,10 @@
+SELECTIONS "arm5e_my_saga" {
+    NAME "My Saga — optional-rule choices"
+    VERSION "0.5.0"
+    SPEC_VERSION "0.5"
+    RELEASE_DATE "2026-07-26"
+    FOR "arm5e" VERSION "0.5"
+
+    # Enable the optional Constriction Attack rule (DEF #tConstriction00000000001).
+    SELECT #tConstriction00000000001 on "House rule for the dragon-heavy saga."
+}

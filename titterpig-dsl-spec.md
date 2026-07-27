@@ -1,4 +1,4 @@
-# Titterpig DSL Specification v0.4
+# Titterpig DSL Specification v0.5
 
 > **Status: v0.4 (current, canonical).** Supersedes v0.3. Historical docs live in `archive/`;
 > `AUTHORING-GUIDELINES.md` holds system-specific authoring best-practices. The `ttrpg.peg`
@@ -87,6 +87,37 @@ v0.4 is a consistency/clarity pass over v0.3's grammar — not a redesign. Key c
   renderer locate each occurrence without mutating the text. Cross-rulebook page citations
   (`(ArM5, page 179)`) are **stripped** from the `DESCRIPTION` — the DEF reference supersedes them.
 
+### Resolved decisions (2026-07-26, v0.5)
+
+Four constructs recurring across systems that 0.4 could not cleanly hold. All additive — 0.4 files
+stay valid.
+
+- **DECISION-8 — Guidance is first-class, distinct from lore and from rules** *(resolved)* (§22): prose
+  that is *about* the mechanics but is neither deterministic/structural (a `DESCRIPTION` rule) nor
+  opaque flavor (`.lore`) — most **sidebars** — gets a `GUIDANCE` block (generalized from the BRIDGE
+  construct, §21). It lives beside what it `CONCERNS`; consumers get a "guidance available" signal and
+  present it contextually. `.lore` remains opaque-by-design (no consumer assumes structure in it), so
+  guidance that tools must locate belongs in `.ttrpg`, not `.lore`.
+- **DECISION-9 — Conditional emit hooks with a declared FORMALITY** *(resolved)* (§23): a stand-off
+  `HOOKS` block makes *visible* that a narrative/roleplay situation has a possible mechanical
+  consequence otherwise untracked (*"if the amulet is removed or damaged … a recovery roll"*). It is
+  **not a rules engine**. Each `HOOK` declares a `FORMALITY` — `PROSE` → `TAGGED` → `CONDITIONAL` →
+  `FORMAL` — the DSL's vocabulary for *how formal the encoding is*; an author uses the **highest level
+  the source supports and no higher**, and consumers dispatch on the level.
+- **DECISION-10 — Optional/variant rules carry a default posture; choices live in `.selections`**
+  *(resolved)* (§24): an `OPTIONAL` marker on a DEF/rule ships its **default posture** (`on`/`off`) and
+  **scope** (types/entities, or `GLOBAL`) in-corpus. User choices are recorded in a **`.selections`**
+  DSL file (`SELECT #hash on|off`) that round-trips through the same parser/validator; consumers read
+  corpus + selections to know the active rule set.
+- **DECISION-11 — `MENTIONS` → `REFERENCES` (+ `REFERENCED BY`), parent targets, strict hash**
+  *(resolved)* (§5c): the DECISION-7 construct is renamed **`REFERENCES`** (`MENTIONS` kept as a
+  deprecated alias). A target may be a mechanic's **parent** DEF when the mechanic is not its own DEF
+  (`"Light Wound" -> ^"Wounds"`) — the surface form carries the sub-component specificity, so no
+  sub-component DEFs need be minted. A target **SHOULD carry the target's `#hash`**; a hashless target
+  **WARNs** (many names are multiply-defined, and a later same-name entity must not silently re-point a
+  link). An optional inverse **`REFERENCED BY`** block mirrors it (tool-derivable; when present each
+  entry must correspond to a real `REFERENCES`).
+
 ## 1. Overview & Design Principles
 
 Titterpig is a domain-specific language (DSL) for defining tabletop role-playing game (TTRPG) systems, content, and narrative structures. The base specification defines a **system-agnostic syntax toolkit** — it owns the grammar, while each game system owns its vocabulary.
@@ -150,6 +181,7 @@ The DSL uses multiple file extensions, each corresponding to a specific containe
 | `.actor` | (single DEF) | A single character — PC or NPC — as a discrete file (DSL) |
 | `.bridge` | BRIDGE | **Cross-edition conversion** — a directed correspondence between two editions (DSL) *(v0.4, §21)* |
 | `.lore` | (none — Markdown) | **Free narrative prose / flavor** — no DSL syntax *(v0.4)* |
+| `.selections` | SELECTIONS | **User's optional-rule choices** for a corpus — `SELECT #hash on\|off` (DSL) *(v0.5, §24)* |
 
 The `.actor` extension is a convenience alias: an `.actor` file is a `.ttrpg` file scoped to exactly one character definition (a single `DEF` block). It uses identical syntax to a DEF within an EXTENSION but exists as a standalone file, making it easy to share, version, or reference individual characters independently of the containers they appear in.
 
@@ -404,7 +436,23 @@ CHOICE [
   of the named type; `PICK n` must not exceed the option count. Verbatim-string options are
   unchecked.
 
-### §5c — In-prose references: the `MENTIONS` block *(v0.4, DECISION-7)*
+### §5c — In-prose references: the `REFERENCES` block *(v0.4 as `MENTIONS`; v0.5, DECISION-11)*
+
+**v0.5 changes (DECISION-11).** The block is renamed **`REFERENCES`** (`MENTIONS` remains a deprecated
+alias, still accepted so 0.4 corpora keep validating). Three additions:
+1. **Hash-qualified targets, strict.** A target may be written `#hash ^"Name"` and — per the strict
+   rule — SHOULD be; a **hashless target WARNs** (a name may resolve to several DEFs, and a later
+   same-name entity must not silently re-point the link). Resolution is by hash when present (the hash
+   must be a declared anchor whose name matches the caret).
+2. **Mechanical-parent targets.** When a referenced mechanic is not its own DEF, target its owning
+   **parent** DEF (`"Light Wound" -> ^"Wounds"`); the surface form carries the sub-component
+   specificity, so sub-component DEFs need not be minted.
+3. **Optional inverse mirror `REFERENCED BY`.** `REFERENCED BY { "surface" <- #hash ^"Referrer" }` on
+   the target records what references it — tool-derivable, and gated for consistency against the
+   forward `REFERENCES`; its absence is never an error.
+
+The rest of this section (byte-verbatim `DESCRIPTION`, exact-surface-form rules, page-cite stripping)
+is unchanged — read `MENTIONS` below as `REFERENCES`.
 
 An entry's rules text **is** the entry — a spell's effect, a virtue's mechanics — so it is captured
 **verbatim** in `DESCRIPTION`, not dropped to prose or a `.lore` file. But that prose names other
@@ -2607,6 +2655,95 @@ A bridge is a knowledge base, not a program. What it makes possible:
 
 ---
 
-**Spec Version:** 0.4
-**Last Updated:** 2026-07-12
-**Status:** Canonical (supersedes v0.3)
+## 22. Guidance *(v0.5, DECISION-8)* — the `GUIDANCE` block
+
+Guidance is prose *about* the mechanics that is neither a `DESCRIPTION` rule (deterministic/structural)
+nor `.lore` flavor (opaque, no assumed structure). Most **sidebars** are guidance. It reuses the BRIDGE
+`GUIDANCE` construct (§21), now also legal in a DEF body and at module level in a `.ttrpg`.
+
+```
+GUIDANCE {
+    ENTRY ^"local-label" #hash? {
+        CONCERNS [ ^"Entity", … ]      # what it guides; optional inside a DEF (⇒ the enclosing DEF)
+        TOPICS   [ "topic", … ]         # optional free-text tags
+        TEXT     "verbatim guidance prose"
+    }
+}
+```
+
+- The `ENTRY` caret is a **local label** for the passage, not a reference.
+- `CONCERNS` refs resolve like any caret ref (hash-qualified allowed). A consumer detects "guidance
+  available for X" by X appearing in some `CONCERNS`. `TEXT` is verbatim.
+- Distinct from `.lore` (no tool assumes structure in it) and from `DESCRIPTION` (the entry's own rules).
+
+## 23. Conditional emit hooks *(v0.5, DECISION-9)* — the `HOOKS` block + `FORMALITY`
+
+A hook makes *visible* that a narrative situation has an otherwise-untracked mechanical consequence. It
+is **stand-off** (it annotates, never mutates, the verbatim `DESCRIPTION`) and is **not a rules engine**.
+
+```
+HOOKS {
+    HOOK #hash? {
+        FORMALITY CONDITIONAL
+        WHEN "the amulet is removed or damaged before the wound would have healed naturally"
+        TRIGGER { ANY [ "amulet removed", "amulet damaged" ] }   # optional structured overlay
+        THEN [ #hash ^"Recovery Roll" ]                          # the mechanic(s) implicated
+    }
+}
+```
+
+- **`FORMALITY`** declares *how formal this hook is* — an ordered ladder, least→most machine-actionable:
+  `PROSE` (readable sentence only) · `TAGGED` (prose + resolvable `THEN` refs, condition unparsed) ·
+  `CONDITIONAL` (a light structured `TRIGGER` — subjects/states, `||`/`&&` — plus refs) · `FORMAL` (a
+  complete, evaluable condition→effect). An author uses the **highest level the source supports and no
+  higher** — the DSL never demands more rigor than the source offers; consumers dispatch on the level.
+- **`WHEN`** is the human-readable condition (a string), present at every level. **`TRIGGER`** is an
+  optional structured overlay for `CONDITIONAL`/`FORMAL`; its internal shape is open (as formal as
+  authored). **`THEN`** lists the mechanic caret refs implicated (may be empty at `PROSE`).
+- Coherence: `FORMALITY` is one of the four levels; every `THEN`/`TRIGGER` ref resolves.
+
+## 24. Optional & variant rules *(v0.5, DECISION-10)* — the `OPTIONAL` marker and `.selections`
+
+An optional/variant rule (a variant combat rule, a creature-scoped option) ships a **default posture**
+in-corpus; a saga's actual choices live in a separate `.selections` file.
+
+```
+#hash ^"Constriction Attack" DEF {
+    EXTENDS ^"Combat Option"
+    OPTIONAL {
+        DEFAULT off                     # on | off — the shipped posture
+        SCOPE [ ^"Dragon" ]            # narrow: types/entities; wide: GLOBAL
+        TEXT "Optional rule: a dragon may constrict a grappled opponent…"
+    }
+    DESCRIPTION "…"
+}
+```
+
+- `OPTIONAL` marks the enclosing DEF an optional/variant rule. `DEFAULT` is `on`/`off`; `SCOPE` names
+  the types/entities it applies to, or the literal `GLOBAL` for a wide rule. The DEF's `#hash` is how a
+  `.selections` file names it.
+
+### `.selections` files
+
+A `.selections` file records a corpus's / campaign's user choices, as a DSL container so it round-trips
+through the same parser and validator:
+
+```
+SELECTIONS "my_saga" {
+    NAME "…"   VERSION "…"   SPEC_VERSION "0.5"   RELEASE_DATE "…"
+    FOR "arm5e" VERSION "0.5"
+    SELECT #hash on  "optional provenance note"
+    SELECT #otherHash off
+}
+```
+
+- Each `SELECT` names an `OPTIONAL` DEF's `#hash` and a posture (`on`/`off`); the validator checks the
+  hash resolves to a DEF that carries an `OPTIONAL` block. A consumer reads corpus + `.selections` to
+  know the active rule set. Generating/editing `.selections` interactively is a downstream tool, not
+  part of the DSL.
+
+---
+
+**Spec Version:** 0.5
+**Last Updated:** 2026-07-26
+**Status:** Canonical (supersedes v0.4)
