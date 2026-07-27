@@ -71,3 +71,19 @@ REMAINING re-treatment (owner approved: full GUIDANCE for core; armdef assess-th
 5. **armdef**: disposition the 180 uncovered headings (front-matter→exclude; narrative→note; audit for record-gaps) to drive its gate green; then GUIDANCE per owner. armdef hashless-ref disambiguation (129).
 6. **Finalize**: bump SPEC_VERSION "0.5" (+ content VERSION patch) on treated files; re-run all gates; commit.
 Tooling ready: apply_references.py (--exclude), check_references.py, check_constructs.py all PROVEN.
+
+## Core HOOKS + OPTIONAL — DONE + verified (this session, "keep going")
+- HOOK on ^"Activities While Injured" (obstacles.ttrpg): FORMALITY TAGGED, WHEN=verbatim injury sentence, THEN [#takTR7JNmGPYWfFeTM8YgXdT ^"Recovering From Wounds"] (parent, since Recovery roll isn't its own DEF).
+- OPTIONAL on ^"Option: Extremely Complex Character Generation" (character-creation.ttrpg): DEFAULT off, SCOPE [GLOBAL].
+- Verified: check_constructs 1 hook/1 optional/1 optional-DEF/0 err; validator 100 files 0/0; core coverage still PASS.
+
+## Core GUIDANCE reclassification — SCOPED (candidates found; sweep is the remaining bulk)
+Most of core's 135 sidebar-records are rules TABLEs → correctly stay records. Guidance-nature (TABLE=NO) candidates to convert record→GUIDANCE (verbatim TEXT + CONCERNS the topic; keep the name as the ENTRY label so coverage stays matched):
+- **"Game Use:" ×7** (mythic-europe.ttrpg): Canon Law, Doctrine, Miracles, Monasteries, Resources, Sacraments, Saints — clearest guidance (how-to-use-in-play).
+- Also assess (TABLE=NO, judge guidance vs rules-prose-record): Mystery Mechanics (hermetic-magic); Aegis of the Hearth / Base Covenant Resources / Covenant Situations (covenants); Constant Effect Devices / Enchantment Summary (laboratory); Warping and Non-Humans (long-term-events); Starting Character Age (character-creation).
+Pilot 1-2 (a "Game Use:" one) then sweep; re-check coverage PASS + check_constructs each step.
+
+## REMAINING BULK (runnable; resume fresh for quality):
+- Core: the GUIDANCE sweep above; the 2 concentration-roll hooks in hermetic-magic (THEN target needs disambiguating between the two ^"Concentration" DEFs #tzkuW2sQSwdFvHyA6vbd5MFW / #tocBOFaacYAtllK16su3pLde); hashless-ref disambiguation (149).
+- armdef: disposition the 180 uncovered headings (front-matter→exclude, etc.) to green the gate; then GUIDANCE; hashless-ref disambiguation (129).
+- Finalize: SPEC_VERSION 0.5 + content VERSION patch on treated files; full gate re-run; commit.
