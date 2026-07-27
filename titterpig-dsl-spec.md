@@ -72,6 +72,21 @@ v0.4 is a consistency/clarity pass over v0.3's grammar — not a redesign. Key c
   (Puissant/Great/Affinity), "A or B" required virtues, and setting vocabulary re-skins. The bare
   `^"Name"` form is unchanged; these are additive.
 
+### Resolved decisions (2026-07-26)
+
+- **DECISION-7 — In-prose references via stand-off `MENTIONS`** *(resolved)* (§5c): an entry's rules
+  text (a spell effect, a virtue's mechanics) is captured **verbatim** in its `DESCRIPTION`, and the
+  mechanical terms inside that prose (`Light Wound`, `Improvement Ease Factor`, `recovery roll`) are
+  linked to their DEFs by a **separate `MENTIONS` block** — stand-off annotation, never inline
+  markup. Each entry pairs the **exact printed surface form** with its target caret ref
+  (`"Improvement Ease Factor" -> ^"Improvement Ease Factor"`). Chosen over inline `[[…]]` markup
+  because it keeps `DESCRIPTION` byte-for-byte verbatim (the project's hard rule and what the
+  `doublecheck` verifier depends on), reuses existing caret-ref-list validation instead of adding
+  string-embedded micro-syntax, and still buys back point-of-use precision — the surface form
+  disambiguates two different targets in one paragraph (Improvement vs Stable Ease Factor) and lets a
+  renderer locate each occurrence without mutating the text. Cross-rulebook page citations
+  (`(ArM5, page 179)`) are **stripped** from the `DESCRIPTION` — the DEF reference supersedes them.
+
 ## 1. Overview & Design Principles
 
 Titterpig is a domain-specific language (DSL) for defining tabletop role-playing game (TTRPG) systems, content, and narrative structures. The base specification defines a **system-agnostic syntax toolkit** — it owns the grammar, while each game system owns its vocabulary.
@@ -388,6 +403,55 @@ CHOICE [
 - Coherence: option caret refs and slot types must resolve; slot `WHERE` fields must be real fields
   of the named type; `PICK n` must not exceed the option count. Verbatim-string options are
   unchecked.
+
+### §5c — In-prose references: the `MENTIONS` block *(v0.4, DECISION-7)*
+
+An entry's rules text **is** the entry — a spell's effect, a virtue's mechanics — so it is captured
+**verbatim** in `DESCRIPTION`, not dropped to prose or a `.lore` file. But that prose names other
+DEFs: *"the target heals a Light Wound … if the roll exceeds the Improvement Ease Factor."* Those
+names are made machine-resolvable by a **stand-off `MENTIONS` block**, not by editing the text.
+
+```
+#hashID ^"Close the Flesh" DEF {
+    EXTENDS ^"Rune Spell"
+    PROPERTIES { ^"Rune" STRING "Berkanan" FIXED  ^"Level" INTEGER 20 … }
+    DESCRIPTION "This spell is usually carved onto an amulet … The target heals a Light
+      Wound, and as long as the runes last … the character must make an immediate recovery roll
+      for that injury. If this equals or exceeds the Improvement Ease Factor, then the wound
+      remains healed. If the roll equals or exceeds the Stable Ease Factor, then the Light Wound
+      re-opens …"
+    MENTIONS {
+        "Light Wound"             -> ^"Light Wound"
+        "recovery roll"           -> ^"Recovery Roll"
+        "Improvement Ease Factor" -> ^"Improvement Ease Factor"
+        "Stable Ease Factor"      -> ^"Stable Ease Factor"
+    }
+}
+```
+
+Rules:
+
+- **`DESCRIPTION` stays byte-for-byte verbatim.** The only transforms allowed are the standard
+  whitespace/HTML-escape normalisation **and** stripping a cross-rulebook page citation
+  (`(ArM5, page 179)`, `(see ArM5 p. 42)`) — the `MENTIONS`/`EXTENDS` reference supersedes the
+  citation, which would otherwise be a dead pointer once the entity has a DEF. Nothing else is
+  added, removed, or reworded. No inline markup is ever inserted into the text.
+- **Each `MENTIONS` entry is `"<surface form>" -> <caret ref>`.** The surface form is the term
+  **exactly as printed in this `DESCRIPTION`** (including case and inflection — `"recovery roll"`,
+  not `"Recovery Roll"`). This is what lets a renderer locate and link the occurrence, and lets two
+  different targets in one paragraph (Improvement vs Stable Ease Factor) each resolve correctly.
+- **Coherence checks:** every caret ref target must resolve in the corpus (same as any reference);
+  and every surface form **must appear as a substring of the `DESCRIPTION`** — a `MENTIONS` entry
+  whose surface string is absent is drift and fails validation. A term may be mentioned once even if
+  it recurs; add a `@<n>` occurrence index (`"Light Wound"@2 -> …`) only when different occurrences
+  of the *same* surface string must point to *different* targets, which is rare.
+- **Optional and additive.** A DEF with no external references simply omits `MENTIONS`. Existing
+  files are unaffected until re-treated.
+
+Rationale and the rejected alternative are in DECISION-7. In short: inline `[[…]]` markup was
+rejected because it mutates the verbatim rules text (breaking the hard verbatim rule and the
+`doublecheck` verifier) and adds string-embedded micro-syntax to the grammar; stand-off annotation
+keeps the text pure and reuses existing caret-ref validation while preserving point-of-use precision.
 
 ### Hash IDs *(v0.4 rules)*
 
