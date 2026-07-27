@@ -49,3 +49,25 @@ _(one line per proven gate/run)_
 Files added/changed in titterpig-dsl: spec (0.5 + DECISION-8..11 + §22-24 + §5c/§2), ttrpg.peg (§3c + SELECTIONS), check_references.py (new, supersedes check_mentions.py), check_constructs.py (new), samples/dsl-0.5-conformance.{ttrpg,selections}, this worklog.
 Deferred (Decision D + noted): apply_references emit tool; folding gates into ttrpg_validator + .selections whitelist; consumer read-side; arm5e re-treatment.
 - `apply_references.py` BUILT + PROVEN (owner: build now). On an arm5e COPY: 2167 refs, 1677 auto-hashed, 490 hashless→WARN (ambiguous names, correct); check_references 0 err, validator 100 files 0/0, re-run idempotent. Committed corpus untouched (re-treatment deferred). Emits target #hash when the name has exactly one anchor; strips existing REFERENCES/MENTIONS for idempotency.
+
+## RE-TREATMENT — arm5e core + armdef (owner: "push, then re-treatment for arm5e core and armdef")
+- In-place in 0.4/ (settled: memory feedback-bump-content-version — live dir is 0.4/, frozen dirs historical). Scope = core (34 root + 10 spells/) excluding the 5 supplement subdirs, + all armdef.
+- **REFERENCES step DONE + PROVEN**: apply_references core (773 refs, 624 hashed) + armdef (1431, 1302 hashed); validators 100/40 files 0/0; check_references 0 errors both editions. Hashless remainder (149 core, 129 armdef) = ambiguous multiply-defined names → WARN for a disambiguation pass. Supplements still on MENTIONS (deferred, their re-treatment is later). apply_references gained --exclude for core-scoping.
+- TODO this re-treatment: GUIDANCE (sidebars), HOOKS, OPTIONAL, hashless-ref disambiguation; then SPEC_VERSION bump on treated files.
+
+## armdef coverage — FIRST assessment (owner: create+gate+assess)
+- Created coverage/armdef.manifest.json (htmlPath only — armdef has NO toc.txt, so inventory = HTML headings; its 172 in-HTML sidebars are NOT separately enumerable without toc Text Box tags — flagged).
+- `coverageAudit.ts coverage/armdef.manifest.json` → inventory 1115 | covered 935 | UNCOVERED 180 (all Heading). ~84% covered. Uncovered head = front-matter (Credits, Fifth Edition Line Authors/Playtesters, Copyright & Trademark) → excludable; remainder = narrative/record headings to categorize. Gate FAILs by design (undispositioned).
+
+## STOPPED HERE — verified milestones banked; remaining re-treatment is runnable next steps
+DONE + verified this session: 0.5 foundation (committed+pushed 0343c01); REFERENCES-hash re-treatment for arm5e core (773 refs, 624 hashed) + armdef (1431, 1302 hashed), both validate 0/0, 0 ref errors; armdef coverage manifest + assessment.
+UNCOMMITTED right now: arm5e core + armdef .ttrpg files (REFERENCES blocks), apply_references.py (--exclude option) in titterpig-dsl, coverage/armdef.manifest.json in titterpig-mastra.
+
+REMAINING re-treatment (owner approved: full GUIDANCE for core; armdef assess-then-guidance):
+1. **Core HOOKS** (source-explicit): add to `^"Activities While Injured"` (obstacles.ttrpg) — WHEN "a character does more than his injuries allow" THEN [^"Recovery Roll"] FORMALITY CONDITIONAL; + the 2 "must make a concentration roll" spots. Hash the THEN refs. Verify: check_constructs + validator.
+2. **Core OPTIONAL**: mark source-declared optional/variant rules in arm5e-0.4-{laboratory,character-creation,spell-rules,spell-guidelines}.ttrpg (grep 'optional rule|variant|you may use' for the exact ones; extract verbatim TEXT + DEFAULT + SCOPE).
+3. **Core GUIDANCE-135 reclassification**: audit the source's 135 Text Box units (covered as records now). Most are rules tables (stay records — e.g. Size table). Move genuine discussion/advice ones into GUIDANCE blocks. PILOT on 2-3 first, verify (validator 0/0, check_constructs 0, coverage still PASS), then scale.
+4. **Core hashless-ref disambiguation** (149): add #hash to the ambiguous REFERENCES (run check_references --show-warns to list; pick the right anchor per context).
+5. **armdef**: disposition the 180 uncovered headings (front-matter→exclude; narrative→note; audit for record-gaps) to drive its gate green; then GUIDANCE per owner. armdef hashless-ref disambiguation (129).
+6. **Finalize**: bump SPEC_VERSION "0.5" (+ content VERSION patch) on treated files; re-run all gates; commit.
+Tooling ready: apply_references.py (--exclude), check_references.py, check_constructs.py all PROVEN.

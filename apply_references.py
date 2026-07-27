@@ -38,17 +38,26 @@ def name_key(name: str) -> str:
     return re.sub(r'[^a-z0-9]+', '', s.lower())
 
 
-def edition_files(root):
-    for dp, _, fns in os.walk(root):
+def edition_files(root, exclude=()):
+    # `exclude` = subdir names (relative to root) to skip entirely — e.g. supplement
+    # subdirs when treating only the core of an edition. Refs resolve within the scanned
+    # set; safe only when the excluded material is never referenced by the kept material.
+    exclude = set(exclude)
+    for dp, dns, fns in os.walk(root):
+        rel = os.path.relpath(dp, root)
+        top = rel.split(os.sep)[0]
+        if top in exclude:
+            dns[:] = []
+            continue
         for fn in fns:
             if fn.endswith('.ttrpg'):
                 yield os.path.join(dp, fn)
 
 
-def declared_maps(root):
+def declared_maps(root, exclude=()):
     """nameKey -> canonical printed name (multi-word only), and nameKey -> set(hash)."""
     names, anchors = {}, {}
-    for f in edition_files(root):
+    for f in edition_files(root, exclude):
         for line in open(f, encoding='utf-8'):
             m = DEF_RE.match(line)
             if m:
@@ -83,11 +92,11 @@ def find_references(desc, rx, names, self_key):
     return hits
 
 
-def process(root, dry):
-    names, anchors = declared_maps(root)
+def process(root, dry, exclude=()):
+    names, anchors = declared_maps(root, exclude)
     rx = build_matcher(names)
     n_files = n_defs = n_stripped = n_refs = n_hashed = n_hashless = 0
-    for f in edition_files(root):
+    for f in edition_files(root, exclude):
         lines = open(f, encoding='utf-8').read().split('\n')
         out = []
         cur_key = None
@@ -145,6 +154,11 @@ def process(root, dry):
 
 
 if __name__ == '__main__':
-    if len(sys.argv) < 2:
-        sys.exit('usage: apply_references.py <edition-dir> [--dry]')
-    process(sys.argv[1], '--dry' in sys.argv)
+    args = [a for a in sys.argv[1:] if not a.startswith('--')]
+    if not args:
+        sys.exit('usage: apply_references.py <edition-dir> [--dry] [--exclude=sub1,sub2]')
+    exclude = ()
+    for a in sys.argv[1:]:
+        if a.startswith('--exclude='):
+            exclude = tuple(x for x in a.split('=', 1)[1].split(',') if x)
+    process(args[0], '--dry' in sys.argv, exclude)
