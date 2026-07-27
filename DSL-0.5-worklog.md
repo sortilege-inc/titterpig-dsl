@@ -162,8 +162,13 @@ Owner supplied the DRAFT manuscript (`~/Working/ArMDef Manuscript Docs`, 18 clea
 - Gates: validator armdef 41/0/0; check_references 1431/0-err/0-hashless; check_constructs 0 err; coverage PASS (1115/1115).
 - **Net rescan conclusion:** armdef is substantially COMPLETE + CORRECT. The scramble dropped only a handful of sidebars (all now fixed: Static/Dynamic Targets, Possible Abuses of Storms, R/D/T table) + mis-grouped the 3 elemental story-seeds (fixed). Bulk of content converted correctly despite the mangled HTML.
 
+## OWNER DECISIONS ON 0.5.0 CLOSEOUT (2026-07-27)
+1. **arm5e supplements (5 subdirs) → NEXT effort** (owner: "we'll do that next"). Still 0.4/MENTIONS; the 1356 whole-dir hashless WARNs are all here (core scope = 0). Not part of 0.5.0 core.
+2. **Core TABLE-caption DESCRIPTIONs → STRIPPED** (owner: "strip"). Removed all **49** editorial captions ("The source presents this as a sidebar table…" / "Presented in the source as…" / the 2 "Material and Size Tables" split-notes) across 11 core files. Table DATA (Table Columns + TABLE rows) is verbatim + self-documenting. Kept VERSION 0.5.0 (finalization, not post-release revision). Committed 30bf8ac. Gates green (validator 100/0/0, refs 0-err, constructs unchanged, coverage PASS). **0 editorial-prefix DESCRIPTIONs remain in core.**
+3. **arm5e-core draft rescan → NOT POSSIBLE** (owner: "no manuscript"). The 2004 core edition has no draft; arm5e-core stands on its own coverage gate + the verbatim verification done during the GUIDANCE re-treatment. (Only armdef had a draft manuscript to cross-check.)
+
 ## FINAL STATE — ALL GATES GREEN, BOTH EDITIONS (2026-07-27)
-- CORE: validator 100/0/0 · refs 706/0-err/0-hashless · constructs 3 hook/1 opt/37 guid/0 err · coverage PASS. SPEC_VERSION 0.5 / VERSION 0.5.0.
+- CORE: validator 100/0/0 · refs 706/0-err/0-hashless · constructs 3 hook/1 opt/37 guid/0 err · coverage PASS. SPEC_VERSION 0.5 / VERSION 0.5.0. Editorial table-captions stripped.
 - ARMDEF: validator 40/0/0 · refs 1431/0-err/0-hashless · constructs 0 err · coverage PASS. SPEC_VERSION 0.5 / VERSION 0.5.0.
 - Commits: arm5e core 6b69277 (VERSION corrected in follow-up), arm5e armdef + core-version-fix (this finalize), mastra armdef.manifest.json, dsl worklog.
 - Supplements (5 arm5e subdirs) stay on MENTIONS/0.4 — deferred (later effort). Owner decisions still open: armdef story-seed gaps (deferred), ~40 core TABLE-caption cleanup (cosmetic), armdef .lore→GUIDANCE migration (optional).
