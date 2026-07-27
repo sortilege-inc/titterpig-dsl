@@ -261,3 +261,22 @@ All 150 remaining hashless resolved, owner reviewed per-cluster with source evid
 - **houses.ttrpg**: 12 House DEFs keep `EXTENDS "Hermetic House"` + PROPERTIES; long DESCRIPTIONs removed (0 remain). **order-of-hermes.ttrpg**: 12 duplicate House DEFs dropped (19 non-House DEFs kept). OoH's by-name House refs already pointed at the canonical houses.ttrpg hashes, and no records referenced the OoH House hashes → clean drop. VERSION → 0.5.1 on both.
 - **FINAL GATES — ALL GREEN, BOTH EDITIONS:** arm5e validator 104/0/0 · refs 1801 / 0-err / **0 hashless** · constructs 0 err · coverage core + 5 supplements ALL PASS. armdef validator 41/0/0 · refs 1431 / 0-err / 0-hashless · constructs 0 err · coverage PASS.
 - REMAINING: commit + push core 0.5.1 (tables + Houses); update this worklog.
+
+## NEXT EFFORT — 0.5 version-dir migration + Houses of Hermes: True Lineages (2026-07-27)
+Plan + kickoff prompt: **`HOH-TRUE-LINEAGES-0.5-handoff.md`** (authoritative; read it first).
+- **Phase 0 — version-dir migration (owner-confirmed):** both editions are complete at DSL 0.5 but
+  still sit in `0.4/` dirs with `-0.4-` filenames. `git mv arm5e/0.4 → arm5e/0.5` and
+  `armdef/0.4 → armdef/0.5` (**keep the edition-first layout — no top-level `0.5/`**, the owner
+  confirmed that structure is deliberate); rename the 201 `-0.4-` filenames to `-0.5-`; update
+  `sources.json` (153 entries), the 8 mastra coverage manifests, the mastra scripts/gates, and this
+  worklog. Leave `TOR2E_04` alone (different repo, still spec 0.4). Rename not copy+freeze: the files
+  in `0.4/` are already SPEC 0.5, so freezing them as "0.4" would mislabel them; git history holds the
+  true 0.4 state.
+- **Phase 1 — True Lineages → DSL 0.5.** Extraction DONE + verified (144pp → 528 toc units: 428
+  Heading / 93 Text Box / 7 Table). Corpus foundation (`core-ext`) + coverage manifest committed;
+  **baseline 586 inventory units / 576 uncovered** = the scope. Deterministic hand-conversion in the
+  main loop (narrative-heavy book, modest mechanical set — not the mastra pipeline). Pilot Chapter One
+  (Bonisagus) end-to-end, then Guernicus / Mercere / Tremere.
+- Reusable verbatim-slicing tooling moved out of the session scratchpad into a durable home:
+  `arm5e-sourcebook-conversions/scripts/{srcextract.py,backfill_sidebars.py}` (verified on True
+  Lineages: 514 headings indexed).
