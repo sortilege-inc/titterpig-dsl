@@ -142,6 +142,14 @@ armdef put the guidance/game-use/setting content in .lore, so the core GUIDANCE-
 - **Hashless disambiguation:** 129 refs hashed + 6 DEFs given hashes (edition-salted, no cross-edition collision with core), same canonical policy. armdef refs 0 hashless, gates green.
 - **VERSION scheme correction (owner ruling 2026-07-27):** content VERSION's first two digits = DSL spec built against; patch = content rev. So the 0.4→0.5 migration sets VERSION **"0.5.0"** (NOT 0.4.1). Fixed on ALL 84 files (44 core + 40 armdef); memory [[feedback-bump-content-version-on-corpus-edits]] updated.
 
+## ARMDEF STORY-SEEDS → .arc + coverage genuinely completed (2026-07-27, owner: "get coverage to complete with armdef, make those story-seeds as .arc")
+Backfilled the deferred armdef story-seed GAPS as a minimalist `.arc` (owner: "arc can be minimalist"):
+- **New file `armdef/0.4/armdef-0.4-story-seeds.arc`** — `ARC "armdef-story-seeds" DEPENDS_ON "ARMDef_Core_Base"`, one `SCENE ^"…" { TYPE "Story Seed" DESCRIPTION <verbatim> }` per seed. 3 seeds with real source bodies: **Lunchtime in the Vis Stores** (1519), **A Cavernous Cage** (631), **A Scintillating Serpent** (411). All 3 DESCRIPTIONs byte-verbatim from armdef source (asserted).
+- **Coverage: 3 deferred → covered** (935→939 covered). Gate still PASS. Removed their deferred dispositions.
+- **HONESTY FIX:** `The Forgotten Child` + `The Unforgiving Sea` were mis-marked `excluded` ("content present") but their body text is **ABSENT from the armdef HTML extraction** (bare heading titles only — a multi-seed sidebar the extractor collapsed; 0 corpus files, 0 source body). Corrected to `deferred` with honest reason (real source-extraction gap; needs PDF re-extraction to backfill — will NOT fabricate). armdef manifest now 177 dispositions (7 deferred / 170 excluded), 939 covered, 0 uncovered.
+- Gates: validator armdef 41/0/0 (incl .arc); check_references 1431/0-err/0-hashless; check_constructs 0 err; coverage PASS.
+- ⚠ Note for owner: the "content present" exclusion reason was wrong for ≥2 items — there may be OTHER excluded headings similarly mis-marked as present when the armdef extraction actually dropped them. A spot-audit of the 170 excluded against corpus presence would catch any more (not done — flagged).
+
 ## FINAL STATE — ALL GATES GREEN, BOTH EDITIONS (2026-07-27)
 - CORE: validator 100/0/0 · refs 706/0-err/0-hashless · constructs 3 hook/1 opt/37 guid/0 err · coverage PASS. SPEC_VERSION 0.5 / VERSION 0.5.0.
 - ARMDEF: validator 40/0/0 · refs 1431/0-err/0-hashless · constructs 0 err · coverage PASS. SPEC_VERSION 0.5 / VERSION 0.5.0.
