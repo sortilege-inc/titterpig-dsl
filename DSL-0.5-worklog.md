@@ -196,3 +196,8 @@ Concentrated: The Gift 61, Parma Magica 31, Hermetic Arts 9, House Bonisagus 5, 
 1. Disambiguation canonical-anchor policy (above) — Ability-vs-Virtue default + House canonical file + the no-anchor "Hermetic Arts" investigation.
 2. ~40 TABLE-record editorial *caption* DESCRIPTIONs (keep or strip) — cosmetic.
 3. Commit the verified core GUIDANCE+HOOKS milestone now, or defer to finalize?
+
+## SUPPLEMENTS → 0.5.0 IN PROGRESS (2026-07-27) — see SUPPLEMENTS-0.5-handoff.md for the resume prompt
+- DONE + committed/pushed: version+REFERENCES-hash all 5 (`2b3bb94`); Power-types + House-ref disambiguation, owner-reviewed (`73bb309`). apply_references gained `--only=<subdir>`.
+- Hashless 274→153. REMAINING: (A) finish supplement disambiguation ONE-AT-A-TIME w/ owner — The Gift/Church/Parma→core-systems; Second Sight/Animal Ken/etc→Ability (watch Ability-vs-Virtue nuance); Faerie Blood/Elementalist/Failed Apprentice→owner call; 4 rop-faerie faerie-powers→leave hashless; Damage/Advancement Table edge. (B) grogs GUIDANCE+caption strip (105, verbatim from Grogs HTML). (C) 5 coverage gates. (D) core Houses restructure (owner: DEF mechanical + prose→new houses.lore pointing to DEF; drop order-of-hermes dup House DEFs; verbatim-merge vs source; VERSION 0.5.1 on touched core). (E) finalize+commit.
+- Power-types RULE: Thing-of-Virtue/Virtue-Flaw context = the Virtue; creature power stat-line = the Magic Quality.
