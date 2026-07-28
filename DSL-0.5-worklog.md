@@ -280,3 +280,41 @@ Plan + kickoff prompt: **`HOH-TRUE-LINEAGES-0.5-handoff.md`** (authoritative; re
 - Reusable verbatim-slicing tooling moved out of the session scratchpad into a durable home:
   `arm5e-sourcebook-conversions/scripts/{srcextract.py,backfill_sidebars.py}` (verified on True
   Lineages: 514 headings indexed).
+
+## PHASE 0 — 0.5 VERSION-DIR MIGRATION: DONE + PROVEN (2026-07-27)
+Pure rename; **zero content change**. Every gate reproduces its pre-migration number exactly.
+
+- `git mv arm5e/0.4 → arm5e/0.5`, `git mv armdef/0.4 → armdef/0.5` (edition-first layout kept; no
+  top-level `0.5/`). `arm5e/0.1|0.2|0.3` untouched. 201 files `git mv`'d `-0.4-` → `-0.5-`
+  (git status: 147 R + 55 RM + 1 M — history preserved).
+- In-corpus filename references rewritten: 230 occurrences across 55 files. Verified first that
+  **every** `-0.4-` occurrence in the corpus was a filename (199 distinct, all quoted/backticked
+  paths); the only bare `0.4` was `sources.json`'s stale `content_version` → `"0.5.0"`.
+  `DEPENDS_ON` uses file-IDs, not filenames — confirmed unaffected (refs gate unchanged).
+- `sources.json`: 151 entries repathed + `houses-true-lineages/…-0.5-core-ext.ttrpg` registered
+  (was on disk but unlisted since `79c7d31`) → **152 entries, 0 missing / 0 unlisted vs disk.**
+- External refs updated: 8 mastra coverage manifests (`corpusDirs` + filenames inside disposition
+  reasons), 60 mastra `scripts/`+`src/` files, mastra `README/RESUME/TASKS.md`,
+  `titterpig-dsl/bridges/README.md`. `TOR2E_04` and every `dnd5e`/`dnd5.5e`/`tor2e` `0.4` path left
+  alone; the `arm4-to-arm5e-0.4-appendix-i.bridge` **filename** deliberately preserved (bridge spec
+  dir is 0.4) while its `--corpus arm5e=` path moved to 0.5.
+- **GATES — every number matches the pre-migration baseline:** validator arm5e/0.5 105 files 0/0 ·
+  armdef/0.5 41/0/0 · check_references arm5e 1801 refs 0 err **0 hashless** / armdef 1431 0 err 0
+  hashless · check_constructs arm5e 0 err (3 hook / 1 optional / 70 guidance) / armdef 0 err ·
+  coverage 7/8 **PASS** with identical unit counts (corebook 1736, covenants 726, grogs 645,
+  hedge-magic 921, rop-faerie 731, rop-magic 824, armdef 1115; all 0 uncovered).
+  8th = `arm5e-houses-true-lineages` **FAILs by design** — 586 units / 576 uncovered = the Phase 1
+  scope. (The handoff's "all 8 PASS" was off by this one; corrected here.)
+
+### ⚠ PRE-EXISTING BREAKAGE surfaced by running the bridge gate (NOT caused by the migration)
+`ttrpg_validator.py bridges/0.4/arm4-to-arm5e-0.4-appendix-i.bridge --corpus arm5e=…` →
+**1 error: `destination reference ^"Starting Character Age" is not defined in edition "arm5e"`.**
+- Cause: the core 0.5 re-treatment (`6b69277`) converted the `^"Starting Character Age"` DEF into a
+  `GUIDANCE ENTRY` (`arm5e-0.5-character-creation.ttrpg:351`). Exactly the documented trap — *a
+  GUIDANCE ENTRY is not a ref-able anchor*; the bridge's inbound ref was not checked first.
+- **PROVEN pre-existing:** the identical error reproduces against the pre-migration corpus
+  (`git archive 79c7d31 arm5e/0.4` → same single error). Migration is not implicated.
+- Not fixed — reverting a GUIDANCE→DEF is a content decision. **Owner call pending** (options: give
+  the bridge an `ALIASES` entry; revert that one record to a DEF carrying the verbatim text; or make
+  GUIDANCE ENTRYs anchor-able in the gates). Also: the bridge gate is not part of
+  `arm5e/armdef` gate runs, which is why it went unnoticed — worth wiring in.

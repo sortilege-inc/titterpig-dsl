@@ -47,7 +47,7 @@ and never the union:
 python3 ../ttrpg_validator.py 0.4/ \
     --corpus dnd5e="../../titterpig-dsl-dnd5e/0.4" \
     --corpus dnd5.5e="../../titterpig-dsl-dnd5.5e/0.4" \
-    --corpus arm5e="../../titterpig-dsl-arm5e/arm5e/0.4"
+    --corpus arm5e="../../titterpig-dsl-arm5e/arm5e/0.5"
 ```
 
 A non-`EXTERNAL` side with no `--corpus` mapping is an **error**, not a pass: an unchecked

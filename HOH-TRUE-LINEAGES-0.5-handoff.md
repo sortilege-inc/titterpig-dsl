@@ -14,25 +14,25 @@ Authoritative plan + state for the next session. The paste-able kickoff prompt i
 **Done in the previous session** (detail in `DSL-0.5-worklog.md`): grogs GUIDANCE (131 editorial
 records), the 217-sidebar backfill across 4 supplements, full hashless disambiguation (150→0,
 owner-reviewed per cluster), duplicate-table consolidation, and the core Houses restructure
-(mechanical DEF + verbatim `arm5e-0.4-houses.lore`).
+(mechanical DEF + verbatim `arm5e-0.5-houses.lore`).
 
 **Houses of Hermes: True Lineages** — extraction DONE + verified; DSL foundation laid:
 - Source HTML + toc at `~/Working/arm5e-sourcebook-conversions/houses-true-lineages/`
   (`toc.txt` = 528 units: 428 Heading / 93 Text Box / 7 Table).
 - Pipeline profile `houses-true-lineages` added to `arm5e-sourcebook-conversions/scripts/books.py`.
-- Corpus dir + `…-core-ext.ttrpg` created (currently under `arm5e/0.4/houses-true-lineages/`).
+- Corpus dir + `…-core-ext.ttrpg` created (currently under `arm5e/0.5/houses-true-lineages/`).
 - Coverage manifest `titterpig-mastra/coverage/arm5e-houses-true-lineages.manifest.json` created.
   **Baseline: 586 inventory units, 576 UNCOVERED** (489 Heading, 91 Text Box, 6 Table) = the scope.
 
 ---
 
-## PHASE 0 — 0.5 version-dir migration (DO FIRST; everything else uses the new paths)
+## PHASE 0 — 0.5 version-dir migration — **DONE + PROVEN 2026-07-27** (detail in `DSL-0.5-worklog.md`)
 
 Owner-confirmed decisions (2026-07-27):
 1. **`git mv` rename, not copy+freeze.** The files in `0.4/` are already `SPEC_VERSION "0.5"` /
    `VERSION "0.5.0"`, so the dir name is simply stale; the true 0.4-spec state is preserved in git
    history. No frozen `0.4/` snapshot is left behind. (`arm5e/0.1`, `0.2`, `0.3` stay as-is.)
-2. **Both editions, each to its OWN 0.5 dir** — `arm5e/0.4` → `arm5e/0.5` and `armdef/0.4` →
+2. **Both editions, each to its OWN 0.5 dir** — `arm5e/0.5` → `arm5e/0.5` and `armdef/0.5` →
    `armdef/0.5`. **Keep the edition-first structure**; do NOT create a top-level `0.5/` with
    `arm5e`/`armdef` children (the owner confirmed the current layout is deliberate).
 3. **Rename the `-0.4-` filename segment to `-0.5-`** (201 files).
@@ -155,8 +155,8 @@ in one pass, and review nuanced clusters one at a time.
 > — read it fully); `titterpig-dsl/DSL-0.5-worklog.md`; the `titterpig-dsl` skill.
 >
 > **Phase 0 — 0.5 version-dir migration.** Both editions are complete at DSL 0.5 but still live in
-> `0.4/` dirs with `-0.4-` filenames. Owner-confirmed: `git mv arm5e/0.4 → arm5e/0.5` and
-> `armdef/0.4 → armdef/0.5` (keep the edition-first layout — do NOT create a top-level `0.5/`);
+> `0.4/` dirs with `-0.4-` filenames. Owner-confirmed: `git mv arm5e/0.5 → arm5e/0.5` and
+> `armdef/0.5 → armdef/0.5` (keep the edition-first layout — do NOT create a top-level `0.5/`);
 > rename the 201 `-0.4-` filenames to `-0.5-`; update `sources.json`, the 8 mastra coverage manifests,
 > the mastra scripts/gates, and the worklog. Leave `TOR2E_04` (different repo) alone. Prove every gate
 > matches the pre-migration numbers (arm5e 105/0/0 · 0 hashless · armdef 41/0/0 · all 8 coverage PASS),

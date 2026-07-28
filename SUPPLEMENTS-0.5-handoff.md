@@ -6,7 +6,7 @@ Paste this into a new chat to continue.
 
 Continue converting the **5 arm5e supplements** to a good 0.5.0 (parity with the already-finished
 arm5e core + armdef core). Supplements, in the owner's order: **hedge-magic, covenants, RoP Magic,
-Grogs, RoP Faerie** — they live in `titterpig-dsl-arm5e/arm5e/0.4/{hedge-magic,covenants,rop-magic,grogs,rop-faerie}/`
+Grogs, RoP Faerie** — they live in `titterpig-dsl-arm5e/arm5e/0.5/{hedge-magic,covenants,rop-magic,grogs,rop-faerie}/`
 and are EXTENSIONs depending on arm5e core.
 
 ## READ FIRST
@@ -17,7 +17,7 @@ and are EXTENSIONs depending on arm5e core.
 - The `titterpig-dsl` skill (validation, migration recipe, git conventions).
 
 ## ENV / PATHS
-- Corpus: `~/Working/Titterpig DSL/titterpig-dsl-arm5e/arm5e/0.4` (core = 34 root .ttrpg + `spells/`;
+- Corpus: `~/Working/Titterpig DSL/titterpig-dsl-arm5e/arm5e/0.5` (core = 34 root .ttrpg + `spells/`;
   supplements = the 5 subdirs).
 - Gates live in `~/Working/Titterpig DSL/titterpig-dsl`: `ttrpg_validator.py`, `check_references.py`,
   `check_constructs.py`, `apply_references.py`.
@@ -25,13 +25,13 @@ and are EXTENSIONs depending on arm5e core.
   `TOR2E_04="/home/hewhocutsdown/Working/Titterpig DSL/titterpig-dsl-tor2e/0.4"`. Supplement manifests:
   `titterpig-mastra/coverage/arm5e-{covenants,grogs,hedge-magic,rop-faerie,rop-magic}.manifest.json`.
 - Supplement source HTML (for GUIDANCE verbatim): `~/Working/arm5e-sourcebook-conversions/<name>/*.html`.
-- Run validator/references/constructs on the whole `arm5e/0.4` dir (cross-file refs resolve there).
+- Run validator/references/constructs on the whole `arm5e/0.5` dir (cross-file refs resolve there).
 
 ## STATE — all committed + pushed (git clean, 0 unpushed). Latest arm5e commit `73bb309`.
 Both **cores are done at 0.5.0** (gates green). Supplements progress:
 - **DONE — version + REFERENCES-hash (all 5)** (commit `2b3bb94`): every supplement file at
   `SPEC_VERSION "0.5"` / `VERSION "0.5.0"`; MENTIONS→REFERENCES-hashed via
-  `apply_references.py <arm5e/0.4> --only=<subdir>` (new `--only` flag: resolves anchors against
+  `apply_references.py <arm5e/0.5> --only=<subdir>` (new `--only` flag: resolves anchors against
   core-root + that supplement, writes only that supplement — does NOT re-touch core / regress core
   disambiguation). Validator 100 files 0/0, 0 ref errors.
 - **DONE — Power-types + House disambiguation (owner-reviewed)** (commit `73bb309`):
@@ -52,7 +52,7 @@ Both **cores are done at 0.5.0** (gates green). Supplements progress:
 Owner wants each nuanced cluster reviewed individually (like the Power types), not blanket-applied.
 Workflow per name: (1) list the hashless refs — `grep -rn '"<Name>" -> \^"<Name>"$' <supp>/*.ttrpg`;
 (2) for each, show enclosing DEF + the DESCRIPTION sentence (context) so the owner can judge;
-(3) find candidate anchors — `grep -rnoE '#\w+ \^"<Name>" DEF' arm5e/0.4/*.ttrpg <supp>/*.ttrpg`
+(3) find candidate anchors — `grep -rnoE '#\w+ \^"<Name>" DEF' arm5e/0.5/*.ttrpg <supp>/*.ttrpg`
 (EXTENDS line tells you Virtue vs Ability vs Magic Quality vs House);
 (4) apply the chosen `#hash` per-reference by replacing `-> ^"<Name>"` with `-> #hash ^"<Name>"`
 (per-DEF or per-file as the context dictates); (5) verify `validator 0/0` + that name's hashless = 0.
@@ -105,7 +105,7 @@ Owner rulings: (1) each House defined **once**; the `houses.ttrpg` DEF (`EXTENDS
 canonical; (2) **the long narrative descriptions become `.lore` that points to the DEF.**
 - `houses.ttrpg ^"House X"` keeps `EXTENDS "Hermetic House"` + PROPERTIES (House Type, Benefit, Source);
   **remove its long DESCRIPTION prose.**
-- Create `arm5e-0.4-houses.lore` — one section per House, verbatim narrative, pointing to `^"House X"`.
+- Create `arm5e-0.5-houses.lore` — one section per House, verbatim narrative, pointing to `^"House X"`.
 - The two writeups differ (houses.ttrpg fuller ~1286 chars; order-of-hermes shorter ~953, some unique
   sentences each; both "Source: Core Rules") → **reconcile to a single verbatim-complete narrative per
   House, checked against the arm5e core source** (the shorter order-of-hermes ones may be paraphrased —
