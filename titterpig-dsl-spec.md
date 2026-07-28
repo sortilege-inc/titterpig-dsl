@@ -1,10 +1,35 @@
 # Titterpig DSL Specification v0.5
 
-> **Status: v0.4 (current, canonical).** Supersedes v0.3. Historical docs live in `archive/`;
-> `AUTHORING-GUIDELINES.md` holds system-specific authoring best-practices. The `ttrpg.peg`
-> grammar and `ttrpg_validator.py` are v0.3-era and **pending realignment** to v0.4.
+> **Status: v0.5 (current, canonical).** Supersedes v0.4 (which superseded v0.3). Historical docs
+> live in `archive/`; `AUTHORING-GUIDELINES.md` holds system-specific authoring best-practices. The
+> `ttrpg.peg` grammar is **aligned to v0.5**. Validation is split: `ttrpg_validator.py` lints spec
+> adherence, while `check_references.py` and `check_constructs.py` coherence-check the v0.5
+> `REFERENCES`/`REFERENCED BY`, `HOOKS`, `OPTIONAL`/`.selections`, and `GUIDANCE` constructs.
 
-## 0. What changed in v0.4
+## 0. What changed
+
+The DSL is **at v0.5**. This section leads with the v0.5 additions, then keeps the v0.4 changelog for
+history; the *Resolved decisions* subsections below (through DECISION-11) carry the full detail.
+
+### v0.5 — four new constructs *(current; additive — every v0.4 file stays valid)*
+
+1. **`GUIDANCE`** *(new, §22, DECISION-8)* — first-class guidance prose (most **sidebars**): prose
+   *about* the mechanics that is neither a deterministic `DESCRIPTION` rule nor opaque `.lore` flavor.
+   A module-level `GUIDANCE { ENTRY ^"Name" #hash { CONCERNS [ … ] TEXT … } }` block lives beside what
+   it `CONCERNS`; consumers get a "guidance available" signal. Generalized from the `.bridge` construct.
+2. **`HOOKS` + `FORMALITY`** *(new, §23, DECISION-9)* — a stand-off `HOOKS` block surfacing that a
+   narrative situation has a possible mechanical consequence, without being a rules engine. Each hook
+   declares a `FORMALITY` on the ladder `PROSE → TAGGED → CONDITIONAL → FORMAL` (author uses the
+   highest level the source supports and no higher; consumers dispatch on it).
+3. **`OPTIONAL` + `.selections`** *(new, §24, DECISION-10)* — an `OPTIONAL` marker on a DEF/rule ships
+   its default posture (`on`/`off`) and `SCOPE` in-corpus; user choices are recorded in a new
+   **`.selections`** DSL file (`SELECT #hash on|off`) that round-trips through the same parser.
+4. **`REFERENCES` / `REFERENCED BY`** *(renamed + extended, §5c, DECISION-11)* — v0.4's `MENTIONS` is
+   renamed **`REFERENCES`** (`MENTIONS` kept as a deprecated alias). A target may be a mechanic's
+   **parent** DEF and **SHOULD** carry the target's `#hash` (a hashless target **WARNs**), with an
+   optional inverse **`REFERENCED BY`** mirror.
+
+### v0.4 — consistency/clarity pass over v0.3
 
 v0.4 is a consistency/clarity pass over v0.3's grammar — not a redesign. Key changes:
 

@@ -369,3 +369,59 @@ values never hand-entered). Verified page images: 5, 7, 14, 21, 22, 24, 26, 33, 
 | 10 | `Key Facts` = a structured DEF (Population / Domus Magna / Prima / Favored Tribunals). | It is a data box, not prose. One per House chapter. |
 | 11 | The asterisk the source puts after a House-exclusive V/F name → `^"House Exclusive"` field; the bold run-in label is dropped from DESCRIPTION (it only repeats the DEF name). | The asterisk is data the source explains in its own intro; a run-in duplicate is noise. |
 | 12 | Narrative sub-headings / V/F category labels / the "NEW … SPELL" label → `excluded`, reusing the owner's 2026-07-26 Grogs wording. | Settled precedent, not a fresh call. Completeness is separately proven by the 363/363 token gate, so exclusion hides nothing. |
+
+## TRUE LINEAGES COMPLETE — Chapters 2, 3 and 4 converted (2026-07-27)
+**The whole book is done: `coverageAudit.ts arm5e-houses-true-lineages.manifest.json` → 586 units,
+468 covered / 118 excluded / **0 UNCOVERED**, exit 0.** All 8 arm5e/armdef coverage gates PASS.
+
+| Ch | House | pp | Output |
+|---|---|---|---|
+| 2 | Guernicus | 35–77 | `.lore` (29 sections) · `guernicus.ttrpg` 60 records (15 Code clauses each with its Oath sentence as a typed field, Peripheral Code, Tribunal procedure, penalties + 6 punishments, 10 Quaesitorial duties, Shroud Magic) · `guernicus-spells.ttrpg` (20 spells + 5 guideline sets + Fenicil's 8 Rituals) · `guernicus-sidebars.ttrpg` (27 Text Boxes) |
+| 3 | Mercere | 78–109 | `.lore` (11) · `mercere.ttrpg` (9 Mastered Spell abilities, Portals, Mutantum Magic, the untitled vis-exchange TABLE) · `mercere-virtues-flaws.ttrpg` (19 V + 9 F) · `mercere-spells.ttrpg` (11) · `mercere-sidebars.ttrpg` (21) |
+| 4 | Tremere | 110–144 | `.lore` (29, incl. the Appendix Timeline) · `tremere.ttrpg` 41 records (promotion, 9 specialist roles, **15 Certamen styles**) · `tremere-spells.ttrpg` (15) · `tremere-virtues.ttrpg` (7) · `tremere-bestiary.ttrpg` (4 creature stat blocks) · `tremere-sidebars.ttrpg` (34 GUIDANCE) |
+
+**GATES — all PROVEN:** verbatim gate PASS on every chapter · completeness **363/363, 667/667,
+339/339, 450/450 source units, 0 tokens lost** in all four · order gate 0 out-of-order sections ·
+validator arm5e/0.5 **122 files 0/0**, armdef 41/0/0 · check_references 1802 / 0 err / **0 hashless**
+(armdef 1431/0/0) · check_constructs 0 err · bridge 1 file 0/0 · `sources.json` **173 entries, 0
+missing / 0 unlisted**.
+
+### THE DEFECT CLASS THAT MATTERED — reading order, invisible to every existing gate
+The page-JSON stream is authoritative for BOX membership but **not for reading order**. It can emit a
+display heading before the preceding column's tail (mis-filing paragraphs between sections) or the
+right column before the left (scrambling order within a section). **Validation, references and
+coverage all pass while this is wrong, and the completeness gate only asks whether each unit exists
+somewhere.** New tooling in `arm5e-sourcebook-conversions/scripts/`:
+- `layoutorder.py` — reconstructs each page's true reading order from `pdftotext -layout` by splitting
+  lines at the column boundary; `order_report` (the **order gate**) and `sort_units`.
+- `layoutanchor.py` — proves how many leading units of a section were displaced, by finding what is
+  printed after that heading **in its own column cell** (substring matching anchors "Penalties" inside
+  "Determining Penalties" in the other column — it must be a whole-cell match).
+- `hoh_chapter.prepare(lo, hi)` — slice → repair displacement → restore order → report what it could
+  not prove. 6 repairs in Ch2, 5 in Ch3, 1 in Ch4.
+- **It found a real defect in the already-committed Chapter One**: p30's right column continues
+  `HERMETIC INTEGRATION`, but 3 paragraphs had been filed under `Example Discoveries`. Fixed (`7899f14`).
+- ⚠ Twice the gate itself was wrong before the corpus was (comparing positions across different pages).
+  Both alarms were investigated and disproved **before** any content was changed.
+
+### Other source shapes handled at the root
+- `list` units (9, all in Ch3) were invisible to both the slicer and the completeness gate — both read
+  them now.
+- A section is only treated as a **spell** if it actually prints a stat line: `Blood of Heroes` (a
+  Virtue) and `Heroic` (a rules note) sit inside Mercere's spell run and were being mined for bogus
+  Range/Target values and truncated.
+- V/F Size and Category come from **each entry's own opening line**, never the summary sidebar — that
+  box's first group heading did not survive extraction.
+- Two-line box titles are merged ("The House View of" + "Tremere in 1220"), so both outline units match.
+- Stat lines are stripped from DESCRIPTIONs once parsed into typed fields — cut at the parsed value, so
+  it can never slice through a word.
+- Creature stat blocks in Tremere's sidebars → `tremere-bestiary.ttrpg` with per-label typed fields,
+  keeping the narrative intro as the DESCRIPTION, rather than flattened into GUIDANCE prose.
+
+### Decision log (additional autonomous calls)
+| # | Decision | Why |
+|---|---|---|
+| 13 | `pdftotext -layout` is the reading-order oracle; the page JSON stays authoritative for box membership. | The JSON's order is wrong on ~12 pages; the printed layout is not. Cheaper and more reliable than reading page images. |
+| 14 | Chapters 2–4 use House-scoped filenames (`guernicus-spells.ttrpg`), where Chapter One kept book-wide facet names (`spells.ttrpg`). | Avoids rewriting Chapter One's committed files. **Flagged for the owner** — harmonizing is a rename, not a re-conversion. |
+| 15 | Fenicil's Rituals get their own type, not `Formulaic Spell`. | The source states their Technique and Form "are not involved in the casting or learning" and they are cast against an Ease Factor, not a level. |
+| 16 | New types declared per chapter in `core-ext`: Code Clause, Tribunal Procedure Step, Hermetic Penalty, Quaesitorial Duty, Fenicil Ritual, Spell Guideline Set, Mastered Spell Special Ability, Certamen Style, House Specialist Role, Magic Creature. | Each is a kind the book itself enumerates; core has no place for them. |
