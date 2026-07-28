@@ -1,7 +1,8 @@
 # Titterpig DSL Specification v0.5
 
-> **Status: v0.5 (current, canonical).** Supersedes v0.4 (which superseded v0.3). Historical docs
-> live in `archive/`; `AUTHORING-GUIDELINES.md` holds system-specific authoring best-practices. The
+> **Status: v0.5 (current, canonical).** Supersedes v0.4 (which superseded v0.3); superseded
+> versions live in this repo's git history. `AUTHORING-GUIDELINES.md` holds authoring
+> best-practices for system-specific content. The
 > `ttrpg.peg` grammar is **aligned to v0.5**. Validation is split: `ttrpg_validator.py` lints spec
 > adherence, while `check_references.py` and `check_constructs.py` coherence-check the v0.5
 > `REFERENCES`/`REFERENCED BY`, `HOOKS`, `OPTIONAL`/`.selections`, and `GUIDANCE` constructs.
