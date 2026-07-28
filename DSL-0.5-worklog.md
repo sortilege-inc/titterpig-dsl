@@ -318,3 +318,54 @@ Pure rename; **zero content change**. Every gate reproduces its pre-migration nu
   the bridge an `ALIASES` entry; revert that one record to a DEF carrying the verbatim text; or make
   GUIDANCE ENTRYs anchor-able in the gates). Also: the bridge gate is not part of
   `arm5e/armdef` gate runs, which is why it went unnoticed — worth wiring in.
+
+## PHASE 1 PILOT — True Lineages Chapter One (House Bonisagus) DONE + PROVEN (2026-07-27)
+Deterministic hand-conversion in the main loop. **pp.4–34 fully converted; that slice is 0 uncovered.**
+
+**Output** (6 files in `arm5e/0.5/houses-true-lineages/`, all registered in `sources.json` → 158 entries,
+0 missing / 0 unlisted): `…-bonisagus.lore` (29 verbatim narrative sections) · `…-bonisagus.ttrpg`
+(House Utilities: House Acclaim / Folios / Intrigue; Original Research + 3 Breakthrough types + 6
+procedure steps; 4 Example Discoveries + **6 Parma Magica folds**) · `…-virtues-flaws.ttrpg` (7) ·
+`…-spells.ttrpg` (Reveal the Lingering Spirit, InMe 20) · `…-statblocks.ttrpg` (Glaucon, 19 typed stat
+lines) · `…-sidebars.ttrpg` (all 20 Text Boxes: 13 GUIDANCE + 6 TABLE DEFs + 1 OPTIONAL).
+`core-ext` gained 6 types: House Utility, Breakthrough, Original Research Step, Example Discovery,
+Parma Magica Fold, Example Character.
+
+**GATES — all PROVEN:** verbatim gate PASS (every emitted TEXT/DESCRIPTION is a token subsequence of
+the source) · completeness **363/363 source units on pp.4–34, 0 tokens lost** · validator arm5e/0.5
+**110 files 0/0** · check_references **1801 refs / 0 err / 0 hashless** · check_constructs 0 err ·
+coverage: Chapter One slice **0 uncovered** (book-wide 89 covered / 40 excluded / 457 remaining =
+Chapters 2–4, not yet converted).
+
+### METHOD — three defects the gates caught, each fixed at the root (this is what scales)
+1. **Heading-bounded slicing silently drops narrative.** The proven `srcextract` method bounds a body
+   at the next heading, so text resuming AFTER an interrupting sidebar is lost — **34 of 129 paragraphs
+   on pp.4–20**. Replaced with a slicer over the per-page JSON's explicit `box_open`/`box_close`
+   stream (`scratchpad/tl/pageslice.py`), which partitions EVERY unit on a page into exactly one
+   destination — complete by construction. **The old method would have under-converted all four chapters.**
+2. **Column-order artifacts.** Four places emit a section heading BEFORE the tail paragraphs of the
+   preceding column (House Utilities/p21, Original Research/p26, Bibliography+Figurine/p34). Each was
+   **verified against the rendered PDF page image** before being encoded as an explicit reassignment.
+3. **Ligatures.** The True Lineages extraction profile does NOT de-ligature (`reﬁne`), unlike every
+   other arm5e source HTML — the committed corpus contains **zero** ligature characters. Normalized in
+   the conversion layer, on both the emitted text and the verification reference.
+   ⚠ **`books.py` profile gap — fix at extraction time for Societates and Mystery Cults.**
+
+### Tables — structured, never flattened, each verified against the page image
+5 of the 7 HTML tables are in Chapter One. The PDF splits header cells and value cells across
+different x-bands, so the raw grid is unusable as-is: added `fit_columns` (merge adjacent columns that
+are never both non-empty — lossless) plus wrap-row joining, with the real column set read off the
+rendered page. `Research and Acclaim Points` (p.21) has NO `<table>` markup at all — a dot-leader list;
+its 11 rows are sliced from the source between each leader and the next label (labels asserted present,
+values never hand-entered). Verified page images: 5, 7, 14, 21, 22, 24, 26, 33, 34.
+
+### Decision log (autonomous method/design calls)
+| # | Decision | Why |
+|---|---|---|
+| 6 | Page-JSON box stream replaces heading-bounded slicing as the primary slicer. | Complete by construction; the heading method provably dropped 26% of the narrative. |
+| 7 | 6 new core-ext types rather than overloading core types. | Matches the supplement precedent (RoP:Magic/Hedge each declare their own); the book distinguishes these kinds itself. |
+| 8 | Glaucon = a DEF in `…-statblocks.ttrpg` (RoP:Magic precedent), not an `.actor`. | In-edition consistency; arm5e has no `.actor` files. **Flagged for the owner** — the skill's query test would also allow `.actor`. |
+| 9 | Every stat line is its own typed field (19 for Glaucon), not one prose blob. | Prime directive; RoP:Magic precedent. |
+| 10 | `Key Facts` = a structured DEF (Population / Domus Magna / Prima / Favored Tribunals). | It is a data box, not prose. One per House chapter. |
+| 11 | The asterisk the source puts after a House-exclusive V/F name → `^"House Exclusive"` field; the bold run-in label is dropped from DESCRIPTION (it only repeats the DEF name). | The asterisk is data the source explains in its own intro; a run-in duplicate is noise. |
+| 12 | Narrative sub-headings / V/F category labels / the "NEW … SPELL" label → `excluded`, reusing the owner's 2026-07-26 Grogs wording. | Settled precedent, not a fresh call. Completeness is separately proven by the 363/363 token gate, so exclusion hides nothing. |
