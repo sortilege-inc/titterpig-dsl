@@ -173,3 +173,69 @@ in one pass, and review nuanced clusters one at a time.
 > Discipline: deterministic-first, pilot-before-scale, prove every gate with command + result
 > (PROVEN/UNVERIFIED/FAILED), no long agents, keep the worklog current, and **ask me rather than
 > spinning out** — surface decisions executive-ready, one cluster at a time.
+
+
+---
+
+# STOPPED HERE (2026-07-27) — Phase 0 + the Chapter One pilot are DONE, PROVEN, committed, pushed.
+
+**Done and green:** Phase 0 version-dir migration; the arm4→arm5e bridge fix (owner: revert
+`^"Starting Character Age"` to a DEF) + the bridge wired into `arm5eFinalGates.sh`; Chapter One
+(House Bonisagus, pp.4–34) fully converted with named characters as `.actor` (owner decision).
+Commits: arm5e `e8f3597` · mastra `d397f4a` · dsl `481e3f3`. All three clean, 0 unpushed.
+
+**Remaining: Chapters 2–4** — Guernicus (pp.35–77) · Mercere (78–109) · Tremere (110–143) ·
+Appendix Timeline (144). Book-wide coverage is 89 covered / 40 excluded / **457 uncovered** = exactly
+those three chapters. Nothing else is outstanding.
+
+## The tooling is durable and PROVEN — reuse it, do not rebuild it
+All in `arm5e-sourcebook-conversions/scripts/` (moved out of the session scratchpad and re-verified
+from that location: re-running the generator reproduces the committed Chapter One corpus **byte for
+byte**, `git diff` empty).
+
+| File | What it does |
+|---|---|
+| `pageslice.py` | **The slicer.** Partitions every unit on a page range into exactly one main section or sidebar, from the page JSON's explicit `box_open`/`box_close` stream. Complete by construction. Also `rejoin()` (emphasis-split hyphenation) and `deligature()`. |
+| `dslemit.py` | DSL emission + the **verbatim gate** (`verbatim()` — token-subsequence vs the de-ligatured source; `report()` exits 1 on any failure), `clean_grid`, `fit_columns`, `hid`, `q`. |
+| `covercheck.py` | **The completeness gate.** `covercheck.py <lo> <hi> <corpus files…>` — every source unit on those pages must be present; reports LOST tokens and exits 1. Split-tolerant, so structuring a stat block into typed fields is not mistaken for loss. |
+| `pagecheck.py` | Stricter contiguous-only variant; use it to see what got structured. |
+| `repair.py` | Contiguity helper for column-order artifacts (see the caveat below). |
+| `gen_hoh_bonisagus.py` + `hoh_bonisagus_spec.py` | **The worked example — copy this shape for each chapter.** |
+
+## Recipe per chapter (this is exactly what Chapter One did)
+1. `python3 scripts/pageslice.py <lo> <hi>` — read the section/sidebar map.
+2. **Find the column-order artifacts.** A display heading set mid-column makes the stream emit the
+   heading BEFORE the preceding column's tail paragraphs. Detector: a section whose first paragraph
+   starts lowercase / mid-sentence, or an h1 with 0 units. For Chapter Two this flags exactly four —
+   **p42 `Organization`, p59 `Penalties`, p69 `Running Stories for a Quaesitor`, p70 `Quaesitorial
+   Magic`** (each visibly continues the previous section: p42's begins `"eral conflict…"` completing
+   `"…in times of gen-"`). ⚠ `repair.py`'s automatic contiguity proof does NOT fire here — the source
+   HTML interleaves the sidebar between them, so the two paragraphs are not adjacent in the HTML token
+   stream either. **Render the page and confirm by eye**, then encode an explicit `REASSIGN` entry
+   exactly as `hoh_bonisagus_spec.py` does:
+   `pdftoppm -f <pg> -l <pg> -r 120 -png "~/Working/Arm5e Sourcebooks/Houses of Hermes - True Lineages.pdf" out/p`
+3. Write `gen_hoh_<house>.py` on the `gen_hoh_bonisagus.py` shape: narrative → verbatim `.lore`;
+   mechanics → typed DEFs; every sidebar → GUIDANCE / OPTIONAL / TABLE DEF; named characters → the
+   `.actor`. Declare any genuinely new type in `core-ext`.
+4. **Gate, in this order:** the generator's own verbatim gate → `covercheck.py <lo> <hi> …` must report
+   **0 WITH LOST TOKENS** → `ttrpg_validator.py arm5e/0.5` → `check_references.py` → `check_constructs.py`
+   → `coverageAudit.ts` (chapter slice must be 0 uncovered) → sync `sources.json`.
+
+## What Chapter Two contains (surveyed: 140 main sections, 27 sidebars)
+Narrative (History, Organization, Guernicus Magi, Running Stories) → `.lore`. Mechanical sets that are
+**enumerable and must each become a record**: the **17 Code of Hermes clauses** (Deprivation of Magical
+Power … Enemies and Allies) · the Peripheral Code (3) · Tribunal Procedures (Preparing/Presenting a
+Case, Acquittal, Conviction) · Penalties (Damages/Fines/Punishments + 6 punishments incl. Loss/Death of
+Familiar) · Quaesitorial Duties and Powers (~10) · **~25 new spells** in Quaesitorial Magic, each with
+an `R:/D:/T:/Level` stat line to parse into Technique/Form/Level like
+`^"Reveal the Lingering Spirit"` · 5 guideline blocks · **Fenicil's Rituals** (3 Greater + 5 Lesser) ·
+Shroud Magic. Note pp.61/70/76 have h1 headings with 0 units whose following h4s belong to the
+*previous* section (Loss/Death of Familiar are Punishments) — grouping only, no text is lost.
+
+## Also flagged
+- ⚠ **`books.py` extraction-profile gap:** the `houses-true-lineages` profile does not de-ligature
+  (`reﬁne`), unlike every other arm5e book — the committed corpus contains zero ligature characters.
+  Chapter One normalizes downstream in `dslemit`/`pageslice`. **Fix the profile before extracting
+  Societates and Mystery Cults**, or they inherit the same defect.
+- The other two Houses of Hermes books still need extraction; each needs its OWN profile (heading
+  thresholds in the section above — do not copy True Lineages' blind).
