@@ -202,11 +202,13 @@ worked examples of increasing complexity.
 documents is invisible to validation, references and coverage alike.
 
 ## Open items for the owner
-1. **Filename asymmetry:** Chapter One kept book-wide facet names (`…-0.5-spells.ttrpg`,
-   `-sidebars`, `-virtues-flaws`, `-characters.actor`); Chapters 2–4 use House-scoped names
-   (`…-0.5-guernicus-spells.ttrpg`). Harmonizing is a rename plus a `sources.json` edit, not a
-   re-conversion — say the word.
-2. ⚠ **`books.py` extraction-profile gap:** the `houses-true-lineages` profile does not de-ligature
+1. ~~Filename asymmetry~~ — **SETTLED (owner, 2026-07-27): the asymmetry is fine, leave it.**
+   Chapter One keeps book-wide facet names (`…-0.5-spells.ttrpg`, `-sidebars`, `-virtues-flaws`,
+   `-characters.actor`); Chapters 2–4 use House-scoped names (`…-0.5-guernicus-spells.ttrpg`).
+   **Do not "fix" this in a later pass.**
+2. ⚠ **Ligature expansion is missing from extraction** (it is a per-PDF property, not a profile
+   setting — see `titterpig-mastra/references/pdf-conversion-risk-classes.md` R3 and the open item in
+   `titterpig-mastra/TASKS.md`). Formerly described here as a profile gap: the `houses-true-lineages` profile does not de-ligature
    (`reﬁne`), unlike every other arm5e book. True Lineages normalizes downstream in
    `pageslice.deligature`. **Fix the profile before extracting Societates and Mystery Cults.**
 3. The other two Houses of Hermes books still need extraction; each needs its OWN profile (heading
