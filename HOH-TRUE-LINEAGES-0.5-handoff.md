@@ -32,8 +32,8 @@ Owner-confirmed decisions (2026-07-27):
 1. **`git mv` rename, not copy+freeze.** The files in `0.4/` are already `SPEC_VERSION "0.5"` /
    `VERSION "0.5.0"`, so the dir name is simply stale; the true 0.4-spec state is preserved in git
    history. No frozen `0.4/` snapshot is left behind. (`arm5e/0.1`, `0.2`, `0.3` stay as-is.)
-2. **Both editions, each to its OWN 0.5 dir** — `arm5e/0.5` → `arm5e/0.5` and `armdef/0.5` →
-   `armdef/0.5`. **Keep the edition-first structure**; do NOT create a top-level `0.5/` with
+2. **Both editions, each to its OWN 0.5 dir** — `arm5e/0.4` → `arm5e/0.5` and `armdef/0.4` →
+   `armdef/0.5`. (DONE.) **Keep the edition-first structure**; do NOT create a top-level `0.5/` with
    `arm5e`/`armdef` children (the owner confirmed the current layout is deliberate).
 3. **Rename the `-0.4-` filename segment to `-0.5-`** (201 files).
 
@@ -76,8 +76,10 @@ Chapter map (from `toc.txt`):
 | — | Appendix | 144 | Timeline |
 
 Per chapter, in this order:
-1. **Narrative → `.lore`**, verbatim slices (bulk of the book). Its in-chapter headings are then
-   matched by `.lore` basename in coverage.
+1. **Narrative → `.lore`**, verbatim slices (bulk of the book). ⚠ CORRECTED 2026-07-27: a `.lore`
+   contributes ONLY its own basename to the coverage entity set — its in-chapter headings do NOT
+   resolve, and must be dispositioned (settled Grogs wording). Completeness is proven separately by
+   `covercheck.py`, so the exclusion hides nothing.
 2. **Mechanical records → `.ttrpg`**, verbatim: new Virtues/Flaws (they fit core `^"Virtue"`/`^"Flaw"`
    unchanged), spells (fit core `^"Hermetic Spell"`), House systems. Declare any genuinely-new type in
    the `core-ext` file as you go.
