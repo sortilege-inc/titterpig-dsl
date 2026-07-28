@@ -1,5 +1,5 @@
 #!/usr/bin/env python3
-"""DSL 0.5 REFERENCES / REFERENCED BY coherence gate (supersedes check_mentions.py).
+"""DSL 0.5 REFERENCES / REFERENCED BY coherence gate.
 
 Per edition-scoped corpus root:
   1. Every REFERENCES / (deprecated) MENTIONS target resolves — by #hash when given

@@ -25,7 +25,6 @@ All paths are inside the `titterpig-dsl` repo (from a system repo, `../titterpig
 | `ttrpg.peg` | v0.4 PEG grammar, aligned to the spec. |
 | `ttrpg_validator.py` | v0.4 validator (two levels: lint + coherence). |
 | `tests/good.ttrpg`, `tests/bad.ttrpg` | Conformant / intentionally-broken fixtures — worked examples. |
-| `archive/` | Superseded material. **Not** part of the current spec — ignore for authoring. |
 
 **When a fact isn't here, read the spec** — do not guess grammar or keyword semantics from memory.
 

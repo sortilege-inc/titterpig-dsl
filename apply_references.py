@@ -1,6 +1,6 @@
 #!/usr/bin/env python3
 """Apply the DSL 0.5 REFERENCES treatment to an edition's DEF descriptions
-(supersedes apply_mentions.py; DECISION-11).
+(DECISION-11).
 
 For every DEF with a DESCRIPTION in the edition tree:
   1. Strip cross-rulebook page citations "(ArM5, page 179)" / "(see ArM5 p42)"

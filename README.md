@@ -14,14 +14,12 @@ A Domain Specific Language for encoding Tabletop Roleplaying Game Sourcebooks
 | `AUTHORING-GUIDELINES.md` | Authoring best-practices for system-specific `.ttrpg`/`.lore` (advisory; the spec wins on conflict) |
 | `ttrpg.peg` | **v0.5 grammar** — aligned to the spec |
 | `ttrpg_validator.py` | **Validator** — two levels: lint (spec adherence) + coherence (referential integrity), with FIAT waivers. `python3 ttrpg_validator.py <file-or-dir>` |
-| `check_references.py` | **v0.5 gate** — `REFERENCES` / `REFERENCED BY` coherence; `--show-warns` lists hashless refs. Supersedes `check_mentions.py`. |
+| `check_references.py` | **v0.5 gate** — `REFERENCES` / `REFERENCED BY` coherence; `--show-warns` lists hashless refs. Also parses the deprecated 0.4-era `MENTIONS`. |
 | `check_constructs.py` | **v0.5 gate** — `GUIDANCE` / `HOOKS` / `OPTIONAL` / `.selections` semantics |
 | `apply_references.py` | Migration tool — emits `REFERENCES` blocks, hashing a target when its name has exactly one anchor |
 | `samples/` | v0.5 conformance fixture (`.ttrpg` + `.selections`) |
 | `tests/` | Validator fixtures — `good.*` (conformant) / `bad.*` (intentional findings), `mods-*` for the §13 modification system, `good.bridge` / `bad.bridge` for §21 |
 | `bridges/` | **Cross-edition conversion documents (§21)** — cross-system, not system-specific; see the note below |
-| `check_mentions.py`, `apply_mentions.py` | **Superseded** by the `*_references` pair (0.4-era `MENTIONS`); retained only while a corpus still carries `MENTIONS` |
-| `archive/` | **Historical / superseded** — v0.2–v0.3 material, not part of the current spec |
 
 `titterpig-dsl-spec.md` is the single source of truth; `ttrpg.peg` and the validator are aligned to
 it. **Coherence is corpus-wide** — validate a whole system version directory (not a lone file) so
