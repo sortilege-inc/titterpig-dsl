@@ -1,0 +1,122 @@
+# ============================================================================
+# PILOT .codex — lore knowledge graph for the TOR2E "Eriador" lore essay.
+# Every fact below is derived from tor2e-0.4-core-eriador.lore; the .lore prose
+# itself is UNTOUCHED and stays byte-verbatim. This file is the stand-off graph
+# that points INTO it (SOURCE ... AT <heading-slug>) and the surface text it was
+# derived from (FROM "...").
+#
+# Combined schema+data for the pilot. In a real corpus the CATEGORIES/RELATIONS
+# ontology would live in one schema codex and be imported by DEPENDS_ON.
+# ============================================================================
+
+CODEX "TOR2E_Eriador_Codex" {
+    NAME "Eriador — Lore Knowledge Graph"
+    VERSION "0.1"
+    SPEC_VERSION "0.5"
+    RELEASE_DATE "2026-08-08"
+    # FOR EDITION "tor2e"  → resolves ^"Hobbit" etc. against the tor2e .ttrpg corpus
+    #                         when validated in-corpus; here they are local nodes.
+
+    # ---- ONTOLOGY: category taxonomy (the "IS a ___" types) -----------------
+    # A category is a node; some categories ARE existing game DEFs (^"Hobbit" is
+    # a tor2e culture), others are pure lore taxonomy (^"River"). Both are just
+    # caret refs, so there is no special case.
+    CATEGORIES {
+        ^"Place"        DEF {}
+        ^"Region"       DEF { EXTENDS ^"Place" }
+        ^"Settlement"   DEF { EXTENDS ^"Place" }
+        ^"Ruined City"  DEF { EXTENDS ^"Settlement" }
+        ^"Tower"        DEF { EXTENDS ^"Place" }
+        ^"River"        DEF { EXTENDS ^"Place" }
+        ^"Lake"         DEF { EXTENDS ^"Place" }
+        ^"Hills"        DEF { EXTENDS ^"Place" }
+        ^"Person"       DEF {}
+        ^"Faction"      DEF {}
+        ^"Hobbit"       DEF { EXTENDS ^"Person" }   # in-corpus: the tor2e culture DEF
+    }
+
+    # ---- ONTOLOGY: relationship predicate vocabulary ------------------------
+    # Declared, validated, with inverses/domain/range. An undeclared predicate
+    # used below is a coherence ERROR (no synonym drift). INVERSE is derivable,
+    # so "contains" need never be asserted by hand.
+    RELATIONS {
+        ^"located-in"       { INVERSE ^"contains"    DOMAIN ^"Place"  RANGE ^"Place"    TRANSITIVE }
+        ^"located-on"       { INVERSE ^"site-of"     DOMAIN ^"Place"  RANGE ^"Place"    }
+        ^"part-of"          { INVERSE ^"has-part"    DOMAIN ^"Place"  RANGE ^"Place"    TRANSITIVE }
+        ^"bordered-by"      { SYMMETRIC               DOMAIN ^"Place"  RANGE ^"Place"    }
+        ^"flows-from"       { INVERSE ^"source-of"   DOMAIN ^"River"  RANGE ^"Place"    }
+        ^"named-after"      {                         DOMAIN ^"Place"  RANGE ^"Place"    }
+        ^"former-capital-of"{ INVERSE ^"had-capital" DOMAIN ^"Settlement" RANGE ^"Region" }
+        ^"lives-in"         { INVERSE ^"residents"   DOMAIN ^"Person" RANGE ^"Place"    }
+        ^"frequents"        {                         DOMAIN ^"Faction" RANGE ^"Place"   }
+    }
+
+    # ---- DATA: entities (nodes) + their relationships (typed edges) ----------
+
+    ENTITY #tor2eEriadorRegion01 ^"Eriador" {
+        IS ^"Region"
+        SOURCE "tor2e-0.4-core-eriador.lore"
+    }
+
+    ENTITY #tor2eTheShire000001 ^"The Shire" {
+        IS ^"Region"
+        SOURCE "tor2e-0.4-core-eriador.lore" AT "the-shire"
+        RELATIONSHIPS {
+            ^"located-in"  -> ^"Eriador"              FROM "found at the heart of Eriador"
+            ^"bordered-by" -> ^"The Brandywine River" FROM "bordered by the Brandywine River"
+        }
+    }
+
+    ENTITY #tor2eBrandywine0001 ^"The Brandywine River" {
+        IS ^"River"
+        SOURCE "tor2e-0.4-core-eriador.lore" AT "the-brandywine-river"
+        RELATIONSHIPS {
+            ^"flows-from" -> ^"Lake Evendim" FROM "flows south out of Lake Evendim"
+        }
+    }
+
+    ENTITY #tor2eLakeEvendim001 ^"Lake Evendim" {
+        IS ^"Lake"
+        SOURCE "tor2e-0.4-core-eriador.lore" AT "lake-evendim"
+        RELATIONSHIPS {
+            ^"named-after" -> ^"The Hills of Evendim" FROM "the great lake for which those rolling lands are named"
+        }
+    }
+
+    ENTITY #tor2eHillsEvendim01 ^"The Hills of Evendim" {
+        IS ^"Hills"
+        SOURCE "tor2e-0.4-core-eriador.lore" AT "the-hills-of-evendim"
+    }
+
+    ENTITY #tor2eAnnuminas00001 ^"Annúminas" {
+        IS ^"Ruined City"
+        SOURCE "tor2e-0.4-core-eriador.lore" AT "annúminas"
+        RELATIONSHIPS {
+            ^"located-on"        -> ^"Lake Evendim" FROM "cast its long shadows on the shores of Lake Evendim"
+            ^"former-capital-of" -> ^"Eriador"      FROM "Once the capital of the North Kingdom of the Men of the West"
+        }
+    }
+
+    ENTITY #tor2eWesternTower01 ^"The Western Tower" {
+        IS ^"Tower"
+        SOURCE "tor2e-0.4-core-eriador.lore" AT "the-western-tower"
+        RELATIONSHIPS {
+            ^"part-of" -> ^"Annúminas" FROM "the tallest and unbroken towers and walls emerge from the surface"
+        }
+    }
+
+    ENTITY #tor2eRangersNorth01 ^"Rangers of the North" {
+        IS ^"Faction"
+        RELATIONSHIPS {
+            ^"frequents" -> ^"Annúminas" FROM "The Rangers of the North sometimes come here"
+        }
+    }
+
+    # Your example: a Person node whose category is a game DEF, living in a place.
+    ENTITY #tor2eBilboBaggins01 ^"Bilbo Baggins" {
+        IS ^"Hobbit"
+        RELATIONSHIPS {
+            ^"lives-in" -> ^"The Shire"
+        }
+    }
+}

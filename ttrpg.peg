@@ -9,7 +9,8 @@
 # Formal syntax specification for .ttrpg files (v0.5)
 # v0.5 additions (§3c): REFERENCES (renames MENTIONS) + REFERENCED BY; GUIDANCE in a
 # DEF/module body (generalized from BRIDGE); HOOKS + FORMALITY; OPTIONAL; the
-# SELECTIONS container for .selections files.
+# SELECTIONS container for .selections files; the CODEX container for .codex files
+# (§25 — the stand-off lore knowledge graph).
 #
 # This grammar defines syntactically valid .ttrpg files. Semantic rules
 # (hash uniqueness, EXTENDS resolution, type consistency) are enforced
@@ -31,7 +32,7 @@
 # 1. File-Level Structure
 # ═══════════════════════════════════════════════════════════
 
-FILE            <- _ (BASE_BLOCK / EXTENSION_BLOCK / BRIDGE_BLOCK / SELECTIONS_BLOCK) _ EOF
+FILE            <- _ (BASE_BLOCK / EXTENSION_BLOCK / BRIDGE_BLOCK / SELECTIONS_BLOCK / CODEX_BLOCK) _ EOF
 
 BASE_BLOCK      <- 'BASE' _ STRING _ '{' _ BODY _ '}'
 EXTENSION_BLOCK <- 'EXTENSION' _ STRING _ EXTENDS_CLAUSE? _ '{' _ BODY _ '}'
@@ -167,6 +168,42 @@ SELECTIONS_ENTRY <- METADATA
                   / 'FOR' _ STRING (_ 'VERSION' _ STRING)?
                   / 'SELECT' _ HASH_ID _ POSTURE (_ STRING)?
                   / COMMENT
+
+# §25 — CODEX: a `.codex` FILE — the stand-off lore knowledge graph. A CATEGORIES
+# taxonomy, a declared RELATIONS predicate vocabulary, and ENTITY nodes with typed
+# edges. Category/entity NAMES join the corpus namespace; predicates must be
+# declared; the .lore prose is never touched (SOURCE/AT point INTO it). Coherence
+# (IS/object resolution, undeclared-predicate, DOMAIN/RANGE, slug match) is in the
+# validator (see FILE, §1).
+CODEX_BLOCK      <- 'CODEX' _ STRING _ '{' _ (CODEX_ENTRY _)* '}'
+CODEX_ENTRY      <- METADATA
+                  / 'FOR' _ 'EDITION' _ STRING
+                  / CATEGORIES_BLOCK
+                  / RELATIONS_BLOCK
+                  / ENTITY_BLOCK
+                  / COMMENT
+
+CATEGORIES_BLOCK <- 'CATEGORIES' _ '{' _ (CATEGORY_DECL _)* '}'
+CATEGORY_DECL    <- HASH_ID? _ CARET_REF _ 'DEF' _ '{' _ (('EXTENDS' _ HASH_ID? _ CARET_REF) / COMMENT / _)* '}'
+
+RELATIONS_BLOCK  <- 'RELATIONS' _ '{' _ (RELATION_DECL _)* '}'
+RELATION_DECL    <- CARET_REF _ '{' _ (RELATION_QUAL _)* '}'
+RELATION_QUAL    <- 'INVERSE' _ CARET_REF
+                  / 'DOMAIN' _ CARET_REF
+                  / 'RANGE' _ CARET_REF
+                  / 'SYMMETRIC'
+                  / 'TRANSITIVE'
+                  / COMMENT
+
+ENTITY_BLOCK     <- 'ENTITY' _ HASH_ID? _ CARET_REF _ '{' _ (ENTITY_ENTRY _)* '}'
+ENTITY_ENTRY     <- 'IS' _ CARET_REF+
+                  / 'SOURCE' _ STRING (_ 'AT' _ STRING)?
+                  / RELATIONSHIPS_BLOCK
+                  / COMMENT
+RELATIONSHIPS_BLOCK <- 'RELATIONSHIPS' _ '{' _ (EDGE_DECL _)* '}'
+# The '->' arrow is cosmetic (non-token); an edge is predicate-caret + object-caret.
+EDGE_DECL        <- CARET_REF _ ARROW? _ CARET_REF (_ 'FROM' _ STRING)?
+ARROW            <- '->'
 
 # ═══════════════════════════════════════════════════════════
 # 4. Properties Block
@@ -310,13 +347,25 @@ GENERIC_BODY_ENTRY <- DEF_BLOCK
 
 # Entries within generic blocks:
 #   1 "text"                  (numbered entry)
+#   2-3 "text"                (roll-range entry — random tables)
+#   1 ^"Name" DEF { }         (numbered nested def)
+#   2-3 #hash ^"Name" DEF { } (roll-range nested def, anchored)
 #   KEYWORD "text"            (labeled entry)
 #   ^"Name" "text"            (caret-labeled entry)
 #   ^"Name" [tag]             (caret with bracket tag)
 #   ^"Name" DEF { }           (nested def)
 #   #hash: text               (hash-labeled, already covered by HASH_ENTRY)
 
-NUMBERED_ENTRY  <- INTEGER_LIT _ (STRING / CARET_REF / GENERIC_BLOCK)
+# A numbered entry may be keyed by a single roll or by a range of rolls, and
+# may carry an anchor hash before its name. Random tables in several systems
+# assign one result to a span of die results (a d10 table with six outcomes),
+# so the key is a range rather than an integer; encoding that span as prose
+# would put something a tool must read outside the structure.
+NUMBERED_ENTRY  <- ROLL_KEY _ HASH_ID? _ (STRING / CARET_REF / GENERIC_BLOCK)
+
+ROLL_KEY        <- ROLL_RANGE / INTEGER_LIT
+
+ROLL_RANGE      <- INTEGER_LIT '-' INTEGER_LIT
 
 LABELED_ENTRY   <- UPPER_IDENT _ (STRING / CARET_REF / INTEGER_LIT / BRACKET_LIST / GENERIC_BLOCK)
 
@@ -536,6 +585,8 @@ EOF             <- !.
 #                PROSE, TAGGED, CONDITIONAL, FORMAL                            (v0.5, §23)
 # Optional:      OPTIONAL, DEFAULT, SCOPE, GLOBAL, on, off                    (v0.5, §24)
 # Selections:    SELECTIONS, SELECT, FOR (also alias kw), VERSION             (v0.5, §24)
+# Codex (§25):   CODEX, CATEGORIES, RELATIONS, ENTITY, IS, RELATIONSHIPS, INVERSE,
+#                DOMAIN, RANGE, SYMMETRIC, TRANSITIVE, SOURCE, AT, FROM, EDITION  (v0.5, §25)
 # Guidance:      GUIDANCE, ENTRY, CONCERNS, TOPICS, TEXT (in a DEF/module now) (v0.5, §22)
 # Text:          DESCRIPTION, TEXT
 # Validation:    FIAT (also an element-level statement)

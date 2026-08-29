@@ -1,0 +1,50 @@
+# Conformant .codex fixture (spec §25) — validates 0 errors / 0 warnings.
+# A self-contained lore knowledge graph: taxonomy, declared predicates, typed edges.
+
+CODEX "Good_Codex" {
+    NAME "Conformant lore knowledge graph"
+    VERSION "0.1"
+    SPEC_VERSION "0.5"
+    RELEASE_DATE "2026-08-08"
+
+    CATEGORIES {
+        ^"Place"       DEF {}
+        ^"Settlement"  DEF { EXTENDS ^"Place" }
+        ^"City"        DEF { EXTENDS ^"Settlement" }
+        ^"River"       DEF { EXTENDS ^"Place" }
+        ^"Person"      DEF {}
+    }
+
+    RELATIONS {
+        ^"located-in"  { INVERSE ^"contains"  DOMAIN ^"Place"  RANGE ^"Place"  TRANSITIVE }
+        ^"flows-from"  { INVERSE ^"source-of" DOMAIN ^"River"  RANGE ^"Place"  }
+        ^"bordered-by" { SYMMETRIC             DOMAIN ^"Place"  RANGE ^"Place"  }
+        ^"lives-in"    { INVERSE ^"residents" DOMAIN ^"Person" RANGE ^"Place"  }
+    }
+
+    ENTITY #codexRegionTestId001 ^"The Vale" {
+        IS ^"Place"
+    }
+
+    ENTITY #codexCityTestId00001 ^"Rivertown" {
+        IS ^"City"
+        RELATIONSHIPS {
+            ^"located-in"  -> ^"The Vale"      FROM "the town in the vale"
+            ^"bordered-by" -> ^"The Long River"
+        }
+    }
+
+    ENTITY #codexRiverTestId0001 ^"The Long River" {
+        IS ^"River"
+        RELATIONSHIPS {
+            ^"flows-from" -> ^"The Vale"
+        }
+    }
+
+    ENTITY #codexPersonTestId001 ^"Mira" {
+        IS ^"Person"
+        RELATIONSHIPS {
+            ^"lives-in" -> ^"Rivertown"
+        }
+    }
+}

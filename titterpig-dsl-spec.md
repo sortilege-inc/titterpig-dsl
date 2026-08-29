@@ -12,7 +12,7 @@
 The DSL is **at v0.5**. This section leads with the v0.5 additions, then keeps the v0.4 changelog for
 history; the *Resolved decisions* subsections below (through DECISION-11) carry the full detail.
 
-### v0.5 — four new constructs *(current; additive — every v0.4 file stays valid)*
+### v0.5 — five new constructs *(current; additive — every v0.4 file stays valid)*
 
 1. **`GUIDANCE`** *(new, §22, DECISION-8)* — first-class guidance prose (most **sidebars**): prose
    *about* the mechanics that is neither a deterministic `DESCRIPTION` rule nor opaque `.lore` flavor.
@@ -29,6 +29,12 @@ history; the *Resolved decisions* subsections below (through DECISION-11) carry 
    renamed **`REFERENCES`** (`MENTIONS` kept as a deprecated alias). A target may be a mechanic's
    **parent** DEF and **SHOULD** carry the target's `#hash` (a hashless target **WARNs**), with an
    optional inverse **`REFERENCED BY`** mirror.
+5. **`.codex`** *(new container, §25, DECISION-12)* — a **stand-off lore knowledge graph**: typed
+   `ENTITY` nodes, a declared `RELATIONS` predicate vocabulary (with `INVERSE`/`DOMAIN`/`RANGE`/
+   `SYMMETRIC`/`TRANSITIVE`), and a `CATEGORIES` taxonomy, all derived from `.lore` prose and stored
+   beside it. The `.lore` body stays byte-verbatim and opaque; the codex points *into* it
+   (`SOURCE … AT <heading-slug>`, `FROM "<surface>"`) and never edits it — the same "mirror, don't
+   duplicate" split as `.ttrpg`↔`.lore`, applied to world facts.
 
 ### v0.4 — consistency/clarity pass over v0.3
 
@@ -115,7 +121,7 @@ v0.4 is a consistency/clarity pass over v0.3's grammar — not a redesign. Key c
 
 ### Resolved decisions (2026-07-26, v0.5)
 
-Four constructs recurring across systems that 0.4 could not cleanly hold. All additive — 0.4 files
+Five constructs recurring across systems that 0.4 could not cleanly hold. All additive — 0.4 files
 stay valid.
 
 - **DECISION-8 — Guidance is first-class, distinct from lore and from rules** *(resolved)* (§22): prose
@@ -143,6 +149,17 @@ stay valid.
   **WARNs** (many names are multiply-defined, and a later same-name entity must not silently re-point a
   link). An optional inverse **`REFERENCED BY`** block mirrors it (tool-derivable; when present each
   entry must correspond to a real `REFERENCES`).
+- **DECISION-12 — Lore is queryable via a stand-off `.codex` graph, never by structuring the prose**
+  *(resolved)* (§25): the queryable companion to `.lore` is a new **`.codex`** container — a knowledge
+  graph of typed `ENTITY` nodes over a declared `RELATIONS` predicate vocabulary and a `CATEGORIES`
+  taxonomy, derived from the narrative and stored beside it. Inline wiki-markup in the prose was
+  rejected for the same reason as DECISION-7: it mutates verbatim narrative and forces every consumer
+  to parse the body. The codex instead points *into* the prose (`SOURCE … AT <heading-slug>`,
+  `FROM "<surface>"`), so `.lore` keeps its opaque-body contract (§2) and existing `.lore` files are
+  untouched. Predicates are declared (an undeclared predicate is a coherence error) so the graph is
+  robust rather than a synonym swamp; a category may be a taxonomy node **or** an existing game DEF, so
+  lore types and mechanical types unify. This is `.setting`'s hand-authored canon's extraction-oriented
+  sibling — the two coexist and cross-reference.
 
 ## 1. Overview & Design Principles
 
@@ -207,6 +224,7 @@ The DSL uses multiple file extensions, each corresponding to a specific containe
 | `.actor` | (single DEF) | A single character — PC or NPC — as a discrete file (DSL) |
 | `.bridge` | BRIDGE | **Cross-edition conversion** — a directed correspondence between two editions (DSL) *(v0.4, §21)* |
 | `.lore` | (none — Markdown) | **Free narrative prose / flavor** — no DSL syntax *(v0.4)* |
+| `.codex` | CODEX | **Stand-off lore knowledge graph** — typed entities + declared relationships over `.lore` prose (DSL) *(v0.5, §25)* |
 | `.selections` | SELECTIONS | **User's optional-rule choices** for a corpus — `SELECT #hash on\|off` (DSL) *(v0.5, §24)* |
 
 The `.actor` extension is a convenience alias: an `.actor` file is a `.ttrpg` file scoped to exactly one character definition (a single `DEF` block). It uses identical syntax to a DEF within an EXTENSION but exists as a standalone file, making it easy to share, version, or reference individual characters independently of the containers they appear in.
@@ -219,6 +237,8 @@ Narrative content splits by whether tools need to *query* it:
 - **Free prose → `.lore`** (Markdown, no DSL). Use this for readable flavor and world description meant for humans — history essays, cultural color, fiction. A `.lore` file is **not** parsed as DSL.
 
 Rule of thumb: if a tool must look something up in it, it's `.setting`/`.frame`; if it's just meant to be read, it's `.lore`. The same subject may appear in both (a mechanical `.setting`/`.ttrpg` entry plus a `.lore` essay).
+
+When a tool must query the *facts inside* a `.lore` essay — who a person is, where a place sits, how factions relate — the answer is **not** to structure the prose but to build a **stand-off `.codex` knowledge graph** beside it (§25). The `.lore` body stays byte-verbatim and opaque; the codex holds the typed entities and relationships and points *into* the prose. This keeps the query test intact: the prose is still "just meant to be read," and the structured, queryable layer is a separate file.
 
 ### File Organization
 
@@ -839,6 +859,23 @@ HERITAGE_TABLE {
             "1-2" "A famous weapon: Receive one weapon of rarity 7 or lower"
         }
     }
+
+    # An entry keyed to a span of die results uses a roll range. Supplement
+    # heritage tables assign one result to several rolls; the range is part
+    # of the structure, never a note in prose.
+    2-3 ^"Triumph over the Lion" DEF {
+        MODIFIERS { ^"Honor" "+5" }
+        SUB_TABLE "1d10" {
+            "1-3" "A weapon"
+            "9" "A horse or another animal"
+        }
+    }
+
+    # Where an entry grants something outright instead of a second roll.
+    10 ^"Imperial Heritage" DEF {
+        MODIFIERS { ^"Status" "+10" }
+        EFFECT { "Gain the ^\"Blessed Lineage\" distinction" }
+    }
 }
 
 GENERAL_OPPORTUNITIES {
@@ -1107,6 +1144,8 @@ Only these keywords are reserved by the base spec:
 **Text:** `DESCRIPTION`, `TEXT`
 
 **Narrative containers:** `SETTING`, `FRAME`, `ARC`, `CAMPAIGN`, `SCENE`, `LOCATION` (and their sub-keywords as defined in §16)
+
+**Codex (§25):** `CODEX`, `CATEGORIES`, `RELATIONS`, `ENTITY`, `IS`, `RELATIONSHIPS`, `INVERSE`, `DOMAIN`, `RANGE`, `SYMMETRIC`, `TRANSITIVE`, `SOURCE`, `AT`, `FROM` (`FOR`/`EDITION`/`DEPENDS_ON`/`VERSION` are shared with §3/§19; `EXTENDS` with §6)
 
 **Bridge (§21):** `BRIDGE`, `ORIGIN`, `DESTINATION`, `EXTERNAL`, `DISPOSITIONS`, `DISPOSITION`, `ALIASES`, `CONVERSION`, `GUIDANCE`, `MAP`, `REMAINDER`, `PROCEDURE`, `SUBJECT`, `SCOPE`, `ASPECT`, `CONCERNS`, `TOPICS`, `EXHAUSTIVE`, `CONVERT`, `INTO`, `UNCHANGED`, `SCALE`, `OVER`, `RESTATE`, `MANUAL` (`ALIAS`/`FOR` are shared with §5b; `ENTRY` and `TEXT` with §16/§10)
 
@@ -2770,6 +2809,137 @@ SELECTIONS "my_saga" {
 
 ---
 
+## 25. CODEX — Lore Knowledge Graph *(v0.5, DECISION-12)*
+
+A `.codex` file is a **stand-off knowledge graph over `.lore` prose**: typed entities, a declared
+relationship vocabulary, and a category taxonomy, all *derived from* the narrative but stored *beside*
+it. The `.lore` body stays byte-verbatim and opaque (§2); the codex points **into** it and never edits
+it. It is the structured, queryable companion to free prose — the same "mirror, don't duplicate" split
+as `.ttrpg`↔`.lore`, applied to world facts (who a person is, where a place sits, how factions relate).
+
+**Why a container, not `.lore` structure.** The query test (§2) routes anything a tool looks something
+up in into a structured container; a fact graph is exactly that. A separate file preserves the `.lore`
+"opaque body" contract and leaves every existing `.lore` file untouched. Inline wiki-markup in the
+prose is rejected for the same reason as DECISION-7: it mutates verbatim narrative and forces every
+consumer to parse the body.
+
+### File-level structure
+
+```
+CODEX "FileID" {
+    NAME "…"  VERSION "…"  SPEC_VERSION "0.5"  RELEASE_DATE "…"
+    [DEPENDS_ON "SchemaCodexID" VERSION "…"]   # import a shared ontology
+    [FOR EDITION "tor2e"]                        # edition whose DEFs categories/objects may resolve against
+
+    CATEGORIES { … }      # the type taxonomy (schema)
+    RELATIONS  { … }      # the predicate vocabulary (schema)
+    ENTITY … { … }        # nodes + edges (data)
+}
+```
+
+A codex may be **schema-only** (just `CATEGORIES`/`RELATIONS`, imported by others via `DEPENDS_ON`),
+**data-only** (just `ENTITY` blocks, depending on a schema codex), or **combined**. This mirrors the
+BASE/EXTENSION split: the schema is the reusable base, per-book graphs depend on it.
+
+`FOR EDITION` (optional) names the edition namespace (§19) whose DEFs a category or relationship object
+may resolve to (`IS ^"Hobbit"` → that edition's culture DEF). Absent it, carets resolve within the
+codex and any co-validated corpus.
+
+### CATEGORIES — the type taxonomy
+
+```
+CATEGORIES {
+    ^"Place"       DEF {}
+    ^"Settlement"  DEF { EXTENDS ^"Place" }
+    ^"Ruined City" DEF { EXTENDS ^"Settlement" }
+}
+```
+
+Each category is a `DEF` (§5): it may carry a `#hash`, may `EXTENDS` a parent (the taxonomy is a DAG),
+and lives in the corpus symbol table. A category name may instead be an **existing game DEF**
+(`^"Hobbit"`, `^"Scorpion Clan"`); `IS` resolves against categories and DEFs alike, so lore taxonomy
+and mechanical types **unify** without a separate layer.
+
+### RELATIONS — the declared predicate vocabulary
+
+Every relationship predicate MUST be declared before use. **An undeclared predicate is a coherence
+error** — this is what makes the graph robust rather than a synonym swamp (`located-in` vs `in` vs
+`inside`).
+
+```
+RELATIONS {
+    ^"located-in" { INVERSE ^"contains"  DOMAIN ^"Place"  RANGE ^"Place"  TRANSITIVE }
+    ^"lives-in"   { INVERSE ^"residents" DOMAIN ^"Person" RANGE ^"Place"  }
+    ^"bordered-by"{ SYMMETRIC             DOMAIN ^"Place"  RANGE ^"Place"  }
+}
+```
+
+Predicate qualifiers, all optional:
+
+- **`INVERSE ^"name"`** — the reverse edge, tool-derivable; declaring it lets a consumer answer both
+  directions from one asserted fact (assert `A located-in B`, read back `B contains A`). `INVERSE` and
+  `SYMMETRIC` are mutually exclusive (declaring both is an **error**).
+- **`DOMAIN ^"Category"` / `RANGE ^"Category"`** — the expected subject / object category. A fact
+  whose endpoints violate domain/range **WARNs** (the source is often looser than the taxonomy; not an
+  error).
+- **`SYMMETRIC`** — the edge is its own inverse (`bordered-by`).
+- **`TRANSITIVE`** — a consumer may chain the edge (`A located-in B`, `B located-in C` ⟹
+  `A located-in C`). Declarative only: the DSL asserts facts, it does not compute closures.
+
+### ENTITY — nodes and edges
+
+```
+ENTITY #hash ^"Name" {
+    IS ^"Category" [ ^"Category2" … ]                  # one or more; ≥1 required
+    [SOURCE "<lore-file>" [AT "<heading-slug>"]]       # provenance into the prose
+    RELATIONSHIPS {
+        ^"predicate" -> ^"Object" [FROM "<surface text>"]
+        …
+    }
+}
+```
+
+- **`#hash`** — opaque, ≥16 chars, unique (§5). An entity is a first-class caret target: any file in
+  the corpus resolves `^"Name"` to it, so **entity→entity links are ordinary caret refs** and are
+  coherence-checked like any other reference.
+- **`IS`** — one or more categories (multi-typing is common: a place that `IS ^"City" ^"Capital"`).
+  Each must resolve to a declared `CATEGORY` or an in-corpus DEF; an unresolved `IS` is an **error**
+  (it is the type system).
+- **`SOURCE … AT`** — binds the entity to the `.lore` file and heading that describes it, by path and
+  GitHub-style heading slug. The one structural assumption made about the prose body is heading text:
+  a slug matching no heading **WARNs**. `SOURCE` is optional (some entities are named only in passing).
+- **`RELATIONSHIPS`** — the entity's outgoing edges. Each line is `^"predicate" -> ^"Object"
+  [FROM "surface"]`, reusing the §5c arrow and surface-form. The predicate MUST be declared in a
+  `RELATIONS` block in scope (**error** otherwise). The object caret **should** resolve to an entity,
+  DEF, or category; an unresolved object **WARNs** — facts derived from prose routinely name things
+  not yet modeled, the same tolerance as bridge untyped referents (§21). `FROM` records the verbatim
+  source phrase the fact was derived from, making the edge auditable against the `.lore`; it is
+  advisory provenance (substring-checked against the prose only by a verifier that loads the `.lore`).
+
+### Validation summary
+
+| Check | Level |
+|---|---|
+| `IS` resolves to a `CATEGORY` or in-corpus DEF | **error** |
+| relationship predicate declared in a `RELATIONS` block | **error** |
+| `#hash` opaque, ≥16 chars, unique | **error** |
+| category `EXTENDS` parent resolves | **error** |
+| `INVERSE` + `SYMMETRIC` on one predicate | **error** |
+| relationship object caret resolves | warn |
+| `DOMAIN` / `RANGE` respected by an edge | warn |
+| `SOURCE` / `AT` slug matches a `.lore` heading | warn |
+
+### Relationship to other containers
+
+- **`.lore`** — the prose the codex is derived from; untouched, opaque body.
+- **`.setting`** (§16) — hand-authored structured world-building (LOCATION / FACTION / HISTORY). A
+  codex may reference `.setting` DEFs as categories or objects. The difference is intent: `.setting`
+  is authored canon, a `.codex` is a fact graph *extracted* from prose. They coexist and cross-reference.
+- **`REFERENCES` (§5c)** — the same stand-off arrow/surface-form pattern, applied to world entities
+  rather than in-`DESCRIPTION` mechanics.
+
+---
+
 **Spec Version:** 0.5
-**Last Updated:** 2026-07-26
+**Last Updated:** 2026-08-08
 **Status:** Canonical (supersedes v0.4)

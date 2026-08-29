@@ -1,3 +1,7 @@
 # Local Claude Code state — keep authored skills tracked, ignore everything else.
 .claude/*
 !.claude/skills/
+
+# Python bytecode
+__pycache__/
+*.pyc

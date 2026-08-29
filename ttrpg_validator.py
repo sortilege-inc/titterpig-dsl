@@ -73,6 +73,7 @@ Exit:   0 = no errors (warnings allowed); 1 = one or more errors; 2 = bad invoca
 from __future__ import annotations
 import sys
 import os
+import re
 from dataclasses import dataclass
 
 HASH_MIN_BODY = 16
@@ -539,7 +540,7 @@ def load_corpus_names(path):
     scratch = []
     for root, _dirs, files in os.walk(path):
         for nm in sorted(files):
-            if not nm.endswith(('.ttrpg', '.actor', '.setting', '.arc', '.frame', '.campaign')):
+            if not nm.endswith(('.ttrpg', '.actor', '.setting', '.arc', '.frame', '.campaign', '.codex')):
                 continue
             p = os.path.join(root, nm)
             try:
@@ -675,6 +676,8 @@ def scan_modify_body(toks, lb):
 def analyze_file(fname, text, findings):
     if fname.endswith('.bridge'):
         return analyze_bridge(fname, text, findings)
+    if fname.endswith('.codex'):
+        return analyze_codex(fname, text, findings)
     toks = tokenize(text, fname, findings)
     defined_names, anchors = {}, {}     # name/hash -> [lines]
     refs, depends, file_ids = [], [], []
@@ -939,6 +942,193 @@ def analyze_file(fname, text, findings):
     }
 
 
+# ═══════════════════════════════════════════════════════════════════════════
+# CODEX analysis (spec §25) — the stand-off lore knowledge graph
+# ═══════════════════════════════════════════════════════════════════════════
+
+def analyze_codex(fname, text, findings):
+    """Structure a .codex file: a CATEGORIES taxonomy, a declared RELATIONS
+    predicate vocabulary, and ENTITY nodes with typed edges. Category and entity
+    NAMES join the corpus namespace (so ^"Name" resolves to them anywhere and
+    entity->entity links ride the ordinary caret machinery); IS categories and
+    category EXTENDS parents are raised as ordinary refs (hard errors if
+    unresolved). Predicate declarations, edges, domain/range and SOURCE bindings
+    are checked in codex_coherence (some are warnings, not errors).
+
+    The tokenizer drops the '->' arrow (both chars are non-tokens), so an edge
+    `^"pred" -> ^"obj"` reaches us as two adjacent CARETs — same as §5c."""
+    toks = tokenize(text, fname, findings)
+    n = len(toks)
+    names, anchors, refs, depends, file_ids = {}, {}, [], [], []
+    relations = {}    # predicate name -> {inverse, domain, range, symmetric, transitive, line}
+    edges = []        # (subject, predicate, object, line)
+    dr_refs = []      # (category-name, line) — DOMAIN/RANGE targets, checked as warnings
+    sources = []      # (entity, lore-file, heading-slug, line)
+    has_spec_version = False
+
+    ctx = []          # stack of (label, name) frames, aligned with brace depth
+    pending = None    # (label, name) for the next '{'
+    depth = 0
+
+    def nearest(label):
+        for lbl, nm in reversed(ctx):
+            if lbl == label:
+                return nm
+        return None
+
+    i = 0
+    while i < n:
+        t = toks[i]
+        if t.kind == 'LBRACE':
+            depth += 1
+            ctx.append(pending or ('?', None))
+            pending = None
+            i += 1
+            continue
+        if t.kind == 'RBRACE':
+            if ctx:
+                ctx.pop()
+            depth -= 1
+            i += 1
+            continue
+
+        top = ctx[-1][0] if ctx else None
+
+        if t.kind == 'ID':
+            w = t.val
+            if w == 'CODEX' and i + 1 < n and toks[i + 1].kind == 'STR':
+                file_ids.append(toks[i + 1].val)
+            elif w == 'SPEC_VERSION':
+                has_spec_version = True
+            elif w == 'DEPENDS_ON' and i + 1 < n and toks[i + 1].kind == 'STR':
+                depends.append((toks[i + 1].val, t.line))
+            elif w == 'CATEGORIES':
+                pending = ('CATEGORIES', None)
+            elif w == 'RELATIONS':
+                pending = ('RELATIONS', None)
+            elif w == 'RELATIONSHIPS':
+                pending = ('RELATIONSHIPS', None)
+            elif w == 'ENTITY':
+                k = i + 1
+                hsh = None
+                if k < n and toks[k].kind == 'HASH':
+                    hsh = toks[k].val
+                    k += 1
+                if k < n and toks[k].kind == 'CARET':
+                    nm = toks[k].val
+                    names.setdefault(nm, []).append(t.line)
+                    if hsh:
+                        anchors.setdefault(hsh, []).append(t.line)
+                    pending = ('ENTITY', nm)
+                    i = k + 1
+                    continue
+            elif w == 'IS' and top == 'ENTITY':
+                k = i + 1
+                while k < n and toks[k].kind == 'CARET':
+                    refs.append(('entity IS', toks[k].val, None, toks[k].line))
+                    k += 1
+                i = k
+                continue
+            elif w == 'SOURCE' and top == 'ENTITY':
+                k, srcfile, slug = i + 1, None, None
+                if k < n and toks[k].kind == 'STR':
+                    srcfile = toks[k].val
+                    k += 1
+                if k + 1 < n and toks[k].kind == 'ID' and toks[k].val == 'AT' \
+                        and toks[k + 1].kind == 'STR':
+                    slug = toks[k + 1].val
+                    k += 2
+                sources.append((nearest('ENTITY'), srcfile, slug, t.line))
+                i = k
+                continue
+            elif w == 'EXTENDS' and top == 'CAT_ENTRY':
+                k, hsh = i + 1, None
+                if k < n and toks[k].kind == 'HASH':
+                    hsh = toks[k].val
+                    k += 1
+                if k < n and toks[k].kind == 'CARET':
+                    refs.append(('category EXTENDS', toks[k].val, hsh, toks[k].line))
+                    i = k + 1
+                    continue
+            elif w in ('INVERSE', 'DOMAIN', 'RANGE') and top == 'REL_ENTRY':
+                rel = relations.get(nearest('REL_ENTRY'))
+                if i + 1 < n and toks[i + 1].kind == 'CARET' and rel is not None:
+                    val = toks[i + 1].val
+                    rel[w.lower()] = val
+                    if w in ('DOMAIN', 'RANGE'):
+                        dr_refs.append((val, toks[i + 1].line))
+                    i += 2
+                    continue
+            elif w in ('SYMMETRIC', 'TRANSITIVE') and top == 'REL_ENTRY':
+                rel = relations.get(nearest('REL_ENTRY'))
+                if rel is not None:
+                    rel[w.lower()] = True
+            i += 1
+            continue
+
+        if t.kind == 'CARET':
+            if top == 'CATEGORIES':
+                # category declaration: [#hash] ^"Name" DEF { ... }
+                if i + 1 < n and toks[i + 1].kind == 'ID' and toks[i + 1].val == 'DEF':
+                    hsh = toks[i - 1].val if i > 0 and toks[i - 1].kind == 'HASH' else None
+                    names.setdefault(t.val, []).append(t.line)
+                    if hsh:
+                        anchors.setdefault(hsh, []).append(t.line)
+                    pending = ('CAT_ENTRY', t.val)
+                    i += 2   # past the DEF keyword; the next '{' opens CAT_ENTRY
+                    continue
+            elif top == 'RELATIONS':
+                # predicate declaration: ^"pred" { ... }
+                if i + 1 < n and toks[i + 1].kind == 'LBRACE':
+                    if t.val in relations:
+                        findings.append(Finding(fname, 'lint', 'error', t.line,
+                                                "duplicate relation ^\"%s\"" % t.val))
+                    relations[t.val] = {'inverse': None, 'domain': None, 'range': None,
+                                        'symmetric': False, 'transitive': False, 'line': t.line}
+                    pending = ('REL_ENTRY', t.val)
+                    i += 1   # position at the '{'
+                    continue
+            elif top == 'RELATIONSHIPS':
+                # edge: ^"pred" -> ^"obj" [FROM "surface"]   (arrow is a non-token)
+                if i + 1 < n and toks[i + 1].kind == 'CARET':
+                    edges.append((nearest('ENTITY'), t.val, toks[i + 1].val, t.line))
+                    k = i + 2
+                    if k + 1 < n and toks[k].kind == 'ID' and toks[k].val == 'FROM' \
+                            and toks[k + 1].kind == 'STR':
+                        k += 2
+                    i = k
+                    continue
+                findings.append(Finding(fname, 'lint', 'error', t.line,
+                                        "relationship ^\"%s\" has no object" % t.val))
+            i += 1
+            continue
+
+        i += 1
+
+    # INVERSE + SYMMETRIC is contradictory (§25)
+    for rel, rec in relations.items():
+        if rec['inverse'] and rec['symmetric']:
+            findings.append(Finding(fname, 'lint', 'error', rec['line'],
+                                    "relation ^\"%s\" declares both INVERSE and SYMMETRIC" % rel))
+    if ctx:
+        for lbl, _ in ctx:
+            findings.append(Finding(fname, 'lint', 'error', 1, "unclosed '{' (%s)" % lbl))
+    for tk in toks:
+        if tk.kind == 'HASH' and len(tk.val) - 1 < HASH_MIN_BODY:
+            findings.append(Finding(fname, 'lint', 'warning', tk.line,
+                                    "hash id '%s' shorter than %d chars" % (tk.val, HASH_MIN_BODY)))
+    if not has_spec_version:
+        findings.append(Finding(fname, 'lint', 'warning', 1, "no SPEC_VERSION declared"))
+
+    return {
+        'file': fname, 'kind': 'codex', 'names': names, 'anchors': anchors, 'refs': refs,
+        'depends': depends, 'file_ids': file_ids,
+        'waived_ranges': [], 'waived_lines': set(),
+        'def_props': {}, 'def_extends': {}, 'mods': [], 'adds': [],
+        'relations': relations, 'edges': edges, 'dr_refs': dr_refs, 'sources': sources,
+    }
+
+
 def is_waived(line, data):
     if line in data['waived_lines']:
         return True
@@ -985,6 +1175,89 @@ def coherence_pass(files_data, findings):
             if fid not in corpus_file_ids and not is_waived(line, d):
                 findings.append(Finding(d['file'], 'coherence', 'error', line,
                                         "DEPENDS_ON references undefined file id \"%s\"" % fid))
+
+    codex_coherence(files_data, corpus_names, findings)
+
+
+def codex_coherence(files_data, corpus_names, findings):
+    """Coherence for .codex graphs (spec §25). IS categories and category EXTENDS
+    parents ride the ordinary ref machinery in coherence_pass (hard errors). Left
+    here: predicates must be declared (error); edge objects should resolve (warn);
+    DOMAIN/RANGE should name a declared category (warn); a SOURCE ... AT slug should
+    match a heading in the referenced .lore, when that file can be found (warn)."""
+    codices = [d for d in files_data if d.get('kind') == 'codex']
+    if not codices:
+        return
+    # Predicates and categories are pooled corpus-wide, so a data-codex may use a
+    # schema-codex's vocabulary (imported via DEPENDS_ON).
+    corpus_relations, corpus_categories = set(), set()
+    for d in codices:
+        corpus_relations.update(d['relations'])
+        for rec in d['relations'].values():
+            if rec['inverse']:
+                corpus_relations.add(rec['inverse'])   # the inverse name is usable too
+        corpus_categories.update(d['names'])           # entity+category names of this codex
+
+    for d in codices:
+        for subj, pred, obj, line in d['edges']:
+            if pred not in corpus_relations:
+                findings.append(Finding(d['file'], 'coherence', 'error', line,
+                                        "relationship uses undeclared predicate ^\"%s\" "
+                                        "(declare it in a RELATIONS block)" % pred))
+            if obj not in corpus_names:
+                findings.append(Finding(d['file'], 'coherence', 'warning', line,
+                                        "relationship object ^\"%s\" does not resolve" % obj))
+        for cat, line in d['dr_refs']:
+            if cat not in corpus_categories and cat not in corpus_names:
+                findings.append(Finding(d['file'], 'coherence', 'warning', line,
+                                        "DOMAIN/RANGE ^\"%s\" is not a declared category" % cat))
+        for entity, srcfile, slug, line in d['sources']:
+            if not srcfile or not slug:
+                continue
+            lore_path = _find_lore(d['file'], srcfile)
+            if lore_path is None:
+                continue                                # cannot verify — do not warn
+            if slug not in _heading_slugs(lore_path):
+                findings.append(Finding(d['file'], 'coherence', 'warning', line,
+                                        "SOURCE AT \"%s\" matches no heading in %s"
+                                        % (slug, os.path.basename(srcfile))))
+
+
+def _find_lore(codex_file, srcfile):
+    """Locate a .lore referenced by SOURCE: as given, beside the codex, or by
+    basename within the codex's directory tree. Returns a path or None."""
+    if os.path.isabs(srcfile) and os.path.isfile(srcfile):
+        return srcfile
+    base_dir = os.path.dirname(os.path.abspath(codex_file))
+    cand = os.path.join(base_dir, srcfile)
+    if os.path.isfile(cand):
+        return cand
+    target = os.path.basename(srcfile)
+    for root, _dirs, files in os.walk(base_dir):
+        if target in files:
+            return os.path.join(root, target)
+    return None
+
+
+def _slugify(heading):
+    """GitHub-style heading slug: lowercase, drop non-word/space/hyphen, spaces→hyphens."""
+    s = heading.strip().lower()
+    s = re.sub(r'[^\w\s-]', '', s, flags=re.UNICODE)
+    s = re.sub(r'\s+', '-', s)
+    return s.strip('-')
+
+
+def _heading_slugs(lore_path):
+    slugs = set()
+    try:
+        with open(lore_path, encoding='utf-8') as fh:
+            for ln in fh:
+                m = re.match(r'\s{0,3}(#{1,6})\s+(.*?)\s*#*\s*$', ln)
+                if m:
+                    slugs.add(_slugify(m.group(2)))
+    except OSError:
+        pass
+    return slugs
 
 
 def _resolve_prop(name, prop, props, extends, seen=None):
@@ -1124,7 +1397,7 @@ def _all_hashes(files_data):
 
 def collect_paths(args):
     files = []
-    exts = ('.ttrpg', '.actor', '.arc', '.frame', '.setting', '.campaign', '.bridge')
+    exts = ('.ttrpg', '.actor', '.arc', '.frame', '.setting', '.campaign', '.bridge', '.codex')
     for p in args:
         if os.path.isdir(p):
             for root, _, names in os.walk(p):

@@ -1,0 +1,30 @@
+CODEX "Bad_Codex" {
+    NAME "Broken on purpose"
+    VERSION "0.1"
+    SPEC_VERSION "0.5"
+    RELEASE_DATE "2026-08-08"
+
+    CATEGORIES {
+        ^"Place" DEF {}
+        ^"City"  DEF { EXTENDS ^"Nonexistent Parent" }   # ERROR: EXTENDS unresolved
+        ^"Ruin"  DEF {}
+    }
+
+    RELATIONS {
+        ^"located-in" { INVERSE ^"contains" SYMMETRIC }  # ERROR: INVERSE + SYMMETRIC
+        ^"rules"      { DOMAIN ^"Undeclared Cat" }        # WARN: domain not a category
+    }
+
+    ENTITY #short ^"Alpha" {                               # WARN: hash too short
+        IS ^"Ghost Category"                              # ERROR: IS unresolved
+        RELATIONSHIPS {
+            ^"undeclared-pred" -> ^"Beta"                # ERROR predicate + WARN object
+            ^"located-in"      -> ^"Nowhere"             # WARN: object unresolved
+        }
+    }
+
+    ENTITY #short ^"Gamma" {                              # ERROR: duplicate anchor #short
+        IS ^"City"
+        located-in ^"Place"
+    }
+}
