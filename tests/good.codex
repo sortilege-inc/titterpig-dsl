@@ -7,6 +7,11 @@ CODEX "Good_Codex" {
     SPEC_VERSION "0.5"
     RELEASE_DATE "2026-08-08"
 
+    SOURCES {
+        "good-region.lore" VERSION "0.1"
+        "Good Book"        VERSION "0.2" AT "good-city.lore"
+    }
+
     CATEGORIES {
         ^"Place"       DEF {}
         ^"Settlement"  DEF { EXTENDS ^"Place" }
@@ -45,6 +50,16 @@ CODEX "Good_Codex" {
         IS ^"Person"
         RELATIONSHIPS {
             ^"lives-in" -> ^"Rivertown"
+        }
+    }
+
+    # Amend (§13): re-state an existing entity by the SAME hash + name to add a
+    # further source and edge, as another book would. Legal, not a duplicate.
+    ENTITY #codexPersonTestId001 ^"Mira" {
+        IS ^"Person"
+        SOURCE "good-city.lore" AT "notable-residents"
+        RELATIONSHIPS {
+            ^"lives-in" -> ^"The Vale"
         }
     }
 }

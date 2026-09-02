@@ -1145,7 +1145,7 @@ Only these keywords are reserved by the base spec:
 
 **Narrative containers:** `SETTING`, `FRAME`, `ARC`, `CAMPAIGN`, `SCENE`, `LOCATION` (and their sub-keywords as defined in §16)
 
-**Codex (§25):** `CODEX`, `CATEGORIES`, `RELATIONS`, `ENTITY`, `IS`, `RELATIONSHIPS`, `INVERSE`, `DOMAIN`, `RANGE`, `SYMMETRIC`, `TRANSITIVE`, `SOURCE`, `AT`, `FROM` (`FOR`/`EDITION`/`DEPENDS_ON`/`VERSION` are shared with §3/§19; `EXTENDS` with §6)
+**Codex (§25):** `CODEX`, `SOURCES`, `CATEGORIES`, `RELATIONS`, `ENTITY`, `IS`, `RELATIONSHIPS`, `INVERSE`, `DOMAIN`, `RANGE`, `SYMMETRIC`, `TRANSITIVE`, `SOURCE`, `AT`, `FROM` (`FOR`/`EDITION`/`DEPENDS_ON`/`VERSION` are shared with §3/§19; `EXTENDS` with §6)
 
 **Bridge (§21):** `BRIDGE`, `ORIGIN`, `DESTINATION`, `EXTERNAL`, `DISPOSITIONS`, `DISPOSITION`, `ALIASES`, `CONVERSION`, `GUIDANCE`, `MAP`, `REMAINDER`, `PROCEDURE`, `SUBJECT`, `SCOPE`, `ASPECT`, `CONCERNS`, `TOPICS`, `EXHAUSTIVE`, `CONVERT`, `INTO`, `UNCHANGED`, `SCALE`, `OVER`, `RESTATE`, `MANUAL` (`ALIAS`/`FOR` are shared with §5b; `ENTRY` and `TEXT` with §16/§10)
 
@@ -2831,6 +2831,7 @@ CODEX "FileID" {
     [DEPENDS_ON "SchemaCodexID" VERSION "…"]   # import a shared ontology
     [FOR EDITION "tor2e"]                        # edition whose DEFs categories/objects may resolve against
 
+    [SOURCES { … }]       # derived-provenance manifest (which prose, which versions)
     CATEGORIES { … }      # the type taxonomy (schema)
     RELATIONS  { … }      # the predicate vocabulary (schema)
     ENTITY … { … }        # nodes + edges (data)
@@ -2840,6 +2841,31 @@ CODEX "FileID" {
 A codex may be **schema-only** (just `CATEGORIES`/`RELATIONS`, imported by others via `DEPENDS_ON`),
 **data-only** (just `ENTITY` blocks, depending on a schema codex), or **combined**. This mirrors the
 BASE/EXTENSION split: the schema is the reusable base, per-book graphs depend on it.
+
+A single logical graph may also be **physically split** across many codex files that share one schema
+and one entity namespace: a lightweight **parent** carries the `SOURCES` manifest and edition-spanning
+anchor entities, and **section files** (per book, per chapter) hold the rest. Because an entity is a
+first-class caret target, any section resolves `^"Name"` to any other, and a section may **amend** a
+node introduced elsewhere (see the amend rule under ENTITY). This keeps each file small while the
+consumer reads them as one graph.
+
+### SOURCES — the derived-provenance manifest
+
+A codex is *derived from* prose, so it records its inputs. The optional header block lists which files
+(or books), at which versions, the graph was built from:
+
+```
+SOURCES {
+    "l5r5e-0.4-courts-of-stone-crane-clan.lore" VERSION "0.4.1"
+    "Emerald Empire" VERSION "0.4" AT "l5r5e-0.4-emerald-empire-history.lore"
+}
+```
+
+Each entry is a source label — a `.lore` path or a book name — with an optional `VERSION` and an
+optional `AT "<path>"` that pins the specific prose file when the label is a book. The block is
+provenance/manifest metadata; it does not itself assert graph facts (those are `ENTITY` blocks whose
+`SOURCE … AT` bind individual nodes into the prose). On a split graph it lives in the parent and grows
+as each book is folded in.
 
 `FOR EDITION` (optional) names the edition namespace (§19) whose DEFs a category or relationship object
 may resolve to (`IS ^"Hobbit"` → that edition's culture DEF). Absent it, carets resolve within the
@@ -2899,9 +2925,15 @@ ENTITY #hash ^"Name" {
 }
 ```
 
-- **`#hash`** — opaque, ≥16 chars, unique (§5). An entity is a first-class caret target: any file in
+- **`#hash`** — opaque, ≥16 chars (§5). An entity is a first-class caret target: any file in
   the corpus resolves `^"Name"` to it, so **entity→entity links are ordinary caret refs** and are
-  coherence-checked like any other reference.
+  coherence-checked like any other reference. **Amend across files (§13).** A node is *canonically*
+  defined once — the first `ENTITY #hash ^"Name"` that introduces it. A later section file may
+  **re-state `ENTITY #hash ^"Name"`** (same hash, same name) to add `SOURCE` bindings and
+  `RELATIONSHIPS` as further books describe the same subject; the consumer merges the re-statements by
+  hash into one node. This recurrence is **legal and expected** (multiple sources enriching one entry).
+  What stays an **error** is a hash mapped to *two different* entity names, or a hash shared between a
+  codex entity and any other anchor — those are genuine collisions, not amends.
 - **`IS`** — one or more categories (multi-typing is common: a place that `IS ^"City" ^"Capital"`).
   Each must resolve to a declared `CATEGORY` or an in-corpus DEF; an unresolved `IS` is an **error**
   (it is the type system).
@@ -2922,7 +2954,9 @@ ENTITY #hash ^"Name" {
 |---|---|
 | `IS` resolves to a `CATEGORY` or in-corpus DEF | **error** |
 | relationship predicate declared in a `RELATIONS` block | **error** |
-| `#hash` opaque, ≥16 chars, unique | **error** |
+| `#hash` opaque, ≥16 chars | **error** if <16 |
+| `#hash` reused for a *different* entity name, or shared with a non-entity anchor | **error** |
+| `#hash` re-stated for the *same* entity name across files (amend, §13) | allowed |
 | category `EXTENDS` parent resolves | **error** |
 | `INVERSE` + `SYMMETRIC` on one predicate | **error** |
 | relationship object caret resolves | warn |

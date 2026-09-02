@@ -960,6 +960,8 @@ def analyze_codex(fname, text, findings):
     toks = tokenize(text, fname, findings)
     n = len(toks)
     names, anchors, refs, depends, file_ids = {}, {}, [], [], []
+    entity_anchors = {}   # hash -> set(entity names): codex ENTITY anchors may
+                          # recur across files as §13 amends (one hash, one name)
     relations = {}    # predicate name -> {inverse, domain, range, symmetric, transitive, line}
     edges = []        # (subject, predicate, object, line)
     dr_refs = []      # (category-name, line) — DOMAIN/RANGE targets, checked as warnings
@@ -1002,6 +1004,8 @@ def analyze_codex(fname, text, findings):
                 has_spec_version = True
             elif w == 'DEPENDS_ON' and i + 1 < n and toks[i + 1].kind == 'STR':
                 depends.append((toks[i + 1].val, t.line))
+            elif w == 'SOURCES':
+                pending = ('SOURCES', None)
             elif w == 'CATEGORIES':
                 pending = ('CATEGORIES', None)
             elif w == 'RELATIONS':
@@ -1019,6 +1023,7 @@ def analyze_codex(fname, text, findings):
                     names.setdefault(nm, []).append(t.line)
                     if hsh:
                         anchors.setdefault(hsh, []).append(t.line)
+                        entity_anchors.setdefault(hsh, set()).add(nm)
                     pending = ('ENTITY', nm)
                     i = k + 1
                     continue
@@ -1125,6 +1130,7 @@ def analyze_codex(fname, text, findings):
         'depends': depends, 'file_ids': file_ids,
         'waived_ranges': [], 'waived_lines': set(),
         'def_props': {}, 'def_extends': {}, 'mods': [], 'adds': [],
+        'entity_anchors': entity_anchors,
         'relations': relations, 'edges': edges, 'dr_refs': dr_refs, 'sources': sources,
     }
 
@@ -1148,8 +1154,26 @@ def coherence_pass(files_data, findings):
             for ln in lines:
                 all_anchors.setdefault(h, []).append((d['file'], ln))
 
+    # A codex ENTITY anchor may recur across section files as an amend (§13): a
+    # later file re-states `ENTITY #hash ^"Name"` to add SOURCE/RELATIONSHIPS to
+    # the same node. That is legal iff every occurrence of the hash is a codex
+    # entity anchor AND they all name the SAME entity. A hash mapped to two
+    # different entities, or shared between a codex entity and any other anchor,
+    # is still a genuine duplicate.
+    codex_ent_names = {}   # hash -> set(names)
+    codex_ent_locs = {}    # hash -> [(file, line)]
+    for d in files_data:
+        if d.get('kind') == 'codex':
+            for h, nms in d.get('entity_anchors', {}).items():
+                codex_ent_names.setdefault(h, set()).update(nms)
+                for ln in d['anchors'].get(h, []):
+                    codex_ent_locs.setdefault(h, []).append((d['file'], ln))
+
     for h, locs in all_anchors.items():
         if len(locs) > 1:
+            if h in codex_ent_names and len(codex_ent_names[h]) == 1 \
+                    and set(codex_ent_locs.get(h, [])) == set(locs):
+                continue   # legal cross-file amend of one codex entity
             where = ", ".join("%s:%d" % (os.path.basename(f), ln) for f, ln in locs)
             f0, l0 = locs[0]
             findings.append(Finding(f0, 'coherence', 'error', l0,

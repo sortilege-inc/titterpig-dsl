@@ -178,10 +178,19 @@ SELECTIONS_ENTRY <- METADATA
 CODEX_BLOCK      <- 'CODEX' _ STRING _ '{' _ (CODEX_ENTRY _)* '}'
 CODEX_ENTRY      <- METADATA
                   / 'FOR' _ 'EDITION' _ STRING
+                  / SOURCES_BLOCK
                   / CATEGORIES_BLOCK
                   / RELATIONS_BLOCK
                   / ENTITY_BLOCK
                   / COMMENT
+
+# SOURCES — the derived-provenance manifest: which books/files, at which
+# versions, this graph is derived from. Header-level (a codex is derived, so it
+# records its inputs). Each entry is a source label (a book name or a .lore path)
+# with an optional VERSION and an optional AT path when the label is a book and
+# the path pins the specific prose file. Repeatable.
+SOURCES_BLOCK    <- 'SOURCES' _ '{' _ (SOURCE_ENTRY _)* '}'
+SOURCE_ENTRY     <- STRING (_ 'VERSION' _ STRING)? (_ 'AT' _ STRING)? / COMMENT
 
 CATEGORIES_BLOCK <- 'CATEGORIES' _ '{' _ (CATEGORY_DECL _)* '}'
 CATEGORY_DECL    <- HASH_ID? _ CARET_REF _ 'DEF' _ '{' _ (('EXTENDS' _ HASH_ID? _ CARET_REF) / COMMENT / _)* '}'
@@ -585,8 +594,9 @@ EOF             <- !.
 #                PROSE, TAGGED, CONDITIONAL, FORMAL                            (v0.5, §23)
 # Optional:      OPTIONAL, DEFAULT, SCOPE, GLOBAL, on, off                    (v0.5, §24)
 # Selections:    SELECTIONS, SELECT, FOR (also alias kw), VERSION             (v0.5, §24)
-# Codex (§25):   CODEX, CATEGORIES, RELATIONS, ENTITY, IS, RELATIONSHIPS, INVERSE,
-#                DOMAIN, RANGE, SYMMETRIC, TRANSITIVE, SOURCE, AT, FROM, EDITION  (v0.5, §25)
+# Codex (§25):   CODEX, SOURCES, CATEGORIES, RELATIONS, ENTITY, IS, RELATIONSHIPS,
+#                INVERSE, DOMAIN, RANGE, SYMMETRIC, TRANSITIVE, SOURCE, AT, FROM,
+#                EDITION, VERSION                                              (v0.5, §25)
 # Guidance:      GUIDANCE, ENTRY, CONCERNS, TOPICS, TEXT (in a DEF/module now) (v0.5, §22)
 # Text:          DESCRIPTION, TEXT
 # Validation:    FIAT (also an element-level statement)
