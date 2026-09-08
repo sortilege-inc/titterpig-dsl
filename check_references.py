@@ -13,11 +13,16 @@ Per edition-scoped corpus root:
 Exit 1 on any ERROR (unresolved / bad-hash / name-hash mismatch / surface-drift / mirror-inconsistency).
 WARNs (hashless targets) do not fail the gate but are reported and counted.
 
-  usage: check_references.py <edition-dir> [--strict-warn-as-error]
+  usage: check_references.py <edition-dir> [--strict-warn-as-error] [--with <dir> ...]
+
+  --with <dir>   an additional corpus root (e.g. the base edition a 3rd-party corpus
+                 EXTENDS) whose DEFs count as resolution targets. Only the edition-dir's
+                 own REFERENCES are checked; the --with roots supply anchors, never claims.
 """
 import os, re, sys
 
 root = sys.argv[1]
+WITH = [sys.argv[i + 1] for i, a in enumerate(sys.argv) if a == '--with' and i + 1 < len(sys.argv)]
 WARN_FATAL = '--strict-warn-as-error' in sys.argv
 SHOW_WARNS = '--show-warns' in sys.argv          # per-line hashless WARNs (noisy on 0.4 corpora)
 
@@ -33,10 +38,11 @@ RBY   = re.compile(r'^\s*(?:"([^"]+)"\s*)?<-\s*(?:(#\S+)\s+)?\^"([^"]+)"\s*$')
 nk = lambda s: re.sub(r'[^a-z0-9]+', '', s.strip().replace('’', "'").lower())
 
 files = [os.path.join(dp, f) for dp, _, fs in os.walk(root) for f in fs if f.endswith('.ttrpg')]
+context = [os.path.join(dp, f) for w in WITH for dp, _, fs in os.walk(w) for f in fs if f.endswith('.ttrpg')]
 
 # Pass 1: declared entities. name_key -> set(hash); hash -> name_key.
 names, hash_name = {}, {}
-for f in files:
+for f in files + context:
     for l in open(f, encoding='utf-8'):
         m = DEF.match(l)
         if m:

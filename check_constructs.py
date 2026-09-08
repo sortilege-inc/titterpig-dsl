@@ -12,11 +12,15 @@ Refs may be hash-qualified (`#hash ^"Name"`) or bare (`^"Name"`); a hash must be
 whose name matches. (The strict-hash WARN is REFERENCES-only, per owner decision B — see
 check_references.py.) Exit 1 on any ERROR.
 
-  usage: check_constructs.py <corpus-dir>
+  usage: check_constructs.py <corpus-dir> [--with <dir> ...]
+
+  --with <dir>   an additional corpus root (e.g. the base edition a 3rd-party corpus
+                 EXTENDS) whose DEFs count as resolution targets for CONCERNS / THEN / SCOPE.
 """
 import os, re, sys
 
 root = sys.argv[1]
+WITH = [sys.argv[i + 1] for i, a in enumerate(sys.argv) if a == '--with' and i + 1 < len(sys.argv)]
 FORMALITY = {'PROSE', 'TAGGED', 'CONDITIONAL', 'FORMAL'}
 POSTURE = {'on', 'off'}
 
@@ -25,11 +29,12 @@ REF = re.compile(r'(?:(#\S+)\s+)?\^"([^"]+)"')     # optional hash + caret, foun
 nk = lambda s: re.sub(r'[^a-z0-9]+', '', s.strip().replace('’', "'").lower())
 
 ttrpg = [os.path.join(dp, f) for dp, _, fs in os.walk(root) for f in fs if f.endswith('.ttrpg')]
+context = [os.path.join(dp, f) for w in WITH for dp, _, fs in os.walk(w) for f in fs if f.endswith('.ttrpg')]
 sel_files = [os.path.join(dp, f) for dp, _, fs in os.walk(root) for f in fs if f.endswith('.selections')]
 
 # Pass 1: declared names/anchors + which hashed DEFs carry an OPTIONAL block.
 names, hash_name, optional_hashes = {}, {}, set()
-for f in ttrpg:
+for f in ttrpg + context:
     cur_hash = None
     for l in open(f, encoding='utf-8'):
         m = DEFLINE.match(l)
