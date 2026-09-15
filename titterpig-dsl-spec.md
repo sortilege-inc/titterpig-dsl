@@ -10,9 +10,9 @@
 ## 0. What changed
 
 The DSL is **at v0.5**. This section leads with the v0.5 additions, then keeps the v0.4 changelog for
-history; the *Resolved decisions* subsections below (through DECISION-11) carry the full detail.
+history; the *Resolved decisions* subsections below (through DECISION-13) carry the full detail.
 
-### v0.5 — five new constructs *(current; additive — every v0.4 file stays valid)*
+### v0.5 — five new constructs, and one rule tightened *(current)*
 
 1. **`GUIDANCE`** *(new, §22, DECISION-8)* — first-class guidance prose (most **sidebars**): prose
    *about* the mechanics that is neither a deterministic `DESCRIPTION` rule nor opaque `.lore` flavor.
@@ -35,6 +35,13 @@ history; the *Resolved decisions* subsections below (through DECISION-11) carry 
    beside it. The `.lore` body stays byte-verbatim and opaque; the codex points *into* it
    (`SOURCE … AT <heading-slug>`, `FROM "<surface>"`) and never edits it — the same "mirror, don't
    duplicate" split as `.ttrpg`↔`.lore`, applied to world facts.
+
+**One rule tightened, not additive** *(§5d, DECISION-13)* — **a reference resolves by `#hash`; the
+caret name is a readability aid.** v0.4 called `EXTENDS ^"Name"` "canonical and sufficient"; v0.5
+withdraws that and applies DECISION-11's strict-hash rule to *every* reference site. A hashless
+reference WARNs; a hashless reference whose name resolves to more than one distinct entity is an
+**ERROR**. Existing files stay syntactically valid — nothing is removed from the grammar — but a
+corpus with ambiguous by-name references will now fail its references gate, which is the point.
 
 ### v0.4 — consistency/clarity pass over v0.3
 
@@ -160,6 +167,23 @@ stay valid.
   robust rather than a synonym swamp; a category may be a taxonomy node **or** an existing game DEF, so
   lore types and mechanical types unify. This is `.setting`'s hand-authored canon's extraction-oriented
   sibling — the two coexist and cross-reference.
+
+- **DECISION-13 — A reference resolves by `#hash`; the caret name is for humans**
+  *(resolved, v0.5)* (§5d): DECISION-11 gave `REFERENCES` a strict-hash rule — *"a hashless target
+  WARNs (many names are multiply-defined, and a later same-name entity must not silently re-point a
+  link)"* — and stopped there. Every **other** by-name construct (`EXTENDS`, `APPLIES TO`, `LIST OF`,
+  `CONCERNS`, `OVERRIDE`, `MODIFY`, `ALIAS … FOR`) kept resolving by name alone, and §6 went
+  further and called the by-name form *canonical and sufficient*, recording a validator that demanded
+  a hash as "a validator bug to fix". That was backwards: **the `#hash` is the functional referent and
+  the `^"Name"` is a readability aid**, which is the whole reason hash IDs exist (§5, §12). The hazard
+  DECISION-11 named is not specific to prose references — it is a property of resolving by name. It
+  bites hardest in inheritance, where a collision is not confined to the colliding entity: in
+  `titterpig-dsl-tor2e` the type `^"Shield"` and one of the three printed shields share a name, so
+  **`^"Buckler"` and `^"Great Shield"` — unambiguous by name and by hash — are reported as circular**
+  because the name they point at is not. v0.5 therefore applies one rule to every reference site (§5d):
+  resolution is **by hash when present**; a hashless reference **WARNs**; and a hashless reference whose
+  name resolves to **more than one distinct entity is an ERROR**, because no rule can choose for it.
+  §6's "canonical and sufficient" language and its "validator bug" note are **withdrawn**.
 
 ## 1. Overview & Design Principles
 
@@ -605,6 +629,47 @@ Instances use the **same** grammar as definitions — no `=` assignments, no dot
 
 ---
 
+
+### §5d — Reference resolution: one rule for every construct *(v0.5, DECISION-13)*
+
+A **reference site** is any place one definition names *an entity that already exists*: `EXTENDS`,
+`APPLIES TO`, `LIST OF`, `CONCERNS`, `OVERRIDE`, `MODIFY`, the target of `ALIAS … FOR`, and the
+`REFERENCES` / `REFERENCED BY` targets of §5c. All of them obey the same rule.
+
+**Declaration sites are not reference sites.** `ADD #hash ^"Name" DEF { … }` (§13) *asserts new
+content*, so its hash is an anchor being minted, not a pointer to one; `ALIAS ^"New" FOR ^"Existing"`
+likewise declares `^"New"` and references only `^"Existing"`. `SET`, `ADD_TO` and `REMOVE_FROM` name a
+**property** of the entity being modified, not an entity, and are outside this rule.
+
+**The `#hash` is the referent. The `^"Name"` is a readability aid.**
+
+```
+EXTENDS #tor5Shield000000001 ^"Shield"     # resolves to that anchor, whatever else is named "Shield"
+EXTENDS ^"Shield"                          # resolves by name — and only if the name is unambiguous
+```
+
+1. **Resolution is by hash when a hash is present.** The caret name must match the anchor's own name;
+   a mismatch is an **ERROR** (it means one of the two was edited and the other was not). A hash that
+   is not a declared anchor is an **ERROR**.
+2. **A hashless reference SHOULD carry the hash.** Where the name resolves to exactly one entity the
+   reference is well-defined but untraceable, so it **WARNs**.
+3. **A hashless reference whose name resolves to more than one distinct entity is an ERROR.** Nothing
+   in the file says which is meant, so every consumer must invent a tie-break, and two consumers that
+   invent different ones disagree about what the corpus says. Two DEFs are the *same* entity when they
+   carry the same hash (a legal restatement — §13, DECISION-4); distinct hashes, or a hashless DEF
+   beside a hashed one, are distinct entities.
+
+**Scope of the name form.** `^"Name"` remains legal and remains the readable surface — this is not a
+deprecation. It is sufficient only where the name is unique corpus-wide, which is a property of the
+corpus, not of the reference, and can stop being true when a later file adds a same-named entity. That
+is precisely what the hash immunises against.
+
+**Migration.** The hash for an unambiguous hashless reference is mechanically derivable — the name
+already resolves — so backfilling is a scripted, reviewable edit, not re-authoring. Ambiguous sites
+cannot be backfilled mechanically: they need the intended target chosen, which is the point.
+
+---
+
 ## 6. Inheritance (EXTENDS)
 
 A DEF that `EXTENDS` another inherits all of its PROPERTIES and RULES. The child can add new properties, override defaults, and add rules.
@@ -623,13 +688,21 @@ A DEF that `EXTENDS` another inherits all of its PROPERTIES and RULES. The child
 }
 ```
 
-Both forms are valid. **`EXTENDS ^"Name"` (by name) is canonical and sufficient;** the hash is optional and adds cross-file traceability. When both are present they must refer to the same definition. *(v0.4: validation must accept the by-name form — the v0.3-era validator wrongly required a hash. That is a validator bug to fix, not a spec rule.)*
+Both forms are legal, and **§5d governs which one resolves**: the hash is the referent, the caret
+name is the readable surface, and they must agree. A hashless `EXTENDS` WARNs; a hashless `EXTENDS`
+whose name resolves to more than one distinct entity is an **ERROR**.
+
+> *(v0.4 said the by-name form was "canonical and sufficient" and called a validator that required a
+> hash "a validator bug to fix". **Both statements are withdrawn in v0.5 — see DECISION-13.** They
+> made inheritance the one graph in the corpus that could not be resolved unambiguously, and the
+> damage is not confined to the colliding entity: a sibling that references the collided name is
+> reported broken too.)*
 
 ---
 
 ## 7. Scope (APPLIES TO)
 
-`APPLIES TO` declares which actor types a definition can be attached to. This is a scope constraint, not inheritance.
+`APPLIES TO` declares which actor types a definition can be attached to. This is a scope constraint, not inheritance. Its targets are reference sites and resolve under **§5d** (hash is the referent; hashless WARNs; hashless-and-ambiguous is an ERROR).
 
 > **DECISION-1 (resolved, v0.4):** `APPLIES TO` has historically been overloaded for three jobs — scope (attachment), type inheritance, and category tagging. **v0.4 restricts it to scope only.** Use `EXTENDS` for type / `is-a` relationships, and a dedicated tag (e.g. `^"Category" ENUM [...]` or `TAGS [...]`) for categorization. Files that used `APPLIES TO` for inheritance or tagging are migration targets.
 
@@ -2391,7 +2464,7 @@ remains future work.)
 Validation of `.ttrpg`/`.lore` files has two levels, both operating on the files themselves:
 
 1. **Lint — spec adherence.** Does the file conform to this grammar/spec (structure, types, reserved-word usage, canonical forms)? One source of truth: the linter is derived from / checked against the grammar.
-2. **Coherence / consilience — referential integrity.** Across **an edition's** corpus: is everything referenced actually defined? Do `^"Name"`, `#hash`, `EXTENDS`, `APPLIES TO`, `DEPENDS_ON` resolve to real, correctly-typed targets? No **dangling** anchors, and **no hash shared by two *different* entities**. (A hash *recurring* across files is a legal override (§13, DECISION-4), not a duplicate — so coherence is scoped to one edition and treats consistent recurrence as override, not error. *Note: the current `ttrpg_validator.py` still flags all recurrence as a duplicate-anchor error; scoping it to inconsistent-recurrence is a pending change — see `titterpig-mastra/TASKS.md`.*)
+2. **Coherence / consilience — referential integrity.** Across **an edition's** corpus: is everything referenced actually defined? Do `^"Name"`, `#hash`, `EXTENDS`, `APPLIES TO`, `DEPENDS_ON` resolve to real, correctly-typed targets — **and unambiguously** (§5d)? No **dangling** anchors, and **no hash shared by two *different* entities**. (A hash *recurring* across files is a legal override (§13, DECISION-4), not a duplicate — so coherence is scoped to one edition and treats consistent recurrence as override, not error. *Note: the current `ttrpg_validator.py` still flags all recurrence as a duplicate-anchor error; scoping it to inconsistent-recurrence is a pending change — see `titterpig-mastra/TASKS.md`.*)
 
 **The modification system is part of coherence** *(v0.4, 2026-07-25)*. A `MODIFY` / `OVERRIDE`
 naming a target that does not exist modifies nothing, silently and permanently — rename the parent

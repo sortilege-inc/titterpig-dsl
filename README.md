@@ -14,7 +14,7 @@ A Domain Specific Language for encoding Tabletop Roleplaying Game Sourcebooks
 | `AUTHORING-GUIDELINES.md` | Authoring best-practices for system-specific `.ttrpg`/`.lore` (advisory; the spec wins on conflict) |
 | `ttrpg.peg` | **v0.5 grammar** — aligned to the spec |
 | `ttrpg_validator.py` | **Validator** — two levels: lint (spec adherence) + coherence (referential integrity), with FIAT waivers. `python3 ttrpg_validator.py <file-or-dir>` |
-| `check_references.py` | **v0.5 gate** — `REFERENCES` / `REFERENCED BY` coherence; `--show-warns` lists hashless refs. Also parses the deprecated 0.4-era `MENTIONS`. |
+| `check_references.py` | **v0.5 gate** — two parts. **A:** `REFERENCES` / `REFERENCED BY` coherence (DECISION-11; also parses the deprecated 0.4-era `MENTIONS`). **B:** every other reference site (§5d, DECISION-13) — `EXTENDS`, `APPLIES TO`, `LIST OF`, `CONCERNS`, `OVERRIDE`, `MODIFY`, `ALIAS … FOR` across all DSL file types. A hashless reference WARNs; a hashless reference whose name resolves to more than one distinct entity is an **ERROR**. `--show-warns` lists every site. |
 | `check_constructs.py` | **v0.5 gate** — `GUIDANCE` / `HOOKS` / `OPTIONAL` / `.selections` semantics |
 | `apply_references.py` | Migration tool — emits `REFERENCES` blocks, hashing a target when its name has exactly one anchor |
 | `samples/` | v0.5 conformance fixture (`.ttrpg` + `.selections`) |

@@ -1,0 +1,33 @@
+BASE "RefsBad" {
+    NAME "Reference resolution — intentionally broken (§5d)"
+    VERSION "0.1"
+    SPEC_VERSION "0.5"
+    RELEASE_DATE "2026-09-15"
+
+    #refsBadShieldType00001 ^"Shield" DEF {
+        PROPERTIES {
+            ^"Name" STRING REQUIRED
+            ^"Parry Modifier" INTEGER
+        }
+    }
+
+    #refsBadShieldInst0001 ^"Shield" DEF {
+        EXTENDS ^"Shield"                       # ERROR: ambiguous — two entities are named Shield
+        PROPERTIES { ^"Name" STRING "Shield" }
+    }
+
+    #refsBadBuckler000001 ^"Buckler" DEF {
+        EXTENDS ^"Shield"                       # ERROR: the collision poisons its sibling too
+        PROPERTIES { ^"Name" STRING "Buckler" }
+    }
+
+    #refsBadHauberk000001 ^"Hauberk" DEF {
+        EXTENDS #refsBadNoSuchAnchor01 ^"Shield"   # ERROR: hash is not a declared anchor
+        PROPERTIES { ^"Name" STRING "Hauberk" }
+    }
+
+    #refsBadCoif00000001 ^"Coif" DEF {
+        EXTENDS #refsBadShieldType00001 ^"Helm"    # ERROR: hash names "shield", caret says Helm
+        PROPERTIES { ^"Name" STRING "Coif" }
+    }
+}

@@ -1,0 +1,42 @@
+BASE "RefsGood" {
+    NAME "Reference resolution — conformant (§5d)"
+    VERSION "0.1"
+    SPEC_VERSION "0.5"
+    RELEASE_DATE "2026-09-15"
+
+    # The TYPE, and an instance the printed book also calls "Shield". Two
+    # distinct entities, one name — legal, because every reference to either
+    # carries the hash that says which (§5d).
+    #refsGoodShieldType00001 ^"Shield" DEF {
+        PROPERTIES {
+            ^"Name" STRING REQUIRED
+            ^"Parry Modifier" INTEGER
+        }
+    }
+
+    #refsGoodShieldInst0001 ^"Shield" DEF {
+        EXTENDS #refsGoodShieldType00001 ^"Shield"
+        PROPERTIES {
+            ^"Name" STRING "Shield"
+            ^"Parry Modifier" INTEGER 2
+        }
+    }
+
+    # A sibling of the collision. Hash-qualified, so it is unaffected by it.
+    #refsGoodBuckler000001 ^"Buckler" DEF {
+        EXTENDS #refsGoodShieldType00001 ^"Shield"
+        PROPERTIES {
+            ^"Name" STRING "Buckler"
+            ^"Parry Modifier" INTEGER 1
+        }
+    }
+
+    # A name nothing else claims: hashless is well-defined, and only WARNs.
+    #refsGoodHelm00000001 ^"Helm" DEF {
+        PROPERTIES { ^"Name" STRING REQUIRED }
+    }
+    #refsGoodGreatHelm0001 ^"Great Helm" DEF {
+        EXTENDS ^"Helm"
+        PROPERTIES { ^"Name" STRING "Great Helm" }
+    }
+}
