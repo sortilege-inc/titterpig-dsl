@@ -155,6 +155,12 @@ all_ctx = [os.path.join(dp, f) for w in WITH for dp, _, fs in os.walk(w)
 # cannot be told apart, so they collapse into at most one further entity.
 ent_hashes, ent_nohash, anchor_name = {}, set(), {}
 ADD_DEF = re.compile(r'^\s*ADD\s+(?:(#\S+)\s+)?\^"([^"]+)"\s+DEF\b')
+# A narrative container and a GUIDANCE entry declare their anchor AFTER the name:
+# `SCENE ^"Rosa's House" #tCUxd... {`, `ENTRY ^"Roleplaying Caitlyn" #to6Pa... {`,
+# and some DEFs are written `^"Name" #hash DEF`. 3,302 anchors corpus-wide use
+# this shape; indexing only `#hash ^"Name" DEF` made every reference to one of
+# them look like a reference to an undeclared anchor.
+POST_HASH = re.compile(r'^\s*(?:[A-Z_]+\s+)?\^"([^"]+)"\s+(#[A-Za-z0-9_]+)\b')
 for f in all_files + all_ctx:
     for l in open(f, encoding='utf-8', errors='ignore'):
         m = DEF.match(l)
@@ -162,9 +168,13 @@ for f in all_files + all_ctx:
             h, k = m.group(1), nk(m.group(2) or m.group(3))
         else:
             m = ADD_DEF.match(l)
-            if not m:
-                continue
-            h, k = m.group(1), nk(m.group(2))
+            if m:
+                h, k = m.group(1), nk(m.group(2))
+            else:
+                m = POST_HASH.match(l)
+                if not m:
+                    continue
+                h, k = m.group(2), nk(m.group(1))
         ent_hashes.setdefault(k, set())
         if h:
             ent_hashes[k].add(h)
