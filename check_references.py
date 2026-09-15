@@ -187,7 +187,11 @@ def distinct(k):
 # `^"Degree" INTEGER 1` is one reference and one property, not two references.
 SITE = re.compile(r'\b(EXTENDS|LIST\s+OF|CONCERNS|OVERRIDE|MODIFY)\b'
                   r'[ \t]*((?:(?:#[A-Za-z0-9_]+[ \t]+)?\^"[^"]+"[ \t]*,?[ \t]*)+)')
-SITE_LIST = re.compile(r'\b(APPLIES\s+TO|CONCERNS|LIST\s+OF)\b[ \t]*\[([^\]]*)\]', re.S)
+# Only APPLIES TO / CONCERNS take a BRACKETED list of references. `LIST OF [`
+# is an inline list of VALUES -- `^"Attacks" LIST OF [ ^"Creature Attack" DEF {...} ]`
+# -- whose contents are nested definitions and property names, not references to
+# anything. `LIST OF ^"Type"` puts its type before the bracket and SITE catches it.
+SITE_LIST = re.compile(r'\b(APPLIES\s+TO|CONCERNS)\b[ \t]*\[([^\]]*)\]', re.S)
 ALIAS_FOR = re.compile(r'\bALIAS\b[^\n]*?\bFOR\b[ \t]+(?:ORIGIN[ \t]+|DESTINATION[ \t]+)?'
                        r'((?:#[A-Za-z0-9_]+[ \t]+)?\^"[^"]+")')
 TARGET = re.compile(r'(#[A-Za-z0-9_]+)?[ \t]*\^"([^"]+)"')
