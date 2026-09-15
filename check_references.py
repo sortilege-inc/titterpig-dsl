@@ -45,8 +45,12 @@ RBY   = re.compile(r'^\s*(?:"([^"]+)"\s*)?<-\s*(?:(#\S+)\s+)?\^"([^"]+)"\s*$')
 
 nk = lambda s: re.sub(r'[^a-z0-9]+', '', s.strip().replace('’', "'").lower())
 
-files = [os.path.join(dp, f) for dp, _, fs in os.walk(root) for f in fs if f.endswith('.ttrpg')]
-context = [os.path.join(dp, f) for w in WITH for dp, _, fs in os.walk(w) for f in fs if f.endswith('.ttrpg')]
+# Every DSL container, not just .ttrpg: a REFERENCES target may be declared in a
+# narrative container (l5r5e's ^"Mountain Song Temple" is a LOCATION in an .arc),
+# and indexing only .ttrpg reported such a target as an undeclared anchor.
+PART_A_EXT = ('.ttrpg', '.actor', '.arc', '.frame', '.setting', '.campaign', '.bridge', '.codex')
+files = [os.path.join(dp, f) for dp, _, fs in os.walk(root) for f in fs if f.endswith(PART_A_EXT)]
+context = [os.path.join(dp, f) for w in WITH for dp, _, fs in os.walk(w) for f in fs if f.endswith(PART_A_EXT)]
 
 # Pass 1: declared entities. name_key -> set(hash); hash -> name_key.
 names, hash_name = {}, {}
