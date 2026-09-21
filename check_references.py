@@ -94,23 +94,167 @@ def warn(msg):
     global warns; warns += 1
     if SHOW_WARNS: print(f'  WARN  {msg}')
 
+# A referrer's prose is the prose of its WHOLE body, nested entities included --
+# something whose text is carried in sub-entries (TEETH's nested ENTRY `^"Text"`,
+# Root's ENTRY blocks, a rule whose examples are children) is one entity, and a
+# reference on the parent annotates the parent's text wherever it sits. Reading
+# the file flat -- letting each DEF header clobber the prose so far -- attributed
+# a parent's REFERENCES block to whichever child happened to close last, which is
+# every nested DEF's REFERENCES block, since the block conventionally follows the
+# children. So scope by braces and take the subtree.
+#
+# Scope by BRACES, not by keyword: REFERENCES is legal on anything that holds
+# prose, and a narrative container (an .arc's SCENE, a LOCATION, an ENTRY) is not
+# a DEF. A reader that only opens a scope on `DEF` finds no prose at all on those
+# and reports every one of them as unprosed.
+QSTRIP = re.compile(r'"(?:[^"\\]|\\.)*"')
+CARET = re.compile(r'\^"([^"]+)"')
+
+TRIPLE = '"""'
+CODE, IN_TRIPLE, IN_STR = 0, 1, 2
+
+
+def braces(l, state):
+    """Braces this line opens/closes in CODE, and the scanner state it ends in.
+
+    A brace is structure only outside a string and outside a comment, and a
+    string is not always on one line: some 0.4 corpora hold a record's whole
+    write-up in a \"\"\"block\"\"\", and a caret name that swallowed a Markdown
+    heading runs a plain "string" across five lines. Counting either as code
+    threw the scoping off by as much as 24 levels."""
+    op = cl = 0
+    i, n = 0, len(l)
+    while i < n:
+        c = l[i]
+        if state == IN_TRIPLE:
+            if l.startswith(TRIPLE, i):
+                state = CODE; i += 3
+            else:
+                i += 1
+        elif state == IN_STR:
+            if c == '\\':
+                i += 2
+            elif c == '"':
+                state = CODE; i += 1
+            else:
+                i += 1
+        elif l.startswith(TRIPLE, i):
+            state = IN_TRIPLE; i += 3
+        elif c == '"':
+            state = IN_STR; i += 1
+        elif c == '#' and (i + 1 >= n or l[i + 1].isspace()):
+            break                         # `# comment`; `#anchor` is not one
+        else:
+            if c == '{':
+                op += 1
+            elif c == '}':
+                cl += 1
+            i += 1
+    return op, cl, state
+
+
 for f in files:
     b = os.path.basename(f)
-    cur_def = cur_hash = None
-    cur_desc = None
-    block = None            # 'REF' | 'RBY' | None
-    for ln, l in enumerate(open(f, encoding='utf-8').read().split('\n'), 1):
-        d = DEF.match(l)
-        if d:
-            cur_hash = d.group(1); cur_def = nk(d.group(2) or d.group(3)); cur_desc = None
-        # Never inside a REFERENCES / REFERENCED BY block: an entry line is itself
-        # `"surface" -> ^"Target"`, and folding that into the prose would let every
-        # surface form prove its own presence.
-        if (block is None and not d and '->' not in l and '<-' not in l
-                and not ONELINE.match(l)):
+    lines = open(f, encoding='utf-8').read().split('\n')
+
+    # Pass A -- brace-scoped spans and the prose of each line.
+    # A span is [start, end, kind, namekey]; kind 'ref' is a REFERENCES /
+    # MENTIONS / REFERENCED BY / EMPHASIS block, which owns no prose and is never
+    # a referrer -- the entity around it is.
+    spans = []
+    prose_line = [''] * len(lines)
+    stack, depth, block, broken, st = [], 0, None, False, CODE
+    for i, l in enumerate(lines):
+        mid = st != CODE               # this line starts inside a string
+        if mid:
+            # A continuation line is the entity's prose, verbatim.
+            prose_line[i] = l
+        d = None if mid else DEF.match(l)
+        ol = None if mid else ONELINE.match(l)
+        # Never inside a REFERENCES / REFERENCED BY / EMPHASIS block: an entry
+        # line is itself `"surface" -> ^"Target"`, and folding that into the
+        # prose would let every surface form prove its own presence.
+        if not mid and block is None and not d and not ol and '->' not in l and '<-' not in l:
             q = QUOTED.findall(l)
             if q:
-                cur_desc = (cur_desc or '') + ' ' + ' '.join(q)
+                prose_line[i] = ' '.join(q)
+        refblock = not mid and bool(OPEN.match(l))      # incl. the one-line form
+        opener = refblock and not ol
+        if opener:
+            block = 'X'
+        elif block and not mid and CLOSE.match(l):
+            block = None
+        op, cl, st = braces(l, st)
+        if op:
+            # The name a reference is filed under: the DEF's, else the caret name
+            # this line declares (SCENE ^"..." {), else none -- inherited below.
+            nm = (nk(d.group(2) or d.group(3)) if d
+                  else nk(CARET.search(l).group(1)) if CARET.search(l) else None)
+            for k in range(op):
+                spans.append([i, len(lines), 'ref' if (refblock and k == 0) else 'entity',
+                              nm if k == 0 else None])
+                stack.append((len(spans) - 1, depth + k))
+        depth += op - cl
+        while stack and depth <= stack[-1][1]:
+            spans[stack.pop()[0]][1] = i + 1
+        if depth < 0:
+            broken = True
+    if depth != 0 or broken:
+        # Brace accounting that does not return to zero means the spans are
+        # guesses. Say so rather than checking against the wrong prose.
+        err(f'{b}: unbalanced braces \u2014 scoping unreliable, prose not checked')
+        continue
+
+    def owner(i, _spans=spans):
+        best = None
+        for sp in _spans:
+            if sp[2] == 'ref' or not (sp[0] <= i < sp[1]):
+                continue
+            if best is None or sp[0] > best[0]:
+                best = sp
+        return best
+
+    def referrer(i, _spans=spans):
+        # The nearest NAMED enclosing entity -- PROPERTIES / TABLE and the like
+        # open a scope but declare nothing, so they inherit their parent's name.
+        best = None
+        for sp in _spans:
+            if sp[2] == 'ref' or sp[3] is None or not (sp[0] <= i < sp[1]):
+                continue
+            if best is None or sp[0] > best[0]:
+                best = sp
+        return best[3] if best else None
+
+    def prose_at(i, _lines=prose_line):
+        s = owner(i)
+        return None if s is None else ' '.join(x for x in _lines[s[0]:s[1]] if x)
+
+    def check_ref(m, ln):
+        global total
+        total += 1
+        surface, thash, tname = m.group(1), m.group(2), m.group(3)
+        tk = nk(tname)
+        if thash:
+            if thash not in hash_name:
+                err(f'{b}:{ln} target hash {thash} is not a declared anchor')
+            elif hash_name[thash] != tk:
+                err(f'{b}:{ln} hash {thash} names "{hash_name[thash]}" but caret says ^"{tname}"')
+        elif tk not in names:
+            err(f'{b}:{ln} unresolved target ^"{tname}"')
+        else:
+            warn(f'{b}:{ln} hashless target ^"{tname}" (strict: add #hash; name has '
+                 f'{len(names[tk])} anchor(s))')
+        p = prose_at(ln - 1)
+        if p is None:
+            err(f'{b}:{ln} surface "{surface}" has no prose in this DEF to appear in')
+        elif surface not in p:
+            err(f'{b}:{ln} surface "{surface}" not a substring of its DEF\'s prose')
+        rf = referrer(ln - 1)
+        if rf:
+            ref_pairs.add((rf, tk))
+
+    block = None            # 'REF' | 'RBY' | 'EMP' | None
+    for ln, l in enumerate(lines, 1):
         ol = ONELINE.match(l)
         if ol:
             kind = ol.group(1)
@@ -121,16 +265,26 @@ for f in files:
                     err(f'unparseable EMPHASIS entry in {b}:{ln}: {inner}')
                 else:
                     emph_total += 1
-                    if cur_desc is None:
+                    p = prose_at(ln - 1)
+                    if p is None:
                         err(f'{b}:{ln} emphasis "{em.group(1)}" has no prose in this DEF to mark')
-                    elif em.group(1) not in cur_desc:
+                    elif em.group(1) not in p:
                         err(f'{b}:{ln} emphasis "{em.group(1)}" not a substring of its DEF\'s prose')
+            elif kind.startswith('REFERENCED'):
+                rm = RBY.match(' ' + inner)
+                if not rm:
+                    err(f'unparseable {kind} entry in {b}:{ln}: {inner}')
+                else:
+                    rby_total += 1
             else:
                 rm = REF.match(' ' + inner)
                 if not rm:
                     err(f'unparseable {kind} entry in {b}:{ln}: {inner}')
                 else:
-                    total += 1
+                    # A block with one entry is legal on one line. Counting it
+                    # and moving on left it unresolved and unchecked -- the one
+                    # shape of the construct the gate never looked at.
+                    check_ref(rm, ln)
             continue
         o = OPEN.match(l)
         if o:
@@ -145,28 +299,7 @@ for f in files:
                 if l.strip() and not l.strip().startswith('#'):
                     err(f'unparseable REFERENCES entry in {b}:{ln}: {l.strip()}')
                 continue
-            total += 1
-            surface, thash, tname = m.group(1), m.group(2), m.group(3)
-            tk = nk(tname)
-            # resolve
-            if thash:
-                if thash not in hash_name:
-                    err(f'{b}:{ln} target hash {thash} is not a declared anchor')
-                elif hash_name[thash] != tk:
-                    err(f'{b}:{ln} hash {thash} names "{hash_name[thash]}" but caret says ^"{tname}"')
-            else:
-                if tk not in names:
-                    err(f'{b}:{ln} unresolved target ^"{tname}"')
-                else:
-                    warn(f'{b}:{ln} hashless target ^"{tname}" (strict: add #hash; name has '
-                         f'{len(names[tk])} anchor(s))')
-            # surface in description
-            if cur_desc is None:
-                err(f'{b}:{ln} surface "{surface}" has no prose in this DEF to appear in')
-            elif surface not in cur_desc:
-                err(f'{b}:{ln} surface "{surface}" not a substring of its DEF\'s prose')
-            if cur_def:
-                ref_pairs.add((cur_def, tk))
+            check_ref(m, ln)
         elif block == 'EMP':
             m = EMPH.match(l)
             if not m:
@@ -175,9 +308,10 @@ for f in files:
                 continue
             emph_total += 1
             surface = m.group(1)
-            if cur_desc is None:
+            p = prose_at(ln - 1)
+            if p is None:
                 err(f'{b}:{ln} emphasis "{surface}" has no prose in this DEF to mark')
-            elif surface not in cur_desc:
+            elif surface not in p:
                 err(f'{b}:{ln} emphasis "{surface}" not a substring of its DEF\'s prose')
         elif block == 'RBY':
             m = RBY.match(l)
@@ -195,8 +329,9 @@ for f in files:
                     err(f'{b}:{ln} REFERENCED BY hash {rhash} names "{hash_name[rhash]}" but ^"{rname}"')
             elif rk not in names:
                 err(f'{b}:{ln} REFERENCED BY unresolved referrer ^"{rname}"')
-            if cur_def:
-                rby_claims.append((cur_def, rk, f'{b}:{ln}'))
+            rf = referrer(ln - 1)
+            if rf:
+                rby_claims.append((rf, rk, f'{b}:{ln}'))
 
 # Consistency: every REFERENCED BY(target=X, referrer=Y) needs a REFERENCES(Y -> X).
 for target_def, referrer, loc in rby_claims:
@@ -226,7 +361,12 @@ ADD_DEF = re.compile(r'^\s*ADD\s+(?:(#\S+)\s+)?\^"([^"]+)"\s+DEF\b')
 # and some DEFs are written `^"Name" #hash DEF`. 3,302 anchors corpus-wide use
 # this shape; indexing only `#hash ^"Name" DEF` made every reference to one of
 # them look like a reference to an undeclared anchor.
-POST_HASH = re.compile(r'^\s*(?:[A-Z_]+\s+)?\^"([^"]+)"\s+(#[A-Za-z0-9_]+)\b')
+# ... but NOT when another caret follows the hash on the line. `^"Nature"
+# #tJTL3h... ^"Extrovert"` is a PROPERTY whose value is a hash-qualified
+# reference (§5d), not a declaration of `^"Nature"`, and indexing it as one
+# filed the target's anchor under the property's name -- so the next construct
+# that referenced that anchor was told its hash names something else.
+POST_HASH = re.compile(r'^\s*(?:[A-Z_]+\s+)?\^"([^"]+)"\s+(#[A-Za-z0-9_]+)\b(?![ \t]*\^")')
 for f in all_files + all_ctx:
     for l in open(f, encoding='utf-8', errors='ignore'):
         m = DEF.match(l)
@@ -261,6 +401,14 @@ def distinct(k):
 # The target list must NOT cross a newline unless the construct opened a `[`.
 # `EXTENDS ^"Order Degree"` followed on the next line by the property
 # `^"Degree" INTEGER 1` is one reference and one property, not two references.
+# A property whose value IS a reference -- `^"Nature" #hash ^"Extrovert"`,
+# `^"See Also" #hash ^"Aging Rolls"`. It carries a hash, so §5d governs it like
+# any other site; without this it was the one reference shape nothing checked,
+# which is how root's ^"Paladin" and ^"Luminary" resolved to nothing in silence.
+# The hash is required: a hashless `^"Prop" ^"Target"` cannot be told apart
+# from two adjacent properties (`^"Category" ^"Wroth"  ^"Rating" INTEGER 3`).
+PROP_REF = re.compile(r'^[ \t]*\^"[^"]+"[ \t]+((?:#[A-Za-z0-9_]+[ \t]+)\^"[^"]+")[ \t]*$',
+                      re.M)
 SITE = re.compile(r'\b(EXTENDS|LIST\s+OF|CONCERNS|OVERRIDE|MODIFY)\b'
                   r'[ \t]*((?:(?:#[A-Za-z0-9_]+[ \t]+)?\^"[^"]+"[ \t]*,?[ \t]*)+)')
 # Only APPLIES TO / CONCERNS take a BRACKETED list of references. `LIST OF [`
@@ -277,11 +425,16 @@ amb_by_name = {}
 for f in all_files:
     src = open(f, encoding='utf-8', errors='ignore').read()
     base = os.path.relpath(f, root)
-    for m in list(SITE.finditer(src)) + list(SITE_LIST.finditer(src)) + list(ALIAS_FOR.finditer(src)):
-        is_site = m.re in (SITE, SITE_LIST)
-        kw = re.sub(r'\s+', ' ', m.group(1)) if is_site else 'ALIAS FOR'
+    for m in (list(SITE.finditer(src)) + list(SITE_LIST.finditer(src))
+              + list(PROP_REF.finditer(src)) + list(ALIAS_FOR.finditer(src))):
+        if m.re is PROP_REF:
+            kw, targets = 'property', m.group(1)
+        elif m.re is ALIAS_FOR:
+            kw, targets = 'ALIAS FOR', m.group(1)
+        else:
+            kw, targets = re.sub(r'\s+', ' ', m.group(1)), m.group(2)
         ln = src.count('\n', 0, m.start()) + 1
-        for thash, tname in TARGET.findall(m.group(2) if is_site else m.group(1)):
+        for thash, tname in TARGET.findall(targets):
             b_sites += 1
             k = nk(tname)
             if thash:
