@@ -36,7 +36,27 @@ SHOW_WARNS = '--show-warns' in sys.argv          # per-line hashless WARNs (nois
 
 DEF   = re.compile(r'^\s*(?:(#\S+)\s+)?(?:\^"([^"]+)"|(?:TEMPLATE|ACTOR)\s+"([^"]+)")\s+DEF\b')
 DESC  = re.compile(r'^\s*DESCRIPTION\s+"(.*)"\s*$')
-OPEN  = re.compile(r'^\s*(REFERENCES|MENTIONS|REFERENCED\s+BY)\s*\{')
+# A surface form has to be found in the prose it annotates, and not every
+# corpus writes that prose on a bare DESCRIPTION line. Root holds a move's
+# commentary in `^"Description" STRING "..."` inside PROPERTIES, its trigger in
+# TRIGGER, and a weapon tag's whole rule in an OPTIONS string; TEETH holds a
+# location's hooks in `^"Text" STRING "..."` inside nested ENTRY blocks. A gate
+# that reads only DESCRIPTION finds nothing to check in any of them and passes
+# every entry without looking, which is worse than not checking. So the prose of
+# a DEF is every string literal in its body -- the DEF's own name line excepted,
+# and the REFERENCES block excepted, since an entry there would otherwise let
+# every surface form prove its own presence.
+QUOTED = re.compile(r'"((?:[^"\\]|\\.)*)"')
+OPEN  = re.compile(r'^\s*(REFERENCES|MENTIONS|REFERENCED\s+BY|EMPHASIS)\s*\{')
+# §5c EMPHASIS: a marked span with no referent, so there is nothing to resolve.
+# The one rule it shares with REFERENCES is the one that matters -- the surface
+# form has to be in the prose it claims to mark.
+EMPH  = re.compile(r'^\s*"([^"]+)"(?:@\d+)?\s*$')
+# A block with one entry is legal on one line -- `EMPHASIS { "…" }` -- and is
+# how a corpus with one span per DEF reads best. Its closing brace is not on a
+# line of its own, so a reader that only closes on a bare `}` never closes it
+# and swallows the rest of the file.
+ONELINE = re.compile(r'^\s*(REFERENCES|MENTIONS|REFERENCED\s+BY|EMPHASIS)\s*\{(.*)\}\s*$')
 CLOSE = re.compile(r'^\s*\}\s*$')
 # "surface" -> [#hash] ^"Target"      (optional @n occurrence index tolerated on surface)
 REF   = re.compile(r'^\s*"([^"]+)"(?:@\d+)?\s*->\s*(?:(#\S+)\s+)?\^"([^"]+)"\s*$')
@@ -64,7 +84,7 @@ for f in files + context:
                 names[k].add(h); hash_name[h] = k
 
 # Pass 2: collect REFERENCES pairs (referrer_def -> target) and REFERENCED BY claims.
-errors = warns = total = rby_total = 0
+errors = warns = total = rby_total = emph_total = 0
 ref_pairs = set()      # (referrer_defkey, target_namekey)
 rby_claims = []        # (target_defkey, referrer_namekey, referrer_hash, surface, file, line)
 
@@ -83,12 +103,39 @@ for f in files:
         d = DEF.match(l)
         if d:
             cur_hash = d.group(1); cur_def = nk(d.group(2) or d.group(3)); cur_desc = None
-        dm = DESC.match(l)
-        if dm:
-            cur_desc = dm.group(1)
+        # Never inside a REFERENCES / REFERENCED BY block: an entry line is itself
+        # `"surface" -> ^"Target"`, and folding that into the prose would let every
+        # surface form prove its own presence.
+        if (block is None and not d and '->' not in l and '<-' not in l
+                and not ONELINE.match(l)):
+            q = QUOTED.findall(l)
+            if q:
+                cur_desc = (cur_desc or '') + ' ' + ' '.join(q)
+        ol = ONELINE.match(l)
+        if ol:
+            kind = ol.group(1)
+            inner = ol.group(2).strip()
+            if kind == 'EMPHASIS':
+                em = EMPH.match(' ' + inner)
+                if not em:
+                    err(f'unparseable EMPHASIS entry in {b}:{ln}: {inner}')
+                else:
+                    emph_total += 1
+                    if cur_desc is None:
+                        err(f'{b}:{ln} emphasis "{em.group(1)}" has no prose in this DEF to mark')
+                    elif em.group(1) not in cur_desc:
+                        err(f'{b}:{ln} emphasis "{em.group(1)}" not a substring of its DEF\'s prose')
+            else:
+                rm = REF.match(' ' + inner)
+                if not rm:
+                    err(f'unparseable {kind} entry in {b}:{ln}: {inner}')
+                else:
+                    total += 1
+            continue
         o = OPEN.match(l)
         if o:
-            block = 'RBY' if o.group(1).startswith('REFERENCED') else 'REF'
+            block = ('RBY' if o.group(1).startswith('REFERENCED')
+                     else 'EMP' if o.group(1) == 'EMPHASIS' else 'REF')
             continue
         if block and CLOSE.match(l):
             block = None; continue
@@ -114,10 +161,24 @@ for f in files:
                     warn(f'{b}:{ln} hashless target ^"{tname}" (strict: add #hash; name has '
                          f'{len(names[tk])} anchor(s))')
             # surface in description
-            if cur_desc is not None and surface not in cur_desc:
-                err(f'{b}:{ln} surface "{surface}" not a substring of its DESCRIPTION')
+            if cur_desc is None:
+                err(f'{b}:{ln} surface "{surface}" has no prose in this DEF to appear in')
+            elif surface not in cur_desc:
+                err(f'{b}:{ln} surface "{surface}" not a substring of its DEF\'s prose')
             if cur_def:
                 ref_pairs.add((cur_def, tk))
+        elif block == 'EMP':
+            m = EMPH.match(l)
+            if not m:
+                if l.strip() and not l.strip().startswith('#'):
+                    err(f'unparseable EMPHASIS entry in {b}:{ln}: {l.strip()}')
+                continue
+            emph_total += 1
+            surface = m.group(1)
+            if cur_desc is None:
+                err(f'{b}:{ln} emphasis "{surface}" has no prose in this DEF to mark')
+            elif surface not in cur_desc:
+                err(f'{b}:{ln} emphasis "{surface}" not a substring of its DEF\'s prose')
         elif block == 'RBY':
             m = RBY.match(l)
             if not m:
@@ -143,7 +204,8 @@ for target_def, referrer, loc in rby_claims:
         err(f'{loc} REFERENCED BY claims "{referrer}" references this entry, but no REFERENCES '
             f'from "{referrer}" -> "{target_def}" exists')
 
-print(f'REFERENCES: {total} refs | {rby_total} referenced-by | {errors} error(s) | {warns} hashless WARN(s)')
+print(f'REFERENCES: {total} refs | {rby_total} referenced-by | {emph_total} emphasis | '
+      f'{errors} error(s) | {warns} hashless WARN(s)')
 
 # ---------------------------------------------------------------------------
 # Part B — §5d / DECISION-13: every other reference site.

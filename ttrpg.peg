@@ -7,7 +7,7 @@
 #
 # Titterpig DSL — PEG Grammar (Bryan Ford notation)
 # Formal syntax specification for .ttrpg files (v0.5)
-# v0.5 additions (§3c): REFERENCES (renames MENTIONS) + REFERENCED BY; GUIDANCE in a
+# v0.5 additions (§3c): REFERENCES (renames MENTIONS) + REFERENCED BY + EMPHASIS; GUIDANCE in a
 # DEF/module body (generalized from BRIDGE); HOOKS + FORMALITY; OPTIONAL; the
 # SELECTIONS container for .selections files; the CODEX container for .codex files
 # (§25 — the stand-off lore knowledge graph).
@@ -49,6 +49,7 @@ BODY_ENTRY      <- METADATA
                  / RULES_BLOCK
                  / REFERENCES_BLOCK          # v0.5, §5c — renamed from MENTIONS
                  / REFERENCED_BY_BLOCK       # v0.5, §5c — optional inverse mirror
+                 / EMPHASIS_BLOCK            # v0.5, §5c — emphasis with no referent
                  / GUIDANCE_BLOCK            # v0.5, §22 — generalized from BRIDGE
                  / HOOKS_BLOCK               # v0.5, §23 — conditional emit hooks
                  / OPTIONAL_BLOCK            # v0.5, §24 — optional/variant rule marker
@@ -127,6 +128,19 @@ REFERENCES_BLOCK    <- ('REFERENCES' / 'MENTIONS') _ '{' _ (REFERENCE_ENTRY _)* 
 REFERENCE_ENTRY     <- STRING OCC_INDEX? _ '->' _ HASH_ID? _ CARET_REF
                      / COMMENT
 OCC_INDEX           <- '@' [0-9]+
+
+# §5c — EMPHASIS: stand-off typographic emphasis with NO referent *(v0.5)*.
+# The companion to REFERENCES, and settled the same way: a span the source sets
+# apart is recorded BESIDE the verbatim text, never as markup inside it
+# (DECISION-7). REFERENCES is for a span that names another DEF; EMPHASIS is for
+# one that names nothing -- Root prints `When you **travel from clearing to
+# clearing through the forest**, the band collectively decides...`, where the
+# display face marks where the triggering fiction ends and the mechanics begin.
+# No target, so no hash and no resolution: the only coherence rule is the one
+# REFERENCES already has, that the surface form appear in the DEF's own prose.
+EMPHASIS_BLOCK      <- 'EMPHASIS' _ '{' _ (EMPHASIS_ENTRY _)* '}'
+EMPHASIS_ENTRY      <- STRING OCC_INDEX?
+                     / COMMENT
 
 # Optional inverse mirror: what references THIS entry. Tool-derivable; when present,
 # each entry must correspond to a real REFERENCES pointing here (validator gate).

@@ -520,6 +520,32 @@ alias, still accepted so 0.4 corpora keep validating). Three additions:
 3. **Optional inverse mirror `REFERENCED BY`.** `REFERENCED BY { "surface" <- #hash ^"Referrer" }` on
    the target records what references it — tool-derivable, and gated for consistency against the
    forward `REFERENCES`; its absence is never an error.
+4. **`EMPHASIS` — a marked span with no referent.** `EMPHASIS { "surface form" }`. DECISION-7 settled
+   that a span the source sets apart is recorded *beside* the verbatim text and never as markup
+   inside it; `REFERENCES` covers the case where the span names another DEF, and this covers the case
+   where it names nothing. No target, so no hash, no resolution and no inverse mirror — the only
+   coherence rule is the one `REFERENCES` already has: **the surface form must appear in the DEF's
+   own prose.** An `@n` occurrence index is accepted on the same terms.
+
+   Root sets a move this way, every move, in all three books:
+
+   ```
+   #tOf8uzMsrgh5Gd67BS7ge8AJ ^"Travel Through the Forest" DEF {
+       TRIGGER "When you travel from clearing to clearing through the forest, the band
+                collectively decides how it travels and one member of the band rolls for the group:"
+       EMPHASIS { "travel from clearing to clearing through the forest" }
+   }
+   ```
+
+   The book prints the triggering fiction in the body serif's bold and the instruction that follows
+   it in the roman. That is not decoration: it is where the fiction ends and the mechanics begin,
+   drawn by the typesetter, and a text channel cannot see it. Written as `**bold**` inside the
+   `TRIGGER` it would change the string the verbatim check compares against the page; written here it
+   changes nothing and a renderer can still set the move the way the book sets it.
+
+   **Use it for what the source marks, not for what an author wants stressed.** An `EMPHASIS` is a
+   claim about the page, and like every other such claim it should be derived from the source rather
+   than decided — Root's 234 are read out of the PDF's font runs, not typed.
 
 The rest of this section (byte-verbatim `DESCRIPTION`, exact-surface-form rules, page-cite stripping)
 is unchanged — read `MENTIONS` below as `REFERENCES`.
