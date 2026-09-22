@@ -16,8 +16,8 @@ overlay" can actually be generated and audited.
 
 | File | Origin → Destination | Shape |
 |---|---|---|
-| `0.4/dnd5e-to-dnd5.5e-0.4-srd-conversion.bridge` | `dnd5e` → `dnd5.5e` | The **rich** case: WotC's *Converting to System Reference Document 5.2.1*, entity-keyed throughout — 573 `MAP`s, 7 `REMAINDER`s, 85 `GUIDANCE` entries, the document's own four-tag disposition vocabulary. |
-| `0.4/arm4-to-arm5e-0.4-appendix-i.bridge` | `arm4` *(EXTERNAL)* → `arm5e` | The **sparse** case: *Ars Magica Fifth Edition*, Appendix I — ~85% prose, no mapping table at all. No `MAP`, no `REMAINDER`, no `DISPOSITIONS`; 7 field-level `PROCEDURE`s + 11 `GUIDANCE` entries. |
+| `0.4/dnd5e-to-dnd5.5e-0.5-srd-conversion.bridge` | `dnd5e` → `dnd5.5e` | The **rich** case: WotC's *Converting to System Reference Document 5.2.1*, entity-keyed throughout — 573 `MAP`s, 7 `REMAINDER`s, 85 `GUIDANCE` entries, the document's own four-tag disposition vocabulary. |
+| `0.4/arm4-to-arm5e-0.5-appendix-i.bridge` | `arm4` *(EXTERNAL)* → `arm5e` | The **sparse** case: *Ars Magica Fifth Edition*, Appendix I — ~85% prose, no mapping table at all. No `MAP`, no `REMAINDER`, no `DISPOSITIONS`; 7 field-level `PROCEDURE`s + 11 `GUIDANCE` entries. |
 
 The two are complementary on purpose: one is a publisher-facing *content changelog*, the other a
 table-facing *character-conversion procedure*. The same grammar holds both.
@@ -45,8 +45,8 @@ and never the union:
 ```bash
 # from titterpig-dsl/bridges/
 python3 ../ttrpg_validator.py 0.4/ \
-    --corpus dnd5e="../../titterpig-dsl-dnd5e/0.4" \
-    --corpus dnd5.5e="../../titterpig-dsl-dnd5.5e/0.4" \
+    --corpus dnd5e="../../titterpig-dsl-dnd5e/0.5" \
+    --corpus dnd5.5e="../../titterpig-dsl-dnd5.5e/0.5" \
     --corpus arm5e="../../titterpig-dsl-arm5e/arm5e/0.5"
 ```
 

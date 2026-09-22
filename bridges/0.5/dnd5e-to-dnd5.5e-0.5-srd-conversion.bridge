@@ -1,7 +1,7 @@
 BRIDGE "Dnd5e_To_Dnd5_5e_Srd_Conversion" {
     NAME "Converting to System Reference Document 5.2.1"
     VERSION "2025.1"
-    SPEC_VERSION "0.4"
+    SPEC_VERSION "0.5"
     RELEASE_DATE "2025-05-23"
 
     # A DIRECTED assertion of correspondence between two independent edition
@@ -54,14 +54,14 @@ BRIDGE "Dnd5e_To_Dnd5_5e_Srd_Conversion" {
             DESTINATION "Tool Proficiency"
             DISPOSITION [ ^"Revised Rule" ]
             TEXT        "If you have proficiency with both the tool and the skill that are used for an ability check, you automatically have Advantage on the check, in addition to adding your Proficiency Bonus."
-            FIAT        "Origin referent \"Tool Proficiency\" is untyped on purpose: this edition has no DEF for it in its own category, and the name is taken by an unrelated ^\"Tool Proficiency\" in dnd5e-0.4-races.ttrpg."
+            FIAT        "Origin referent \"Tool Proficiency\" is untyped on purpose: this edition has no DEF for it in its own category, and the name is taken by an unrelated ^\"Tool Proficiency\" in dnd5e-0.5-races.ttrpg."
         }
         MAP #bm9097484fdcf28eab25 {
             ORIGIN      "Attack Action"
             DESTINATION ^"Attack"
             DISPOSITION [ ^"Revised Rule" ]
             TEXT        "The Attack action contains several revisions: The action now specifies that it involves an attack with a weapon or an Unarmed Strike. The action now allows you to equip or unequip one weapon with each attack you make with the action. The ability to move between attacks during combat is now a function of the Attack action rather than a general rule."
-            FIAT        "Origin referent \"Attack Action\" is untyped on purpose: this edition has no DEF for it in its own category, and the name is taken by an unrelated ^\"Attack\" in dnd5e-0.4-monsters.ttrpg."
+            FIAT        "Origin referent \"Attack Action\" is untyped on purpose: this edition has no DEF for it in its own category, and the name is taken by an unrelated ^\"Attack\" in dnd5e-0.5-monsters.ttrpg."
         }
         MAP #bm7317dd75a251b745d5 {
             ORIGIN      "Help"
@@ -2436,7 +2436,7 @@ BRIDGE "Dnd5e_To_Dnd5_5e_Srd_Conversion" {
             DESTINATION ^"Light"
             DISPOSITION [ ^"Revised Rule" ]
             TEXT        "Light"
-            FIAT        "Origin referent \"Light\" is untyped on purpose: this edition has no DEF for it in its own category, and the name is taken by an unrelated ^\"Light\" in dnd5e-0.4-spells.ttrpg."
+            FIAT        "Origin referent \"Light\" is untyped on purpose: this edition has no DEF for it in its own category, and the name is taken by an unrelated ^\"Light\" in dnd5e-0.5-spells.ttrpg."
         }
         MAP #bme11a8dbf0715d97da9 {
             ORIGIN      "Thrown"
@@ -2513,7 +2513,7 @@ BRIDGE "Dnd5e_To_Dnd5_5e_Srd_Conversion" {
             DESTINATION "Tool Proficiency"
             DISPOSITION [ ^"Revised Rule" ]
             TEXT        "The rule about having Advantage on checks when you have proficiency in both the tool and the skill is new."
-            FIAT        "Origin referent \"Tool Proficiency\" is untyped on purpose: this edition has no DEF for it in its own category, and the name is taken by an unrelated ^\"Tool Proficiency\" in dnd5e-0.4-races.ttrpg."
+            FIAT        "Origin referent \"Tool Proficiency\" is untyped on purpose: this edition has no DEF for it in its own category, and the name is taken by an unrelated ^\"Tool Proficiency\" in dnd5e-0.5-races.ttrpg."
         }
         MAP #bm78749e1305a63b85d0 {
             DESTINATION "Artisan’s Tools"
@@ -2578,13 +2578,13 @@ BRIDGE "Dnd5e_To_Dnd5_5e_Srd_Conversion" {
             DESTINATION "Spellcasting"
             DISPOSITION [ ^"New Name" ]
             TEXT        "This rule was previously named Spellcasting Services."
-            FIAT        "Destination referent \"Spellcasting\" is untyped on purpose: this edition has no DEF for it in its own category, and the name is taken by an unrelated ^\"Spellcasting\" in dnd5.5e-0.4-monsters.ttrpg."
+            FIAT        "Destination referent \"Spellcasting\" is untyped on purpose: this edition has no DEF for it in its own category, and the name is taken by an unrelated ^\"Spellcasting\" in dnd5.5e-0.5-monsters.ttrpg."
         }
         MAP #bm7071d7f27f8e7fc572 {
             DESTINATION "Spellcasting"
             DISPOSITION [ ^"New Rule" ]
             TEXT        "The Spellcasting Services table is new."
-            FIAT        "Destination referent \"Spellcasting\" is untyped on purpose: this edition has no DEF for it in its own category, and the name is taken by an unrelated ^\"Spellcasting\" in dnd5.5e-0.4-monsters.ttrpg."
+            FIAT        "Destination referent \"Spellcasting\" is untyped on purpose: this edition has no DEF for it in its own category, and the name is taken by an unrelated ^\"Spellcasting\" in dnd5.5e-0.5-monsters.ttrpg."
         }
         MAP #bm08a9f33e7b6e8310e0 {
             DESTINATION "Identifying a Magic Item"
@@ -2984,7 +2984,7 @@ BRIDGE "Dnd5e_To_Dnd5_5e_Srd_Conversion" {
             ASPECT      "Action"
             DISPOSITION [ ^"Revised Rule" ]
             TEXT        "Attack [Action]"
-            FIAT        "Origin referent \"Attack\" is untyped on purpose: this edition has no DEF for it in its own category, and the name is taken by an unrelated ^\"Attack\" in dnd5e-0.4-monsters.ttrpg."
+            FIAT        "Origin referent \"Attack\" is untyped on purpose: this edition has no DEF for it in its own category, and the name is taken by an unrelated ^\"Attack\" in dnd5e-0.5-monsters.ttrpg."
         }
         MAP #bme59eadf7c3927c06ff {
             ORIGIN      "Blindsight"
@@ -3195,7 +3195,7 @@ BRIDGE "Dnd5e_To_Dnd5_5e_Srd_Conversion" {
             DESTINATION ^"Unarmed Strike"
             DISPOSITION [ ^"Revised Rule" ]
             TEXT        "Unarmed Strike (options for grappling and shoving a target now appear as part of these rules, rather than as a special function of the Attack action)"
-            FIAT        "Origin referent \"Unarmed Strike\" is untyped on purpose: this edition has no DEF for it in its own category, and the name is taken by an unrelated ^\"Unarmed Strike\" in dnd5e-0.4-monsters.ttrpg."
+            FIAT        "Origin referent \"Unarmed Strike\" is untyped on purpose: this edition has no DEF for it in its own category, and the name is taken by an unrelated ^\"Unarmed Strike\" in dnd5e-0.5-monsters.ttrpg."
         }
         MAP #bm5bf55e680735952e24 {
             DESTINATION ^"Good Roads"

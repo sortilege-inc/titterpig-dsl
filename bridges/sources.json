@@ -7,7 +7,7 @@
   "note": "A .bridge (spec §21) is the one container with TWO dependency lineages: it records a DIRECTED, third-party assertion of correspondence between two independent edition namespaces. It belongs to NEITHER edition and must never live inside either edition's corpus directory — its ORIGIN names would not resolve there and its presence would pollute that namespace. Validate with the two-corpus mode: ttrpg_validator.py 0.4/ --corpus <edition>=<dir> ...",
   "sources": [
     {
-      "file": "0.4/dnd5e-to-dnd5.5e-0.4-srd-conversion.bridge",
+      "file": "0.4/dnd5e-to-dnd5.5e-0.5-srd-conversion.bridge",
       "origin": { "edition": "dnd5e", "version": "0.4", "repo": "titterpig-dsl-dnd5e" },
       "destination": { "edition": "dnd5.5e", "version": "0.4", "repo": "titterpig-dsl-dnd5.5e" },
       "source": {
@@ -22,7 +22,7 @@
       "description": "The RICH case: entity-keyed throughout. 573 MAPs, 7 REMAINDERs, 85 GUIDANCE entries, the document's own four-tag disposition vocabulary."
     },
     {
-      "file": "0.4/arm4-to-arm5e-0.4-appendix-i.bridge",
+      "file": "0.4/arm4-to-arm5e-0.5-appendix-i.bridge",
       "origin": {
         "edition": "arm4",
         "version": "4",

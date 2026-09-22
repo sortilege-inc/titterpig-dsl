@@ -2524,9 +2524,9 @@ coherence for it is checked against **two** corpora, not one:
 The validator is therefore given a corpus per edition id:
 
 ```bash
-python3 ttrpg_validator.py bridges/0.4/ \
-    --corpus dnd5e="…/titterpig-dsl-dnd5e/0.4" \
-    --corpus dnd5.5e="…/titterpig-dsl-dnd5.5e/0.4"
+python3 ttrpg_validator.py bridges/0.5/ \
+    --corpus dnd5e="…/titterpig-dsl-dnd5e/0.5" \
+    --corpus dnd5.5e="…/titterpig-dsl-dnd5.5e/0.5"
 ```
 
 A side declared `EXTERNAL "reason"` (§21) has no titterpig corpus, so its references cannot be
@@ -2955,8 +2955,8 @@ A codex is *derived from* prose, so it records its inputs. The optional header b
 
 ```
 SOURCES {
-    "l5r5e-0.4-courts-of-stone-crane-clan.lore" VERSION "0.4.1"
-    "Emerald Empire" VERSION "0.4" AT "l5r5e-0.4-emerald-empire-history.lore"
+    "l5r5e-0.5-courts-of-stone-crane-clan.lore" VERSION "0.4.1"
+    "Emerald Empire" VERSION "0.4" AT "l5r5e-0.5-emerald-empire-history.lore"
 }
 ```
 

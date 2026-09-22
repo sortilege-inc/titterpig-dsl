@@ -184,7 +184,7 @@ gap `.bridge` fills. Not an EXTENSION, not errata (same edition), not `FIAT`.
   disagreement only, never to force a wrong correspondence through.
 - **Gates:** `titterpig-mastra/scripts/bridge/gates.sh` — validator + coverage + verbatim.
 
-Worked examples: `titterpig-dsl/bridges/0.4/` (rich: SRD 5.2.1; sparse: ArM5 Appendix I) and the
+Worked examples: `titterpig-dsl/bridges/0.5/` (rich: SRD 5.2.1; sparse: ArM5 Appendix I) and the
 `tests/good.bridge` / `tests/bad.bridge` fixtures.
 
 ## Migrating a system to a new SPEC_VERSION

@@ -59,7 +59,7 @@ neither is ever checked against the other, and a bridge's own definitions (its d
 dispositions, its guidance labels) belong to neither edition. Supply a corpus per
 edition id:
 
-    ttrpg_validator.py bridges/0.4/ --corpus dnd5e=<dir> --corpus dnd5.5e=<dir>
+    ttrpg_validator.py bridges/0.5/ --corpus dnd5e=<dir> --corpus dnd5.5e=<dir>
 
 A side declared EXTERNAL "reason" has no titterpig corpus; its references are counted
 and reported, never silently passed. A non-EXTERNAL side with no --corpus mapping is an

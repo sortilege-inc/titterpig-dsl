@@ -1,7 +1,7 @@
 BRIDGE "Arm4_To_Arm5e_Appendix_I" {
     NAME "Ars Magica Fifth Edition, Appendix I: Fourth Edition Conversion"
-    VERSION "0.4"
-    SPEC_VERSION "0.4"
+    VERSION "0.5.0"
+    SPEC_VERSION "0.5"
     RELEASE_DATE "2026-07-25"
 
     # The SPARSE case (cf. the SRD 5.2.1 bridge, the rich one). Appendix I is ~85%

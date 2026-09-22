@@ -32,8 +32,8 @@ canonical DSL repo's `bridges/<specver>/`" precisely so it cannot be mistaken fo
 content — so it is cross-system rather than system-specific. Validate in two-corpus mode:
 
 ```bash
-python3 ttrpg_validator.py bridges/0.4/ \
-    --corpus dnd5e="../titterpig-dsl-dnd5e/0.4" \
-    --corpus dnd5.5e="../titterpig-dsl-dnd5.5e/0.4" \
+python3 ttrpg_validator.py bridges/0.5/ \
+    --corpus dnd5e="../titterpig-dsl-dnd5e/0.5" \
+    --corpus dnd5.5e="../titterpig-dsl-dnd5.5e/0.5" \
     --corpus arm5e="../titterpig-dsl-arm5e/arm5e/0.5"
 ```
