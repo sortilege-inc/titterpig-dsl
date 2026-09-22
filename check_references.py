@@ -51,7 +51,10 @@ OPEN  = re.compile(r'^\s*(REFERENCES|MENTIONS|REFERENCED\s+BY|EMPHASIS)\s*\{')
 # §5c EMPHASIS: a marked span with no referent, so there is nothing to resolve.
 # The one rule it shares with REFERENCES is the one that matters -- the surface
 # form has to be in the prose it claims to mark.
-EMPH  = re.compile(r'^\s*"([^"]+)"(?:@\d+)?\s*$')
+# The surface form may itself contain an escaped quote -- the book prints dialogue --
+# so it is read with the same escape-aware body as QUOTED. "[^"]+" stops at the first
+# backslash-quote and reports a legal entry as unparseable.
+EMPH  = re.compile(r'^\s*"((?:[^"\\]|\\.)*)"(?:@\d+)?\s*$')
 # A block with one entry is legal on one line -- `EMPHASIS { "…" }` -- and is
 # how a corpus with one span per DEF reads best. Its closing brace is not on a
 # line of its own, so a reader that only closes on a bare `}` never closes it
@@ -59,9 +62,9 @@ EMPH  = re.compile(r'^\s*"([^"]+)"(?:@\d+)?\s*$')
 ONELINE = re.compile(r'^\s*(REFERENCES|MENTIONS|REFERENCED\s+BY|EMPHASIS)\s*\{(.*)\}\s*$')
 CLOSE = re.compile(r'^\s*\}\s*$')
 # "surface" -> [#hash] ^"Target"      (optional @n occurrence index tolerated on surface)
-REF   = re.compile(r'^\s*"([^"]+)"(?:@\d+)?\s*->\s*(?:(#\S+)\s+)?\^"([^"]+)"\s*$')
+REF   = re.compile(r'^\s*"((?:[^"\\]|\\.)*)"(?:@\d+)?\s*->\s*(?:(#\S+)\s+)?\^"([^"]+)"\s*$')
 # ["surface"] <- [#hash] ^"Referrer"
-RBY   = re.compile(r'^\s*(?:"([^"]+)"\s*)?<-\s*(?:(#\S+)\s+)?\^"([^"]+)"\s*$')
+RBY   = re.compile(r'^\s*(?:"((?:[^"\\]|\\.)*)"\s*)?<-\s*(?:(#\S+)\s+)?\^"([^"]+)"\s*$')
 
 nk = lambda s: re.sub(r'[^a-z0-9]+', '', s.strip().replace('’', "'").lower())
 
