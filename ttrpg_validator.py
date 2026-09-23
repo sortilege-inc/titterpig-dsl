@@ -926,6 +926,16 @@ def analyze_file(fname, text, findings):
 
     for fr in frames:
         findings.append(Finding(fname, 'lint', 'error', fr['open'], "unclosed '{'"))
+    # §12: a rule states itself. `#hash: slug` alone on its line — a name with no text, the
+    # rule only described in a comment beside it — carries nothing a tool can read (the L5R
+    # corpus held 980 of them, 2026-09-23).
+    for k in range(len(toks) - 2):
+        a, b, c = toks[k], toks[k + 1], toks[k + 2]
+        if a.kind == 'HASH' and b.kind == 'COLON' and c.kind == 'ID' and a.line == b.line == c.line \
+                and (k + 3 >= len(toks) or toks[k + 3].line != a.line):
+            findings.append(Finding(fname, 'lint', 'warning', a.line,
+                                    "rule %s (%s) has no text: give it the source's statement of the rule, "
+                                    "or a structured WHEN … THEN (§12)" % (a.val, c.val)))
     for tk in toks:
         if tk.kind == 'HASH' and len(tk.val) - 1 < HASH_MIN_BODY:
             findings.append(Finding(fname, 'lint', 'warning', tk.line,

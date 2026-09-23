@@ -1037,7 +1037,16 @@ RULES {
 Rules are hash-labeled entries inside a `RULES { }` block. The base spec defines the container syntax:
 
 - `#hashID: WHEN [condition] THEN action` — structured rule with trigger
-- `#hashID: label_name` — named rule placeholder (description lives in comments or documentation)
+- `#hashID: label_name "text"` — a named rule carrying the source's own statement of it,
+  verbatim (paragraphs as `\n\n`, §10). Where the source prints a name for the item — a table
+  row, a bulleted term, a step heading — the text leads with it: `"Label: text"`.
+
+A rule states itself. `#hashID: label_name` with no text — a name, with the rule described in a
+comment beside it — carries nothing a tool can read, and a comment is not data: the validator
+**warns** on one *(2026-09-23)*. The L5R 5e corpus held 980 of them, written that way in its first
+pass under this section's earlier wording ("named rule placeholder — description lives in
+comments or documentation"); they were given the book's text, or removed where the book has no
+such rule.
 
 The condition/action grammar is system-defined. `WHEN` and `THEN` are recognized by the base spec as rule structure markers. Other keywords used in rule expressions (`REQUIRE`, `IS`, `CREATED`, `INTERACTS`, `ENTERS`, `USE`, etc.) are conventions, not base-spec reserved words.
 

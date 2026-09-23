@@ -11,4 +11,12 @@ BASE "Bad_Core" {
 
     #DupAnchor00000000000000 ^"Alpha" DEF { PROPERTIES { ^"X" STRING } }
     #DupAnchor00000000000000 ^"Beta" DEF { PROPERTIES { ^"Y" STRING } }
+
+    #TextlessRule000000000000 ^"Gamma" DEF {
+        RULES {
+            #TextlessRuleSlug00000000: a_rule_with_no_text
+            #TextedRuleSlug0000000000: a_rule_with_text "The rule, as the source states it."
+            #StructuredRule0000000000: WHEN [^"Gamma" CREATED] THEN REQUIRE ^"Gamma"
+        }
+    }
 }
