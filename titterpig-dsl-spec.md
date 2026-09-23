@@ -1946,7 +1946,8 @@ SCENE ^"Scene Name" #scene_id {
 - `SKILL`: The skill used for the check. Repeat it when the text allows either of several skills
   at the same TN (*"a TN 1 Medicine or Skulduggery check"*).
 - `RING`: The ring or attribute used — **only when the text requires that one**. A check that
-  allows any ring states no `RING`; never record one the text does not name.
+  allows any ring states no `RING`; never record one the text does not name. Repeat it when the
+  text allows either of several (*"a TN 2 Games [Water or Air] check"*).
 - `TN`: Target number for success — when `RING_TN` lines follow, the TN for any ring they do not name
 - `RING_TN` *(v0.5, 2026-09-23)*: the TN for one named ring, where the text gives rings their own
   TNs. One line per ring, as printed: *"a TN 3 Fitness check (Earth 1, Fire 4)"* is `TN 3`,
