@@ -1889,7 +1889,13 @@ SCENE ^"Scene Name" #scene_id {
             SKILL "skill_name"
             RING "ring_name"
             TN target_number
+            RING_TN "ring_name" target_number   # optional, repeatable (v0.5, 2026-09-23)
             APPROACH "approach_name"       # optional
+            ALTERNATIVE {                  # optional, repeatable (v0.5, 2026-09-23)
+                SKILL "skill_name"
+                TN target_number
+                RING_TN "ring_name" target_number
+            }
             ON_SUCCESS "Result description"
             ON_FAILURE "Result description"
         }
@@ -1937,11 +1943,24 @@ SCENE ^"Scene Name" #scene_id {
 - `OPTIONAL`: Bonus goals that enrich the experience
 
 **CHECKS** — Specific mechanical rolls the scene may call for.
-- `SKILL`: The skill used for the check
-- `RING`: The ring or attribute used
-- `TN`: Target number for success
+- `SKILL`: The skill used for the check. Repeat it when the text allows either of several skills
+  at the same TN (*"a TN 1 Medicine or Skulduggery check"*).
+- `RING`: The ring or attribute used — **only when the text requires that one**. A check that
+  allows any ring states no `RING`; never record one the text does not name.
+- `TN`: Target number for success — when `RING_TN` lines follow, the TN for any ring they do not name
+- `RING_TN` *(v0.5, 2026-09-23)*: the TN for one named ring, where the text gives rings their own
+  TNs. One line per ring, as printed: *"a TN 3 Fitness check (Earth 1, Fire 4)"* is `TN 3`,
+  `RING_TN "Earth" 1`, `RING_TN "Fire" 4` (L5R5e core p. 297: *"a TN of 4 if the character uses
+  their Fire Ring … a TN of only 1 if the character uses their Earth Ring … and a TN of 3 for any
+  other ring"*).
 - `APPROACH`: Optional specific approach (system-dependent)
-- `ON_SUCCESS` / `ON_FAILURE`: Narrative consequences
+- `ALTERNATIVE { … }` *(v0.5, 2026-09-23)*: a second way to make the same check that the text
+  offers in the same breath with its own skill, TN or ring TNs — *"a TN 3 Aesthetics (Air 2) or
+  TN 2 Skulduggery (Earth 1) check"* is `SKILL "Aesthetics"`, `TN 3`, `RING_TN "Air" 2` and
+  `ALTERNATIVE { SKILL "Skulduggery" TN 2 RING_TN "Earth" 1 }`. It takes `SKILL`, `RING`, `TN`
+  and `RING_TN`; the outcomes are the check's.
+- `ON_SUCCESS` / `ON_FAILURE`: Narrative consequences — **only those the text states**; a check
+  whose failure the text leaves open has no `ON_FAILURE`.
 
 **CLUES** — Discoverable information.
 - `DESCRIPTION`: What the PCs learn
@@ -2454,7 +2473,7 @@ These keywords are reserved by the base spec for use within narrative containers
 
 **ARC:** `CAST`, `FLOW`, `PHASE`, `SCENE_REF`, `REWARDS`, `XP_BASE`, `CONDITIONAL_REWARDS`, `REWARD`, `XP`
 
-**SCENE:** `TYPE`, `PREREQUISITES`, `MINIMUM_CLUES`, `COMPLETED_SCENES`, `CONDITION`, `OBJECTIVES`, `REQUIRED`, `OPTIONAL`, `CHECKS`, `CHECK`, `SKILL`, `RING`, `TN`, `APPROACH`, `ON_SUCCESS`, `ON_FAILURE`, `CLUES`, `CLUE`, `DISCOVERED_BY`, `CONFLICT`, `STAKES`, `OPPONENTS`, `RESOLUTIONS`, `RESOLUTION`, `OUTCOME`, `MONTAGE`, `MOMENT`
+**SCENE:** `TYPE`, `PREREQUISITES`, `MINIMUM_CLUES`, `COMPLETED_SCENES`, `CONDITION`, `OBJECTIVES`, `REQUIRED`, `OPTIONAL`, `CHECKS`, `CHECK`, `SKILL`, `RING`, `TN`, `RING_TN`, `ALTERNATIVE`, `APPROACH`, `ON_SUCCESS`, `ON_FAILURE`, `CLUES`, `CLUE`, `DISCOVERED_BY`, `CONFLICT`, `STAKES`, `OPPONENTS`, `RESOLUTIONS`, `RESOLUTION`, `OUTCOME`, `MONTAGE`, `MOMENT`
 
 **LOCATION:** `TAGS`
 
