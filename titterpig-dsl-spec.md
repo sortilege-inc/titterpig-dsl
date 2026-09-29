@@ -274,7 +274,7 @@ Files are organized as:
 - `arcs/{system_id}/{arc_id}.arc` — Playable adventures
 - `campaigns/{system_id}/{campaign_id}.campaign` — Multi-arc campaigns
 - `actors/{character_id}.actor` — Individual character definitions (PC or NPC)
-- `bridges/{origin}-to-{destination}-{doc}.bridge` — Cross-edition conversions (§21); never inside either edition's corpus
+- `bridges/{origin}-to-{destination}-{doc}.bridge` — Cross-edition conversions (§21), in the canonical repo or beside a system's corpus; never inside either edition's corpus
 
 ---
 
@@ -2625,8 +2625,11 @@ ORIGIN "arm4" VERSION "4" EXTERNAL "No titterpig corpus exists for Ars Magica Fo
 
 **Placement.** A `.bridge` file MUST NOT live inside either edition's corpus directory — its origin
 names would not resolve there and its presence would pollute that edition's namespace. Bridges live
-outside both, in the canonical DSL repo's `bridges/<specver>/`, named
-`<origin>-to-<destination>-<specver>-<document>.bridge`.
+outside both corpora, named `<origin>-to-<destination>-<specver>-<document>.bridge`: in the canonical
+DSL repo's `bridges/<specver>/`, or in a system repo's `bridges/<specver>/`, **beside** that edition's
+corpus directory and never inside it *(2026-09-29)* — the Pendragon 5e→6e bridge sits in
+`titterpig-dsl-pendragon6e/bridges/0.5/`, next to `0.5/`. Wherever it lives, a bridge is listed in the
+canonical `bridges/sources.json` and validated in two-corpus mode.
 
 ### Sided references
 

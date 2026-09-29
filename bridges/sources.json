@@ -2,14 +2,22 @@
   "system_id": "bridges",
   "name": "Titterpig cross-edition bridges",
   "dsl_dir": "titterpig-dsl/bridges",
-  "content_version": "0.4.0",
-  "spec_version": "0.4",
-  "note": "A .bridge (spec §21) is the one container with TWO dependency lineages: it records a DIRECTED, third-party assertion of correspondence between two independent edition namespaces. It belongs to NEITHER edition and must never live inside either edition's corpus directory — its ORIGIN names would not resolve there and its presence would pollute that namespace. Validate with the two-corpus mode: ttrpg_validator.py 0.4/ --corpus <edition>=<dir> ...",
+  "content_version": "0.5.1",
+  "spec_version": "0.5",
+  "note": "A .bridge (spec §21) is the one container with TWO dependency lineages: it records a DIRECTED, third-party assertion of correspondence between two independent edition namespaces. It belongs to NEITHER edition and must never live inside either edition's corpus directory — its ORIGIN names would not resolve there and its presence would pollute that namespace. Validate with the two-corpus mode: ttrpg_validator.py 0.5/ --corpus <edition>=<dir> ... A bridge may instead live in a system repo, beside that edition's corpus directory and never inside it (Pendragon: titterpig-dsl-pendragon6e/bridges/0.5/); its entry's `file` is then relative to this folder and `repo` names its home.",
   "sources": [
     {
-      "file": "0.4/dnd5e-to-dnd5.5e-0.5-srd-conversion.bridge",
-      "origin": { "edition": "dnd5e", "version": "0.4", "repo": "titterpig-dsl-dnd5e" },
-      "destination": { "edition": "dnd5.5e", "version": "0.4", "repo": "titterpig-dsl-dnd5.5e" },
+      "file": "0.5/dnd5e-to-dnd5.5e-0.5-srd-conversion.bridge",
+      "origin": {
+        "edition": "dnd5e",
+        "version": "0.4",
+        "repo": "titterpig-dsl-dnd5e"
+      },
+      "destination": {
+        "edition": "dnd5.5e",
+        "version": "0.4",
+        "repo": "titterpig-dsl-dnd5.5e"
+      },
       "source": {
         "title": "Converting to System Reference Document 5.2.1",
         "publisher": "Wizards of the Coast LLC",
@@ -22,13 +30,17 @@
       "description": "The RICH case: entity-keyed throughout. 573 MAPs, 7 REMAINDERs, 85 GUIDANCE entries, the document's own four-tag disposition vocabulary."
     },
     {
-      "file": "0.4/arm4-to-arm5e-0.5-appendix-i.bridge",
+      "file": "0.5/arm4-to-arm5e-0.5-appendix-i.bridge",
       "origin": {
         "edition": "arm4",
         "version": "4",
         "external": "No titterpig corpus exists for Ars Magica Fourth Edition (Atlas Games, 1996)."
       },
-      "destination": { "edition": "arm5e", "version": "0.4", "repo": "titterpig-dsl-arm5e/arm5e" },
+      "destination": {
+        "edition": "arm5e",
+        "version": "0.4",
+        "repo": "titterpig-dsl-arm5e/arm5e"
+      },
       "source": {
         "title": "Ars Magica Fifth Edition, Appendix I: Fourth Edition Conversion (pp.223-224)",
         "publisher": "Atlas Games",
@@ -37,6 +49,28 @@
       },
       "coverage_manifest": "titterpig-mastra/coverage/arm5e-corebook.manifest.json",
       "description": "The SPARSE case: ~85% prose, no entity-mapping table. No MAP, no REMAINDER, no DISPOSITIONS (the document declares no change-tag vocabulary, so none is invented). 7 field-level PROCEDUREs + 11 GUIDANCE entries."
+    },
+    {
+      "file": "../../titterpig-dsl-pendragon6e/bridges/0.5/pendragon5e-to-pendragon6e-0.5-notes-on-the-new-edition.bridge",
+      "repo": "titterpig-dsl-pendragon6e",
+      "origin": {
+        "edition": "pendragon5e",
+        "version": "0.5",
+        "repo": "titterpig-dsl-pendragon5e"
+      },
+      "destination": {
+        "edition": "pendragon6e",
+        "version": "0.5.1",
+        "repo": "titterpig-dsl-pendragon6e"
+      },
+      "source": {
+        "title": "Pendragon Core Rulebook (6th edition), Appendix A: Notes on the New Edition (pp. 237-240)",
+        "publisher": "Chaosium Inc.",
+        "corpus_file": "titterpig-dsl-pendragon6e/0.5/pendragon6e-0.5-core-notes-on-the-new-edition.ttrpg"
+      },
+      "coverage_manifest": "titterpig-dsl-pendragon6e/bridges/coverage-manifest-bridge.json",
+      "generator": "hand-authored; the gates' inventory (appendix-a-units.json, appendix-a-blocks.json) is read from the appendix's corpus file by titterpig-dsl-pendragon6e/bridges/appendix_a_units.py",
+      "description": "The SPARSE case, like ArM5 Appendix I: a character-conversion procedure with no change-tag vocabulary, so no DISPOSITIONS and no MAP or REMAINDER. 14 PROCEDUREs (51 CONVERTs) + 7 GUIDANCE entries + 4 ALIASES; lives in the destination's repo, beside its corpus."
     }
   ]
 }
