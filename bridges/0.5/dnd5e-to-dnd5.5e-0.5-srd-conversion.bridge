@@ -170,7 +170,7 @@ BRIDGE "Dnd5e_To_Dnd5_5e_Srd_Conversion" {
         }
         MAP #bmc15537b6879390cedd {
             ORIGIN      "Fixed Hit Points By Class"
-            DESTINATION "Fixed Hit Points By Class"
+            DESTINATION ^"Fixed Hit Points by Class"
             DISPOSITION [ ^"New Name" ]
             TEXT        "Fixed Hit Points received by each class are presented here under this new name, rather than in each class’s features."
         }
@@ -203,7 +203,7 @@ BRIDGE "Dnd5e_To_Dnd5_5e_Srd_Conversion" {
             TEXT        "This rule now clarifies that it applies to any feature that calculates your Armor Class differently, not just the Unarmored Defense class feature."
         }
         MAP #bm378e25101f8a495016 {
-            DESTINATION "Trinkets"
+            DESTINATION ^"Trinkets"
             DISPOSITION [ ^"New Rule" ]
             TEXT        "This section and its table are new."
         }
@@ -412,7 +412,7 @@ BRIDGE "Dnd5e_To_Dnd5_5e_Srd_Conversion" {
         }
         MAP #bme9d73220afa2265e98 {
             ORIGIN      ^"Expertise"
-            DESTINATION ^"Expertise"
+            DESTINATION ^"Level 2: Expertise"
             SCOPE       DESTINATION ^"Bard"
             ASPECT      "Class Features"
             DISPOSITION [ ^"Revised Rule" ]
@@ -1340,7 +1340,7 @@ BRIDGE "Dnd5e_To_Dnd5_5e_Srd_Conversion" {
             TEXT        "Roving"
         }
         MAP #bm4f7a0c26680ef4a946 {
-            DESTINATION ^"Expertise"
+            DESTINATION ^"Level 9: Expertise"
             SCOPE       DESTINATION ^"Ranger"
             ASPECT      "Class Features"
             DISPOSITION [ ^"New Rule" ]
@@ -1976,7 +1976,7 @@ BRIDGE "Dnd5e_To_Dnd5_5e_Srd_Conversion" {
             TEXT        "Lessons of the First Ones"
         }
         MAP #bm85e08c0c3c04937219 {
-            ORIGIN      "Agonizing Blast"
+            ORIGIN      ^"Eldritch Invocation: Agonizing Blast"
             DESTINATION ^"Eldritch Invocation: Agonizing Blast"
             SCOPE       DESTINATION ^"Warlock"
             ASPECT      "Eldritch Invocation Options"
@@ -1984,7 +1984,7 @@ BRIDGE "Dnd5e_To_Dnd5_5e_Srd_Conversion" {
             TEXT        "Agonizing Blast"
         }
         MAP #bmbe8e0f234d07dc2855 {
-            ORIGIN      "Ascendant Step"
+            ORIGIN      ^"Eldritch Invocation: Ascendant Step"
             DESTINATION ^"Eldritch Invocation: Ascendant Step"
             SCOPE       DESTINATION ^"Warlock"
             ASPECT      "Eldritch Invocation Options"
@@ -1992,7 +1992,7 @@ BRIDGE "Dnd5e_To_Dnd5_5e_Srd_Conversion" {
             TEXT        "Ascendant Step"
         }
         MAP #bm2044506824f1ee45f8 {
-            ORIGIN      "Eldritch Spear"
+            ORIGIN      ^"Eldritch Invocation: Eldritch Spear"
             DESTINATION ^"Eldritch Invocation: Eldritch Spear"
             SCOPE       DESTINATION ^"Warlock"
             ASPECT      "Eldritch Invocation Options"
@@ -2000,7 +2000,7 @@ BRIDGE "Dnd5e_To_Dnd5_5e_Srd_Conversion" {
             TEXT        "Eldritch Spear"
         }
         MAP #bm5e3407d88432cc27af {
-            ORIGIN      "Fiendish Vigor"
+            ORIGIN      ^"Eldritch Invocation: Fiendish Vigor"
             DESTINATION ^"Eldritch Invocation: Fiendish Vigor"
             SCOPE       DESTINATION ^"Warlock"
             ASPECT      "Eldritch Invocation Options"
@@ -2008,7 +2008,7 @@ BRIDGE "Dnd5e_To_Dnd5_5e_Srd_Conversion" {
             TEXT        "Fiendish Vigor"
         }
         MAP #bmf605635c24091c489d {
-            ORIGIN      "Gaze of Two Minds"
+            ORIGIN      ^"Eldritch Invocation: Gaze of Two Minds"
             DESTINATION ^"Eldritch Invocation: Gaze of Two Minds"
             SCOPE       DESTINATION ^"Warlock"
             ASPECT      "Eldritch Invocation Options"
@@ -2016,7 +2016,7 @@ BRIDGE "Dnd5e_To_Dnd5_5e_Srd_Conversion" {
             TEXT        "Gaze of Two Minds"
         }
         MAP #bmb6e4d3c51ebcc84090 {
-            ORIGIN      "Lifedrinker"
+            ORIGIN      ^"Eldritch Invocation: Lifedrinker"
             DESTINATION ^"Eldritch Invocation: Lifedrinker"
             SCOPE       DESTINATION ^"Warlock"
             ASPECT      "Eldritch Invocation Options"
@@ -2024,7 +2024,7 @@ BRIDGE "Dnd5e_To_Dnd5_5e_Srd_Conversion" {
             TEXT        "Lifedrinker"
         }
         MAP #bm59b82465e5a04ddce2 {
-            ORIGIN      "Master of Myriad Forms"
+            ORIGIN      ^"Eldritch Invocation: Master of Myriad Forms"
             DESTINATION ^"Eldritch Invocation: Master of Myriad Forms"
             SCOPE       DESTINATION ^"Warlock"
             ASPECT      "Eldritch Invocation Options"
@@ -2032,7 +2032,7 @@ BRIDGE "Dnd5e_To_Dnd5_5e_Srd_Conversion" {
             TEXT        "Master of Myriad Forms"
         }
         MAP #bm9efea1e4e1913be6c3 {
-            ORIGIN      "One with Shadows"
+            ORIGIN      ^"Eldritch Invocation: One with Shadows"
             DESTINATION ^"Eldritch Invocation: One with Shadows"
             SCOPE       DESTINATION ^"Warlock"
             ASPECT      "Eldritch Invocation Options"
@@ -2040,7 +2040,7 @@ BRIDGE "Dnd5e_To_Dnd5_5e_Srd_Conversion" {
             TEXT        "One with Shadows"
         }
         MAP #bm47a9cb992587d4ec8f {
-            ORIGIN      "Otherworldly Leap"
+            ORIGIN      ^"Eldritch Invocation: Otherworldly Leap"
             DESTINATION ^"Eldritch Invocation: Otherworldly Leap"
             SCOPE       DESTINATION ^"Warlock"
             ASPECT      "Eldritch Invocation Options"
@@ -2072,7 +2072,7 @@ BRIDGE "Dnd5e_To_Dnd5_5e_Srd_Conversion" {
             TEXT        "Pact of the Tome (this option is provided as an eldritch invocation option rather than from the Pact Boon class feature)"
         }
         MAP #bmde334d82401a753b06 {
-            ORIGIN      "Repelling Blast"
+            ORIGIN      ^"Eldritch Invocation: Repelling Blast"
             DESTINATION ^"Eldritch Invocation: Repelling Blast"
             SCOPE       DESTINATION ^"Warlock"
             ASPECT      "Eldritch Invocation Options"
@@ -2080,7 +2080,7 @@ BRIDGE "Dnd5e_To_Dnd5_5e_Srd_Conversion" {
             TEXT        "Repelling Blast"
         }
         MAP #bme06eb04f333b64b79d {
-            ORIGIN      "Thirsting Blade"
+            ORIGIN      ^"Eldritch Invocation: Thirsting Blade"
             DESTINATION ^"Eldritch Invocation: Thirsting Blade"
             SCOPE       DESTINATION ^"Warlock"
             ASPECT      "Eldritch Invocation Options"
@@ -2088,7 +2088,7 @@ BRIDGE "Dnd5e_To_Dnd5_5e_Srd_Conversion" {
             TEXT        "Thirsting Blade"
         }
         MAP #bm3972f494bb170dec79 {
-            ORIGIN      "Visions of Distant Realms"
+            ORIGIN      ^"Eldritch Invocation: Visions of Distant Realms"
             DESTINATION ^"Eldritch Invocation: Visions of Distant Realms"
             SCOPE       DESTINATION ^"Warlock"
             ASPECT      "Eldritch Invocation Options"
@@ -2096,7 +2096,7 @@ BRIDGE "Dnd5e_To_Dnd5_5e_Srd_Conversion" {
             TEXT        "Visions of Distant Realms"
         }
         MAP #bmb8e6b156fc7fe5dbdb {
-            ORIGIN      "Whispers of the Grave"
+            ORIGIN      ^"Eldritch Invocation: Whispers of the Grave"
             DESTINATION ^"Eldritch Invocation: Whispers of the Grave"
             SCOPE       DESTINATION ^"Warlock"
             ASPECT      "Eldritch Invocation Options"
@@ -2104,7 +2104,7 @@ BRIDGE "Dnd5e_To_Dnd5_5e_Srd_Conversion" {
             TEXT        "Whispers of the Grave"
         }
         MAP #bm4f6983550ccd72b3ac {
-            ORIGIN      "Witch Sight"
+            ORIGIN      ^"Eldritch Invocation: Witch Sight"
             DESTINATION ^"Eldritch Invocation: Witch Sight"
             SCOPE       DESTINATION ^"Warlock"
             ASPECT      "Eldritch Invocation Options"
@@ -2426,20 +2426,19 @@ BRIDGE "Dnd5e_To_Dnd5_5e_Srd_Conversion" {
             TEXT        "The rules for selling equipment are revised and now refer to “Magic Items” for the value of magic items."
         }
         MAP #bm07803b5f35bd67aa4d {
-            ORIGIN      "Heavy"
+            ORIGIN      ^"Heavy"
             DESTINATION ^"Heavy"
             DISPOSITION [ ^"Revised Rule" ]
             TEXT        "Heavy"
         }
         MAP #bm6a53ffb4840fa1a68a {
-            ORIGIN      "Light"
+            ORIGIN      ^"Light"
             DESTINATION ^"Light"
             DISPOSITION [ ^"Revised Rule" ]
             TEXT        "Light"
-            FIAT        "Origin referent \"Light\" is untyped on purpose: this edition has no DEF for it in its own category, and the name is taken by an unrelated ^\"Light\" in dnd5e-0.5-spells.ttrpg."
         }
         MAP #bme11a8dbf0715d97da9 {
-            ORIGIN      "Thrown"
+            ORIGIN      ^"Thrown"
             DESTINATION ^"Thrown"
             DISPOSITION [ ^"Revised Rule" ]
             TEXT        "Thrown"
@@ -3214,7 +3213,7 @@ BRIDGE "Dnd5e_To_Dnd5_5e_Srd_Conversion" {
             TEXT        "This rule is revised, and was previously named Forced March."
         }
         MAP #bma92c6b07a8a2a2a5af {
-            DESTINATION "Travel Terrain"
+            DESTINATION ^"Travel Terrain"
             DISPOSITION [ ^"New Rule" ]
             TEXT        "This table consolidating travel rules is new."
         }
@@ -3274,7 +3273,7 @@ BRIDGE "Dnd5e_To_Dnd5_5e_Srd_Conversion" {
             TEXT        "This rule is new."
         }
         MAP #bm6a3b34081d384a8244 {
-            ORIGIN      "drow poison"
+            ORIGIN      ^"Drow Poison"
             DESTINATION ^"Spider's Sting"
             DISPOSITION [ ^"New Name", ^"Revised Rule" ]
             TEXT        "Spider’s Sting (formerly drow poison)"
@@ -3286,7 +3285,7 @@ BRIDGE "Dnd5e_To_Dnd5_5e_Srd_Conversion" {
             TEXT        "These rules have been standardized and streamlined. Rather than being designated as a setback, dangerous, or deadly, traps are now designated as a nuisance trap or a deadly trap."
         }
         MAP #bm628d21fff33bed5276 {
-            ORIGIN      "fire-breathing statue"
+            ORIGIN      ^"Fire-Breathing Statue"
             DESTINATION ^"Fire-Casting Statue"
             DISPOSITION [ ^"New Name", ^"Revised Rule" ]
             TEXT        "Fire-casting statue (formerly fire-breathing statue)"
@@ -3298,19 +3297,19 @@ BRIDGE "Dnd5e_To_Dnd5_5e_Srd_Conversion" {
             TEXT        "Hidden pit (formerly among pits)"
         }
         MAP #bme19483761339698444 {
-            ORIGIN      "poison darts"
+            ORIGIN      ^"Poison Darts"
             DESTINATION ^"Poisoned Darts"
             DISPOSITION [ ^"New Name", ^"Revised Rule" ]
             TEXT        "Poisoned darts (formerly poison darts)"
         }
         MAP #bm5d61628a916d93c34e {
-            ORIGIN      "poison needle"
+            ORIGIN      ^"Poison Needle"
             DESTINATION ^"Poisoned Needle"
             DISPOSITION [ ^"New Name", ^"Revised Rule" ]
             TEXT        "Poisoned needle (formerly poison needle)"
         }
         MAP #bm0f52923afc07868af6 {
-            ORIGIN      "rolling sphere"
+            ORIGIN      ^"Rolling Sphere"
             DESTINATION ^"Rolling Stone"
             DISPOSITION [ ^"New Name", ^"Revised Rule" ]
             TEXT        "Rolling stone (formerly rolling sphere)"
@@ -3366,7 +3365,7 @@ BRIDGE "Dnd5e_To_Dnd5_5e_Srd_Conversion" {
             TEXT        "Ammunition of Slaying (formerly arrow of slaying)"
         }
         MAP #bm381e5c212c336e4dc5 {
-            ORIGIN      "Orb of Dragonkind"
+            ORIGIN      ^"Orb of Dragonkind"
             DESTINATION ^"Dragon Orb"
             DISPOSITION [ ^"New Name", ^"Revised Rule" ]
             TEXT        "Dragon Orb (formerly Orb of Dragonkind)"
@@ -3507,7 +3506,7 @@ BRIDGE "Dnd5e_To_Dnd5_5e_Srd_Conversion" {
             TEXT        "A monster’s damage type Immunities now appear alongside its condition Immunities, rather than having a separate entry."
         }
         MAP #bmc3fba923c0b38822f0 {
-            DESTINATION "Gear"
+            DESTINATION ^"Gear"
             DISPOSITION [ ^"New Rule" ]
             TEXT        "This new entry in a monster’s stat block provides more clarity about a monster’s equipment."
         }
