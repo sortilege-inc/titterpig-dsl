@@ -43,6 +43,7 @@ BODY            <- (BODY_ENTRY _)*
 
 BODY_ENTRY      <- METADATA
                  / ALIAS_STATEMENT
+                 / REPRINT_STATEMENT         # v0.5 addendum, §5b — unchanged reprint
                  / DEF_BLOCK
                  / PROPERTIES_BLOCK
                  / PARAMETERS_BLOCK
@@ -113,6 +114,11 @@ PARAM_DECL       <- CARET_REF _ 'OF' _ (CARET_REF / 'STRING' / BRACKET_LIST)
 #   ALIAS ^"Ride" FOR ^"Drive"
 # Ships in a setting's own extension file to re-skin vocabulary.
 ALIAS_STATEMENT  <- 'ALIAS' _ CARET_REF _ 'FOR' _ HASH_ID? _ CARET_REF
+
+# REPRINT records that this book prints an existing entity unchanged (v0.5 addendum,
+# DECISION-14). It declares nothing: the target must resolve and SHOULD carry its #hash.
+#   REPRINT #tZhJv5oWt4DoTU8mwaNHNmPz ^"Folk Magic"
+REPRINT_STATEMENT <- 'REPRINT' _ HASH_ID? _ CARET_REF
 
 # ─────────────────────────────────────────────────────────────
 # 3c. v0.5 constructs (§§5c, 22-24). GUIDANCE_BLOCK is defined in §9b (BRIDGE)
@@ -328,12 +334,14 @@ ADD_STATEMENT      <- 'ADD' _ DEF_BLOCK
 # PROPERTIES inside a MODIFY INTRODUCES properties the target lacks; SET may only
 # change one it already declares (spec S13, "Changing vs. introducing a property").
 MODIFY_BODY     <- (MODIFY_ENTRY _)*
-MODIFY_ENTRY    <- SET_ENTRY / ADD_TO_ENTRY / REMOVE_FROM_ENTRY
+MODIFY_ENTRY    <- SET_DESCRIPTION_ENTRY / SET_ENTRY / ADD_TO_ENTRY / REMOVE_FROM_ENTRY
                  / PROPERTIES_BLOCK / RULES_BLOCK / COMMENT
 
 # A SET may restate the whole type (`SET ^"Magnitude" ENUM [...]`) or just adjust a
 # constraint on it (`SET ^"Starting Honor" DEFAULT 45`, as in the spec's own example).
 SET_ENTRY       <- 'SET' _ CARET_REF _ (PROPERTY_TYPE / (MODIFIER _)+)
+# A variant printing replaces the target's whole DESCRIPTION, verbatim (v0.5 addendum, §13).
+SET_DESCRIPTION_ENTRY <- 'SET' _ 'DESCRIPTION' _ STRING
 ADD_TO_ENTRY    <- 'ADD_TO' _ CARET_REF _ VALUE
 REMOVE_FROM_ENTRY <- 'REMOVE_FROM' _ CARET_REF _ VALUE
 
@@ -600,7 +608,7 @@ EOF             <- !.
 # Modifiers:     REQUIRED, FIXED, DEFAULT, MIN, MAX, FIAT
 # Scope:         APPLIES, TO
 # Rule:          WHEN, THEN
-# Modification:  OVERRIDE, ADD, MODIFY, SET, ADD_TO, REMOVE_FROM
+# Modification:  OVERRIDE, ADD, MODIFY, SET, ADD_TO, REMOVE_FROM, REPRINT
 # Parameterize:  PARAMETERS, OF (also a type keyword), ALIAS, FOR   (DECISION-6)
 # Choice:        CHOICE, PICK, OF, WHERE                            (DECISION-6)
 # References:    REFERENCES, MENTIONS (deprecated alias), REFERENCED, BY       (v0.5, §5c)

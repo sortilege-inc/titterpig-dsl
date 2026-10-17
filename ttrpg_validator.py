@@ -19,6 +19,8 @@ Two levels of validation over one or more .ttrpg files (or directories):
       options, and ALIAS FOR targets all resolve (an ALIAS name is itself a
       resolvable name)
     - MODIFICATION SYSTEM (spec §13) — see below
+    - REPRINT ^"X" (v0.5 addendum, DECISION-14): X must resolve; a file must not
+      both REPRINT and DEF the same entity
 
 MODIFICATION SYSTEM (spec §13). An overlay that names a target which does not exist
 modifies nothing, silently, forever; these checks are the gate against that.
@@ -42,6 +44,9 @@ modifies nothing, silently, forever; these checks are the gate against that.
       REMOVE_FROM ^"P" v    P must exist and be a LIST (ERROR otherwise); if P declares
                             literal members and v is not among them, WARNING — an
                             earlier layer's ADD_TO may legitimately have put it there.
+      SET DESCRIPTION "…"   replaces the target's whole DESCRIPTION with a variant
+                            printing's text (v0.5 addendum); it must be followed by a
+                            string (ERROR otherwise).
   - SET ^"P" ENUM [...] that DROPS a value warns for every loaded definition extending
     the target that still assigns a dropped value — narrowing an enum is legal, but
     orphaning a live instance with it is a mistake.
@@ -656,6 +661,14 @@ def scan_modify_body(toks, lb):
             depth -= 1
             if depth == 0:
                 break
+        elif depth == 1 and t.kind == 'ID' and t.val == 'SET' \
+                and j + 1 < len(toks) and toks[j + 1].kind == 'ID' \
+                and toks[j + 1].val == 'DESCRIPTION':
+            # v0.5 addendum (DECISION-14): a variant printing replaces the whole text.
+            ok = j + 2 < len(toks) and toks[j + 2].kind == 'STR'
+            ops.append({'op': 'SET DESCRIPTION', 'ok': ok, 'line': t.line})
+            j += 3 if ok else 2
+            continue
         elif depth == 1 and t.kind == 'ID' and t.val in ('SET', 'ADD_TO', 'REMOVE_FROM') \
                 and j + 1 < len(toks) and toks[j + 1].kind == 'CARET':
             prop = toks[j + 1].val
@@ -690,6 +703,8 @@ def analyze_file(fname, text, findings):
     def_extends = {}                     # name -> [parent names]
     mods = []                            # §13 MODIFY blocks and their operations
     adds = []                            # §13 ADD ^"X" DEF sites: (name, line)
+    reprints = []                        # REPRINT ^"X" sites: (name, line)  (DECISION-14)
+    aliases = []                         # ALIAS ^"A" FOR ^"B" sites: (alias, target, line)  (§5b)
 
     def cur_def():
         for fr in reversed(frames):
@@ -809,6 +824,20 @@ def analyze_file(fname, text, findings):
                         hsh = toks[k].val; k += 1
                     if k < len(toks) and toks[k].kind == 'CARET':
                         refs.append(('alias target', toks[k].val, hsh, toks[k].line))
+                        aliases.append((toks[idx + 1].val, toks[k].val, t.line))
+        elif w == 'REPRINT':
+            # REPRINT [#hash] ^"existing"  (v0.5 addendum, DECISION-14): a pointer to an
+            # entity this book prints unchanged. It declares nothing; the target resolves.
+            k = idx + 1
+            hsh = None
+            if k < len(toks) and toks[k].kind == 'HASH':
+                hsh = toks[k].val; k += 1
+            if k < len(toks) and toks[k].kind == 'CARET':
+                refs.append(('reprint target', toks[k].val, hsh, toks[k].line))
+                reprints.append((toks[k].val, t.line))
+            else:
+                findings.append(Finding(fname, 'lint', 'error', t.line,
+                                        "REPRINT needs a ^\"name\" (the entity reprinted)"))
         elif w == 'PARAMETERS':
             # PARAMETERS { ^"slot" OF ^"Type" ... }  (DECISION-6): each OF type
             # must resolve; the slot-name carets are local and not refs.
@@ -949,6 +978,7 @@ def analyze_file(fname, text, findings):
         'depends': depends, 'file_ids': file_ids,
         'waived_ranges': waived_ranges, 'waived_lines': waived_lines,
         'def_props': def_props, 'def_extends': def_extends, 'mods': mods, 'adds': adds,
+        'reprints': reprints, 'aliases': aliases,
     }
 
 
@@ -1346,6 +1376,10 @@ def modification_pass(files_data, findings):
             for ln in lines:
                 name_sites.setdefault(nm, []).append((d['file'], ln))
 
+    # every ALIAS declaration site, so an alias is never mistaken for the DEF it collides with
+    alias_sites = {(d['file'], ln) for d in files_data if d.get('kind') == 'ttrpg'
+                   for _a, _t, ln in d.get('aliases', [])}
+
     children = {}
     for child, parents in extends.items():
         for parent in parents:
@@ -1360,6 +1394,13 @@ def modification_pass(files_data, findings):
                 continue        # unresolvable target: already reported, once, as a ref
             for op in m['ops']:
                 if is_waived(op['line'], d):
+                    continue
+                if op['op'] == 'SET DESCRIPTION':
+                    if not op['ok']:
+                        findings.append(Finding(
+                            d['file'], 'lint', 'error', op['line'],
+                            "SET DESCRIPTION must be followed by the variant's text as a "
+                            "string (§13, v0.5 addendum)"))
                     continue
                 rec = _resolve_prop(tgt, op['prop'], props, extends)
                 if op['op'] == 'SET':
@@ -1407,6 +1448,28 @@ def modification_pass(files_data, findings):
                         d['file'], 'coherence', 'warning', op['line'],
                         "REMOVE_FROM ^\"%s\" removes \"%s\", which ^\"%s\" does not list"
                         % (op['prop'], op['value'], tgt)))
+
+        for alias, target, line in d.get('aliases', []):
+            if is_waived(line, d) or alias == target:
+                continue
+            # §5b: "an alias name must not already name a *different* entity"
+            owners = [(f, ln) for f, ln in name_sites.get(alias, [])
+                      if (f, ln) not in alias_sites]
+            if owners:
+                where = ", ".join("%s:%d" % (os.path.basename(f), ln) for f, ln in owners)
+                findings.append(Finding(
+                    d['file'], 'coherence', 'error', line,
+                    "ALIAS ^\"%s\" names an entity already defined (%s) — an alias name must not "
+                    "already name a different entity (§5b)" % (alias, where)))
+
+        for nm, line in d.get('reprints', []):
+            if is_waived(line, d):
+                continue
+            if nm in d['names']:
+                findings.append(Finding(
+                    d['file'], 'coherence', 'error', line,
+                    "REPRINT ^\"%s\" in a file that also defines it — a reprint points at an "
+                    "entity defined elsewhere (§5b, DECISION-14)" % nm))
 
         for nm, line in d['adds']:
             if is_waived(line, d):

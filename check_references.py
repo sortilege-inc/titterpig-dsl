@@ -3,7 +3,7 @@
 
 Part A — REFERENCES / REFERENCED BY (DECISION-11).
 Part B — every OTHER reference site (§5d, DECISION-13): EXTENDS, APPLIES TO,
-LIST OF, CONCERNS, OVERRIDE, MODIFY, ADD, ALIAS ... FOR. The hash is the
+LIST OF, CONCERNS, OVERRIDE, MODIFY, REPRINT, ADD, ALIAS ... FOR. The hash is the
 referent and the caret name is a readability aid, so a hashless reference whose
 name resolves to more than one distinct entity is an ERROR: nothing in the file
 says which is meant, and two consumers that invent different tie-breaks disagree
@@ -412,7 +412,7 @@ def distinct(k):
 # from two adjacent properties (`^"Category" ^"Wroth"  ^"Rating" INTEGER 3`).
 PROP_REF = re.compile(r'^[ \t]*\^"[^"]+"[ \t]+((?:#[A-Za-z0-9_]+[ \t]+)\^"[^"]+")[ \t]*$',
                       re.M)
-SITE = re.compile(r'\b(EXTENDS|LIST\s+OF|CONCERNS|OVERRIDE|MODIFY)\b'
+SITE = re.compile(r'\b(EXTENDS|LIST\s+OF|CONCERNS|OVERRIDE|MODIFY|REPRINT)\b'
                   r'[ \t]*((?:(?:#[A-Za-z0-9_]+[ \t]+)?\^"[^"]+"[ \t]*,?[ \t]*)+)')
 # Only APPLIES TO / CONCERNS take a BRACKETED list of references. `LIST OF [`
 # is an inline list of VALUES -- `^"Attacks" LIST OF [ ^"Creature Attack" DEF {...} ]`

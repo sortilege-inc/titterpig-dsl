@@ -1,12 +1,16 @@
 # Intentionally-broken §13 modification system — one instance of each finding.
 # Validate together with good.ttrpg, which declares the targets:
 #     python3 ttrpg_validator.py tests/good.ttrpg tests/mods-bad.ttrpg
-# Expected: 4 error(s), 3 warning(s).
+# Expected: 8 error(s), 3 warning(s).
 #
 #   ERROR    MODIFY names a target that does not exist
 #   ERROR    OVERRIDE names a target that does not exist
 #   ERROR    SET names a property the target does not declare
 #   ERROR    ADD_TO names a property that is not a LIST
+#   ERROR    REPRINT names a target that does not exist
+#   ERROR    REPRINT of an entity the same file defines
+#   ERROR    SET DESCRIPTION with no string after it
+#   ERROR    ALIAS whose name already names a different entity
 #   WARNING  REMOVE_FROM removes a value the list does not carry
 #   WARNING  ADD collides with a name the corpus already defines
 #   WARNING  SET narrows an ENUM that a loaded instance still assigns
@@ -52,4 +56,19 @@ EXTENSION "Demo_Core_Broken_Ext" {
             ^"Name" STRING "Crossing Blade"
         }
     }
+
+    # v0.5 addendum (DECISION-14)
+    REPRINT ^"Reprint Target That Does Not Exist Anywhere"
+
+    #DemoOwnReprintZ9yX8wV7uT6s ^"Own Reprint" DEF {
+        EXTENDS ^"Technique"
+    }
+    REPRINT #DemoOwnReprintZ9yX8wV7uT6s ^"Own Reprint"
+
+    MODIFY ^"Technique" {
+        SET DESCRIPTION
+    }
+
+    # §5b: the alias name ^"Technique" is already a different entity's name
+    ALIAS ^"Technique" FOR ^"Kuni Watcher"
 }

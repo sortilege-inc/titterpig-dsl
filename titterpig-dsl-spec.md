@@ -43,6 +43,19 @@ reference WARNs; a hashless reference whose name resolves to more than one disti
 **ERROR**. Existing files stay syntactically valid — nothing is removed from the grammar — but a
 corpus with ambiguous by-name references will now fail its references gate, which is the point.
 
+### v0.5 addendum — one entity, many printings *(2026-10-17, DECISION-14)*
+
+Additive: every file valid before stays valid.
+
+1. **`REPRINT ^"Name"`** *(new, §5b)* — a book that prints an entity **unchanged** says so with a
+   pointer, not a second `DEF`. No new entity is created; the target must resolve, and the book is
+   recorded as one of the target's printings.
+2. **`SET DESCRIPTION "…"`** *(new, §13)* — `MODIFY` may replace the target's whole `DESCRIPTION` with
+   a variant printing's verbatim text, so a reprint that differs only in wording is a `MODIFY` of the
+   original rather than a duplicate `DEF`.
+
+`ALIAS` (§5b) remains the construct for the same entity printed under a **different name**.
+
 ### v0.4 — consistency/clarity pass over v0.3
 
 v0.4 is a consistency/clarity pass over v0.3's grammar — not a redesign. Key changes:
@@ -184,6 +197,18 @@ stay valid.
   resolution is **by hash when present**; a hashless reference **WARNs**; and a hashless reference whose
   name resolves to **more than one distinct entity is an ERROR**, because no rule can choose for it.
   §6's "canonical and sufficient" language and its "validator bug" note are **withdrawn**.
+
+- **DECISION-14 — One entity, many printings: `REPRINT`, `ALIAS`, and `MODIFY … SET DESCRIPTION`**
+  *(resolved, v0.5 addendum, 2026-10-17)* (§5b, §13): sourcebooks routinely reprint an entity another
+  book already defines — a Virtue from a supplement folded into a later core, or one book's Flaw
+  reprinted in another. Converted as a second `DEF`, the reprint becomes a second entity: consumers
+  list it twice, and a conversion that must keep names unique invents labels like
+  `"Finding Hidden Loot (Between Sand & Sea)"` that no book prints. The decision is that a printing
+  which adds nothing is a **pointer**, chosen by what differs: **nothing** → `REPRINT ^"Name"`; **only
+  the name** → `ALIAS ^"New" FOR ^"Existing"`; **the wording** → `MODIFY ^"Existing" { SET DESCRIPTION
+  "…" }`, which carries the variant text verbatim and lets precedence (§13) decide which printing a
+  composition shows. An empty `MODIFY` was rejected as the reprint marker: it reads as an unfinished
+  patch, and says nothing about the book printing the entity.
 
 ## 1. Overview & Design Principles
 
@@ -481,6 +506,20 @@ nothing and changes nothing. Aliases are edition-scoped, so a setting ships an `
 extension file to re-skin vocabulary without touching base definitions (a VtM 1200s campaign
 renaming `Drive` to `Ride`). The `FOR` target must resolve; alias chains must be acyclic; an alias
 name must not already name a *different* entity. An alias may target a bound reference.
+
+#### Reprints — the same entity printed again *(v0.5 addendum, DECISION-14)*
+
+`REPRINT` records that this file's book prints an existing entity **unchanged**:
+
+```
+REPRINT #tZhJv5oWt4DoTU8mwaNHNmPz ^"Folk Magic"
+```
+
+It declares **no** new entity and mints no anchor: references to the name resolve to the original,
+and consumers list the entity once, noting this book among its printings. The target must resolve and
+**SHOULD** carry its `#hash` (§5d). A file must not both `REPRINT` and `DEF` the same entity, and an
+entity the file itself defines cannot be its own reprint. When the reprint's **name** differs, use
+`ALIAS` instead; when its **wording** differs, use `MODIFY … SET DESCRIPTION` (§13).
 
 #### Choices
 
@@ -1108,8 +1147,26 @@ Within a `MODIFY` block:
 - `SET` — change a property value or constraint
 - `ADD_TO` — append to a list property
 - `REMOVE_FROM` — remove from a list property
+- `SET DESCRIPTION "…"` — replace the target's whole `DESCRIPTION` *(v0.5 addendum)*
 - `PROPERTIES { … }` — **introduce** properties the target does not have
 - `RULES { … }` — modify individual rules (below)
+
+### Variant printings — `SET DESCRIPTION` *(v0.5 addendum, DECISION-14)*
+
+A book that reprints an entity in **different words** — a corrected sentence, a reordered paragraph —
+expresses it as a `MODIFY` of the original whose `SET DESCRIPTION` carries the variant's text,
+verbatim and whole:
+
+```
+MODIFY #DemoRisingBladeX2yZ4aB6cD ^"Rising Blade" {
+    SET DESCRIPTION "Strike upward from a low guard. (The reprint's wording, whole and verbatim.)"
+}
+```
+
+The replacement is the **entire** description, never a diff, so the variant stays byte-verbatim and
+needs no patch language. `SET DESCRIPTION` must be followed by a string. Which printing a consumer
+shows is load order (*Composition & Precedence*, below). Only the name differing is an `ALIAS`;
+nothing differing is a `REPRINT` (§5b).
 
 ### Changing vs. introducing a property *(v0.4, decided 2026-07-25)*
 
@@ -1247,7 +1304,7 @@ Only these keywords are reserved by the base spec:
 
 **Rule structure:** `WHEN`, `THEN`
 
-**Modification:** `OVERRIDE`, `ADD`, `MODIFY`, `SET`, `ADD_TO`, `REMOVE_FROM`
+**Modification:** `OVERRIDE`, `ADD`, `MODIFY`, `SET`, `ADD_TO`, `REMOVE_FROM`, `REPRINT`
 
 **Text:** `DESCRIPTION`, `TEXT`
 

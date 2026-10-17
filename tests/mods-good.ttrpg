@@ -39,6 +39,15 @@ EXTENSION "Demo_Core_Ext" {
         }
     }
 
+    # REPRINT: this book prints ^"Kuni Watcher" unchanged — a pointer, no new entity
+    # (v0.5 addendum, DECISION-14)
+    REPRINT #DemoNpcQ4sT6uW8xY0zA2bC4d ^"Kuni Watcher"
+
+    # a variant printing: the whole DESCRIPTION replaced with the reprint's wording
+    MODIFY #DemoCrossingBladeW7xY9zA1bC3 ^"Crossing Blade" {
+        SET DESCRIPTION "A cross-body cut, as the second book prints it."
+    }
+
     # ADD introduces content the parent does not have
     ADD #DemoRisingBladeX2yZ4aB6cD ^"Rising Blade" DEF {
         EXTENDS ^"Technique"
