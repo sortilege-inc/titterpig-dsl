@@ -115,8 +115,9 @@ PARAM_DECL       <- CARET_REF _ 'OF' _ (CARET_REF / 'STRING' / BRACKET_LIST)
 # Ships in a setting's own extension file to re-skin vocabulary.
 ALIAS_STATEMENT  <- 'ALIAS' _ CARET_REF _ 'FOR' _ HASH_ID? _ CARET_REF
 
-# REPRINT records that this book prints an existing entity unchanged (v0.5 addendum,
-# DECISION-14). It declares nothing: the target must resolve and SHOULD carry its #hash.
+# REPRINT records that this book prints an existing entity whose text the target holds --
+# unchanged, or in an older wording the target supersedes (v0.5 addendum, DECISION-14). It
+# declares nothing: the target must resolve and SHOULD carry its #hash.
 #   REPRINT #tZhJv5oWt4DoTU8mwaNHNmPz ^"Folk Magic"
 REPRINT_STATEMENT <- 'REPRINT' _ HASH_ID? _ CARET_REF
 
