@@ -9,8 +9,26 @@
 
 ## 0. What changed
 
-The DSL is **at v0.5**. This section leads with the v0.5 additions, then keeps the v0.4 changelog for
-history; the *Resolved decisions* subsections below (through DECISION-13) carry the full detail.
+The DSL is **at v0.5**, and a v0.6 working draft is in progress. This section lists the v0.6 changes
+first, then the v0.5 additions, then the v0.4 changelog for history; the *Resolved decisions*
+subsections below carry the full detail.
+
+### v0.6 — working draft *(in progress, 2026-11)*
+
+Changes made since v0.5, listed as they are decided. **Not all are additive.**
+
+1. **`CHOOSE n` replaces `CHOICE`** *(§5b, DECISION-15; not additive)* — one construct for a choice,
+   with the count always written: `CHOOSE 1 [ … ]`, `CHOOSE 3 OF ^"Type" WITH { … }`. `CHOICE`,
+   `PICK` and `WHERE` are removed. `DISTINCT` (the default) and `INDISTINCT` say whether one option
+   may be picked more than once.
+2. **`BOOLEAN` takes an inline value** *(§8)* — `^"Starting" BOOLEAN true`, as `STRING` and `INTEGER`
+   already did.
+3. **`SET` and `TRANSFORM`** *(new, §8, DECISION-16)* — a change to a value says which kind it is:
+   `#hash ^"Glory" SET 44` (becomes 44), `#hash ^"Command" TRANSFORM ADD 1` (goes up by 1). The
+   methods are `ADD`, `SUBTRACT`, `MULTIPLY` and `DIVIDE`, with `ROUND`, `MIN` and `MAX`, and
+   `TRANSFORM MANUAL "…"` for what they cannot express.
+4. **`REF`** *(new, §8, DECISION-17)* — a property type that holds a reference to one entity:
+   `^"Clan" REF #hash ^"Crab"`, declared on the type as `REF OF #hash ^"Clan"`.
 
 ### v0.5 — five new constructs, and one rule tightened *(current)*
 
@@ -118,9 +136,9 @@ v0.4 is a consistency/clarity pass over v0.3's grammar — not a redesign. Key c
   (`PARAMETERS { ^"subject" OF ^"Ability" }`) that **bound references** fill
   (`^"Puissant"(^"Single Weapon")`, `^"Area Lore"("Normandy")`) — one base entity, a family of
   instances. **`ALIAS ^"Ride" FOR ^"Drive"`** makes one name a display synonym of an existing entity
-  (a setting-level rename; same entity/hash, no value change). **`CHOICE [ … ]`** is a structured
-  "pick from these" value — specific entities, verbatim strings, or quantified typed slots
-  (`1 OF ^"Virtue" WHERE { ^"Size" "Major" }`). Motivated by ArM5's pervasive parameterized virtues
+  (a setting-level rename; same entity/hash, no value change). **A choice** is a structured
+  "pick from these" value — specific entities, verbatim strings, or a number of entities of a type
+  (written `CHOOSE n` since v0.6; DECISION-15 replaced the keyword this decision introduced). Motivated by ArM5's pervasive parameterized virtues
   (Puissant/Great/Affinity), "A or B" required virtues, and setting vocabulary re-skins. The bare
   `^"Name"` form is unchanged; these are additive.
 
@@ -213,6 +231,44 @@ stay valid.
   empty `MODIFY` was rejected as the reprint marker: it reads as an unfinished patch, and says nothing
   about the book printing the entity.
 
+### Resolved decisions (2026-11-11, v0.6 working draft)
+
+- **DECISION-15 — `CHOOSE n` replaces `CHOICE`** *(resolved, v0.6)* (§5b): DECISION-6 gave a choice
+  the form `CHOICE [ … ]`, with `PICK n` for a count other than one and `n OF ^"Type" WHERE { … }` for
+  an open allotment. Three corpora adopted it (root, TEETH, arm5e: 360 statements). l5r5e had already
+  written 308 choices as `CHOOSE n [ … ]`, and the synthesist reads that form and has no handling for
+  the other. The decision is to keep one: **`CHOOSE n`**, with the count always written. `CHOICE` and
+  `PICK` are removed, with no deprecated alias: `CHOICE` is a warning in a file that declares a
+  `SPEC_VERSION` below 0.6 and an error in one that declares 0.6 or later. A choice from a type is `CHOOSE n OF ^"Type"`. What
+  must be true of each entity chosen is stated by **`WITH { … }`**, which replaces `WHERE`: each term
+  is a property and one value in brackets (a comma is not an implicit "or"), terms are joined by
+  `AND` or `OR`, and `NOT` negates one. A condition nested inside another is **not yet defined (to-do)**. `DISTINCT` and `INDISTINCT`
+  say whether one option may be picked more than once; with neither word a choice is `DISTINCT`. An
+  option that names an entity is a reference site and carries the entity's `#hash` (§5d). This is the
+  first change since v0.4 that is not additive: a v0.5 file that uses `CHOICE` is not a valid v0.6
+  file.
+
+- **DECISION-16 — A change to a value says what kind of change it is: `SET` and `TRANSFORM`**
+  *(resolved, v0.6)* (§8): corpora wrote "the value becomes 44" and "add 1 to the value" the same
+  way, as a bare `INTEGER`, and told them apart by the name of the property they sat under
+  (`^"Glory" INTEGER 44` beside `^"Skill Increases" DEF { ^"Command" INTEGER 1 }`). Elsewhere a change
+  was a signed number in a string (`MODIFIERS { ^"Glory" "+3" }`). The decision is two primitives.
+  `<target> SET <amount>` makes the value the amount. `<target> TRANSFORM <METHOD> <amount>` changes
+  it, by one of a closed set of methods: `ADD`, `SUBTRACT`, `MULTIPLY`, `DIVIDE`. A `TRANSFORM` may
+  be followed by `ROUND UP|DOWN|NEAREST`, `MIN n` and `MAX n`. The amount is an integer or a
+  reference to another value. `TRANSFORM MANUAL "…"` carries, in the source's words, a change the
+  methods cannot express; it is the escape §21 already uses. The target is a reference to the thing
+  changed, so it is a reference site (§5d), or it is a `CHOOSE`. **Flagged for review:** `SET` is
+  also a directive inside `MODIFY` (§13), written before its target, where it patches a definition
+  when files are composed. The two uses are told apart by position.
+
+- **DECISION-17 — A property that names one entity holds a reference: `REF`** *(resolved, v0.6)*
+  (§8): the type table had `LIST OF ^"Type"` for many entities and nothing for one, so corpora and
+  this spec's own examples wrote the entity's name in a string (`^"Clan" STRING "Crab"`), which no
+  gate checks. `REF` is the property type for one entity: `REF OF ^"Type"` declares it, taking the
+  type's name as the property's name, and `^"Name" REF ^"Entity"` gives its value. Both are reference sites, and the entity must be of the declared
+  type.
+
 ## 1. Overview & Design Principles
 
 Titterpig is a domain-specific language (DSL) for defining tabletop role-playing game (TTRPG) systems, content, and narrative structures. The base specification defines a **system-agnostic syntax toolkit** — it owns the grammar, while each game system owns its vocabulary.
@@ -246,15 +302,46 @@ Everything else. Keywords like `CURRICULUM`, `SCHOOL_ABILITY`, `POWERS`, `AMALGA
 The base spec is permissive: the grammar accepts almost any well-formed block. That flexibility must **not** be used to bury data in prose. **Mechanically-critical data — anything a tool will read (bonuses, costs, dice, ranks, stats, prerequisites) — must be represented structurally, not packed into free-text strings or comments.**
 
 ```
-# Avoid — data trapped in a string:
-^"Ring Increase" STRING "+1 Earth or Fire, +1 Command, Glory 44, 4 koku"
+# Avoid — everything in one string:
+#h9k7mQ2vX7wZ9tB4cD1a ^"Hida" DEF {
+    EXTENDS #p4Tz8LwQ1nRv6YbK3xGs ^"Family"
+    DESCRIPTION """
+        Ring Increase: +1 Earth or +1 Fire
+        Skill Increases: +1 Command, +1 Tactics
+        Glory: 44
+        Starting Wealth: 4 koku
+    """
+}
+
+# Avoid — the fields named, the values still packed in strings:
+#h9k7mQ2vX7wZ9tB4cD1a ^"Hida" DEF {
+    EXTENDS #p4Tz8LwQ1nRv6YbK3xGs ^"Family"
+    PROPERTIES {
+        ^"Ring Increase"   STRING "+1 Earth or +1 Fire"
+        ^"Skill Increases" STRING "+1 Command, +1 Tactics"
+        ^"Glory"           INTEGER 44
+        ^"Wealth"          STRING "4 koku"
+    }
+}
 
 # Prefer — structured, machine-readable:
-^"Ring Increase" DEF {
-    ^"Earth" INTEGER 1
-    ^"Command" INTEGER 1
-    ^"Glory" INTEGER 44
-    ^"Koku" INTEGER 4
+#h9k7mQ2vX7wZ9tB4cD1a ^"Hida" DEF {
+    EXTENDS #p4Tz8LwQ1nRv6YbK3xGs ^"Family"
+    APPLIES TO [#c2Hn7VdM9sXq5JrW8eLf ^"Samurai"]
+
+    PROPERTIES {
+        ^"Family Name" STRING "Hida" FIXED
+        ^"Clan"        REF #w6Jc1ZpR4mXe9LtV3bKn ^"Crab"
+        ^"Ring Increase" DEF {
+            CHOOSE 1 [#k3nP8mQ2vX7wZ9tB4cD1 ^"Earth", #r7Yt2LmW9qKc4VbN6xHs ^"Fire"] TRANSFORM ADD 1
+        }
+        ^"Skill Increases" DEF {
+            #d8Sg5QhT2yNk7McA4vPr ^"Command" TRANSFORM ADD 1
+            #f1Bn6WxE3zHj9RdL5sUo ^"Tactics" TRANSFORM ADD 1
+        }
+        #m2Vq7KcY4tGf8NwJ6pXa ^"Glory" SET 44
+        ^"Wealth" DEF { ^"Count" INTEGER 4  ^"Type" STRING "koku"  ^"Starting" BOOLEAN true }
+    }
 }
 ```
 
@@ -526,29 +613,83 @@ The target must resolve and **SHOULD** carry its `#hash` (§5d). A file must not
 reprint's **name** differs, use `ALIAS` instead; when the reprint's **own wording** should take effect,
 use `MODIFY … SET DESCRIPTION` (§13).
 
-#### Choices
+#### Choices — `CHOOSE n` *(v0.6, DECISION-15)*
 
-A `CHOICE` is a structured **value** — usable anywhere a value or bracket-list item is (inside a
-`^"Required Virtues"` list, a `CHOICES` block, a property). It models "A or B" and open-allotment
-requirements so consumers can present a decision rather than parse prose:
+`CHOOSE` says that a number of things are picked, and from what. The count is always written.
 
 ```
-CHOICE [ ^"Demonic Might", ^"Demonic Powers" ]           # pick exactly one of these entities
+CHOOSE 1 [ #hash ^"Demonic Might", #hash ^"Demonic Powers" ]    # one of these two entities
+CHOOSE 5 [ #hash ^"Fitness", #hash ^"Command", … ]               # five of those listed
+CHOOSE 1 [ "Charm", "Cunning", "Finesse", "Luck", "Might" ]     # options may be strings
+CHOOSE 2 OF #hash ^"Roguish Feat"                                 # any two entities of a type
+CHOOSE 3 OF #hash ^"Virtue" WITH { ^"Size" ["Minor"] AND ^"Category" ["Supernatural"] }
+```
 
-CHOICE [
-    1 OF ^"Virtue" WHERE { ^"Size" "Major", ^"Category" "Supernatural" },
-    3 OF ^"Virtue" WHERE { ^"Size" "Minor", ^"Category" "Supernatural" }
+**From a list.** `CHOOSE n [ … ]` picks `n` of the options listed. An option is one of:
+
+- an entity reference, which may be a bound reference;
+- a verbatim string, for an option the corpus has no entity for (completeness wins over shape);
+- another `CHOOSE`.
+
+**From a type.** `CHOOSE n OF ^"Type"` picks `n` entities of that type: every DEF that `EXTENDS` it,
+directly or through a chain.
+
+**`WITH` — what must be true of each entity chosen.** A `WITH { … }` may follow `CHOOSE n OF
+^"Type"`. Each term is a property of the type and one value in brackets. A term holds when the
+entity's property has that value. Terms are joined by `AND` or by `OR`, and `NOT` before a term
+negates it:
+
+```
+WITH { ^"Size" ["Minor"] }
+WITH { ^"Size" ["Minor"] AND ^"Category" ["Supernatural"] }
+WITH { ^"Size" ["Major"] OR ^"Size" ["Minor"] }
+WITH { ^"Category" ["Supernatural"] AND NOT ^"Size" ["Free"] }
+```
+
+A value is a string, an integer, `true` / `false`, or an entity reference. A term takes exactly one
+value: a comma is not an implicit "or", and `^"Size" ["Major", "Minor"]` is an error. One `WITH`
+joins its terms with `AND` throughout or with `OR` throughout.
+
+> **To-do — nested conditions.** A condition inside another (`A AND (B OR C)`) is not yet defined, so
+> a `WITH` that mixes `AND` and `OR` is an error until it is.
+
+**`DISTINCT` and `INDISTINCT`.** `CHOOSE DISTINCT n …` picks `n` different options. `CHOOSE
+INDISTINCT n …` lets one option be picked more than once. With neither word the choice is `DISTINCT`.
+
+**One or the other.** A list option may itself be a `CHOOSE`, for "one Major Virtue, or three Minor
+ones":
+
+```
+CHOOSE 1 [
+    CHOOSE 1 OF #hash ^"Virtue" WITH { ^"Size" ["Major"] AND ^"Category" ["Supernatural"] },
+    CHOOSE 3 OF #hash ^"Virtue" WITH { ^"Size" ["Minor"] AND ^"Category" ["Supernatural"] }
 ]
 ```
 
-- An option is a specific entity (`^"Name"`, possibly a bound reference), a **quantified typed
-  slot** (`<count> OF ^"Type" WHERE { <field> <value> … }` — pick N entities of that type matching
-  the field constraints), or a **verbatim string** (the completeness escape hatch when nothing
-  structured fits — completeness always wins over shape).
-- Optional `CHOICE PICK n [ … ]` sets how many options are chosen (default 1).
-- Coherence: option caret refs and slot types must resolve; slot `WHERE` fields must be real fields
-  of the named type; `PICK n` must not exceed the option count. Verbatim-string options are
-  unchecked.
+**Where a `CHOOSE` may stand.**
+
+- As a property's value: `^"Background" CHOOSE 1 [ … ]`.
+- As an item in a list, beside fixed items: `[ #hash ^"Second Sight", CHOOSE 1 [ … ] ]`.
+- After a system keyword, in a template's `CHOICES` block, or alone in a block:
+  `KATA CHOOSE 1 [ … ]`.
+- In place of a name or a target. Where a block gives each named thing a value or a change (§8), a
+  `CHOOSE` may stand where the name would, and what follows applies to each option chosen:
+  `^"Ring Increase" DEF { CHOOSE 1 [ #hash ^"Earth", #hash ^"Fire" ] TRANSFORM ADD 1 }`.
+
+**References.** An entity option and the type after `OF` are reference sites (§5d): each resolves,
+and each SHOULD carry the entity's `#hash`.
+
+**Coherence.**
+
+- The count is a positive integer. In a `DISTINCT` choice from a list it must not exceed the number
+  of options.
+- Every entity option and every `OF` type resolves. String options are unchecked.
+- Every property named in a `WITH` is a property of the type, its own or inherited.
+- A `WITH` term has exactly one value, and a `WITH` does not mix `AND` and `OR`.
+
+**`CHOICE` in an older file.** A file that declares a `SPEC_VERSION` below 0.6, or none, and still
+writes `CHOICE` raises a **warning**; its options are still resolved. A file that declares
+`SPEC_VERSION "0.6"` or later and writes `CHOICE` raises an **error**.
 
 ### §5c — In-prose references: the `REFERENCES` block *(v0.4 as `MENTIONS`; v0.5, DECISION-11)*
 
@@ -703,8 +844,10 @@ Instances use the **same** grammar as definitions — no `=` assignments, no dot
 ### §5d — Reference resolution: one rule for every construct *(v0.5, DECISION-13)*
 
 A **reference site** is any place one definition names *an entity that already exists*: `EXTENDS`,
-`APPLIES TO`, `LIST OF`, `CONCERNS`, `OVERRIDE`, `MODIFY`, the target of `ALIAS … FOR`, and the
-`REFERENCES` / `REFERENCED BY` targets of §5c. All of them obey the same rule.
+`APPLIES TO`, `LIST OF`, `CONCERNS`, `OVERRIDE`, `MODIFY`, the target of `ALIAS … FOR`, an entity
+option or `OF` type of a `CHOOSE` (§5b), the type and the value of a `REF` and the target of a `SET`
+or `TRANSFORM` (§8), and the `REFERENCES` / `REFERENCED BY` targets of §5c. All of them obey the same
+rule.
 
 **Declaration sites are not reference sites.** `ADD #hash ^"Name" DEF { … }` (§13) *asserts new
 content*, so its hash is an anchor being minted, not a pointer to one; `ALIAS ^"New" FOR ^"Existing"`
@@ -820,11 +963,12 @@ PROPERTIES {
 |------|--------|-------------|
 | STRING | `STRING [value] [REQUIRED\|FIXED]` | Text value |
 | INTEGER | `INTEGER [MIN n] [MAX n] [DEFAULT n] [REQUIRED]` | Numeric value with optional constraints |
-| BOOLEAN | `BOOLEAN [DEFAULT true\|false]` | True/false |
+| BOOLEAN | `BOOLEAN [true\|false] [DEFAULT true\|false]` | True/false |
 | ENUM | `ENUM ["val1", "val2", ...]` | Constrained choice |
 | LIST | `LIST ["val1", "val2"]` | Literal list of values |
 | LIST OF | `LIST OF ^"TypeName"` | Typed collection referencing another DEF |
 | LIST OF STRING | `LIST OF STRING [values]` | Typed collection of strings with optional defaults |
+| REF | `REF OF ^"TypeName"` · `^"Name" REF ^"Entity"` | Reference to one entity *(v0.6, see below)* |
 | DEF (nested) | `^"Name" DEF { ... }` | Nested structured object |
 
 ### Modifiers (apply to any type)
@@ -841,10 +985,95 @@ A property can include its value inline at declaration time:
 
 ```
 ^"School Name" STRING "Hida Defender" FIXED
-^"Clan" STRING "Crab"
+^"Clan" REF #hash ^"Crab"
 ^"Combat Conflict Rank" INTEGER 2
+^"Starting" BOOLEAN true
 ^"In-Clan Disciplines" LIST OF STRING ["Celerity", "Potence", "Presence"]
 ```
+
+### One entity — `REF` *(v0.6, DECISION-17)*
+
+A property that names one entity holds a reference to it. A name in a `STRING` is not checked; a
+`REF` is.
+
+```
+# on the type: what kind of entity the property points at
+REF OF #hash ^"Clan" REQUIRED
+
+# on an instance: the entity it points at
+^"Clan" REF #hash ^"Crab"
+```
+
+- `REF OF ^"Type"` declares the property, and the property takes the type's name: `REF OF ^"Clan"`
+  declares a property `^"Clan"`. The name is not written a second time.
+- A property whose name differs from its type writes the name: `^"Patron" REF OF #hash ^"Virtue"`.
+- `REF ^"Entity"`, after the property's name, gives its value. An instance inherits the declaration
+  and writes only the value; both may be written on one line
+  (`REF OF #hash ^"Clan" #hash ^"Crab"`).
+- The type and the entity are reference sites (§5d).
+- Coherence: both resolve. Where the type is declared, the entity must be of that type: it
+  `EXTENDS` it, directly or through a chain.
+- For several entities, use `LIST OF ^"Type" [ … ]`.
+
+### Changes to a value — `SET` and `TRANSFORM` *(v0.6, DECISION-16)*
+
+An entity often changes a value that belongs to something else: a family adds 1 to a skill, a
+heritage sets starting Glory, a condition halves movement. A change names its target and says what
+happens to it.
+
+```
+#hash ^"Glory"   SET 44                                  # the value becomes 44
+#hash ^"Command" TRANSFORM ADD 1                         # the value goes up by 1
+#hash ^"Honor"   TRANSFORM SUBTRACT 5
+#hash ^"Damage"  TRANSFORM MULTIPLY 2
+#hash ^"Speed"   TRANSFORM DIVIDE 2 ROUND DOWN MIN 1
+#hash ^"TN"      TRANSFORM ADD #hash ^"School Rank"      # the amount is another value
+#hash ^"Damage Die" TRANSFORM MANUAL "increase the die by one step"
+CHOOSE 1 [ #hash ^"Earth", #hash ^"Fire" ] TRANSFORM ADD 1
+```
+
+- **Target.** A reference to the thing whose value changes, or a `CHOOSE` (§5b), in which case the
+  change applies to each option chosen. A target that is a reference is a reference site (§5d).
+- **`SET <amount>`.** The value becomes the amount.
+- **`TRANSFORM <METHOD> <amount>`.** The value is changed by the method. The methods are a closed
+  set: `ADD`, `SUBTRACT`, `MULTIPLY`, `DIVIDE`. Write the method the source prints: "−5" is
+  `SUBTRACT 5`.
+- **Amount.** An integer, or a reference to another value. Dice amounts are not yet defined.
+- **`ROUND UP`, `ROUND DOWN`, `ROUND NEAREST`.** How a result that is not whole is rounded.
+- **`MIN n`, `MAX n`.** The result is not below `n`, or not above it.
+- **`TRANSFORM MANUAL "…"`.** A change the methods cannot express, in the source's own words,
+  verbatim. It is the same escape §21 uses for a conversion that needs judgement.
+
+A change may stand wherever a property may: in a `PROPERTIES` block, in a nested property `DEF`, or
+in a system block. When a change applies, and to whom, is not part of the change. That stays with the
+entity that carries it, with `APPLIES TO`, and with the text.
+
+### Where a statement ends *(v0.6)*
+
+The DSL has no statement terminator. Two statements end at a place where a reference may or may not
+follow: `REF OF ^"Type"`, which an entity may follow, and `SET` or `TRANSFORM <METHOD>`, which an
+amount may follow. One rule settles both:
+
+**A reference that is followed by a property type (`STRING`, `INTEGER`, `BOOLEAN`, `ENUM`, `LIST`,
+`REF`), `DEF`, `CHOOSE`, `SET`, `TRANSFORM` or `MODIFY` opens the next statement.** It is not the
+entity or the amount of the statement before it.
+
+```
+REF OF #hash ^"Clan"                      # declares the property; gives no entity
+^"Glory" INTEGER MIN 0 MAX 100            # ^"Glory" is followed by INTEGER: a new statement
+
+#hash ^"Command" TRANSFORM ADD            # an error: no amount
+#hash ^"Tactics" TRANSFORM ADD 1          # ^"Tactics" is followed by TRANSFORM: a new statement
+```
+
+> **For review — two uses of `SET`.** `SET` is also a directive inside a `MODIFY` block (§13), written
+> before its target (`SET ^"Starting Honor" DEFAULT 45`), where it patches a definition when files
+> are composed. Here it follows its target and describes a change in play. Position tells them
+> apart: directly inside a `MODIFY` body it is the §13 directive. Whether one word should serve both
+> is to be reviewed.
+
+Coherence: the target resolves; the method is one of the four, or `MANUAL` followed by a string; the
+amount is an integer or a reference that resolves; `ROUND` is followed by `UP`, `DOWN` or `NEAREST`.
 
 ### FIAT — Intentional Exceptions *(v0.4)*
 
@@ -992,12 +1221,14 @@ OPPORTUNITIES {
 }
 
 FAMILIES {
-    ^"Hida" "+1 Earth or Fire, +1 Command, +1 Tactics, Glory 44, 4 koku"
+    ^"Hida"
+    ^"Hiruma"
+    ^"Kaiu"
 }
 
 HERITAGE_TABLE {
     1 ^"Famous Deed" DEF {
-        MODIFIERS { ^"Glory" "+3" }
+        MODIFIERS { #hash ^"Glory" TRANSFORM ADD 3 }
         SUB_TABLE "1d10" {
             "1-2" "A famous weapon: Receive one weapon of rarity 7 or lower"
         }
@@ -1007,7 +1238,7 @@ HERITAGE_TABLE {
     # heritage tables assign one result to several rolls; the range is part
     # of the structure, never a note in prose.
     2-3 ^"Triumph over the Lion" DEF {
-        MODIFIERS { ^"Honor" "+5" }
+        MODIFIERS { #hash ^"Honor" TRANSFORM ADD 5 }
         SUB_TABLE "1d10" {
             "1-3" "A weapon"
             "9" "A horse or another animal"
@@ -1016,7 +1247,7 @@ HERITAGE_TABLE {
 
     # Where an entry grants something outright instead of a second roll.
     10 ^"Imperial Heritage" DEF {
-        MODIFIERS { ^"Status" "+10" }
+        MODIFIERS { #hash ^"Status" TRANSFORM ADD 10 }
         EFFECT { "Gain the ^\"Blessed Lineage\" distinction" }
     }
 }
@@ -1302,11 +1533,15 @@ Only these keywords are reserved by the base spec:
 
 **Definition:** `DEF`, `ACTOR`, `TEMPLATE`, `CHOICES`, `PROPERTIES`, `RULES`
 
-**Types:** `STRING`, `INTEGER`, `BOOLEAN`, `ENUM`, `LIST`, `OF`
+**Types:** `STRING`, `INTEGER`, `BOOLEAN`, `ENUM`, `LIST`, `OF`, `REF`
+
+**Changes (§8):** `SET`, `TRANSFORM`, `ADD`, `SUBTRACT`, `MULTIPLY`, `DIVIDE`, `ROUND`, `UP`, `DOWN`, `NEAREST`, `MANUAL` (`SET` and `ADD` are shared with **Modification**, `MANUAL` with **Bridge**, `MIN` / `MAX` with **Modifiers**)
 
 **Modifiers:** `REQUIRED`, `FIXED`, `DEFAULT`, `MIN`, `MAX`, `FIAT`
 
 **Scope:** `APPLIES`, `TO`, `ALIAS`
+
+**Choice (§5b):** `CHOOSE`, `DISTINCT`, `INDISTINCT`, `WITH`, `AND`, `OR`, `NOT` (`OF` is shared with **Types**)
 
 **Rule structure:** `WHEN`, `THEN`
 
@@ -2226,8 +2461,8 @@ BASE "L5R5e_Core" {
     #L5R003xY4zA ACTOR "Samurai" DEF {
         EXTENDS #L5R001aB2cD ^"Entity"
         PROPERTIES {
-            ^"Clan" STRING REQUIRED
-            ^"School" STRING
+            REF OF ^"Clan" REQUIRED
+            REF OF ^"School"
             ^"School Rank" INTEGER MIN 1 MAX 6 DEFAULT 1
             ^"Honor" INTEGER MIN 0 MAX 100
             ^"Glory" INTEGER MIN 0 MAX 100
@@ -2266,7 +2501,7 @@ BASE "L5R5e_Core" {
         EXTENDS ^"School"
         APPLIES TO [^"Samurai"]
         PROPERTIES {
-            ^"Clan" STRING "Crab" FIXED
+            ^"Clan" REF ^"Crab" FIXED
             ^"Roles" LIST ["Bushi", "Guardian"]
             ^"Starting Honor" INTEGER DEFAULT 40
             ^"Starting Skills" LIST OF ^"Skill"
@@ -2343,7 +2578,7 @@ BASE "VTM5e_Core" {
     #X3yZ5aB7cD ACTOR "Kindred" DEF {
         EXTENDS #VnK8MrPxWb ^"Entity"
         PROPERTIES {
-            ^"Clan" STRING REQUIRED
+            REF OF ^"Clan" REQUIRED
             ^"Generation" INTEGER MIN 4 MAX 16
             ^"Hunger" INTEGER MIN 0 MAX 5 DEFAULT 1
             ^"Humanity" INTEGER MIN 0 MAX 10 DEFAULT 7
@@ -2404,7 +2639,7 @@ BASE "VTM5e_Core" {
         EXTENDS ^"Discipline Power"
         PROPERTIES {
             ^"Level" INTEGER 1
-            ^"Parent" STRING "Dominate"
+            ^"Parent" REF ^"Dominate"
         }
         COST "Free"
         DICE_POOL "Charisma + Domination vs. Wits + Resolve"
@@ -2418,7 +2653,7 @@ BASE "VTM5e_Core" {
         EXTENDS ^"Clan"
         PROPERTIES {
             ^"Clan Name" STRING "Brujah" FIXED
-            ^"In-Clan Disciplines" LIST OF STRING ["Celerity", "Potence", "Presence"]
+            ^"In-Clan Disciplines" LIST OF ^"Discipline" [^"Celerity", ^"Potence", ^"Presence"]
         }
         TRIGGER ^"Bestial Failure"
         RULES {
@@ -2444,7 +2679,7 @@ BASE "ArM5e_Core" {
         EXTENDS ^"Character"
         PROPERTIES {
             ^"Name" STRING REQUIRED
-            ^"House" STRING REQUIRED
+            REF OF ^"House" REQUIRED
             ^"Age" INTEGER MIN 25
             ^"Techniques" DEF {
                 ^"Creo" INTEGER MIN 0 DEFAULT 0
@@ -2496,8 +2731,8 @@ BASE "ArM5e_Core" {
     ^"Pilum of Fire" DEF {
         EXTENDS ^"Formulaic Spell"
         PROPERTIES {
-            ^"Technique" STRING "Creo" FIXED
-            ^"Form" STRING "Ignem" FIXED
+            ^"Technique" REF ^"Creo" FIXED
+            ^"Form" REF ^"Ignem" FIXED
             ^"Level" INTEGER 20
             ^"Range" STRING "Voice"
             ^"Duration" STRING "Momentary"

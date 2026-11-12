@@ -1,6 +1,6 @@
 BASE "Demo_Decision6" {
-    NAME "DECISION-6 fixture — parameterized refs, aliases, choices"
-    SPEC_VERSION "0.4"
+    NAME "DECISION-6 / 15 / 16 / 17 fixture — parameterized refs, aliases, CHOOSE, changes, REF"
+    SPEC_VERSION "0.6"
     VERSION "1.0"
     RELEASE_DATE "2026-07-14"
 
@@ -46,11 +46,57 @@ BASE "Demo_Decision6" {
         PROPERTIES {
             ^"Virtues" LIST [ ^"Puissant"(^"Single Weapon"), ^"Great"(^"Stamina") ]
             ^"Abilities" LIST [ ^"Area Lore"("Normandy"), ^"Ride" ]
-            ^"Required" CHOICE [ ^"Demonic Might", ^"Demonic Powers" ]
-            ^"Allotment" CHOICE [
-                1 OF ^"Virtue" WHERE { ^"Size" "Major", ^"Category" "Supernatural" },
-                3 OF ^"Virtue" WHERE { ^"Size" "Minor", ^"Category" "Supernatural" }
+            ^"Required" CHOOSE 1 [ #Decision6DemonMight0ffffffff ^"Demonic Might", #Decision6DemonPower0gggggggg ^"Demonic Powers" ]
+            ^"Allotment" CHOOSE 1 [
+                CHOOSE 1 OF #Decision6Virtue00cccccccccc ^"Virtue" WITH { ^"Size" ["Major"] AND ^"Category" ["Supernatural"] },
+                CHOOSE 3 OF #Decision6Virtue00cccccccccc ^"Virtue" WITH { ^"Size" ["Minor"] AND ^"Category" ["Supernatural"] }
             ]
+            # v0.6 forms (DECISION-15): string options, DISTINCT / INDISTINCT, OR, NOT, a
+            # CHOOSE as a list item, and a CHOOSE in place of a name.
+            ^"Stat Boost" CHOOSE 1 [ "Charm", "Cunning", "Finesse" ]
+            ^"Two Abilities" CHOOSE DISTINCT 2 OF #Decision6Ability0aaaaaaaaaa ^"Ability"
+            ^"Any Two" CHOOSE INDISTINCT 2 [ #Decision6DemonMight0ffffffff ^"Demonic Might" ]
+            ^"Either Kind" CHOOSE 1 OF #Decision6Virtue00cccccccccc ^"Virtue" WITH { ^"Category" ["Hermetic"] OR ^"Category" ["Supernatural"] }
+            ^"Sized" CHOOSE 1 OF #Decision6Virtue00cccccccccc ^"Virtue" WITH { ^"Size" ["Major"] AND NOT ^"Category" ["Social Status"] }
+            ^"Mixed" LIST [ #Decision6Drive00000hhhhhhhhh ^"Drive", CHOOSE 1 [ #Decision6SingleWeap0dddddddd ^"Single Weapon", #Decision6Stamina000eeeeeeeee ^"Stamina" ] ]
+            ^"Increase" DEF { CHOOSE 1 [ #Decision6SingleWeap0dddddddd ^"Single Weapon", #Decision6Drive00000hhhhhhhhh ^"Drive" ] INTEGER 1 }
+        }
+    }
+
+    # --- v0.6: REF (DECISION-17) and changes to a value (DECISION-16) -------
+    #Decision6Clan0000mmmmmmmmmm ^"Clan" DEF { }
+    #Decision6Crab0000nnnnnnnnnn ^"Crab" DEF { EXTENDS #Decision6Clan0000mmmmmmmmmm ^"Clan" }
+    #Decision6Glory000oooooooooo ^"Glory" DEF { INTEGER MIN 0 MAX 100 }
+    #Decision6Family00pppppppppp ^"Family" DEF {
+        PROPERTIES {
+            REF OF #Decision6Clan0000mmmmmmmmmm ^"Clan" REQUIRED
+            ^"Patron" REF OF #Decision6Virtue00cccccccccc ^"Virtue"
+            ^"Family Name" STRING REQUIRED
+        }
+    }
+    #Decision6Hida0000qqqqqqqqqq ^"Hida" DEF {
+        EXTENDS #Decision6Family00pppppppppp ^"Family"
+        PROPERTIES {
+            ^"Family Name" STRING "Hida" FIXED
+            ^"Clan" REF #Decision6Crab0000nnnnnnnnnn ^"Crab"
+            ^"Patron" REF OF #Decision6Virtue00cccccccccc ^"Virtue" #Decision6DemonMight0ffffffff ^"Demonic Might"
+            ^"Ring Increase" DEF {
+                CHOOSE 1 [ #Decision6SingleWeap0dddddddd ^"Single Weapon", #Decision6Drive00000hhhhhhhhh ^"Drive" ] TRANSFORM ADD 1
+            }
+            ^"Skill Increases" DEF {
+                #Decision6Drive00000hhhhhhhhh ^"Drive" TRANSFORM ADD 1
+                #Decision6SingleWeap0dddddddd ^"Single Weapon" TRANSFORM SUBTRACT 1 MIN 0
+            }
+            #Decision6Glory000oooooooooo ^"Glory" SET 44
+            ^"Other Changes" DEF {
+                #Decision6Glory000oooooooooo ^"Glory" TRANSFORM MULTIPLY 2
+                #Decision6Glory000oooooooooo ^"Glory" TRANSFORM DIVIDE 3 ROUND DOWN MIN 1 MAX 50
+                #Decision6Glory000oooooooooo ^"Glory" TRANSFORM ADD #Decision6Stamina000eeeeeeeee ^"Stamina"
+                #Decision6Glory000oooooooooo ^"Glory" SET #Decision6Stamina000eeeeeeeee ^"Stamina"
+                #Decision6Glory000oooooooooo ^"Glory" TRANSFORM MANUAL "increase the die by one step"
+                CHOOSE 2 OF #Decision6Ability0aaaaaaaaaa ^"Ability" TRANSFORM ADD 1
+                CHOOSE 1 OF #Decision6Virtue00cccccccccc ^"Virtue" WITH { ^"Size" ["Minor"] } SET 1
+            }
         }
     }
 }

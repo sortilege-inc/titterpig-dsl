@@ -11,6 +11,10 @@
 # DEF/module body (generalized from BRIDGE); HOOKS + FORMALITY; OPTIONAL; the
 # SELECTIONS container for .selections files; the CODEX container for .codex files
 # (§25 — the stand-off lore knowledge graph).
+# v0.6 working draft: CHOOSE n replaces CHOICE / PICK / WHERE (§5b, DECISION-15), with
+# DISTINCT / INDISTINCT and a WITH clause; BOOLEAN takes an inline value (§8); SET and
+# TRANSFORM, a change to a value (§8, DECISION-16); REF, a reference to one entity (§8,
+# DECISION-17).
 #
 # This grammar defines syntactically valid .ttrpg files. Semantic rules
 # (hash uniqueness, EXTENDS resolution, type consistency) are enforced
@@ -61,6 +65,9 @@ BODY_ENTRY      <- METADATA
                  / MODIFY_STATEMENT
                  / OVERRIDE_STATEMENT
                  / ADD_STATEMENT
+                 / CHANGE                    # v0.6, §8 — <target> SET n / TRANSFORM …
+                 / CHOOSE_KEYED              # v0.6, §5b — a CHOOSE in place of a name
+                 / CHOOSE_VALUE              # v0.6, §5b — a CHOOSE alone in a block
                  / GENERIC_BLOCK
                  / INLINE_VALUE
                  / COMMENT
@@ -239,11 +246,13 @@ ARROW            <- '->'
 # 4. Properties Block
 # ═══════════════════════════════════════════════════════════
 
-PROPERTIES_BLOCK <- 'PROPERTIES' _ '{' _ (PROPERTY_DECL _)* '}'
+PROPERTIES_BLOCK <- 'PROPERTIES' _ '{' _ ((CHANGE / REF_DECL / PROPERTY_DECL) _)* '}'
 
 PROPERTY_DECL   <- (CARET_REF / STRING) _ PROPERTY_TYPE
 
 PROPERTY_TYPE   <- DEF_INLINE
+                 / CHOOSE_VALUE              # v0.6, §5b — ^"Background" CHOOSE 1 [ … ]
+                 / REF_TYPE                  # v0.6, §8 — ^"Clan" REF #hash ^"Crab"
                  / LIST_OF_TYPE
                  / LIST_LITERAL
                  / ENUM_TYPE
@@ -251,14 +260,48 @@ PROPERTY_TYPE   <- DEF_INLINE
                  / INTEGER_TYPE
                  / BOOLEAN_TYPE
 
-DEF_INLINE      <- 'DEF' _ '{' _ (PROPERTY_DECL _)* '}'
+DEF_INLINE      <- 'DEF' _ '{' _ ((CHANGE / CHOOSE_KEYED / REF_DECL / PROPERTY_DECL) _)* '}'
 
 STRING_TYPE     <- 'STRING' (_ STRING)? (_ MODIFIER)*
 INTEGER_TYPE    <- 'INTEGER' (_ INTEGER_LIT)? (_ MODIFIER)*
-BOOLEAN_TYPE    <- 'BOOLEAN' (_ MODIFIER)*
+BOOLEAN_TYPE    <- 'BOOLEAN' (_ BOOLEAN_LIT)? (_ MODIFIER)*
 ENUM_TYPE       <- 'ENUM' _ BRACKET_LIST
 LIST_OF_TYPE    <- 'LIST' _ 'OF' _ (CARET_REF / 'STRING') (_ BRACKET_LIST)?
 LIST_LITERAL    <- 'LIST' _ BRACKET_LIST
+
+# REF — a reference to one entity (v0.6, DECISION-17). `REF OF ^"Type"` declares the
+# property; `REF ^"Entity"` gives its value; both may be written. A reference that is
+# followed by a property type, DEF, CHOOSE, SET or TRANSFORM belongs to the next
+# statement and is not this property's value.
+#   REF OF #hash ^"Clan" REQUIRED                  on the type; the property is named ^"Clan"
+#   ^"Patron" REF OF #hash ^"Virtue"               on the type, when the name differs from the type
+#   ^"Clan" REF #hash ^"Crab"                      on an instance
+REF_TYPE        <- 'REF' (_ 'OF' _ HASHED_REF)? (_ REF_TARGET)? (_ MODIFIER)*
+# The declaration with no name of its own: the property takes the type's name.
+REF_DECL        <- 'REF' _ 'OF' _ HASHED_REF (_ REF_TARGET)? (_ MODIFIER)*
+REF_TARGET      <- HASHED_REF !(_ NEXT_STATEMENT_KW)
+NEXT_STATEMENT_KW <- 'STRING' / 'INTEGER' / 'BOOLEAN' / 'ENUM' / 'LIST' / 'REF' / 'DEF'
+                   / 'CHOOSE' / 'SET' / 'TRANSFORM' / 'MODIFY'
+
+# A change to a value (v0.6, DECISION-16). The target is a reference to the thing changed,
+# or a CHOOSE, in which case the change applies to each option chosen.
+#   #hash ^"Glory"   SET 44
+#   #hash ^"Command" TRANSFORM ADD 1
+#   #hash ^"Speed"   TRANSFORM DIVIDE 2 ROUND DOWN MIN 1
+#   #hash ^"TN"      TRANSFORM ADD #hash ^"School Rank"
+#   #hash ^"Damage Die" TRANSFORM MANUAL "increase the die by one step"
+#   CHOOSE 1 [ #hash ^"Earth", #hash ^"Fire" ] TRANSFORM ADD 1
+# FOR REVIEW: SET is also the §13 directive inside a MODIFY body, written BEFORE its
+# target (SET_ENTRY, section 8). Here it FOLLOWS its target. Position tells them apart.
+CHANGE          <- CHANGE_TARGET _ (SET_CHANGE / TRANSFORM_CHANGE)
+CHANGE_TARGET   <- CHOOSE_VALUE / HASHED_REF
+SET_CHANGE      <- 'SET' _ AMOUNT
+TRANSFORM_CHANGE <- 'TRANSFORM' _ ('MANUAL' _ STRING / METHOD _ AMOUNT (_ CHANGE_SUFFIX)*)
+METHOD          <- 'ADD' / 'SUBTRACT' / 'MULTIPLY' / 'DIVIDE'
+AMOUNT          <- INTEGER_LIT / REF_TARGET      # a reference that opens the next statement is not an amount
+CHANGE_SUFFIX   <- 'ROUND' _ ('UP' / 'DOWN' / 'NEAREST')
+                 / 'MIN' _ INTEGER_LIT
+                 / 'MAX' _ INTEGER_LIT
 
 MODIFIER        <- 'REQUIRED' / 'FIXED'
                  / 'DEFAULT' _ VALUE
@@ -275,7 +318,7 @@ BARE_TYPE_CONSTRAINT <- BARE_ENUM / BARE_INTEGER / BARE_STRING / BARE_BOOLEAN
 BARE_ENUM       <- 'ENUM' _ BRACKET_LIST
 BARE_INTEGER    <- 'INTEGER' (_ INTEGER_LIT)? (_ MODIFIER)*
 BARE_STRING     <- 'STRING' (_ STRING)? (_ MODIFIER)*
-BARE_BOOLEAN    <- 'BOOLEAN' (_ MODIFIER)*
+BARE_BOOLEAN    <- 'BOOLEAN' (_ BOOLEAN_LIT)? (_ MODIFIER)*
 
 # ═══════════════════════════════════════════════════════════
 # 6. Inheritance and Scope
@@ -367,6 +410,9 @@ GENERIC_VALUE   <- '{' _ GENERIC_BODY _ '}'
 GENERIC_BODY    <- (GENERIC_BODY_ENTRY _)*
 
 GENERIC_BODY_ENTRY <- DEF_BLOCK
+                    / CHANGE
+                    / CHOOSE_KEYED
+                    / CHOOSE_VALUE
                     / PROPERTIES_BLOCK
                     / RULES_BLOCK
                     / GENERIC_BLOCK
@@ -399,7 +445,7 @@ ROLL_KEY        <- ROLL_RANGE / INTEGER_LIT
 
 ROLL_RANGE      <- INTEGER_LIT '-' INTEGER_LIT
 
-LABELED_ENTRY   <- UPPER_IDENT _ (STRING / CARET_REF / INTEGER_LIT / BRACKET_LIST / GENERIC_BLOCK)
+LABELED_ENTRY   <- UPPER_IDENT _ (CHOOSE_VALUE / STRING / CARET_REF / INTEGER_LIT / BRACKET_LIST / GENERIC_BLOCK)
 
 CARET_ENTRY     <- CARET_REF _ (STRING / BRACKET_LIST / DEF_INLINE_BLOCK / GENERIC_BLOCK)?
 
@@ -520,24 +566,42 @@ SIDED_REF       <- SIDE_KW _ REFERENT
 # 10. Values and Literals
 # ═══════════════════════════════════════════════════════════
 
-VALUE           <- CHOICE_VALUE / STRING / INTEGER_LIT / BOOLEAN_LIT / CARET_REF / HASH_ID / BRACKET_LIST
+VALUE           <- CHOOSE_VALUE / STRING / INTEGER_LIT / BOOLEAN_LIT / CARET_REF / HASH_ID / BRACKET_LIST
 
 INLINE_VALUE    <- STRING / CARET_REF
 
 BRACKET_LIST    <- '[' _ BRACKET_ITEM (_ ',' _ BRACKET_ITEM)* _ ']'
-BRACKET_ITEM    <- CHOICE_VALUE / CARET_REF / HASH_ID / STRING / INTEGER_LIT / BOOLEAN_LIT
+BRACKET_ITEM    <- CHOOSE_VALUE / CARET_REF / HASH_ID / STRING / INTEGER_LIT / BOOLEAN_LIT
 
-# CHOICE — a structured "pick from these" value (v0.4, DECISION-6). Options are
-# specific entities, verbatim strings (the completeness escape hatch), or
-# quantified typed slots ("N OF <type> WHERE {field value ...}"). Optional
-# PICK n sets how many options are taken (default 1).
-#   CHOICE [ ^"Demonic Might", ^"Demonic Powers" ]
-#   CHOICE [ 1 OF ^"Virtue" WHERE { ^"Size" "Major", ^"Category" "Supernatural" },
-#            3 OF ^"Virtue" WHERE { ^"Size" "Minor", ^"Category" "Supernatural" } ]
-CHOICE_VALUE    <- 'CHOICE' (_ 'PICK' _ INTEGER_LIT)? _ '[' _ CHOICE_OPTION (_ ',' _ CHOICE_OPTION)* _ ']'
-CHOICE_OPTION   <- CHOICE_SLOT / CARET_REF / STRING
-CHOICE_SLOT     <- INTEGER_LIT _ 'OF' _ CARET_REF (_ 'WHERE' _ '{' _ (WHERE_PAIR _)* '}')?
-WHERE_PAIR      <- CARET_REF _ (STRING / INTEGER_LIT)
+# CHOOSE n — a number of things are picked, and from what (v0.6, DECISION-15; replaces
+# v0.4's CHOICE / PICK / WHERE). The count is always written.
+#   CHOOSE 1 [ #hash ^"Demonic Might", #hash ^"Demonic Powers" ]     from a list
+#   CHOOSE 1 [ "Charm", "Cunning" ]                                  options may be strings
+#   CHOOSE 3 OF #hash ^"Virtue" WITH { ^"Size" ["Minor"] AND ^"Category" ["Supernatural"] }
+#   CHOOSE 1 [ CHOOSE 1 OF ^"Virtue" WITH {…}, CHOOSE 3 OF ^"Virtue" WITH {…} ]   one or the other
+# DISTINCT (the default) picks n different options; INDISTINCT lets one be picked again.
+CHOOSE_VALUE    <- 'CHOOSE' (_ CHOOSE_MODE)? _ INTEGER_LIT _ (CHOOSE_LIST / CHOOSE_FROM_TYPE)
+CHOOSE_MODE     <- 'DISTINCT' / 'INDISTINCT'
+CHOOSE_LIST     <- '[' _ CHOOSE_OPTION (_ ',' _ CHOOSE_OPTION)* _ ']'
+CHOOSE_OPTION   <- CHOOSE_VALUE / HASHED_REF / STRING
+CHOOSE_FROM_TYPE <- 'OF' _ HASHED_REF (_ WITH_CLAUSE)?
+
+# An entity option and an OF type are reference sites (§5d): the #hash is the referent.
+HASHED_REF      <- (HASH_ID _)? CARET_REF
+
+# WITH — what must be true of each entity chosen. A term is a property of the type and ONE
+# value in brackets; it holds when the property has that value. A comma is not an implicit
+# "or". One WITH joins its terms with AND throughout or OR throughout (the validator
+# rejects a mix).
+# TO-DO: nested conditions, A AND (B OR C), are not yet defined.
+WITH_CLAUSE     <- 'WITH' _ '{' _ WITH_TERM (_ WITH_JOIN _ WITH_TERM)* _ '}'
+WITH_JOIN       <- 'AND' / 'OR'
+WITH_TERM       <- ('NOT' _)? CARET_REF _ '[' _ WITH_VALUE _ ']'
+WITH_VALUE      <- HASHED_REF / STRING / INTEGER_LIT / BOOLEAN_LIT
+
+# In place of a name: the value that follows applies to each option chosen.
+#   ^"Ring Increase" DEF { CHOOSE 1 [ #hash ^"Earth", #hash ^"Fire" ] INTEGER 1 }
+CHOOSE_KEYED    <- CHOOSE_VALUE _ PROPERTY_TYPE
 
 # ═══════════════════════════════════════════════════════════
 # 11. Terminals
@@ -605,13 +669,15 @@ EOF             <- !.
 # File-level:    BASE, EXTENSION, BRIDGE, EXTENDS, NAME, VERSION, SPEC_VERSION,
 #                RELEASE_DATE, DEPENDS_ON
 # Definition:    DEF, ACTOR, TEMPLATE, PROPERTIES, RULES
-# Types:         STRING, INTEGER, BOOLEAN, ENUM, LIST, OF
+# Types:         STRING, INTEGER, BOOLEAN, ENUM, LIST, OF, REF            (REF: v0.6, DECISION-17)
+# Changes:       SET, TRANSFORM, ADD, SUBTRACT, MULTIPLY, DIVIDE, ROUND, UP, DOWN,
+#                NEAREST, MANUAL, MIN, MAX                               (v0.6, DECISION-16)
 # Modifiers:     REQUIRED, FIXED, DEFAULT, MIN, MAX, FIAT
 # Scope:         APPLIES, TO
 # Rule:          WHEN, THEN
 # Modification:  OVERRIDE, ADD, MODIFY, SET, ADD_TO, REMOVE_FROM, REPRINT
 # Parameterize:  PARAMETERS, OF (also a type keyword), ALIAS, FOR   (DECISION-6)
-# Choice:        CHOICE, PICK, OF, WHERE                            (DECISION-6)
+# Choice:        CHOOSE, DISTINCT, INDISTINCT, OF, WITH, AND, OR, NOT   (v0.6, DECISION-15)
 # References:    REFERENCES, MENTIONS (deprecated alias), REFERENCED, BY       (v0.5, §5c)
 # Hooks:         HOOKS, HOOK, FORMALITY, WHEN, TRIGGER, THEN,
 #                PROSE, TAGGED, CONDITIONAL, FORMAL                            (v0.5, §23)

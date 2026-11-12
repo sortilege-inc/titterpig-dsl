@@ -1,6 +1,6 @@
 #!/usr/bin/env python3
 """
-Titterpig DSL v4 validator.
+Titterpig DSL validator (v0.5, with the v0.6 working-draft CHOOSE construct).
 
 Two levels of validation over one or more .ttrpg files (or directories):
 
@@ -15,9 +15,21 @@ Two levels of validation over one or more .ttrpg files (or directories):
     - no duplicate definition anchors (#hash)
     - EXTENDS / APPLIES TO / LIST OF targets resolve to a defined ^"Name"
     - DEPENDS_ON targets resolve to a defined file id
-    - DECISION-6: bound-ref bases & arguments, PARAMETERS OF types, CHOICE
-      options, and ALIAS FOR targets all resolve (an ALIAS name is itself a
-      resolvable name)
+    - DECISION-6: bound-ref bases & arguments, PARAMETERS OF types, and ALIAS FOR
+      targets all resolve (an ALIAS name is itself a resolvable name)
+    - CHOOSE n (v0.6, DECISION-15): the count is written and is 1 or more; entity
+      options and the OF type resolve; a DISTINCT choice from a list does not pick
+      more than are listed; every WITH property is a property of the type; a WITH
+      does not mix AND and OR (nested conditions are a to-do) and each term takes one
+      value.
+    - REF (v0.6, DECISION-17): the OF type and the entity resolve; where a type up the
+      chain declares the property REF OF a type, the entity is of that type.
+    - SET / TRANSFORM (v0.6, DECISION-16): a target precedes it on the line and resolves;
+      the method is ADD, SUBTRACT, MULTIPLY, DIVIDE or MANUAL "…"; the amount is an
+      integer or a reference that resolves. A SET directly inside a MODIFY body is the
+      §13 directive and is checked there. CHOICE, which CHOOSE replaced, still has its options resolved; it is a
+      WARNING in a file declaring SPEC_VERSION below 0.6 (or none) and an ERROR in
+      one declaring 0.6 or later.
     - MODIFICATION SYSTEM (spec §13) — see below
     - REPRINT ^"X" (v0.5 addendum, DECISION-14): X must resolve; a file must not
       both REPRINT and DEF the same entity
@@ -85,7 +97,34 @@ HASH_MIN_BODY = 16
 
 # Property types the spec declares (§8). A caret followed by one of these inside a
 # PROPERTIES block is a property declaration; anything else is not.
-PROP_TYPE_KW = ('STRING', 'INTEGER', 'BOOLEAN', 'ENUM', 'LIST', 'DEF', 'TEXT')
+PROP_TYPE_KW = ('STRING', 'INTEGER', 'BOOLEAN', 'ENUM', 'LIST', 'DEF', 'TEXT', 'REF')
+
+# What may open the statement AFTER a `REF [OF ^"Type"]`: a reference followed by one of
+# these belongs to that next statement and is not the REF's value (§8, DECISION-17).
+NEXT_STATEMENT_KW = PROP_TYPE_KW + ('CHOOSE', 'SET', 'TRANSFORM', 'MODIFY')
+CHANGE_METHODS = ('ADD', 'SUBTRACT', 'MULTIPLY', 'DIVIDE')
+
+
+def parse_ref(toks, j):
+    """toks[j] is the token after `REF`. Returns (type, type_hash, type_line, value,
+    value_hash, value_line, next index) for `REF [OF [#h] ^"Type"] [[#h] ^"Entity"]`."""
+    ty = th = tl = val = vh = vl = None
+    if j < len(toks) and toks[j].kind == 'ID' and toks[j].val == 'OF':
+        j += 1
+        if j < len(toks) and toks[j].kind == 'HASH':
+            th = toks[j].val; j += 1
+        if j < len(toks) and toks[j].kind == 'CARET':
+            ty, tl = toks[j].val, toks[j].line; j += 1
+    k = j
+    h = None
+    if k < len(toks) and toks[k].kind == 'HASH':
+        h = toks[k].val; k += 1
+    if k < len(toks) and toks[k].kind == 'CARET':
+        nxt = toks[k + 1] if k + 1 < len(toks) else None
+        if not (nxt is not None and nxt.kind == 'ID' and nxt.val in NEXT_STATEMENT_KW):
+            val, vh, vl = toks[k].val, h, toks[k].line
+            j = k + 1
+    return ty, th, tl, val, vh, vl, j
 
 
 @dataclass
@@ -619,6 +658,9 @@ def parse_prop_decl(toks, k):
         if j < len(toks) and toks[j].kind == 'BOOL':
             rec['value'] = toks[j].val
             j += 1
+    elif ty == 'REF':
+        rty, _th, _tl, rval, _vh, _vl, j = parse_ref(toks, j)
+        rec['ref_of'], rec['value'] = rty, rval
     return rec, j
 
 
@@ -642,6 +684,16 @@ def parse_properties_block(toks, k):
             rec, j = parse_prop_decl(toks, j)
             if rec is not None:
                 out[rec['name']] = rec
+            continue
+        elif t.kind == 'ID' and t.val == 'REF' and depth == 1 \
+                and j + 1 < len(toks) and toks[j + 1].kind == 'ID' and toks[j + 1].val == 'OF':
+            # REF OF ^"Type"  (§8): no name of its own, so the property takes the type's name.
+            # A named REF never reaches here: parse_prop_decl consumed it with its name.
+            rty, _th, _tl, rval, _vh, _vl, j2 = parse_ref(toks, j + 1)
+            if rty is not None:
+                out[rty] = {'name': rty, 'type': 'REF', 'enum': None, 'is_list': False,
+                            'members': None, 'value': rval, 'ref_of': rty, 'line': t.line}
+            j = j2
             continue
         j += 1
     return out
@@ -705,6 +757,76 @@ def analyze_file(fname, text, findings):
     adds = []                            # §13 ADD ^"X" DEF sites: (name, line)
     reprints = []                        # REPRINT ^"X" sites: (name, line)  (DECISION-14)
     aliases = []                         # ALIAS ^"A" FOR ^"B" sites: (alias, target, line)  (§5b)
+    chooses = []                         # CHOOSE n OF ^"T" WITH { } sites  (§5b, DECISION-15)
+    ref_values = []                      # ^"P" REF ^"Entity" sites: (owner, prop, entity, line)  (§8)
+    next_lbrace_is_modify = False
+
+    def change_target(idx):
+        """toks[idx] is SET or TRANSFORM. Return 'choose' when what precedes it on the line is a
+        CHOOSE, the (name, hash, line) of a reference target, 'bound' for a bound reference, or
+        None when nothing on the line can be a target."""
+        p = idx - 1
+        if p < 0 or toks[p].line != toks[idx].line:
+            return None
+        if toks[p].kind == 'RPAREN':
+            return 'bound'
+        if toks[p].kind == 'RBRACK':
+            depth, k = 0, p
+            while k >= 0:
+                if toks[k].kind == 'RBRACK':
+                    depth += 1
+                elif toks[k].kind == 'LBRACK':
+                    depth -= 1
+                    if depth == 0:
+                        break
+                k -= 1
+            k -= 1
+            if k >= 0 and toks[k].kind == 'INT':
+                k -= 1
+                if k >= 0 and toks[k].kind == 'ID' and toks[k].val in ('DISTINCT', 'INDISTINCT'):
+                    k -= 1
+                if k >= 0 and toks[k].kind == 'ID' and toks[k].val == 'CHOOSE':
+                    return 'choose'
+            return None
+        if toks[p].kind == 'RBRACE':        # CHOOSE n OF ^"Type" WITH { … }
+            k = p
+            while k >= 0 and toks[k].kind != 'LBRACE':
+                k -= 1
+            if k >= 1 and toks[k - 1].kind == 'ID' and toks[k - 1].val == 'WITH':
+                return 'choose'
+            return None
+        if toks[p].kind == 'CARET':
+            h = toks[p - 1].val if p >= 1 and toks[p - 1].kind == 'HASH' else None
+            k = p - (2 if h else 1)
+            if k >= 0 and toks[k].kind == 'ID' and toks[k].val == 'OF':
+                return 'choose'             # CHOOSE n OF ^"Type"
+            return (toks[p].val, h, toks[p].line)
+        return None
+
+    def change_amount(k, line):
+        """An amount at toks[k]: an integer, or a reference to another value. Returns the next
+        index, or None when there is no amount."""
+        if k < len(toks) and toks[k].kind == 'INT':
+            return k + 1
+        h = None
+        if k < len(toks) and toks[k].kind == 'HASH':
+            h = toks[k].val
+            k += 1
+        if k < len(toks) and toks[k].kind == 'CARET':
+            nxt = toks[k + 1] if k + 1 < len(toks) else None
+            if nxt is not None and nxt.kind == 'ID' and nxt.val in NEXT_STATEMENT_KW:
+                return None       # that reference opens the next statement; no amount here
+            refs.append(('change amount', toks[k].val, h, toks[k].line))
+            return k + 1
+        return None
+    # The SPEC_VERSION the file declares, as (major, minor); (0, 0) when it declares none.
+    spec_version = (0, 0)
+    for _i, _t in enumerate(toks[:-1]):
+        if _t.kind == 'ID' and _t.val == 'SPEC_VERSION' and toks[_i + 1].kind == 'STR':
+            _m = re.match(r'\s*(\d+)\.(\d+)', toks[_i + 1].val)
+            if _m:
+                spec_version = (int(_m.group(1)), int(_m.group(2)))
+            break
 
     def cur_def():
         for fr in reversed(frames):
@@ -724,7 +846,8 @@ def analyze_file(fname, text, findings):
     for idx, t in enumerate(toks):
         if t.kind == 'LBRACE':
             frames.append({'open': t.line, 'is_def': next_lbrace_is_def, 'waived': False,
-                           'def_name': next_lbrace_def_name})
+                           'def_name': next_lbrace_def_name, 'is_modify': next_lbrace_is_modify})
+            next_lbrace_is_modify = False
             next_lbrace_is_def = False
             next_lbrace_def_name = None
             continue
@@ -856,9 +979,214 @@ def analyze_file(fname, text, findings):
                             and k + 1 < len(toks) and toks[k + 1].kind == 'CARET':
                         refs.append(('parameter type', toks[k + 1].val, None, toks[k + 1].line))
                     k += 1
+        elif w == 'REF':
+            # REF OF [#h] ^"Type"                 declares a property named for its type
+            # ^"P" REF OF [#h] ^"Type"            declares one whose name differs from its type
+            # ^"P" REF [#h] ^"Entity"             gives the value
+            # (v0.6, DECISION-17). The type and the entity are reference sites.
+            named = idx > 0 and toks[idx - 1].kind in ('CARET', 'STR') and toks[idx - 1].line == t.line
+            rty, rth, rtl, rval, rvh, rvl, _j = parse_ref(toks, idx + 1)
+            if rty is None and rval is None:
+                findings.append(Finding(fname, 'lint', 'error', t.line,
+                                        "REF needs OF ^\"Type\", an ^\"Entity\", or both (§8)"))
+                continue
+            if not named and rty is None:
+                findings.append(Finding(fname, 'lint', 'error', t.line,
+                                        "a REF with no property name before it needs OF ^\"Type\"; "
+                                        "to give a value write ^\"Name\" REF ^\"Entity\" (§8)"))
+            if named and rty is not None and toks[idx - 1].val == rty:
+                findings.append(Finding(fname, 'lint', 'warning', t.line,
+                                        "^\"%s\" REF OF ^\"%s\" writes the name twice: "
+                                        "REF OF ^\"%s\" declares the same property (§8)" % (rty, rty, rty)))
+            if rty is not None:
+                refs.append(('ref type', rty, rth, rtl))
+            if rval is not None:
+                refs.append(('ref value', rval, rvh, rvl))
+                ref_values.append((cur_def(), toks[idx - 1].val if named else rty, rval, rvl))
+        elif w in ('SET', 'TRANSFORM') and not (w == 'SET' and frames and frames[-1].get('is_modify')):
+            # A change to a value (v0.6, DECISION-16): <target> SET n | <target> TRANSFORM METHOD n.
+            # FOR REVIEW: SET is also the §13 directive, written BEFORE its target directly
+            # inside a MODIFY body; that use is left to scan_modify_body and skipped here.
+            tgt = change_target(idx)
+            if tgt is None:
+                if w == 'TRANSFORM':
+                    findings.append(Finding(fname, 'lint', 'error', t.line,
+                                            "TRANSFORM needs a target before it on the line: a "
+                                            "reference, or a CHOOSE (§8)"))
+                continue          # a SET with no target on its line is not a change
+            if isinstance(tgt, tuple):
+                refs.append(('change target', tgt[0], tgt[1], tgt[2]))
+            k = idx + 1
+            if w == 'SET':
+                if change_amount(k, t.line) is None:
+                    findings.append(Finding(fname, 'lint', 'error', t.line,
+                                            "SET needs an amount: an integer, or a reference to "
+                                            "another value (§8)"))
+                continue
+            meth = toks[k].val if k < len(toks) and toks[k].kind == 'ID' else None
+            if meth == 'MANUAL':
+                if not (k + 1 < len(toks) and toks[k + 1].kind == 'STR'):
+                    findings.append(Finding(fname, 'lint', 'error', t.line,
+                                            "TRANSFORM MANUAL needs the source's words as a string (§8)"))
+                continue
+            if meth not in CHANGE_METHODS:
+                findings.append(Finding(fname, 'lint', 'error', t.line,
+                                        "TRANSFORM needs a method: ADD, SUBTRACT, MULTIPLY, DIVIDE, "
+                                        "or MANUAL \"…\" (§8)"))
+                continue
+            k = change_amount(k + 1, t.line)
+            if k is None:
+                findings.append(Finding(fname, 'lint', 'error', t.line,
+                                        "TRANSFORM %s needs an amount: an integer, or a reference "
+                                        "to another value (§8)" % meth))
+                continue
+            while k < len(toks) and toks[k].line == t.line and toks[k].kind == 'ID' \
+                    and toks[k].val in ('ROUND', 'MIN', 'MAX'):
+                if toks[k].val == 'ROUND':
+                    if not (k + 1 < len(toks) and toks[k + 1].kind == 'ID'
+                            and toks[k + 1].val in ('UP', 'DOWN', 'NEAREST')):
+                        findings.append(Finding(fname, 'lint', 'error', t.line,
+                                                "ROUND is followed by UP, DOWN or NEAREST (§8)"))
+                        break
+                elif not (k + 1 < len(toks) and toks[k + 1].kind == 'INT'):
+                    findings.append(Finding(fname, 'lint', 'error', t.line,
+                                            "%s is followed by an integer (§8)" % toks[k].val))
+                    break
+                k += 2
+        elif w == 'CHOOSE':
+            # CHOOSE [DISTINCT|INDISTINCT] n ( [ options ] | OF [#hash] ^"Type" [WITH { … }] )
+            # (v0.6, DECISION-15; replaces CHOICE / PICK / WHERE). Entity options and the OF
+            # type are reference sites; a WITH names properties of the type.
+            k = idx + 1
+            distinct = True
+            if k < len(toks) and toks[k].kind == 'ID' and toks[k].val in ('DISTINCT', 'INDISTINCT'):
+                distinct = toks[k].val == 'DISTINCT'
+                k += 1
+            if k >= len(toks) or toks[k].kind != 'INT' or int(toks[k].val) < 1:
+                findings.append(Finding(fname, 'lint', 'error', t.line,
+                                        "CHOOSE needs a count of 1 or more: CHOOSE n [ … ] or "
+                                        "CHOOSE n OF ^\"Type\" (§5b)"))
+                continue
+            n = int(toks[k].val)
+            k += 1
+            if k < len(toks) and toks[k].kind == 'LBRACK':
+                depth, brace, items, in_item, nested = 0, 0, 0, False, False
+                while k < len(toks):
+                    tk = toks[k]
+                    if tk.kind == 'LBRACK':
+                        depth += 1
+                    elif tk.kind == 'RBRACK':
+                        depth -= 1
+                        if depth == 0:
+                            break
+                    elif tk.kind == 'LBRACE':
+                        brace += 1
+                    elif tk.kind == 'RBRACE':
+                        brace -= 1
+                    elif depth == 1 and brace == 0:
+                        if tk.kind == 'COMMA':
+                            in_item = nested = False
+                        else:
+                            if not in_item:
+                                items += 1
+                                in_item = True
+                            if tk.kind == 'ID' and tk.val == 'CHOOSE':
+                                nested = True     # an option that is itself a CHOOSE: its own
+                                                  # handler resolves what it names
+                            elif tk.kind == 'CARET' and not nested \
+                                    and not (k + 1 < len(toks) and toks[k + 1].kind == 'LPAREN'):
+                                hsh = toks[k - 1].val if toks[k - 1].kind == 'HASH' else None
+                                refs.append(('choose option', tk.val, hsh, tk.line))
+                    k += 1
+                if distinct and n > items:
+                    refs.append(('__msg__', "CHOOSE %d from a list of %d: a DISTINCT choice cannot pick "
+                                 "more than are listed (INDISTINCT lets an option be picked again)"
+                                 % (n, items), None, t.line))
+            elif k < len(toks) and toks[k].kind == 'ID' and toks[k].val == 'OF':
+                k += 1
+                hsh = None
+                if k < len(toks) and toks[k].kind == 'HASH':
+                    hsh = toks[k].val
+                    k += 1
+                if k >= len(toks) or toks[k].kind != 'CARET':
+                    findings.append(Finding(fname, 'lint', 'error', t.line,
+                                            "CHOOSE n OF needs a ^\"Type\" (§5b)"))
+                    continue
+                tname = toks[k].val
+                refs.append(('choose type', tname, hsh, toks[k].line))
+                k += 1
+                if k < len(toks) and toks[k].kind == 'ID' and toks[k].val == 'WHERE':
+                    findings.append(Finding(fname, 'lint', 'error', toks[k].line,
+                                            "WHERE was replaced by WITH in v0.6: "
+                                            "WITH { ^\"Property\" [ values ] AND … } (§5b)"))
+                elif k + 1 < len(toks) and toks[k].kind == 'ID' and toks[k].val == 'WITH' \
+                        and toks[k + 1].kind == 'LBRACE':
+                    wline = toks[k].line
+                    k += 2
+                    joins, wprops, ok, want_term, many_values = set(), [], True, True, False
+                    while k < len(toks) and toks[k].kind != 'RBRACE':
+                        tk = toks[k]
+                        if want_term:
+                            if tk.kind == 'ID' and tk.val == 'NOT':
+                                k += 1
+                                continue
+                            if tk.kind != 'CARET' or k + 1 >= len(toks) or toks[k + 1].kind != 'LBRACK':
+                                ok = False
+                                break
+                            wprops.append((tk.val, tk.line))
+                            k += 2
+                            nvals = 0
+                            while k < len(toks) and toks[k].kind != 'RBRACK':
+                                if toks[k].kind in ('STR', 'INT', 'BOOL'):
+                                    nvals += 1
+                                elif toks[k].kind == 'CARET':
+                                    nvals += 1
+                                    vh = toks[k - 1].val if toks[k - 1].kind == 'HASH' else None
+                                    refs.append(('with value', toks[k].val, vh, toks[k].line))
+                                elif toks[k].kind not in ('COMMA', 'HASH'):
+                                    ok = False
+                                k += 1
+                            if nvals == 0:
+                                ok = False
+                            elif nvals > 1:
+                                many_values = True
+                            k += 1
+                            want_term = False
+                        else:
+                            if tk.kind == 'ID' and tk.val in ('AND', 'OR'):
+                                joins.add(tk.val)
+                                want_term = True
+                                k += 1
+                            else:
+                                ok = False
+                                break
+                    if not ok or want_term:
+                        findings.append(Finding(fname, 'lint', 'error', wline,
+                                                "malformed WITH: each term is ^\"Property\" [ values ], "
+                                                "optionally after NOT, joined by AND or OR (§5b)"))
+                    elif many_values:
+                        findings.append(Finding(fname, 'lint', 'error', wline,
+                                                "a WITH term takes one value: a comma is not an implicit "
+                                                "OR; write ^\"P\" [\"A\"] OR ^\"P\" [\"B\"] (§5b)"))
+                    elif len(joins) > 1:
+                        findings.append(Finding(fname, 'lint', 'error', wline,
+                                                "WITH mixes AND and OR: nested conditions are not yet "
+                                                "defined (§5b to-do); use AND throughout or OR throughout"))
+                    else:
+                        chooses.append({'type': tname, 'props': wprops, 'line': wline})
+            else:
+                findings.append(Finding(fname, 'lint', 'error', t.line,
+                                        "CHOOSE n must be followed by a list [ … ] or OF ^\"Type\" (§5b)"))
         elif w == 'CHOICE':
-            # CHOICE [ options ]  (DECISION-6): option/slot-type carets must
-            # resolve; carets inside a WHERE { } are field names (local, skipped).
+            # CHOICE [ options ]  (DECISION-6) was replaced by CHOOSE n in v0.6 (DECISION-15).
+            # Its options are still resolved so nothing goes unchecked before a corpus migrates;
+            # carets inside a WHERE { } are field names (local, skipped).
+            # A file that declares SPEC_VERSION 0.6 or later has no business writing it: error.
+            # One that declares less, or nothing, is a 0.5 file awaiting migration: warning.
+            findings.append(Finding(fname, 'lint', 'error' if spec_version >= (0, 6) else 'warning',
+                                    t.line,
+                                    "CHOICE was removed in v0.6: write CHOOSE n [ … ], with the count "
+                                    "(§5b, DECISION-15)"))
             k = idx + 1
             if k < len(toks) and toks[k].kind == 'ID' and toks[k].val == 'PICK':
                 k += 2
@@ -900,6 +1228,7 @@ def analyze_file(fname, text, findings):
             if tgt is not None:
                 refs.append(('modify target', tgt, hsh, t.line))
                 mods.append({'target': tgt, 'line': t.line, 'ops': scan_modify_body(toks, lb)})
+                next_lbrace_is_modify = True
                 next_lbrace_is_def = True
                 next_lbrace_def_name = tgt
         elif w == 'OVERRIDE':
@@ -978,7 +1307,7 @@ def analyze_file(fname, text, findings):
         'depends': depends, 'file_ids': file_ids,
         'waived_ranges': waived_ranges, 'waived_lines': waived_lines,
         'def_props': def_props, 'def_extends': def_extends, 'mods': mods, 'adds': adds,
-        'reprints': reprints, 'aliases': aliases,
+        'reprints': reprints, 'aliases': aliases, 'chooses': chooses, 'ref_values': ref_values,
     }
 
 
@@ -1228,13 +1557,17 @@ def coherence_pass(files_data, findings):
                     findings.append(Finding(d['file'], 'coherence', 'error', line,
                                             "value %s" % name))
                 continue
+            if kind == '__msg__':
+                if not is_waived(line, d):
+                    findings.append(Finding(d['file'], 'coherence', 'error', line, name))
+                continue
             if name not in corpus_names and not is_waived(line, d):
                 findings.append(Finding(d['file'], 'coherence', 'error', line,
                                         "%s references undefined ^\"%s\"" % (kind, name)))
             if hsh and hsh not in d['anchors'] and hsh not in {a for a in _all_hashes(files_data)} \
                and not is_waived(line, d):
                 findings.append(Finding(d['file'], 'coherence', 'error', line,
-                                        "extends references undefined hash %s" % hsh))
+                                        "%s references undefined hash %s" % (kind, hsh)))
         for fid, line in d['depends']:
             if fid not in corpus_file_ids and not is_waived(line, d):
                 findings.append(Finding(d['file'], 'coherence', 'error', line,
@@ -1351,6 +1684,87 @@ def _descendants(name, children, seen=None):
         seen.add(child)
         _descendants(child, children, seen)
     return seen
+
+
+def choose_pass(files_data, findings):
+    """CHOOSE n OF ^"Type" WITH { … } (§5b, DECISION-15): every property a WITH names must be
+    one the type declares, its own or inherited. A misspelled property would otherwise be a
+    condition nothing can meet, and the choice would silently offer nothing."""
+    props, extends, known = {}, {}, set()
+    for d in files_data:
+        if d.get('kind') != 'ttrpg':
+            continue
+        for nm, table in d['def_props'].items():
+            props.setdefault(nm, {}).update(table)
+        for nm, parents in d['def_extends'].items():
+            extends.setdefault(nm, []).extend(parents)
+        known.update(d['names'])
+    for d in files_data:
+        if d.get('kind') != 'ttrpg':
+            continue
+        for c in d.get('chooses', []):
+            if c['type'] not in known:
+                continue        # unresolved type: already reported as a ref
+            for pname, line in c['props']:
+                if _resolve_prop(c['type'], pname, props, extends) is None and not is_waived(line, d):
+                    findings.append(Finding(d['file'], 'coherence', 'error', line,
+                                            "WITH names ^\"%s\", which ^\"%s\" does not declare "
+                                            "(its own properties or inherited)" % (pname, c['type'])))
+
+
+def ref_pass(files_data, findings):
+    """^"P" REF ^"Entity" (§8, DECISION-17): where a type up the owner's EXTENDS chain declares
+    ^"P" REF OF ^"Type", the entity must be of that type: Type itself, or something that
+    EXTENDS it, directly or through a chain."""
+    props, extends = {}, {}
+    for d in files_data:
+        if d.get('kind') != 'ttrpg':
+            continue
+        for nm, table in d['def_props'].items():
+            bucket = props.setdefault(nm, {})
+            for pname, rec in table.items():
+                if rec.get('ref_of') or pname not in bucket:
+                    bucket[pname] = rec
+        for nm, parents in d['def_extends'].items():
+            extends.setdefault(nm, []).extend(parents)
+
+    def declared_type(owner, prop, seen):
+        if owner in seen:
+            return None
+        seen.add(owner)
+        rec = props.get(owner, {}).get(prop)
+        if rec is not None and rec.get('ref_of'):
+            return rec['ref_of']
+        for parent in extends.get(owner, ()):
+            found = declared_type(parent, prop, seen)
+            if found:
+                return found
+        return None
+
+    def is_a(entity, ty, seen):
+        if entity == ty:
+            return True
+        if entity in seen:
+            return False
+        seen.add(entity)
+        return any(is_a(parent, ty, seen) for parent in extends.get(entity, ()))
+
+    known = set()
+    for d in files_data:
+        if d.get('kind') == 'ttrpg':
+            known.update(d['names'])
+    for d in files_data:
+        if d.get('kind') != 'ttrpg':
+            continue
+        for owner, prop, entity, line in d.get('ref_values', []):
+            if owner is None or is_waived(line, d):
+                continue
+            ty = declared_type(owner, prop, set())
+            if ty and entity in known:      # an unresolved entity is already reported as a ref
+                if not is_a(entity, ty, set()):
+                    findings.append(Finding(d['file'], 'coherence', 'error', line,
+                                            "^\"%s\" REF ^\"%s\": the property is declared REF OF "
+                                            "^\"%s\", and ^\"%s\" is not one" % (prop, entity, ty, entity)))
 
 
 def modification_pass(files_data, findings):
@@ -1549,6 +1963,8 @@ def main(argv):
             return 2
         files_data.append(analyze_file(path, text, findings))
     coherence_pass(files_data, findings)
+    choose_pass(files_data, findings)
+    ref_pass(files_data, findings)
     modification_pass(files_data, findings)
     bridge_coherence(files_data, corpora, findings, notes)
 

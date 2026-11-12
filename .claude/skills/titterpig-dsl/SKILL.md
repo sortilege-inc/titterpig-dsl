@@ -34,15 +34,46 @@ Anything a tool will read is **structured DSL**, never packed into a free-text s
 The grammar is permissive; that is not license to bury data.
 
 ```
-# Avoid — data trapped in a string:
-^"Ring Increase" STRING "+1 Earth or Fire, +1 Command, Glory 44, 4 koku"
+# Avoid — everything in one string:
+#h9k7mQ2vX7wZ9tB4cD1a ^"Hida" DEF {
+    EXTENDS #p4Tz8LwQ1nRv6YbK3xGs ^"Family"
+    DESCRIPTION """
+        Ring Increase: +1 Earth or +1 Fire
+        Skill Increases: +1 Command, +1 Tactics
+        Glory: 44
+        Starting Wealth: 4 koku
+    """
+}
 
-# Prefer — structured, queryable:
-^"Ring Increase" DEF {
-    ^"Earth" INTEGER 1
-    ^"Command" INTEGER 1
-    ^"Glory" INTEGER 44
-    ^"Koku" INTEGER 4
+# Avoid — the fields named, the values still packed in strings:
+#h9k7mQ2vX7wZ9tB4cD1a ^"Hida" DEF {
+    EXTENDS #p4Tz8LwQ1nRv6YbK3xGs ^"Family"
+    PROPERTIES {
+        ^"Ring Increase"   STRING "+1 Earth or +1 Fire"
+        ^"Skill Increases" STRING "+1 Command, +1 Tactics"
+        ^"Glory"           INTEGER 44
+        ^"Wealth"          STRING "4 koku"
+    }
+}
+
+# Prefer — structured, machine-readable:
+#h9k7mQ2vX7wZ9tB4cD1a ^"Hida" DEF {
+    EXTENDS #p4Tz8LwQ1nRv6YbK3xGs ^"Family"
+    APPLIES TO [#c2Hn7VdM9sXq5JrW8eLf ^"Samurai"]
+
+    PROPERTIES {
+        ^"Family Name" STRING "Hida" FIXED
+        ^"Clan"        REF #w6Jc1ZpR4mXe9LtV3bKn ^"Crab"
+        ^"Ring Increase" DEF {
+            CHOOSE 1 [#k3nP8mQ2vX7wZ9tB4cD1 ^"Earth", #r7Yt2LmW9qKc4VbN6xHs ^"Fire"] TRANSFORM ADD 1
+        }
+        ^"Skill Increases" DEF {
+            #d8Sg5QhT2yNk7McA4vPr ^"Command" TRANSFORM ADD 1
+            #f1Bn6WxE3zHj9RdL5sUo ^"Tactics" TRANSFORM ADD 1
+        }
+        #m2Vq7KcY4tGf8NwJ6pXa ^"Glory" SET 44
+        ^"Wealth" DEF { ^"Count" INTEGER 4  ^"Type" STRING "koku"  ^"Starting" BOOLEAN true }
+    }
 }
 ```
 

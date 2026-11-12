@@ -10,15 +10,46 @@ Represent anything a tool will read as **structured DSL**, never packed into a f
 a comment. The grammar is permissive; do not use that permissiveness to bury data.
 
 ```
-# Avoid — data trapped in a string:
-^"Ring Increase" STRING "+1 Earth or Fire, +1 Command, Glory 44, 4 koku"
+# Avoid — everything in one string:
+#h9k7mQ2vX7wZ9tB4cD1a ^"Hida" DEF {
+    EXTENDS #p4Tz8LwQ1nRv6YbK3xGs ^"Family"
+    DESCRIPTION """
+        Ring Increase: +1 Earth or +1 Fire
+        Skill Increases: +1 Command, +1 Tactics
+        Glory: 44
+        Starting Wealth: 4 koku
+    """
+}
+
+# Avoid — the fields named, the values still packed in strings:
+#h9k7mQ2vX7wZ9tB4cD1a ^"Hida" DEF {
+    EXTENDS #p4Tz8LwQ1nRv6YbK3xGs ^"Family"
+    PROPERTIES {
+        ^"Ring Increase"   STRING "+1 Earth or +1 Fire"
+        ^"Skill Increases" STRING "+1 Command, +1 Tactics"
+        ^"Glory"           INTEGER 44
+        ^"Wealth"          STRING "4 koku"
+    }
+}
 
 # Prefer — structured, machine-readable:
-^"Ring Increase" DEF {
-    ^"Earth" INTEGER 1
-    ^"Command" INTEGER 1
-    ^"Glory" INTEGER 44
-    ^"Koku" INTEGER 4
+#h9k7mQ2vX7wZ9tB4cD1a ^"Hida" DEF {
+    EXTENDS #p4Tz8LwQ1nRv6YbK3xGs ^"Family"
+    APPLIES TO [#c2Hn7VdM9sXq5JrW8eLf ^"Samurai"]
+
+    PROPERTIES {
+        ^"Family Name" STRING "Hida" FIXED
+        ^"Clan"        REF #w6Jc1ZpR4mXe9LtV3bKn ^"Crab"
+        ^"Ring Increase" DEF {
+            CHOOSE 1 [#k3nP8mQ2vX7wZ9tB4cD1 ^"Earth", #r7Yt2LmW9qKc4VbN6xHs ^"Fire"] TRANSFORM ADD 1
+        }
+        ^"Skill Increases" DEF {
+            #d8Sg5QhT2yNk7McA4vPr ^"Command" TRANSFORM ADD 1
+            #f1Bn6WxE3zHj9RdL5sUo ^"Tactics" TRANSFORM ADD 1
+        }
+        #m2Vq7KcY4tGf8NwJ6pXa ^"Glory" SET 44
+        ^"Wealth" DEF { ^"Count" INTEGER 4  ^"Type" STRING "koku"  ^"Starting" BOOLEAN true }
+    }
 }
 ```
 
@@ -107,9 +138,15 @@ for these instead of burying the meaning in a verbatim string (spec §5b):
   re-labels the *same* mechanic. It changes only the name — no value, no slot. If the value differs,
   it's a `MODIFY`/`OVERRIDE` (errata) or a new DEF, not an alias. Ship aliases in a `*-aliases-*`
   extension so base files stay pristine.
-- **`CHOICE` for "A or B" and open allotments** — `CHOICE [ ^"Demonic Might", ^"Demonic Powers" ]`,
-  or quantified slots `CHOICE [ 1 OF ^"Virtue" WHERE { ^"Size" "Major" }, … ]`. A verbatim-string
-  option is the escape hatch when nothing structured fits — completeness still beats shape.
+- **`CHOOSE n` for "A or B" and open allotments** — `CHOOSE 1 [ ^"Demonic Might", ^"Demonic Powers" ]`,
+  or a number of entities of a type, `CHOOSE 3 OF ^"Virtue" WITH { ^"Size" ["Minor"] }`. The count is
+  always written. A verbatim-string option is the escape hatch when nothing structured fits —
+  completeness still beats shape.
+- **`REF` when a property names one entity.** `^"Clan" REF #hash ^"Crab"`. A name in a `STRING` is
+  not checked; a `REF` is. For several entities, `LIST OF ^"Type" [ … ]`.
+- **`SET` and `TRANSFORM` for a change to a value.** `#hash ^"Glory" SET 44` when the value becomes
+  the amount, `#hash ^"Command" TRANSFORM ADD 1` when it goes up by it. A signed number in a string
+  (`"+1"`) and a bare `INTEGER 1` both hide which one is meant.
 - **Rendering is the consumer's job.** Store the structured `(base, bindings)`; the display string
   (`Puissant Single Weapon`) is produced downstream, not written into the file.
 
