@@ -1,0 +1,7 @@
+EXTENSION "Port_Bad_2" {
+    NAME "fault 2 — ORIGIN gives no container id"
+    SPEC_VERSION "0.6"
+    VERSION "1.0"
+    RELEASE_DATE "2026-11-12"
+    ORIGIN "port-old" EXTENSION                                # ERROR
+}

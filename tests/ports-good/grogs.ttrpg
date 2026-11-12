@@ -1,0 +1,26 @@
+EXTENSION "Port_New_Grogs" {
+    NAME "DECISION-26 fixture — a sourcebook ported to the newer edition"
+    SPEC_VERSION "0.6"
+    VERSION "1.0"
+    RELEASE_DATE "2026-11-12"
+    ORIGIN "port-old" EXTENSION "Port_Old_Grogs"
+    DEPENDS_ON "Port_New_Core"
+
+    # carried over: the hash and the name it has in the origin; the reference is re-pointed
+    #PrtPoppetsW3nB8sHdPz5FgR1 ^"Craft Poppets" DEF {
+        EXTENDS #PrtNewAbilityH4zC8pM1dYw6 ^"Ability"
+        DESCRIPTION "The character can make effigies of individuals out of wax, straw, and cloth."
+    }
+
+    #PrtFarrierK2xV6yNc9TqJ4mL ^"Craft: Farrier" DEF {
+        EXTENDS #PrtNewAbilityH4zC8pM1dYw6 ^"Ability"
+        DESCRIPTION "This is the professional skill of hoof care and shoeing horses."
+    }
+
+    # ^"Swim" is left out: this edition's core holds it.
+
+    # the port's own addition, under a new hash
+    #PrtNewNoteB6gP2tR8mX4cJ1q ^"Grog Aging" DEF {
+        DESCRIPTION "Grogs age as other characters do."
+    }
+}

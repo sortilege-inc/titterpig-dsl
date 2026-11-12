@@ -58,6 +58,10 @@ Changes made since v0.5, listed as they are decided. **Not all are additive.**
     inside its own file. References between scenes and locations are now checked.
 12. **A caret name may hold an escaped quote** *(§14, DECISION-25)* — `^"Mrinmoy \"Vidyapati\"
     Mishra"`. The grammar allowed no escape there and both tools cut such a name short.
+13. **A port keeps its source's hashes and names its source** *(§3, §5, §19, DECISION-26)* — a
+    file made from another edition's file keeps the hash of everything it carries over, and says
+    in its header which file it came from: `ORIGIN "arm5e" EXTENSION "ArM5_Grogs_Abilities"`.
+    Anywhere else, a hash that two editions share means nothing.
 
 ### v0.5 — five new constructs, and one rule tightened *(current)*
 
@@ -149,7 +153,8 @@ v0.4 is a consistency/clarity pass over v0.3's grammar — not a redesign. Key c
   load-order precedence, **explicitly** (`OVERRIDE`/`MODIFY`/`ADD`) or **implicitly** (re-stating a
   hash). Hash identity is **edition-scoped** — stable within an edition, independent across editions
   (edition changes are breaking). Forward-porting a stranded sourcebook is an explicit **derived
-  artifact**, not an automatic overlay.
+  artifact**, not an automatic overlay. *(Amended by DECISION-26: that artifact is a port, and it
+  keeps its source's hashes.)*
 
 ### Resolved decisions (2026-07-14)
 
@@ -403,6 +408,19 @@ stay valid.
   invisible to the validator and to the reference gate. The decision is that `\"` inside a caret
   name is a quote, as it is inside a string.
 
+- **DECISION-26 — A port keeps its source's hashes and declares its source** *(resolved, v0.6,
+  2026-11-12)* (§3, §5, §19, §20; amends DECISION-4): §5 said the same entity in another edition
+  is "a separate definition with a different hash", and §19 gave arm5e and armdef as its two
+  editions. The two cores bear that out: they share no hash, and 1,201 names are defined in both
+  under different ones. The 46 sourcebooks are generated. armdef's copies are made from arm5e's,
+  and 10,275 of their 10,276 hashed definitions carry the hash and the name they have in arm5e.
+  No generated file said so, and a tool could not tell a port from an accident: invisiblesun and
+  root share 1,508 hashes, none of them under the same name. The decision is that a port keeps
+  the hash of every definition and named block it carries over, and declares the file it was made
+  from in its header: `ORIGIN "arm5e" EXTENSION "ArM5_Grogs_Abilities"`. A hash that stands in a
+  port and in its origin is one entity carried over, and has the same name in both. A hash that
+  two editions share in any other case means nothing.
+
 ## 1. Overview & Design Principles
 
 Titterpig is a domain-specific language (DSL) for defining tabletop role-playing game (TTRPG) systems, content, and narrative structures. The base specification defines a **system-agnostic syntax toolkit** — it owns the grammar, while each game system owns its vocabulary.
@@ -581,6 +599,8 @@ Both forms declare a parent. `EXTENDS` is concise; `DEPENDS_ON` allows specifyin
 - `VERSION`: Content version of this file (semantic or date-based)
 - `SPEC_VERSION` *(v0.4)*: The DSL-spec version this file targets (e.g., `"0.4"`). Distinct from `VERSION`; lets tooling detect spec conformance.
 - `RELEASE_DATE`: ISO date format
+- `ORIGIN` *(v0.6)*: only in a **port**, a file made from another edition's file. It names that
+  edition and that file: `ORIGIN "arm5e" EXTENSION "ArM5_Grogs_Abilities"` (§19).
 
 **Errata files:** corrections live in dedicated `*-errata-*` EXTENSION files as machine-readable `MODIFY`/`OVERRIDE`/`ADD` (see §13), never as comments in source files.
 
@@ -1026,9 +1046,12 @@ Hash IDs are optional cross-reference anchors on any DEF or rule. When present:
   *canonical* definition appears once. **Recurrence of the same hash across files within an edition is
   legal** — a later-loaded file (a sourcebook, an errata overlay) re-stating a hash **replaces or
   amends** that entity by load-order precedence (the override mechanism, §13), not a collision.
-  **Across editions the namespace resets:** the "same" entity in a different edition is a **separate
-  definition with a different hash** (edition changes may be breaking — §19). Two *different* entities
-  must never share a hash.
+  **Across editions the namespace resets.** Nothing resolves from one edition into another, and
+  the "same" entity in a different edition is a **separate definition** (edition changes may be
+  breaking — §19). An entity converted afresh for the other edition has a hash of its own. An
+  entity carried over by a **port** keeps the hash it had *(v0.6, §19, DECISION-26)*. A hash that
+  two editions share outside a declared port means nothing. Within an edition, two *different*
+  entities must never share a hash.
 - **Format:** `#` followed by `≥16` alphanumeric characters (`[A-Za-z0-9]{16,}`).
 - A short, non-semantic readability prefix is *tolerated* (e.g. `#L5R…`) but must not be depended on.
 
@@ -1881,7 +1904,8 @@ There are two ways for a later file to override an earlier one, both valid:
 
 Consumers normally load only **one** definition of a given entity; overlapping printings (a spell
 reprinted in two sourcebooks, a beta and a final ruleset, a draft and a definitive edition) are
-generally not co-loaded, and when they are, precedence silently resolves them. Precedence resolution
+generally not co-loaded, and when they are, precedence silently resolves them. A port and its origin
+(§19) belong to two editions and are never loaded in one set: that is an error *(v0.6)*. Precedence resolution
 itself is a **consumer / `.ttrpg → .json`** concern — the file-level validator checks *coherence*
 within an edition (§20), not which layer ultimately wins.
 
@@ -1941,7 +1965,7 @@ EXTENDS #L5R001aB2cD4eF6gH8iJ0kL ^"Entity"
 
 Only these keywords are reserved by the base spec:
 
-**File-level:** `BASE`, `EXTENSION`, `EXTENDS`, `NAME`, `VERSION`, `RELEASE_DATE`, `DEPENDS_ON`
+**File-level:** `BASE`, `EXTENSION`, `EXTENDS`, `NAME`, `VERSION`, `RELEASE_DATE`, `DEPENDS_ON`, `ORIGIN` (a port's source, §19; shared with **Bridge**)
 
 **Definition:** `DEF`, `ACTOR`, `TEMPLATE`, `CHOICES`, `PROPERTIES`, `RULES`
 
@@ -3242,19 +3266,65 @@ Three distinct version axes, kept separate:
 ### Editions & version namespaces *(v0.4)*
 
 An **edition** (or a major/beta version line) is an **identity namespace**. Hash identity is **stable
-within** it and carries **no identity across** it: an edition change is a **breaking change**, so "the
-same" entity in a newer edition is a *new* definition with a *new* hash (§5), not an overlay on the
-old one. Editions are therefore kept as **separate systems** — e.g. `arm5e` (Ars Magica 5th) vs.
-`armdef` (the Definitive edition), or a system's beta lines vs. its final rules. Within one edition,
-core + sourcebooks + errata share the namespace and compose by precedence (§13).
+within** it, and nothing resolves across it: an edition change is a **breaking change**, so "the
+same" entity in a newer edition is a *new* definition (§5), not an overlay on the old one. Editions
+are therefore kept as **separate systems** — e.g. `arm5e` (Ars Magica 5th) vs. `armdef` (the
+Definitive edition), or a system's beta lines vs. its final rules. Within one edition, core +
+sourcebooks + errata share the namespace and compose by precedence (§13).
 
-The spec's **dice module** (§8) is the one thing shared across editions. It is edition-neutral: every
-edition includes it, and its hashes are the same in each.
+A hash stands in two editions on purpose in two cases only:
+
+- The spec's **dice module** (§8) is edition-neutral. It is one file, every edition includes it,
+  and its hashes are the same in each.
+- A **port** keeps the hashes of the file it was made from (*Ports*, below).
+
+An entity converted afresh for another edition has a hash of its own: the cores of `arm5e` and
+`armdef` share none, and `^"Faerie Blood"` has one hash in each.
 
 **Forward-porting.** A sourcebook published for an older edition does **not** automatically apply to a
 newer one — it references the old edition's hashes. To use it under a newer edition, generate a **new
 `.ttrpg` of that sourcebook converted to the newer edition**, targeting the newer edition's
 definitions and diffs — a derived artifact, not an automatic overlay.
+
+### Ports *(v0.6, DECISION-26)*
+
+That derived artifact is a **port**: a file made from a file of another edition. It says so in its
+header.
+
+```
+EXTENSION "ARMDef_Grogs_Abilities" {
+    NAME "Ars Magica Fifth Edition, Grogs - New Abilities"
+    VERSION "0.5.2"
+    SPEC_VERSION "0.6"
+    RELEASE_DATE "2026-07-25"
+    ORIGIN "arm5e" EXTENSION "ArM5_Grogs_Abilities"
+    DEPENDS_ON "ARMDef_Grogs_Core_Ext"
+
+    #tu5h4xn3dqOCTXEYMVzZrEWh ^"Craft Poppets" DEF {
+        EXTENDS #tLzvYKtdVMBerES3oaOuTyEy ^"Ability"
+        # ...
+    }
+}
+```
+
+- **`ORIGIN "edition" <KIND> "id"`** stands in the header, once. It names the edition the file was
+  ported from (an edition id, as a bridge names one, §21) and the container it was made from:
+  `EXTENSION`, `BASE`, `SETTING`, `FRAME`, `ARC` or `CAMPAIGN`.
+- **A port keeps its anchors.** Every definition and named block the port carries over keeps the
+  hash it has in the origin. `^"Craft Poppets"` is `#tu5h4xn3dqOCTXEYMVzZrEWh` in both files.
+- **A shared hash is one entity, carried over.** A hash that stands in a port and in its origin has
+  the same name in both. The two bodies may differ, since each is written for its own edition.
+- **A port's references are its own edition's.** Every reference in a port resolves in the port's
+  edition (§20). A reference to the other edition's core is re-pointed: `^"Ability"` is
+  `#tWPnyoi9rSMWyMo7Njlo9XM2` in arm5e and `#tLzvYKtdVMBerES3oaOuTyEy` in armdef, and the port
+  writes the second.
+- A port may leave out an entity its own edition already holds, with a `REPRINT`, an `ALIAS` or a
+  `MODIFY` in its place (§5b, §13). It may add definitions of its own, each under a new hash.
+- A port and its origin are files of two editions. They are never loaded in one composition set
+  (§13).
+- **Outside a port, a shared hash means nothing.** Two editions may hold the same hash by accident,
+  and no tool may read that as identity. Where no port carries an entity across, the
+  correspondence between two editions is a bridge's to state (§21).
 
 The machine-readable edition diff this presupposes is a **`.bridge` file (§21)** — the one container
 with two dependency lineages, holding a *directed* correspondence between two namespaces. A bridge
@@ -3302,6 +3372,24 @@ spec version.
 
 **Out of scope for the DSL:** *sophisticated rules validation* (evaluating whether game rules are internally consistent or produce legal characters) runs **downstream**, in the tools that consume `.ttrpg`/`.lore`, and is built later. The DSL guarantees a well-formed, coherent knowledge base — not a rules engine.
 
+### Ports — checked against their origin *(v0.6, DECISION-26)*
+
+A port (§19) declares `ORIGIN "edition" <KIND> "id"`. The validator checks:
+
+- **Form (lint).** The line names an edition id, a container kind and a container id, and a file
+  has at most one.
+- **Not loaded together.** If the origin container is in the loaded set, that is an **error**: a
+  port and its origin are two editions' files (§13).
+- **Against the origin's corpus.** Given a corpus for the origin's edition
+  (`--corpus arm5e="…/arm5e/0.5"`, the flag a bridge uses), the origin container must exist there
+  and be of the kind named, and every hash the port shares with it must carry the same name in
+  both. Each failure is an **error**.
+- **No corpus given.** The port's references are still resolved in its own edition. The claim
+  about its origin is not checked, and the validator says so in one **warning** per edition id.
+
+A hash that two editions share outside a declared port is not a finding. No rule gives it a
+meaning (§5).
+
 ### Bridges — two-corpus coherence *(v0.4)*
 
 A `.bridge` file (§21) is the one container whose references span **two** edition namespaces, so
@@ -3335,7 +3423,7 @@ raises a **warning**, so quoting cannot be used to dodge the reference gate.
 ## 21. BRIDGE — Cross-Edition Conversion *(v0.4)*
 
 §19 makes an edition an **identity namespace**: hash identity is stable within it and carries none
-across it. §13 scopes a composition set to one edition namespace, and §20 scopes coherence to one
+across it, a declared port aside. §13 scopes a composition set to one edition namespace, and §20 scopes coherence to one
 edition. Every container defined above has exactly **one** dependency lineage.
 
 A published *edition-conversion document* — "Converting to SRD 5.2.1", Ars Magica 5th's "Appendix I:

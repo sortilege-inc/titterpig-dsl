@@ -1,0 +1,9 @@
+EXTENSION "Port_Bad_4" {
+    NAME "fault 4 — ORIGIN inside a definition"
+    SPEC_VERSION "0.6"
+    VERSION "1.0"
+    RELEASE_DATE "2026-11-12"
+    #PrtBad4DefM8xK2cV5nL9qW3 ^"A Ported Thing" DEF {
+        ORIGIN "port-old" EXTENSION "Port_Old_Grogs"           # ERROR
+    }
+}

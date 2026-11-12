@@ -333,11 +333,74 @@ nowhere are reported by neither tool.
 
 ### A5. The spec's example of two editions shares most of its hashes
 
-**Status:** open
+**Status:** closed 2026-11-12 by the owner. Committed and pushed on branch `0.6`. A port keeps
+its source's hashes and declares its source (DECISION-26).
 
 §5 and §19: hash identity carries nothing across editions; the same entity in another edition has a
-different hash. §19 gives arm5e and armdef as the example of separate editions. 8,299 of the 9,959
-DEF anchors in `arm5e/0.5` also appear in `armdef/0.5`, because armdef is regenerated from arm5e.
+different hash. §19 gives arm5e and armdef as the example of separate editions. Most DEF anchors in
+`arm5e/0.5` also appear in `armdef/0.5`, because the armdef sourcebooks are regenerated from arm5e.
+
+**Evidence, recounted 2026-11-12.** Every hashed DEF in `.ttrpg` and `.actor` files, read with the
+validator's tokenizer. This replaces the first count (8,299 of 9,959), which I could not reproduce.
+
+| Hashed DEFs | arm5e | armdef | Same hash in both |
+|---|---|---|---|
+| Core (top level and `spells/`) | 1,410 | 2,232 | 0 |
+| The 46 sourcebooks | 10,555 | 10,276 | 10,275 |
+| Total | 11,965 | 12,508 | 10,275 |
+
+- The two cores were converted from two different books and share no hash. 1,201 names are defined
+  in both editions under different hashes (`^"Faerie Blood"` is `#t42wf…` in arm5e and `#t1nZX…` in
+  armdef).
+- The sourcebooks are ports. `retarget_armdef.py` copies each arm5e file, gives it an armdef id and
+  `DEPENDS_ON`, and re-points its references at armdef's core. Its own header says a DEF's `#hash`
+  anchor is never rewritten. All 10,275 shared hashes carry the same name on both sides.
+- Of the 10,275 pairs, 5,549 have identical bodies, 3,788 differ only in the hashes of what they
+  reference, and 938 differ in more (the one opened renames a property, `^"Personality Traits"` to
+  `^"Personality Trait"`). No ported file is byte-identical to its source (0 of 2,382): each
+  declares its own id.
+- 280 sourcebook DEFs exist only in arm5e and 1 only in armdef. The 280 are entries the Definitive
+  core also prints, which the port turns into `REPRINT`, `ALIAS` or `MODIFY` (DECISION-14).
+  UNVERIFIED: I did not check each of the 280 against that table.
+- A tool depends on the shared hashes: `retarget_armdef.py` (`check_armdef_only`) matches a renamed
+  DEF to its arm5e source by hash.
+- Nothing in a ported file says it is a port or names the file it came from.
+- A second pair shares hashes by accident. `invisiblesun/0.5` and `root/0.5` have 1,508 DEF hashes
+  in common and none of them carries the same name (`#t0414qus2S0amh67MiPhYGCp` is
+  `^"Elderbrin Camp in the Realm of the Gold Sun"` in one and `^"New Faction Roll Mechanics (Ruins
+  and Expeditions p18)"` in the other). No other pair among the 22 corpus directories shares one;
+  dnd5e and dnd5.5e share none, and neither do pendragon5e and pendragon6e.
+- No tool compares hashes across editions. Passing both copies of one book (Grogs) to the validator
+  in one run gives 273 `duplicate anchor` errors.
+- Seven files in the dossiers project cite shared hashes. The one opened names its edition in its
+  header (`EXTENDS "ARMDef_Core_Base"`).
+
+**Ruling (owner, 2026-11-12):** "ports keep them but there should be a port declaration".
+Written as DECISION-26.
+
+- **Spec.** §5 and §19 no longer say the other edition's entity has a different hash. A port
+  keeps the hash of everything it carries over and declares its source in its header:
+  `ORIGIN "arm5e" EXTENSION "ArM5_Grogs_Abilities"`. A hash two editions share outside a declared
+  port means nothing. §19 has a new *Ports* section, §20 lists what is checked, and §3, §13, §15,
+  §21 and `bridges/README.md` are brought into line. The owner confirmed the line's wording
+  ("Yes, as written").
+- **Grammar.** `ORIGIN_DECL` in the header. Unproven, as every grammar change is (B1).
+- **Validator.** The line's form; a port and its origin in one loaded set; and, given the origin
+  edition's corpus with `--corpus`, that the origin container exists, is of the kind named, and
+  gives every hash it shares with the port the same name. With no corpus the run says so in one
+  warning per edition id.
+- **Proof.**
+  - Fixtures: `tests/ports-good` with `--corpus port-old=tests/ports-origin` gives 0 errors and
+    0 warnings, and 1 warning without the corpus. `tests/ports-bad` holds nine planted faults and
+    gives 10 errors with the corpus (fault 9 raises two) and 5 without it.
+  - The real corpus: a scratch copy of `armdef/0.5` with an `ORIGIN` line written into each of
+    its 2,390 ported files, validated with arm5e as the corpus, gives the findings the unchanged
+    armdef gives (5 errors, 2,723 warnings, the same list) and none about a port. Renaming one
+    carried-over DEF in that copy and misspelling one origin id gives one error each.
+  - No change elsewhere: the old validator and the new give byte-identical output on all 22
+    corpus directories, and on the dnd5e to dnd5.5e bridge with both corpora.
+- **Not done.** No corpus file declares an `ORIGIN` yet (F14). invisiblesun and root still share
+  their 1,508 hashes (F15).
 
 ### A6. Implicit override is legal in §13 and an error in the validator
 
@@ -890,6 +953,38 @@ in their corpus and are errors now: curseborne's `Curseborne_Wolf_You_Feed_NPCs`
   `^"Mrinmoy \"Vidyapati\" Mishra"`, which neither tool could see until a caret name was allowed
   an escaped quote. It is back to 0 errors.
 
+### F14. arm5e: the retarget writes an `ORIGIN` line into every ported file
+
+**From:** A5, DECISION-26. **Status:** open, not started. Nothing fails today: a port with no
+declaration cannot be told from any other file.
+
+- `retarget_armdef.py` adds `ORIGIN "arm5e" <KIND> "<the arm5e file's id>"` to the header of each
+  file it generates: 2,390 files (2,372 `EXTENSION`, 18 `SETTING`). `verify_armdef.py` strips that
+  line as it strips the other structural rewrites.
+- `armdef-grogs-0.5-aging-subtype.ttrpg` has no arm5e source and declares nothing.
+- armdef's gate then passes `--corpus arm5e=…/arm5e/0.5` to the validator, or the run carries one
+  warning that 2,390 ports were not checked. The scratch run above took the corpus and found no
+  fault.
+- The line needs `SPEC_VERSION "0.6"` to be honest about the spec it follows. The validator reads
+  it at any version.
+
+### F15. invisiblesun and root: re-mint so the two corpora share no hash
+
+**From:** A5. **Status:** open, not started. Added at the owner's request on 2026-11-12: "fi[x]
+invisiblesun and root's hashes to be unique/distinct".
+
+- `invisiblesun/0.5` and `root/0.5` have 1,508 DEF hashes in common. None carries the same name
+  in both, so the two were minted alike by accident. They sit in 9 invisiblesun files and 6 root
+  files.
+- Neither tool reports it: under DECISION-26 a hash two editions share outside a port has no
+  meaning and is legal. The owner wants them distinct all the same.
+- One side re-mints its 1,508 and every reference to them. root is the smaller corpus (2,695
+  hashed DEFs against 10,553). Which side changes is the owner's call, and so is what happens to
+  anything outside the corpus that cites the old hashes. UNVERIFIED: I have not looked for such
+  consumers, or for how the two came to match.
+- Done when a recount of the 22 corpus directories shows arm5e and armdef as the only pair with a
+  hash in common.
+
 ### F12. Seven corpora: scene and conflict types become entities
 
 **From:** A3, DECISION-23. **Status:** open, not started. The validator now reports these.
@@ -1024,6 +1119,27 @@ two parameter to-dos below.
   which the validator does not check; a result given as a bare value in place of a block.
 
 ### Known gaps left by this change
+
+- **An undeclared port is invisible.** The validator checks a file that says `ORIGIN`. It cannot
+  find a file that is a port and does not say so, and armdef's 2,390 say nothing until F14.
+- **A shared hash outside a port is not reported.** invisiblesun and root share 1,508 by
+  accident. That is legal and no tool counts it; F15 makes the two distinct. The cause is
+  UNVERIFIED: two conversions that seeded one generator alike would produce it, and I have not
+  looked.
+- **An edition id is bound only on the command line.** `ORIGIN "arm5e"` means the directory given
+  as `--corpus arm5e=<dir>`, as in a bridge. No file declares its own edition (C8), so the
+  validator cannot check that a port and its origin are in fact two editions.
+- **`ORIGIN` in a port takes no `VERSION`.** A bridge's `ORIGIN` may pin one.
+- **The port check reads the origin a file at a time.** A file that holds two containers lends
+  its anchors to both. UNVERIFIED whether any corpus file holds two.
+- **A ported `.lore` file declares nothing.** It has no header.
+- **Only the validator reads `ORIGIN`.** `check_references.py`, `check_constructs.py` and
+  `check_structure.py` pass over the line (run on `tests/ports-good`: no finding about it). The
+  synthesist and the VTT parsers are unchecked. A `.codex` or `.selections` file with an `ORIGIN`
+  line is not read as a port.
+- **The 280 arm5e sourcebook DEFs with no armdef counterpart** were not checked one by one
+  against the `REPRINT` / `ALIAS` / `MODIFY` table that should account for them.
+- The guidelines and the atlas skill say nothing about ports.
 
 - **§16's SETTING and FRAME examples are still invented.** They carry `SPEC_VERSION`, opaque
   hashes and the 0.6 forms, and their content is unchanged. A real setting waits on l5r5e's Rokugan
@@ -1176,6 +1292,11 @@ Filled in as each finding is walked through.
 | A4 | 2026-11-12 | Any named block that carries a hash is an anchor, whatever its keyword. A hash declared on two different names is an error; on the same name it is a restatement and legal. The one block that shares a hash and a name with a DEF therefore passes. | Agent's calls, to confirm. The second replaces what the agent told the owner beforehand (that the shared `CHECK` / DEF hash would be a duplicate): l5r5e's errata files restate 13 entries under the same hash and name, which §5 allows, so repeating a hash could not be the error. |
 | A4 | 2026-11-12 | A caret name may hold an escaped quote: `^"Mrinmoy \"Vidyapati\" Mishra"`. Written as DECISION-25, and read that way by the validator, the reference gate and the grammar. | Owner: "Yes, allow it", over renaming the 31 definitions that carry one. |
 | A4 | 2026-11-12 | A4 is closed. The branch is committed and pushed. | Owner: "Close, commit, push". The agent's calls in the A4 row marked "to confirm" were reported to him before he closed and were not separately ruled on. |
+| A5 | 2026-11-12 | A port keeps its source's hashes, and a port declares its source. Written as DECISION-26 in §3, §5, §13, §15, §19, §20 and §21, in the grammar and in the validator. | Owner: "ports keep them but there should be a port declaration". The alternative was to re-mint 10,275 armdef anchors and keep a map. |
+| A5 | 2026-11-12 | The declaration is `ORIGIN "edition" <KIND> "id"`, as in `ORIGIN "arm5e" EXTENSION "ArM5_Grogs_Abilities"`. | Owner: "Yes, as written". It reuses the bridge's keyword. |
+| A5 | 2026-11-12 | Agent's calls, to confirm. They were reported to the owner beside the wording and not separately ruled on. (2) A hash a port shares with its origin must carry the same name in both. (3) A port and its origin in one loaded set is an error. (4) With no corpus for the origin's edition the validator gives one warning per edition id, where a bridge gives an error. (5) No `VERSION` on the line. (6) A port may add definitions of its own and may leave entities out. (7) The audit's first count for A5 (8,299 of 9,959) is replaced by a recount (10,275 of 11,965). | (2) to (6): the smallest rule that makes the declaration checkable; all 10,275 real pairs satisfy (2). (7): the first count could not be reproduced. |
+| A5 | 2026-11-12 | invisiblesun and root are to be re-minted so that they share no hash. Recorded as F15. | Owner: "add to the todo to fi[x] invisiblesun and root's hashes to be unique/distinct". The spec does not require it. |
+| A5 | 2026-11-12 | A5 is closed. The branch is committed and pushed. | Owner: "Close, commit, push". The agent's calls in the A5 row marked "to confirm" were reported to him before he closed and were not separately ruled on. |
 
 ---
 

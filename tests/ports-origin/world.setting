@@ -1,0 +1,9 @@
+SETTING "Port_Old_Setting" {
+    NAME "DECISION-26 fixture — a setting in the origin edition"
+    SPEC_VERSION "0.6"
+    VERSION "1.0"
+
+    LOCATION ^"The Mill" #PrtMillN5cJ9vE2kX7sR4bWf {
+        DESCRIPTION "A water mill below the covenant."
+    }
+}

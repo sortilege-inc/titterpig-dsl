@@ -1,0 +1,22 @@
+EXTENSION "Port_Old_Grogs" {
+    NAME "DECISION-26 fixture — a sourcebook in the origin edition"
+    SPEC_VERSION "0.6"
+    VERSION "1.0"
+    RELEASE_DATE "2026-11-12"
+    DEPENDS_ON "Port_Old_Core"
+
+    #PrtPoppetsW3nB8sHdPz5FgR1 ^"Craft Poppets" DEF {
+        EXTENDS #PrtOldAbilityQ7mX2vK9tLc4 ^"Ability"
+        DESCRIPTION "The character can make effigies of individuals out of wax, straw, and cloth."
+    }
+
+    #PrtFarrierK2xV6yNc9TqJ4mL ^"Craft: Farrier" DEF {
+        EXTENDS #PrtOldAbilityQ7mX2vK9tLc4 ^"Ability"
+        DESCRIPTION "This is the professional skill of hoof care and shoeing horses."
+    }
+
+    # The newer edition prints this one in its core, so the port leaves it out.
+    #PrtSwimD8rT1wZb5YhG3pQ7uA ^"Swim" DEF {
+        EXTENDS #PrtOldAbilityQ7mX2vK9tLc4 ^"Ability"
+    }
+}

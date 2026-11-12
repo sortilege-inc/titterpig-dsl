@@ -109,6 +109,17 @@ ERROR: "not checked" must never read as "checked and fine". An untyped referent 
 string where a caret ref could have gone) is not gated, but WARNS if it would in fact
 have resolved — so quoting cannot be used to dodge the reference gate.
 
+PORTS (spec §19, DECISION-26). A file made from another edition's file declares it in its
+header:  ORIGIN "arm5e" EXTENSION "ArM5_Grogs_Abilities".  A port keeps its origin's hashes.
+
+  - lint: the line names an edition id, a container kind and a container id; it stands in
+    the header; a file has at most one.
+  - a port and its origin in one loaded set is an ERROR (they are two editions' files).
+  - with --corpus <edition>=<dir> for the origin's edition: the origin container must exist
+    there and be of the kind named, and every hash the port shares with it must carry the
+    same name in both (ERROR otherwise).
+  - with no corpus for that edition the claim is not checked: one WARNING per edition id.
+
 Usage:  ttrpg_validator.py <file-or-dir> [more ...] [--corpus <edition>=<dir> ...]
 Exit:   0 = no errors (warnings allowed); 1 = one or more errors; 2 = bad invocation.
 """
@@ -627,8 +638,11 @@ def bridge_coherence(files_data, corpora, findings, notes):
                                 unverified.get(side, 0), rec['external']))
 
 
-def load_corpus_names(path):
-    """Every ^"Name" / ACTOR / TEMPLATE / ALIAS name defined in an edition corpus."""
+def load_corpus_names(path, index=None):
+    """Every ^"Name" / ACTOR / TEMPLATE / ALIAS name defined in an edition corpus.
+    `index`, when given, is filled with  container id -> {'kinds', 'anchors', 'file'}:
+    the kinds declared under that id and hash -> {names} for the file that declares it
+    (what a port is checked against, §19)."""
     names = set()
     scratch = []
     for root, _dirs, files in os.walk(path):
@@ -642,6 +656,17 @@ def load_corpus_names(path):
             except OSError:
                 continue
             names.update(data['names'])
+            if index is not None:
+                anchors = {}
+                for src in (data.get('anchor_names', {}), data.get('block_anchors', {}),
+                            data.get('entity_anchors', {})):
+                    for h, nms in src.items():
+                        anchors.setdefault(h, set()).update(nms)
+                for cid, kind in data.get('containers', {}).items():
+                    rec = index.setdefault(cid, {'kinds': set(), 'anchors': {}, 'file': p})
+                    rec['kinds'].add(kind)
+                    for h, nms in anchors.items():
+                        rec['anchors'].setdefault(h, set()).update(nms)
     return names
 
 
@@ -832,6 +857,7 @@ def analyze_file(fname, text, findings):
     hash_refs = []                       # a reference written as a bare hash: (kind, hash, line)
     block_types = []                     # TYPE of a SCENE / CONFLICT: (block kw, entity, line)  (§16)
     containers = {}                      # container id -> kind (BASE, EXTENSION, SETTING, …)  (§16)
+    origins = []                         # (edition, kind, container id, line): a port's source (§19)
     froms = []                           # FROM [KIND] "id" imports: (kind or None, id, line)  (§16)
 
     # Embedded references (§5c, DECISION-20): every ^\"Name\" inside a string is a reference
@@ -1787,6 +1813,27 @@ def analyze_file(fname, text, findings):
         elif w == 'DEPENDS_ON':
             if idx + 1 < len(toks) and toks[idx + 1].kind == 'STR':
                 depends.append((toks[idx + 1].val, t.line))
+        elif w == 'ORIGIN' and idx + 1 < len(toks) and toks[idx + 1].kind == 'STR':
+            # A port's source (§19, DECISION-26): ORIGIN "edition" <KIND> "id", in the header.
+            # `ORIGIN {` with no string is a block some frozen pre-0.4 files use, and is left alone.
+            kind_tok = toks[idx + 2] if idx + 2 < len(toks) else None
+            id_tok = toks[idx + 3] if idx + 3 < len(toks) else None
+            if not (kind_tok is not None and kind_tok.kind == 'ID' and kind_tok.val in CONTAINER_KINDS
+                    and kind_tok.line == t.line
+                    and id_tok is not None and id_tok.kind == 'STR' and id_tok.line == t.line):
+                findings.append(Finding(fname, 'lint', 'error', t.line,
+                                        'ORIGIN names an edition, a kind of container and its id: '
+                                        'ORIGIN "arm5e" EXTENSION "ArM5_Grogs_Abilities" (§19)'))
+            elif len(frames) != 1:
+                findings.append(Finding(fname, 'lint', 'error', t.line,
+                                        'ORIGIN stands in the file\'s header, beside VERSION and '
+                                        'DEPENDS_ON (§19)'))
+            elif origins:
+                findings.append(Finding(fname, 'lint', 'error', t.line,
+                                        'a file declares one ORIGIN; the first is on line %d (§19)'
+                                        % origins[0][3]))
+            else:
+                origins.append((toks[idx + 1].val, kind_tok.val, id_tok.val, t.line))
         elif w == 'FIAT':
             nxt = toks[idx + 1] if idx + 1 < len(toks) else None
             if nxt is None or nxt.kind != 'STR':
@@ -1864,7 +1911,7 @@ def analyze_file(fname, text, findings):
         'reprints': reprints, 'aliases': aliases, 'chooses': chooses, 'ref_values': ref_values,
         'rolls': rolls, 'tables': tables, 'containers': containers, 'froms': froms,
         'block_types': block_types, 'block_names': block_names, 'block_anchors': block_anchors,
-        'block_anchor_lines': block_anchor_lines, 'anchor_names': anchor_names,
+        'block_anchor_lines': block_anchor_lines, 'anchor_names': anchor_names, 'origins': origins,
         'hash_refs': hash_refs,
     }
 
@@ -2410,6 +2457,58 @@ def from_pass(files_data, findings):
                                         % (kind, cid, ' / '.join(sorted(kinds[cid])), kind)))
 
 
+def port_pass(files_data, corpus_index, findings):
+    """A port and its origin (§19, DECISION-26). `corpus_index` is  edition id ->
+    {container id -> {'kinds', 'anchors', 'file'}}  for each --corpus given."""
+    declared = {}                                   # container id -> {files that declare it}
+    for d in files_data:
+        for cid in d.get('containers', {}):
+            declared.setdefault(cid, set()).add(d['file'])
+    unchecked = {}                                  # edition id -> [(file, line)]
+    for d in files_data:
+        for edition, kind, cid, line in d.get('origins', []):
+            others = declared.get(cid, set()) - {d['file']}
+            if others:
+                findings.append(Finding(d['file'], 'coherence', 'error', line,
+                                        'ORIGIN names %s "%s", and %s declares it in this loaded set: '
+                                        'a port and its origin are files of two editions and are not '
+                                        'loaded together (§13, §19)'
+                                        % (kind, cid, os.path.basename(sorted(others)[0]))))
+            if edition not in corpus_index:
+                unchecked.setdefault(edition, []).append((d['file'], line))
+                continue
+            rec = corpus_index[edition].get(cid)
+            if rec is None:
+                findings.append(Finding(d['file'], 'coherence', 'error', line,
+                                        'ORIGIN names %s "%s", and the corpus given for edition "%s" '
+                                        'has no container of that id (§19)' % (kind, cid, edition)))
+                continue
+            if kind not in rec['kinds']:
+                findings.append(Finding(d['file'], 'coherence', 'error', line,
+                                        'ORIGIN %s "%s": in edition "%s" that container is %s (§19)'
+                                        % (kind, cid, edition, ' / '.join(sorted(rec['kinds'])))))
+            mine = {}                               # hash -> ({names}, line)
+            for h, nms in d.get('anchor_names', {}).items():
+                mine[h] = (set(nms), d['anchors'].get(h, [line])[0])
+            for h, decls in d.get('block_anchor_lines', {}).items():
+                nms, ln = mine.get(h, (set(), decls[0][1]))
+                mine[h] = (nms | {nm for nm, _ in decls}, ln)
+            for h, (nms, ln) in sorted(mine.items(), key=lambda kv: kv[1][1]):
+                theirs = rec['anchors'].get(h)
+                if theirs and not (nms & theirs):
+                    findings.append(Finding(d['file'], 'coherence', 'error', ln,
+                                            'hash %s is ^"%s" here and ^"%s" in the origin (%s "%s", '
+                                            'edition "%s"): a hash a port shares with its origin '
+                                            'carries the same name in both (§19)'
+                                            % (h, sorted(nms)[0], sorted(theirs)[0], kind, cid, edition)))
+    for edition, where in sorted(unchecked.items()):
+        f, line = sorted(where)[0]
+        findings.append(Finding(f, 'coherence', 'warning', line,
+                                'ORIGIN "%s": no corpus was given for that edition, so %d port(s) in '
+                                'this run were not checked against their origin; pass '
+                                '--corpus %s=<dir> (§20)' % (edition, len(where), edition)))
+
+
 def block_type_pass(files_data, findings):
     """TYPE of a SCENE or a CONFLICT (§16, DECISION-23). Where the loaded set defines ^"Scene Type"
     (or ^"Conflict Type"), the entity named must be one: it, or something that EXTENDS it. Where
@@ -2657,7 +2756,7 @@ def main(argv):
         print("no .ttrpg files found", file=sys.stderr)
         return 2
 
-    corpora = {}
+    corpora, corpus_index = {}, {}
     for spec in corpus_args:
         if '=' not in spec:
             print("--corpus expects <edition>=<dir>, got %r" % spec, file=sys.stderr)
@@ -2666,7 +2765,8 @@ def main(argv):
         if not os.path.isdir(d):
             print("--corpus %s: not a directory: %s" % (ed, d), file=sys.stderr)
             return 2
-        corpora[ed] = load_corpus_names(d)
+        corpus_index[ed] = {}
+        corpora[ed] = load_corpus_names(d, corpus_index[ed])
 
     findings, files_data, notes = [], [], []
     for path in paths:
@@ -2684,6 +2784,7 @@ def main(argv):
     table_pass(files_data, findings)
     from_pass(files_data, findings)
     block_type_pass(files_data, findings)
+    port_pass(files_data, corpus_index, findings)
     modification_pass(files_data, findings)
     bridge_coherence(files_data, corpora, findings, notes)
 

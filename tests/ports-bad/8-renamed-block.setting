@@ -1,0 +1,10 @@
+SETTING "Port_Bad_8" {
+    NAME "fault 8 — a named block's shared hash under another name"
+    SPEC_VERSION "0.6"
+    VERSION "1.0"
+    ORIGIN "port-old" SETTING "Port_Old_Setting"
+
+    LOCATION ^"The Old Mill" #PrtMillN5cJ9vE2kX7sR4bWf {       # ERROR: ^"The Mill" in the origin
+        DESCRIPTION "A water mill below the covenant."
+    }
+}

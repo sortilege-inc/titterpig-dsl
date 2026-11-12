@@ -1,0 +1,18 @@
+BASE "Port_New_Core" {
+    NAME "DECISION-26 fixture — the edition a port is written for (§19)"
+    SPEC_VERSION "0.6"
+    VERSION "1.0"
+    RELEASE_DATE "2026-11-12"
+
+    # Run with the origin edition's corpus, and without it:
+    #   ttrpg_validator.py tests/ports-good --corpus port-old=tests/ports-origin    0 errors, 0 warnings
+    #   ttrpg_validator.py tests/ports-good                                         0 errors, 1 warning
+    #
+    # The two cores were converted apart. ^"Ability" and ^"Swim" have hashes of their own here.
+
+    #PrtNewAbilityH4zC8pM1dYw6 ^"Ability" DEF { }
+
+    #PrtNewSwimU9fL3aS7eV2oK5x ^"Swim" DEF {
+        EXTENDS #PrtNewAbilityH4zC8pM1dYw6 ^"Ability"
+    }
+}

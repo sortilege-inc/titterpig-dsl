@@ -4,7 +4,7 @@
 game's repo: a bridge belongs to **neither** edition.
 
 An edition is an *identity namespace* (§19): hash identity is stable within it and carries none
-across it. Every other container has exactly one dependency lineage. A published
+across it, a declared port aside. Every other container has exactly one dependency lineage. A published
 edition-conversion document asserts the thing §19 forbids inside a namespace — *this older-edition
 thing became that newer-edition thing* — and inherently has **two**. That is the gap `.bridge` fills.
 

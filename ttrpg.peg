@@ -21,6 +21,7 @@
 # a block's name and hash may stand in either order (§16, DECISION-22).
 # A SCENE's and a CONFLICT's TYPE is a reference to an entity the system defines (§16,
 # DECISION-23); the validator checks it, since the containers are not yet rules here.
+# A port's header names its source: ORIGIN "edition" <KIND> "id" (§19, DECISION-26).
 #
 # This grammar defines syntactically valid .ttrpg files. Semantic rules
 # (hash uniqueness, EXTENDS resolution, type consistency) are enforced
@@ -87,12 +88,19 @@ BODY_ENTRY      <- METADATA
 # ═══════════════════════════════════════════════════════════
 
 METADATA        <- NAME_DECL / SPEC_VERSION_DECL / VERSION_DECL / RELEASE_DATE_DECL / DEPENDS_ON_DECL
+                 / ORIGIN_DECL
 
 NAME_DECL       <- 'NAME' _ STRING
 SPEC_VERSION_DECL <- 'SPEC_VERSION' _ STRING
 VERSION_DECL    <- 'VERSION' _ STRING
 RELEASE_DATE_DECL <- 'RELEASE_DATE' _ STRING
 DEPENDS_ON_DECL <- 'DEPENDS_ON' _ STRING (_ 'VERSION' _ STRING)?
+
+# v0.6 (DECISION-26, §19): a port names the edition and the container it was made from.
+#   ORIGIN "arm5e" EXTENSION "ArM5_Grogs_Abilities"
+# One per file, in the header. A port keeps the hashes of that container.
+ORIGIN_DECL     <- 'ORIGIN' _ STRING _ PORT_KIND _ STRING
+PORT_KIND       <- CONTAINER_KIND / 'CAMPAIGN'
 
 # ═══════════════════════════════════════════════════════════
 # 3. Definitions (DEF)
@@ -767,7 +775,8 @@ EOF             <- !.
 # over UPPER_IDENT / GENERIC_BLOCK:
 #
 # File-level:    BASE, EXTENSION, BRIDGE, EXTENDS, NAME, VERSION, SPEC_VERSION,
-#                RELEASE_DATE, DEPENDS_ON
+#                RELEASE_DATE, DEPENDS_ON, ORIGIN (v0.6, DECISION-26: a port's source;
+#                shared with Bridge)
 # Definition:    DEF, ACTOR, TEMPLATE, PROPERTIES, RULES
 # Types:         STRING, INTEGER, BOOLEAN, ENUM, LIST, OF, REF            (REF: v0.6, DECISION-17)
 # Dice:          FACES, WEIGHT, ROLL, NEXT                               (v0.6, DECISION-18)

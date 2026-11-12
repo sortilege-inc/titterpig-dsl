@@ -1,0 +1,14 @@
+BASE "Port_Bad_Core" {
+    NAME "DECISION-26 fixture — ports with one fault each (§19, §20)"
+    SPEC_VERSION "0.6"
+    VERSION "1.0"
+    RELEASE_DATE "2026-11-12"
+
+    # Run with the origin edition's corpus:
+    #   ttrpg_validator.py tests/ports-bad --corpus port-old=tests/ports-origin
+    # Each file below carries the fault its NAME states: 10 errors, since fault 9 raises two (its
+    # planted origin is also missing from the corpus given). The faults that need the origin's
+    # corpus (5 to 8) are silent without it; that run gives 5 errors and one warning.
+
+    #PrtBadAbilityT1vN7kQ3wE9s ^"Ability" DEF { }
+}

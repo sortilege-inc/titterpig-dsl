@@ -1,0 +1,7 @@
+EXTENSION "Port_Bad_5" {
+    NAME "fault 5 — the origin edition has no such container"
+    SPEC_VERSION "0.6"
+    VERSION "1.0"
+    RELEASE_DATE "2026-11-12"
+    ORIGIN "port-old" EXTENSION "Port_Old_Covenants"           # ERROR
+}
