@@ -68,6 +68,10 @@ Changes made since v0.5, listed as they are decided. **Not all are additive.**
     `REPRINT`. No corpus used the implicit form and the validator never accepted it. A DEF of the
     same name under another hash is a second entity and replaces nothing, and a consumer must not
     merge the two.
+15. **An `.actor` file is an `EXTENSION` file of instances** *(§2, §3, DECISION-28; not additive)* —
+    it opens with the `EXTENSION` wrapper as a `.ttrpg` does, holds one or more instance DEFs, and
+    holds nothing else. §2 had called it a standalone single DEF. A file that opens with a bare
+    DEF is the older form and the validator warns on it.
 
 ### v0.5 — five new constructs, and one rule tightened *(current)*
 
@@ -448,6 +452,17 @@ stay valid.
   the two. A book that means an entity another file defines says so with `REPRINT`, `ALIAS`,
   `MODIFY` or `OVERRIDE`.
 
+- **DECISION-28 — An `.actor` file is an `EXTENSION` file of instances** *(resolved, v0.6,
+  2026-11-12)* (§2, §3, §5): §2 called an `.actor` "a `.ttrpg` file scoped to exactly one
+  character definition (a single `DEF` block)" and "a standalone file", while §3 has every
+  `.ttrpg` open with `BASE` or `EXTENSION`. Of the 3,077 `.actor` files in 13 corpora, 2,407
+  open with an `EXTENSION` wrapper and 670 with a bare DEF, and 78 hold more than one DEF: a
+  magus at four ages, an adventure's pregenerated characters, a chapter's NPCs. A bare file has
+  no header, so it cannot declare a `SPEC_VERSION` or name the system it belongs to. Three
+  rulings. An `.actor` always opens with the `EXTENSION` wrapper. It holds one or more DEFs. It
+  holds instances only: each DEF extends a type, and a type declaration belongs in a `.ttrpg`.
+  The type need not be an `ACTOR` type, since arm5e's creatures and covenants extend plain DEFs.
+
 ## 1. Overview & Design Principles
 
 Titterpig is a domain-specific language (DSL) for defining tabletop role-playing game (TTRPG) systems, content, and narrative structures. The base specification defines a **system-agnostic syntax toolkit** — it owns the grammar, while each game system owns its vocabulary.
@@ -539,13 +554,45 @@ The DSL uses multiple file extensions, each corresponding to a specific containe
 | `.frame` | FRAME | Campaign scaffolding — setting + light mechanics (DSL) |
 | `.arc` | ARC | Complete playable narrative adventures (DSL) |
 | `.campaign` | CAMPAIGN | Long-form multi-arc story collections (DSL) |
-| `.actor` | (single DEF) | A single character — PC or NPC — as a discrete file (DSL) |
+| `.actor` | EXTENSION | One or more instances (characters, PC or NPC, and other records with a sheet) as a file of their own (DSL) *(v0.6: wrapped, §2)* |
 | `.bridge` | BRIDGE | **Cross-edition conversion** — a directed correspondence between two editions (DSL) *(v0.4, §21)* |
 | `.lore` | (none — Markdown) | **Free narrative prose / flavor** — no DSL syntax *(v0.4)* |
 | `.codex` | CODEX | **Stand-off lore knowledge graph** — typed entities + declared relationships over `.lore` prose (DSL) *(v0.5, §25)* |
 | `.selections` | SELECTIONS | **User's optional-rule choices** for a corpus — `SELECT #hash on\|off` (DSL) *(v0.5, §24)* |
 
-The `.actor` extension is a convenience alias: an `.actor` file is a `.ttrpg` file scoped to exactly one character definition (a single `DEF` block). It uses identical syntax to a DEF within an EXTENSION but exists as a standalone file, making it easy to share, version, or reference individual characters independently of the containers they appear in.
+**An `.actor` file is an `EXTENSION` file that holds instances and nothing else** *(v0.6,
+DECISION-28)*. The extension says what the file holds, which makes characters easy to share, version
+and find apart from the rules.
+
+```
+EXTENSION "tor2e-core-ash" EXTENDS "tor2e" {
+    NAME "Ash"
+    VERSION "0.5"
+    SPEC_VERSION "0.6"
+    RELEASE_DATE "2026-11-12"
+
+    #tzjEoZpJbPbQBT05csRIVx5 ^"Ash" DEF {
+        EXTENDS #TOR0020000000000 ^"Adversary"
+        PROPERTIES {
+            ^"Name" STRING "Ash"
+        }
+    }
+}
+```
+
+- **It opens with the `EXTENSION` wrapper**, as a `.ttrpg` does (§3). So it declares its
+  `SPEC_VERSION`, its own `VERSION`, and the file it depends on.
+- **It holds one or more instance DEFs** (§5). One file may hold one character, one character in
+  several states (a magus at Gauntlet and again fifteen years on), or a group that belongs together
+  (an adventure's pregenerated characters, a chapter's NPCs).
+- **It holds instances only.** Each DEF `EXTENDS` a type, usually one of the system's `ACTOR` types,
+  or another instance in the same file. A type declaration, an `ACTOR` or `TEMPLATE` definition, and
+  a `MODIFY`, `OVERRIDE`, `ADD`, `REPRINT` or `ALIAS` belong in a `.ttrpg`.
+
+Before v0.6 this section called an `.actor` a standalone single DEF with no wrapper. A file that
+opens with a bare DEF is that older form. It carries no `SPEC_VERSION`, so it reads as older than
+0.6, and the validator **warns**. A type or a modification in an `.actor` is a warning in a file that
+declares a `SPEC_VERSION` below 0.6 and an error from 0.6.
 
 ### Structured Narrative vs. Free Prose (`.setting`/`.frame` vs `.lore`) *(v0.4)*
 
@@ -567,14 +614,14 @@ Files are organized as:
 - `frames/{system_id}/{frame_id}.frame` — Campaign scaffolds
 - `arcs/{system_id}/{arc_id}.arc` — Playable adventures
 - `campaigns/{system_id}/{campaign_id}.campaign` — Multi-arc campaigns
-- `actors/{character_id}.actor` — Individual character definitions (PC or NPC)
+- `actors/{character_id}.actor` — Character instances (PC or NPC), one or more to a file
 - `bridges/{origin}-to-{destination}-{doc}.bridge` — Cross-edition conversions (§21), in the canonical repo or beside a system's corpus; never inside either edition's corpus
 
 ---
 
 ## 3. File-Level Structure
 
-Every `.ttrpg` file opens with either a `BASE` or `EXTENSION` declaration. These are the only two file-level wrappers.
+Every `.ttrpg` file opens with either a `BASE` or `EXTENSION` declaration. These are the only two file-level wrappers. An `.actor` file opens with `EXTENSION` (§2).
 
 ### BASE — Standalone Module
 
@@ -1123,7 +1170,7 @@ A `DEF` serves two roles, distinguished by whether it `EXTENDS` an **actor type*
 }
 ```
 
-Instances use the **same** grammar as definitions — no `=` assignments, no dotted paths, no `STATS` block, and the canonical `#hash ^"Name" DEF` ordering. An `.actor` file is exactly one such instance. Coherence validation checks each value against the constraint inherited from the actor type (here, Air ∈ 1–5).
+Instances use the **same** grammar as definitions — no `=` assignments, no dotted paths, no `STATS` block, and the canonical `#hash ^"Name" DEF` ordering. An `.actor` file holds one or more such instances (§2). Coherence validation checks each value against the constraint inherited from the actor type (here, Air ∈ 1–5).
 
 ---
 

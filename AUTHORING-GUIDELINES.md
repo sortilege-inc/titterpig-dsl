@@ -90,7 +90,7 @@ the only objectives**. Structure must never cause content loss.
 | If the content is… | Use |
 |---|---|
 | Game mechanics / rules | `.ttrpg` |
-| A single character (PC/NPC) as its own file | `.actor` |
+| One or more character instances (PC/NPC) as a file of their own, in an `EXTENSION` wrapper | `.actor` |
 | *Structured* world-building a tool queries (locations, factions, NPCs, scenes, hooks) | `.setting` / `.frame` / `.arc` / `.campaign` |
 | *Free prose* meant only to be read (history, color, fiction) | `.lore` (Markdown, no DSL) |
 

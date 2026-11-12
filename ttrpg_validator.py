@@ -112,6 +112,15 @@ ERROR: "not checked" must never read as "checked and fine". An untyped referent 
 string where a caret ref could have gone) is not gated, but WARNS if it would in fact
 have resolved — so quoting cannot be used to dodge the reference gate.
 
+ACTOR FILES (spec §2, DECISION-28). An .actor file is an EXTENSION file of instances.
+
+  - it opens with the EXTENSION wrapper. A file that opens with a bare DEF is the form older
+    than 0.6: one WARNING, which stands in for the missing-SPEC_VERSION warning.
+  - every top-level DEF extends a type; an ACTOR or TEMPLATE definition, a DEF that extends
+    nothing, and a MODIFY / OVERRIDE / ADD / REPRINT / ALIAS belong in a .ttrpg (WARNING in a
+    file that declares SPEC_VERSION below 0.6, ERROR from 0.6).
+  - a wrapped .actor declares SPEC_VERSION as any file does.
+
 PORTS (spec §19, DECISION-26). A file made from another edition's file declares it in its
 header:  ORIGIN "arm5e" EXTENSION "ArM5_Grogs_Abilities".  A port keeps its origin's hashes.
 
@@ -825,6 +834,69 @@ def scan_modify_body(toks, lb):
             ops.append({'op': t.val, 'prop': prop, 'value': val, 'line': t.line})
         j += 1
     return ops
+
+
+def check_actor_file(fname, toks, spec_version, findings):
+    """An .actor file (§2, DECISION-28): the EXTENSION wrapper, and instances only.
+    Returns True when the file opens with a bare DEF (the form older than 0.6)."""
+    if not toks:
+        return False
+    sev = 'error' if spec_version >= (0, 6) else 'warning'
+    first = toks[0]
+    wrapped = first.kind == 'ID' and first.val in CONTAINER_KINDS
+    if not wrapped:
+        findings.append(Finding(fname, 'lint', 'warning', first.line,
+                                'an .actor file opens with EXTENSION "id" { ... }, as a .ttrpg does; '
+                                'this one opens with a bare DEF, so it declares no SPEC_VERSION and '
+                                'names no parent (§2)'))
+    elif first.val != 'EXTENSION':
+        findings.append(Finding(fname, 'lint', sev, first.line,
+                                'an .actor file opens with EXTENSION; this one opens with %s (§2)'
+                                % first.val))
+    base, depth = (1 if wrapped else 0), 0
+    for i, t in enumerate(toks):
+        if t.kind == 'LBRACE':
+            depth += 1
+        elif t.kind == 'RBRACE':
+            depth -= 1
+        elif t.kind == 'ID' and depth == base:
+            if t.val in ('MODIFY', 'OVERRIDE', 'REPRINT', 'ALIAS', 'ADD'):
+                findings.append(Finding(fname, 'lint', sev, t.line,
+                                        'an .actor file holds instances only; %s belongs in a '
+                                        '.ttrpg (§2)' % t.val))
+            elif t.val == 'DEF' and i > 0 and toks[i - 1].kind in ('CARET', 'STR'):
+                name, k = toks[i - 1].val, i - 2
+                decl = toks[k].val if k >= 0 and toks[k].kind == 'ID' \
+                    and toks[k].val in ('ACTOR', 'TEMPLATE') else None
+                if decl:
+                    k -= 1
+                if k >= 0 and toks[k].kind == 'HASH':
+                    k -= 1
+                if k >= 0 and toks[k].kind == 'ID' and toks[k].val == 'ADD' and toks[k].line == t.line:
+                    continue                      # reported once, as the ADD
+                if decl:
+                    findings.append(Finding(fname, 'lint', sev, t.line,
+                                            'an .actor file holds instances only; %s "%s" defines a '
+                                            'type and belongs in a .ttrpg (§2)' % (decl, name)))
+                    continue
+                extends, d, j = False, 0, i + 1
+                while j < len(toks):
+                    if toks[j].kind == 'LBRACE':
+                        d += 1
+                    elif toks[j].kind == 'RBRACE':
+                        d -= 1
+                        if d <= 0:
+                            break
+                    elif d == 1 and toks[j].kind == 'ID' and toks[j].val == 'EXTENDS':
+                        extends = True
+                        break
+                    j += 1
+                if not extends:
+                    findings.append(Finding(fname, 'lint', sev, t.line,
+                                            'an .actor file holds instances only; ^"%s" extends '
+                                            'nothing, so it is a type and belongs in a .ttrpg (§2)'
+                                            % name))
+    return not wrapped
 
 
 def analyze_file(fname, text, findings):
@@ -1902,8 +1974,9 @@ def analyze_file(fname, text, findings):
         if tk.kind == 'HASH' and len(tk.val) - 1 < HASH_MIN_BODY:
             findings.append(Finding(fname, 'lint', 'warning', tk.line,
                                     "hash id '%s' shorter than %d chars" % (tk.val, HASH_MIN_BODY)))
-    if not has_spec_version and not fname.endswith('.actor'):
-        # .actor files are bare single-DEF fragments with no metadata wrapper
+    bare_actor = fname.endswith('.actor') and check_actor_file(fname, toks, spec_version, findings)
+    if not has_spec_version and not bare_actor:
+        # a bare .actor has its own warning (§2), which says it declares no SPEC_VERSION
         findings.append(Finding(fname, 'lint', 'warning', 1, "no SPEC_VERSION declared"))
 
     return {

@@ -1,0 +1,7 @@
+# fault 1 — opens with a bare DEF: the form older than 0.6                  WARNING
+#ActBad1WolfH6tJ3yL9sD2fG ^"Wolf" DEF {
+    EXTENDS #ActBadAdversaryN2xK8mQ4w ^"Adversary"
+    PROPERTIES {
+        ^"Name" STRING "Wolf"
+    }
+}

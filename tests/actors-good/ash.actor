@@ -1,0 +1,15 @@
+EXTENSION "Actors_Ash" EXTENDS "Actors_Core" {
+    NAME "Ash"
+    SPEC_VERSION "0.6"
+    VERSION "1.0"
+    RELEASE_DATE "2026-11-12"
+
+    # one instance
+    #ActAshT5wZ1qE8uH3jL6pX0 ^"Ash" DEF {
+        EXTENDS #ActAdversaryK7mQ2xW9vN4c ^"Adversary"
+        PROPERTIES {
+            ^"Name" STRING "Ash"
+            ^"Attribute Level" INTEGER 6
+        }
+    }
+}

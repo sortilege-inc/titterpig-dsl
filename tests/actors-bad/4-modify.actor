@@ -1,0 +1,12 @@
+EXTENSION "Actors_Bad_4" {
+    NAME "fault 4 — a MODIFY and a REPRINT"
+    SPEC_VERSION "0.6"
+    VERSION "1.0"
+    RELEASE_DATE "2026-11-12"
+    MODIFY #ActBadAdversaryN2xK8mQ4w ^"Adversary" {                 # ERROR
+        PROPERTIES {
+            ^"Might" INTEGER
+        }
+    }
+    REPRINT #ActBadAdversaryN2xK8mQ4w ^"Adversary"                  # ERROR
+}

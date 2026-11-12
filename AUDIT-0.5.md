@@ -496,7 +496,8 @@ are distinct entities.
 
 ### A7. `.actor` is defined one way and written two other ways
 
-**Status:** open
+**Status:** closed 2026-11-12 by the owner. Committed and pushed on branch `0.6`. An `.actor` is
+an `EXTENSION` file of one or more instances (DECISION-28).
 
 §2: an `.actor` file is "a `.ttrpg` file scoped to exactly one character definition (a single `DEF`
 block)". §3 says every `.ttrpg` opens with `BASE` or `EXTENSION`. The two sentences cannot both
@@ -504,6 +505,62 @@ hold. On disk, 2,420 `.actor` files open with an `EXTENSION` wrapper and 670 ope
 `#hash ^"Name" DEF`. `l5r5e-0.5-blood-of-the-lioness-pregens.actor` holds 7 DEFs, one of them a type
 declaration. arm5e uses `.actor` for covenants. A bare `.actor` has no `SPEC_VERSION`, `VERSION` or
 `DEPENDS_ON`, so nothing in the file says which system it belongs to.
+
+**Evidence, recounted 2026-11-12.** Every `.actor` file in the 22 corpus directories, read with
+the validator's tokenizer: 3,077 files in 13 corpora. The first count had 2,420 wrapped.
+
+| How the file opens | Files | Corpora |
+|---|---|---|
+| `EXTENSION "id" …` wrapper | 2,407 | arm5e 1,087, armdef 1,087, pendragon6e 151, pendragon5e 66, callofcthulhu7e 11, l5r5e 5 |
+| A bare `#hash ^"Name" DEF` | 670 | tor2e 311, marvelmultiverse 211, aegean 50, troika 36, coyotecrow 31, root 24, curseborne 7 |
+
+- Every wrapped file declares `SPEC_VERSION` and names a parent (`EXTENDS "id"` or `DEPENDS_ON`).
+  No bare file can: it has no header.
+- **How many DEFs.** 2,999 files hold one. 78 hold several, 418 DEFs between them: arm5e 30
+  files (134 DEFs) and the same in armdef, callofcthulhu7e all 11 (107), l5r5e all 5 (33),
+  curseborne 2 (10). The ones opened hold:
+  - one character at several ages (arm5e's Gwidion of Verditius: at Gauntlet, +15, +30, +45
+    years, 8 DEFs);
+  - a section's characters (arm5e's The Church, "the women characters", 7 DEFs);
+  - an adventure's pregenerated characters (l5r5e, 6 or 7 a file);
+  - a chapter's NPCs (callofcthulhu7e, 3 to 23 a file).
+- **What they hold.** Every top-level statement in every file is a DEF. All but one of the 3,417
+  DEFs extend a type. The one is a type declared inside an actor file:
+  `#t84d75db874b40237553ca ^"Historical Persona"` in
+  `l5r5e-0.5-blood-of-the-lioness-pregens.actor`, which six DEFs in that file then extend. No
+  file holds a `MODIFY`, a `REPRINT` or any other statement.
+- **What the DEFs extend.** In 11 corpora the type is an `ACTOR` type, or a `TEMPLATE` that
+  extends one (root's playbooks). arm5e's extend `^"Example Character"` (693), `^"Creature"`
+  (303), `^"Covenant"` (157) and `^"Saint"` (25); `^"Creature"` and `^"Covenant"` are declared as
+  plain DEFs. Four arm5e DEFs extend another character.
+- **Tools.** The validator skips its "no SPEC_VERSION" warning for any `.actor`
+  (`ttrpg_validator.py`, "bare single-DEF fragments"). The grammar's `FILE` rule has no bare-DEF
+  form, so it rejects the 670. The synthesist parses a bare file as "standalone". A bare file
+  validated alone (`tor2e-0.5-core-ash.actor`) gives 2 errors for an undefined `^"Adversary"`,
+  and nothing in the file says which corpus would define it.
+- The dossiers project writes its character files with the wrapper
+  (`EXTENSION "dossiers-khalida-bint-tariq" EXTENDS "ARMDef_Core_Base"`).
+
+**Rulings (owner, 2026-11-12):** "part 1: always wrapped", "part 2: one or more", "part 3:
+instances only. mark historical persona as a todo". Written as DECISION-28.
+
+- **Spec.** §2 defines an `.actor` as an `EXTENSION` file that holds one or more instance DEFs
+  and nothing else, with an example. The "standalone single DEF" text is gone. §3 and §5 are
+  brought into line, and so is the guidelines' file-type row.
+- **Validator.** A file that opens with a bare DEF gets one warning, which replaces the
+  missing-`SPEC_VERSION` warning it was exempt from. A type, an `ACTOR` or `TEMPLATE` definition,
+  or a `MODIFY`, `OVERRIDE`, `ADD`, `REPRINT` or `ALIAS` in an `.actor` is a warning below 0.6
+  and an error from 0.6. A wrapped `.actor` must declare `SPEC_VERSION` as any file does.
+- **Grammar.** No rule changes: `FILE` never had a bare-DEF form. A header note says so.
+- **Proof.**
+  - `tests/actors-good` (one instance; one character at two ages; an instance of a plain type)
+    gives 0 errors and 0 warnings. `tests/actors-bad` holds seven faults and gives 5 errors and
+    3 warnings.
+  - Old validator against new on the 22 corpus directories: 14 give byte-identical output. The
+    other eight gain warnings and nothing else. Seven gain one per bare file, 670 in all
+    (tor2e 311, marvelmultiverse 211, aegean 50, troika 36, coyotecrow 31, root 24,
+    curseborne 7). l5r5e gains one, for `^"Historical Persona"`. No error count changes.
+- **Not done.** The 670 files are not wrapped (F17). `^"Historical Persona"` is not moved (F1).
 
 ### A8. Stale and inconsistent text
 
@@ -916,6 +973,11 @@ What is known going in:
   three actor types in `l5r5e-0.5-core-base.ttrpg` declare `^"Skills" LIST OF ^"Skill"`. Both become
   a keyed block (`^"Skills" DEF { ^"Artisan" INTEGER 3 … }`), declared on the type. The `^"NPC"`
   type declares no properties today.
+- **To-do from A7 (owner, 2026-11-12): move `^"Historical Persona"` out of the actor file.**
+  `l5r5e-0.5-blood-of-the-lioness-pregens.actor` declares the type
+  `#t84d75db874b40237553ca ^"Historical Persona"` (line 24) and six instances of it. An `.actor`
+  holds instances only (DECISION-28), so the type goes to a `.ttrpg` the file depends on. The
+  validator warns today, and will fail the file once it declares `SPEC_VERSION "0.6"`.
 - **14 arcs and frames** open with `ARC "id" EXTENDS "l5r5e" {` and have no `DEPENDS_ON`.
 
 ### F2. l5r5e: replace semantic hashes with opaque ones
@@ -1089,6 +1151,21 @@ DEF with a later one of the same name, so every built JSON still carries the mer
   UNVERIFIED: which consumers look up by name.
 - arm5e sourcebook pairs are fixed in `arm5e/0.5` and reach armdef through the retarget.
 
+### F17. Seven corpora: give 670 bare `.actor` files the `EXTENSION` wrapper
+
+**From:** A7, DECISION-28. **Status:** open, not started. The validator warns on each.
+
+- tor2e 311, marvelmultiverse 211, aegean 50, troika 36, coyotecrow 31, root 24, curseborne 7.
+- Each file gains `EXTENSION "<id>" EXTENDS "<the system's base id>" {`, a `NAME`, a `VERSION`,
+  a `SPEC_VERSION` and a `RELEASE_DATE`, and its DEF moves inside. The file's leading
+  `# source:` comment stays with the DEF. pendragon6e's actor files are the model.
+- The ids are new and must be unique in the corpus. A file that already depends on a sourcebook
+  file names it with `DEPENDS_ON`.
+- tor2e's and troika's synthesist manifests list these files by name (311 and 36). The file
+  names do not change. UNVERIFIED: that every consumer of a bare file reads a wrapped one. The
+  synthesist does, for arm5e.
+- Done when the validator gives no bare-file warning in any of the seven.
+
 ### F12. Seven corpora: scene and conflict types become entities
 
 **From:** A3, DECISION-23. **Status:** open, not started. The validator now reports these.
@@ -1223,6 +1300,18 @@ two parameter to-dos below.
   which the validator does not check; a result given as a bare value in place of a block.
 
 ### Known gaps left by this change
+
+- **An `.actor` instance's type is not checked for being a type.** The validator asks only that
+  each top-level DEF has an `EXTENDS`. It does not ask what the target is, and it does not
+  require an `ACTOR` type (arm5e's creatures and covenants extend plain DEFs).
+- **Only the listed statements are refused in an `.actor`:** a type, an `ACTOR` or `TEMPLATE`
+  definition, `MODIFY`, `OVERRIDE`, `ADD`, `REPRINT`, `ALIAS`. Any other top-level block passes.
+  No corpus file has one.
+- **A bare `.actor` can only warn.** It declares no `SPEC_VERSION`, so the 0.6 error never
+  applies to it.
+- **The reference gate, `check_constructs.py` and `check_structure.py` do not look at how an
+  `.actor` opens.** The synthesist still parses a bare file.
+- **The atlas skill still describes "headerless `.actor` fragments"** as a normal form.
 
 - **The reference gate does not report a DEF hash declared twice.** `check_references.py` gives
   0 errors on `tests/restate-bad`. The validator gives 3.
@@ -1422,6 +1511,9 @@ Filled in as each finding is walked through.
 | A6 | 2026-11-12 | Part 2: a DEF of the same name under another hash is a second entity and replaces nothing; a consumer must not merge the two. Written into DECISION-27 and §13. The synthesist and the corpora follow in F16. | Owner: "Yes, two entities". The name match dropped 356 definitions in six compositions, and tor2e's built JSON lost its core Combat chapter. |
 | A6 | 2026-11-12 | Agent's calls, to confirm. (4) Both rulings are one decision, DECISION-27. (5) F16 says to triage a composition before rebuilding its JSON without the name match. (6) The gate's weaker treatment of a hashless `REFERENCES` target is logged as a gap and not fixed here. | (4): one subject. (5): a pair meant as one entity would otherwise arrive as two. (6): fixing it would raise new findings across the corpora, which was not asked for. |
 | A6 | 2026-11-12 | A6 is closed. The branch is committed and pushed. | Owner: "Close, commit, push". The agent's calls in the A6 rows marked "to confirm" were reported to him before he closed and were not separately ruled on. |
+| A7 | 2026-11-12 | An `.actor` file always opens with the `EXTENSION` wrapper; it holds one or more DEFs; it holds instances only. Written as DECISION-28 in §2, §3 and §5, and checked by the validator. Moving l5r5e's `^"Historical Persona"` is a to-do in F1. | Owner: "part 1: always wrapped / part 2: one or more / part 3: instances only. mark historical persona as a todo". |
+| A7 | 2026-11-12 | Agent's calls, to confirm. (1) A bare `.actor` is a warning, and replaces the missing-`SPEC_VERSION` warning. (2) A type or a modification in an `.actor` is a warning below 0.6 and an error from 0.6. (3) An `.actor` that opens with a container other than `EXTENSION` gets the same treatment. (4) The type an instance extends need not be an `ACTOR` type. (5) An instance may extend another instance in the same file. (6) The guidelines' file-type row is updated. (7) The audit's first count (2,420 wrapped) is replaced by a recount (2,407). | (1) and (2): the owner's pattern for an older form. (4) was put to the owner with part 3. (5): four arm5e DEFs do it. (6): the row stated the withdrawn rule. |
+| A7 | 2026-11-12 | A7 is closed. The branch is committed and pushed. | Owner: "Close, commit, push". The agent's calls in the A7 row marked "to confirm" were reported to him before he closed and were not separately ruled on. |
 
 ---
 
