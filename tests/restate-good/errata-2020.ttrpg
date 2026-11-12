@@ -1,0 +1,18 @@
+EXTENSION "Restate_Errata_2020" {
+    NAME "DECISION-27 fixture — the errata that supersedes the first and repeats its entry"
+    SPEC_VERSION "0.6"
+    VERSION "1.0"
+    RELEASE_DATE "2026-11-12"
+    DEPENDS_ON "Restate_Core"
+
+    # the same block, stated again: same hash, same name
+    MODIFY #RstTiebreakG4mK8wQ2xN6vB1 ^"Universal Tiebreaker" {
+        GUIDANCE {
+            ENTRY ^"errata-universal-tiebreaker-0" #RstEntryP7cJ3yT9hL5sD2fA {
+                CONCERNS [ #RstTiebreakG4mK8wQ2xN6vB1 ^"Universal Tiebreaker" ]
+                TOPICS [ "errata" ]
+                TEXT "The second bullet should read \"Adversary NPCs supersede minion NPCs\""
+            }
+        }
+    }
+}

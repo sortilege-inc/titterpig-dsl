@@ -494,8 +494,8 @@ all_files = [os.path.join(dp, f) for dp, _, fs in os.walk(root)
 all_ctx = [os.path.join(dp, f) for w in WITH for dp, _, fs in os.walk(w)
            for f in fs if f.endswith(DSL_EXT)]
 
-# Distinct entities behind a name. Two DEFs are the SAME entity when they carry
-# the same hash (a legal restatement across files, §13/DECISION-4). Hashless DEFs
+# Distinct entities behind a name. Two DEFs under the same hash count once here; the
+# validator reports the second as a duplicate anchor (§13, DECISION-27). Hashless DEFs
 # cannot be told apart, so they collapse into at most one further entity.
 ent_hashes, ent_nohash, anchor_name = {}, set(), {}
 ADD_DEF = re.compile(r'^\s*ADD\s+(?:(#\S+)\s+)?\^"((?:[^"\\]|\\.)+)"\s+DEF\b')

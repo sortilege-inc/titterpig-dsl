@@ -12,7 +12,10 @@ Two levels of validation over one or more .ttrpg files (or directories):
     - an inline INTEGER value lies within a same-declaration MIN/MAX
 
   COHERENCE (referential integrity, across the whole corpus)
-    - no duplicate definition anchors (#hash)
+    - no duplicate definition anchors (#hash): a DEF's hash stands once in a corpus, and a
+      second DEF under it is an error whatever its name (v0.6, DECISION-27; the implicit
+      override is withdrawn). A named block stated again under its own hash and name, and a
+      codex ENTITY restated to add sources, are not duplicates.
     - EXTENDS / APPLIES TO / LIST OF targets resolve to a defined ^"Name"
     - DEPENDS_ON targets resolve to a defined file id
     - DECISION-6: bound-ref bases & arguments, PARAMETERS OF types, and ALIAS FOR
@@ -2128,7 +2131,7 @@ def coherence_pass(files_data, findings):
             for ln in lines:
                 all_anchors.setdefault(h, []).append((d['file'], ln))
 
-    # A codex ENTITY anchor may recur across section files as an amend (§13): a
+    # A codex ENTITY anchor may recur across section files as an amend (§25): a
     # later file re-states `ENTITY #hash ^"Name"` to add SOURCE/RELATIONSHIPS to
     # the same node. That is legal iff every occurrence of the hash is a codex
     # entity anchor AND they all name the SAME entity. A hash mapped to two
@@ -2151,7 +2154,9 @@ def coherence_pass(files_data, findings):
             where = ", ".join("%s:%d" % (os.path.basename(f), ln) for f, ln in locs)
             f0, l0 = locs[0]
             findings.append(Finding(f0, 'coherence', 'error', l0,
-                                    "duplicate anchor %s (%s)" % (h, where)))
+                                    "duplicate anchor %s (%s): a DEF's hash stands once in a "
+                                    "corpus; to change a definition, name it in OVERRIDE, MODIFY "
+                                    "or REPRINT (§13)" % (h, where)))
 
     block_hash_names = {}     # hash -> names of the named blocks that carry it, corpus-wide
     for d in files_data:

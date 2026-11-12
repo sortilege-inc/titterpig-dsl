@@ -1,0 +1,21 @@
+BASE "Restate_Core" {
+    NAME "DECISION-27 fixture — what may be stated twice (§13, §20)"
+    SPEC_VERSION "0.6"
+    VERSION "1.0"
+    RELEASE_DATE "2026-11-12"
+
+    #   ttrpg_validator.py tests/restate-good        0 errors, 0 warnings
+    #   check_references.py tests/restate-good       0 errors
+    #
+    # A DEF's hash stands once. The two errata files change this definition by naming it, and the
+    # later one repeats the earlier one's guidance entry under the same hash and name.
+
+    #RstTiebreakG4mK8wQ2xN6vB1 ^"Universal Tiebreaker" DEF {
+        DESCRIPTION "Adversary NPCs act before minion NPCs."
+    }
+
+    # strider.ttrpg defines another ^"Combat" under another hash. The two are two entities.
+    #RstCoreCombatY8bN4gR7dF1u ^"Combat" DEF {
+        DESCRIPTION "Every age of the world has seen conflict and strife."
+    }
+}

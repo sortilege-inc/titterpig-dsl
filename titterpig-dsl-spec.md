@@ -62,6 +62,12 @@ Changes made since v0.5, listed as they are decided. **Not all are additive.**
     file made from another edition's file keeps the hash of everything it carries over, and says
     in its header which file it came from: `ORIGIN "arm5e" EXTENSION "ArM5_Grogs_Abilities"`.
     Anywhere else, a hash that two editions share means nothing.
+14. **A definition is replaced only by a statement that names it** *(§5, §13, §20, DECISION-27; not
+    additive)* — the implicit override is withdrawn. A DEF's hash stands once in a corpus, and a
+    second DEF under it is an error. A later file changes an entity with `OVERRIDE`, `MODIFY` or
+    `REPRINT`. No corpus used the implicit form and the validator never accepted it. A DEF of the
+    same name under another hash is a second entity and replaces nothing, and a consumer must not
+    merge the two.
 
 ### v0.5 — five new constructs, and one rule tightened *(current)*
 
@@ -154,7 +160,7 @@ v0.4 is a consistency/clarity pass over v0.3's grammar — not a redesign. Key c
   hash). Hash identity is **edition-scoped** — stable within an edition, independent across editions
   (edition changes are breaking). Forward-porting a stranded sourcebook is an explicit **derived
   artifact**, not an automatic overlay. *(Amended by DECISION-26: that artifact is a port, and it
-  keeps its source's hashes.)*
+  keeps its source's hashes. Amended by DECISION-27: the implicit form is withdrawn.)*
 
 ### Resolved decisions (2026-07-14)
 
@@ -420,6 +426,27 @@ stay valid.
   from in its header: `ORIGIN "arm5e" EXTENSION "ArM5_Grogs_Abilities"`. A hash that stands in a
   port and in its origin is one entity carried over, and has the same name in both. A hash that
   two editions share in any other case means nothing.
+
+- **DECISION-27 — No implicit override, by hash or by name** *(resolved, v0.6, 2026-11-12)* (§5, §5d, §13, §20; amends
+  DECISION-4): DECISION-4 let a later file replace a definition by restating its hash on a new
+  DEF, with no keyword. The validator has reported every such DEF as a duplicate anchor since
+  v0.4, and §20 carried a note calling the difference "a pending change". None of the 22 corpus
+  directories restates a DEF's hash: 96,571 hashed DEFs, each hash once in its corpus. They write
+  their changes out, in 603 `MODIFY` and 355 `REPRINT` statements. The validator knows no load
+  order, so it could not have said which of two DEFs under one hash wins, and it could not have
+  told a replacement from a DEF pasted twice. The decision is that a DEF's hash stands once in a
+  corpus and a second DEF under it is an error. A later file changes an entity only by naming it:
+  `OVERRIDE`, `MODIFY`, or `REPRINT`. A named block stated again under its own hash and name, and
+  a codex `ENTITY` restated to add sources (§25), stay legal.
+
+  The same decision settles the name. §5d already said two hashes are two entities. The
+  synthesist replaced an earlier DEF with a later one of the same name and a compatible type all
+  the same: 301 entities and 356 definitions across six compositions, every pair under two
+  different hashes. tor2e's core `^"Combat"`, which holds the combat chapter, was replaced by
+  Strider Mode's empty `^"Combat" DEF { }`, and the built JSON lost the chapter. A DEF of the same
+  name under another hash is a second entity. It replaces nothing, and a consumer must not merge
+  the two. A book that means an entity another file defines says so with `REPRINT`, `ALIAS`,
+  `MODIFY` or `OVERRIDE`.
 
 ## 1. Overview & Design Principles
 
@@ -1042,10 +1069,11 @@ keeps the text pure and reuses existing caret-ref validation while preserving po
 Hash IDs are optional cross-reference anchors on any DEF or rule. When present:
 
 - **Opaque:** the ID carries no semantics a tool relies on. Do **not** encode system, category, or sequence meaning that code parses out of the ID — that information lives in fields.
-- **Unique per entity, within an edition/version namespace.** A hash names one entity; its
-  *canonical* definition appears once. **Recurrence of the same hash across files within an edition is
-  legal** — a later-loaded file (a sourcebook, an errata overlay) re-stating a hash **replaces or
-  amends** that entity by load-order precedence (the override mechanism, §13), not a collision.
+- **Unique per entity, within an edition/version namespace.** A hash names one entity, and its
+  definition appears once: a second DEF under a hash the corpus already declares is an **error**
+  *(v0.6, DECISION-27)*. A later-loaded file (a sourcebook, an errata overlay) changes an entity by
+  naming it in an `OVERRIDE`, a `MODIFY` or a `REPRINT` (§13, §5b). Before v0.6 a restated hash was
+  read as a silent replacement.
   **Across editions the namespace resets.** Nothing resolves from one edition into another, and
   the "same" entity in a different edition is a **separate definition** (edition changes may be
   breaking — §19). An entity converted afresh for the other edition has a hash of its own. An
@@ -1131,9 +1159,9 @@ EXTENDS ^"Shield"                          # resolves by name — and only if th
    reference is well-defined but untraceable, so it **WARNs**.
 3. **A hashless reference whose name resolves to more than one distinct entity is an ERROR.** Nothing
    in the file says which is meant, so every consumer must invent a tie-break, and two consumers that
-   invent different ones disagree about what the corpus says. Two DEFs are the *same* entity when they
-   carry the same hash (a legal restatement — §13, DECISION-4); distinct hashes, or a hashless DEF
-   beside a hashed one, are distinct entities.
+   invent different ones disagree about what the corpus says. An entity is its hash: two DEFs with
+   distinct hashes, or a hashless DEF beside a hashed one, are distinct entities. Two DEFs cannot
+   carry the same hash (§5, DECISION-27).
 
 **Scope of the name form.** `^"Name"` remains legal and remains the readable surface — this is not a
 deprecation. It is sufficient only where the name is unique corpus-wide, which is a property of the
@@ -1786,8 +1814,8 @@ EXTENSION "Sourcebook" EXTENDS "L5R5e_Core" {
 assertion is false, and the validator raises a **warning** — pointing at `OVERRIDE` / `MODIFY`,
 which is what a deliberate replacement should say. It is a warning rather than an error because the
 loaded set is not necessarily the consumer's composition set: the collision may be with an optional
-sourcebook that would never be co-loaded with this one, and precedence would resolve it either way
-(*Composition & Precedence*, below).
+sourcebook that would never be co-loaded with this one. Where both are loaded they are two entities
+of one name, and neither replaces the other (*Composition & Precedence*, below).
 
 ### MODIFY — Partial Changes
 
@@ -1894,17 +1922,25 @@ Writing a correction *as* a comment (`# p.65 … should read …`) is **non-conf
 
 A downstream consumer loads a **selected, ordered set** of `.ttrpg` files — a *composition set* (a
 BASE + chosen EXTENSIONs + errata + homebrew), all drawn from **one edition namespace** (§19). **Load
-order is precedence:** when more than one loaded file defines the same entity, the **later one wins**.
-There are two ways for a later file to override an earlier one, both valid:
+order is precedence:** each file's `OVERRIDE` / `MODIFY` / `ADD` (above) and `REPRINT` (§5b) is applied
+over what the files before it define, and where two files change the same thing the **later one wins**.
 
-- **Explicit** — it issues `OVERRIDE` / `MODIFY` / `ADD` (above) naming the target. Surgical and
-  auditable; the base definition stays put and the overlay is applied deterministically.
-- **Implicit** — it simply **re-states the target entity's hash** with new content; by load-order
-  precedence that replaces the earlier definition wholesale. No directive needed.
+**A later file changes an earlier definition only by naming it** *(v0.6, DECISION-27)*. The statement
+is surgical and auditable: the base definition stays put and the overlay is applied deterministically.
+A new DEF under the target's hash replaces nothing. A DEF's hash stands once in the loaded set, and a
+second DEF under it is an **error** (§20). Before v0.6 that second DEF was an "implicit" override. No
+corpus used it, the validator rejected it, and it could not be told from a DEF pasted twice.
 
-Consumers normally load only **one** definition of a given entity; overlapping printings (a spell
-reprinted in two sourcebooks, a beta and a final ruleset, a draft and a definitive edition) are
-generally not co-loaded, and when they are, precedence silently resolves them. A port and its origin
+**A DEF of the same name under another hash is a second entity** *(v0.6, DECISION-27)*. It replaces
+nothing, whatever its type and wherever it loads, because an entity is its hash (§5d). Both definitions
+reach the consumer, and a consumer must not merge two DEFs because their names match. A hashless
+reference to that name is an error until it carries a hash (§5d). A book that means the entity
+another file defines names it: `REPRINT` where the text is the same, `ALIAS` where only the name
+differs, `MODIFY` where its wording should take effect, `OVERRIDE` to replace it (§5b, above).
+
+A set holds **one** definition of a given entity. Overlapping printings (a spell reprinted in two
+sourcebooks, a beta and a final ruleset) are generally not co-loaded, and a book that prints an entity
+another loaded file defines says so with `REPRINT`, `ALIAS` or `MODIFY` (§5b). A port and its origin
 (§19) belong to two editions and are never loaded in one set: that is an error *(v0.6)*. Precedence resolution
 itself is a **consumer / `.ttrpg → .json`** concern — the file-level validator checks *coherence*
 within an edition (§20), not which layer ultimately wins.
@@ -3337,7 +3373,7 @@ remains future work.)
 Validation of `.ttrpg`/`.lore` files has two levels, both operating on the files themselves:
 
 1. **Lint — spec adherence.** Does the file conform to this grammar/spec (structure, types, reserved-word usage, canonical forms)? One source of truth: the linter is derived from / checked against the grammar.
-2. **Coherence / consilience — referential integrity.** Across **an edition's** corpus: is everything referenced actually defined? Do `^"Name"`, `#hash`, `EXTENDS`, `APPLIES TO`, `DEPENDS_ON` resolve to real, correctly-typed targets — **and unambiguously** (§5d)? No **dangling** anchors, and **no hash shared by two *different* entities**. (A hash *recurring* across files is a legal override (§13, DECISION-4), not a duplicate — so coherence is scoped to one edition and treats consistent recurrence as override, not error. *Note: the current `ttrpg_validator.py` still flags all recurrence as a duplicate-anchor error; scoping it to inconsistent-recurrence is a pending change — see `titterpig-mastra/TASKS.md`.*)
+2. **Coherence / consilience — referential integrity.** Across **an edition's** corpus: is everything referenced actually defined? Do `^"Name"`, `#hash`, `EXTENDS`, `APPLIES TO`, `DEPENDS_ON` resolve to real, correctly-typed targets — **and unambiguously** (§5d)? No **dangling** anchors, and **no hash declared twice**: a second DEF under a hash the corpus already declares is a **duplicate anchor**, an error *(v0.6, DECISION-27; before v0.6 the spec read it as an implicit override, which the validator never accepted)*. Two restatements are not duplicates: a named block stated again under its own hash and name, and a codex `ENTITY` restated to add sources (§25). The same hash on two different names is an error in every case.
 
 **The modification system is part of coherence** *(v0.4, 2026-07-25)*. A `MODIFY` / `OVERRIDE`
 naming a target that does not exist modifies nothing, silently and permanently — rename the parent
@@ -3937,7 +3973,7 @@ ENTITY #hash ^"Name" {
 | relationship predicate declared in a `RELATIONS` block | **error** |
 | `#hash` opaque, ≥16 chars | **error** if <16 |
 | `#hash` reused for a *different* entity name, or shared with a non-entity anchor | **error** |
-| `#hash` re-stated for the *same* entity name across files (amend, §13) | allowed |
+| `#hash` re-stated for the *same* entity name across files (amend) | allowed |
 | category `EXTENDS` parent resolves | **error** |
 | `INVERSE` + `SYMMETRIC` on one predicate | **error** |
 | relationship object caret resolves | warn |

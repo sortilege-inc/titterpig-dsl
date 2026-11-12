@@ -404,7 +404,8 @@ Written as DECISION-26.
 
 ### A6. Implicit override is legal in §13 and an error in the validator
 
-**Status:** open
+**Status:** closed 2026-11-12 by the owner. Committed and pushed on branch `0.6`. No implicit
+override, by hash or by name (DECISION-27).
 
 §13: a later file may restate an entity's hash, and by load order that replaces the earlier
 definition. `ttrpg_validator.py` reports any recurring hash as `duplicate anchor` (proven by the
@@ -414,6 +415,84 @@ The synthesist does something the spec does not describe. With no hash match it 
 DEF of a compatible type as an implicit override of the earlier one, even when the two carry
 different hashes (`titterpig-synthesist/internal/resolve/collect.go:66`). §5d says distinct hashes
 are distinct entities.
+
+**Evidence, counted 2026-11-12.**
+
+*A restated hash.*
+
+- No corpus restates a DEF's hash. The 22 corpus directories hold 96,571 hashed DEFs and each
+  hash stands once in its corpus; the validator reports no `duplicate anchor` in any of them.
+- Changes are written out: 603 `MODIFY` and 355 `REPRINT` statements. No line in the 22
+  directories begins with `OVERRIDE` or `ADD`.
+- The one hash restated on purpose is a block's. l5r5e's 2020 errata file supersedes its 2019
+  file and repeats 13 of its guidance `ENTRY` blocks, each under the same hash and name, inside
+  the same explicit `MODIFY`. A4 made that legal. §25 lets a codex `ENTITY` be restated the same
+  way to add sources.
+- The validator knows no load order. The order of a composition is written only in the
+  synthesist's manifest.
+
+*The same name under another hash.* Counted by building the synthesist at `207d945` and running
+`--collect -v` on each manifest.
+
+| Composition | Entities replaced by a name match | Definitions dropped |
+|---|---|---|
+| arm5e-0.5-full | 114 | 138 |
+| armdef-0.5-full | 125 | 140 |
+| callofcthulhu7e-0.5 | 18 | 23 |
+| dnd5.5e-0.5 | 13 | 13 |
+| l5r5e-0.5 | 6 | 6 |
+| tor2e-0.5 | 25 | 36 |
+| Total | 301 | 356 |
+
+- In all 301 the replaced DEF carries a different hash from the one that replaces it, and a
+  different body. None is a match by hash. In 165 the DEF that wins is the shorter of the two.
+- tor2e: the core rulebook's `#ty7p38adq9mo4x4elEf5xGA ^"Combat"` holds the combat chapter, with
+  an epigraph, a description and nested DEFs. Strider Mode's `#t3CjgX8PA3uTc56tNZkmsHp ^"Combat"
+  DEF { }` is an empty heading, loads later, and replaces it. The built
+  `tor2e-0.5.resolved.json` (2026-10-13) has the Strider hash and has neither the core hash, nor
+  the epigraph's text, nor the nested `^"The Onset of Battle"`.
+- arm5e: the actor type `#t0pngx6WgYt7QZLQE1H73Gy3 ACTOR "Magus"`, which extends `^"Character"`,
+  is replaced by `#tzWhfmKnMGhj7DODAwBeTkii ^"Magus"`, a rules entry in the character-creation
+  file that extends nothing.
+- l5r5e: `^"Daidoji Shin"` in the GM tools file is replaced by the fuller `^"Daidoji Shin"` in
+  the NPC file. The two are one person under two hashes.
+- The rule is deliberate in the synthesist. Its README states it ("matched by hash then name"),
+  five arm5e and armdef manifests carry a `type_equivalence` list so that reprints under another
+  type still match, and `CORPUS.md` calls one case "a consumer gotcha, not a corpus error". It
+  predates `REPRINT` (DECISION-14).
+- A further 107 same-name DEFs in arm5e-0.5-full, and 119 in armdef-0.5-full, are kept apart
+  because their types are unrelated.
+- Other manifests: arm5e-0.5-core 38, armdef-0.5-core 9, armdef-0.5-sub-rosa-13 114,
+  dnd5.5e-0.5-historica-arcanum 14, dnd5.5e-0.5-wyldwolf-axis-mikko 13,
+  dnd5e-0.5-historica-arcanum 2, and none in daggerheart, mythic-gme2 and troika. These were
+  counted and not opened.
+
+**Ruling on Part 1 (owner, 2026-11-12):** "Yes, drop it". Written as DECISION-27.
+
+- **Spec.** The implicit override is withdrawn from §5, §5d, §13 and §20. A DEF's hash stands
+  once in a corpus and a second DEF under it is an error. A later file changes an entity by
+  naming it in `OVERRIDE`, `MODIFY` or `REPRINT`. §20 drops its "pending change" note and states
+  the two restatements that stay legal: a named block under its own hash and name, and a codex
+  `ENTITY`.
+- **Validator.** It already reported the error. Its message now says what to write, and its
+  header states the rule.
+- **Proof.** `tests/restate-good` (a block repeated across two errata files, as l5r5e does) gives
+  0 errors and 0 warnings. `tests/restate-bad` plants three faults (a hash restated in a later
+  file under the same name, under another name, and twice in one file) and gives 3 errors. The
+  old validator and the new give byte-identical output on all 22 corpus directories.
+
+**Ruling on Part 2 (owner, 2026-11-12):** "Yes, two entities". Written into DECISION-27.
+
+- **Spec.** §13 states that a DEF of the same name under another hash is a second entity, that
+  it replaces nothing whatever its type and load position, and that a consumer must not merge
+  two DEFs because their names match. It lists what a book writes when it means the other file's
+  entity: `REPRINT`, `ALIAS`, `MODIFY` or `OVERRIDE`. §13's `ADD` paragraph no longer says
+  precedence resolves a same-name collision.
+- **Tools in this repo.** No change. A same-name DEF under another hash was already legal to the
+  validator and the gate.
+- **Proof.** `tests/restate-good` now holds two DEFs named `^"Combat"` under two hashes and a
+  reference to each by hash: 0 errors and 0 warnings in the validator, 0 errors in the gate.
+- **Not done.** The synthesist still merges by name, and the 301 pairs are not triaged (F16).
 
 ### A7. `.actor` is defined one way and written two other ways
 
@@ -985,6 +1064,31 @@ invisiblesun and root's hashes to be unique/distinct".
 - Done when a recount of the 22 corpus directories shows arm5e and armdef as the only pair with a
   hash in common.
 
+### F16. synthesist and six corpora: stop the name match, and triage the pairs it merged
+
+**From:** A6, DECISION-27. **Status:** open, not started. The synthesist still replaces an earlier
+DEF with a later one of the same name, so every built JSON still carries the merges.
+
+- **synthesist.** `register` in `internal/resolve/collect.go` stops replacing on a name match: a
+  DEF whose hash is new becomes its own entity. The hash match goes too, since a second DEF under
+  a declared hash is now an error upstream. `type_equivalence` in the five arm5e and armdef
+  manifests, `typesCompatible`, and the README's "matched by hash then name" go with them.
+  `--collect` should keep listing same-name DEFs, since that list is the triage.
+- **Triage, per composition** (entities merged today): arm5e-0.5-full 114, armdef-0.5-full 125,
+  callofcthulhu7e-0.5 18, dnd5.5e-0.5 13, l5r5e-0.5 6, tor2e-0.5 25. Each pair is one of two
+  things.
+  - One entity written twice (l5r5e's `^"Daidoji Shin"`, short in one file and full in another):
+    keep one DEF and make the other a `REPRINT`, an `ALIAS` or a `MODIFY`.
+  - Two entities of one name (tor2e's core `^"Combat"` and Strider Mode's heading; arm5e's
+    `ACTOR "Magus"` and the rules entry `^"Magus"`): both stay, and every reference to the name
+    carries a hash.
+- **Order.** Triage a composition before its JSON is rebuilt without the name match. Rebuilt
+  first, a pair meant as one entity arrives as two.
+- **What consumers see.** tor2e's JSON regains the core Combat chapter. Every composition gains
+  entities, and a consumer that looks an entity up by name finds two where it found one.
+  UNVERIFIED: which consumers look up by name.
+- arm5e sourcebook pairs are fixed in `arm5e/0.5` and reach armdef through the retarget.
+
 ### F12. Seven corpora: scene and conflict types become entities
 
 **From:** A3, DECISION-23. **Status:** open, not started. The validator now reports these.
@@ -1119,6 +1223,22 @@ two parameter to-dos below.
   which the validator does not check; a result given as a bare value in place of a block.
 
 ### Known gaps left by this change
+
+- **The reference gate does not report a DEF hash declared twice.** `check_references.py` gives
+  0 errors on `tests/restate-bad`. The validator gives 3.
+- **The synthesist still applies a hash match and a name match as replacements** (F16). No
+  corpus restates a DEF's hash, so the hash rule never fires today. The name rule fires 301
+  times in six compositions.
+- **A hashless `REFERENCES` target to a name two entities share only warns in the gate.** §5d
+  rule 3 makes it an error. On a scratch copy of `tests/restate-good` with the hashes stripped
+  from its two arrows, `check_references.py` gives 0 errors and 2 hashless WARNs, and the
+  validator gives nothing. The gate does fail the same name after `EXTENDS` (1 error). Belongs
+  with C3. It matters more now: once the synthesist stops merging, these references are where a
+  duplicated name should surface.
+- **No tool lists same-name DEFs for triage** except the synthesist's `--collect -v`.
+- **`titterpig-mastra/TASKS.md` still holds an open task** to make the validator accept a
+  restated hash ("Validator: scope the duplicate-anchor check", line 59). DECISION-27 makes it
+  moot. Not edited: it is in another repo.
 
 - **An undeclared port is invisible.** The validator checks a file that says `ORIGIN`. It cannot
   find a file that is a port and does not say so, and armdef's 2,390 say nothing until F14.
@@ -1297,6 +1417,11 @@ Filled in as each finding is walked through.
 | A5 | 2026-11-12 | Agent's calls, to confirm. They were reported to the owner beside the wording and not separately ruled on. (2) A hash a port shares with its origin must carry the same name in both. (3) A port and its origin in one loaded set is an error. (4) With no corpus for the origin's edition the validator gives one warning per edition id, where a bridge gives an error. (5) No `VERSION` on the line. (6) A port may add definitions of its own and may leave entities out. (7) The audit's first count for A5 (8,299 of 9,959) is replaced by a recount (10,275 of 11,965). | (2) to (6): the smallest rule that makes the declaration checkable; all 10,275 real pairs satisfy (2). (7): the first count could not be reproduced. |
 | A5 | 2026-11-12 | invisiblesun and root are to be re-minted so that they share no hash. Recorded as F15. | Owner: "add to the todo to fi[x] invisiblesun and root's hashes to be unique/distinct". The spec does not require it. |
 | A5 | 2026-11-12 | A5 is closed. The branch is committed and pushed. | Owner: "Close, commit, push". The agent's calls in the A5 row marked "to confirm" were reported to him before he closed and were not separately ruled on. |
+| A6 | 2026-11-12 | Part 1: the implicit override is dropped. A DEF's hash stands once in a corpus, and a replacement is written `OVERRIDE`, `MODIFY` or `REPRINT`. Written as DECISION-27 in §5, §5d, §13 and §20. | Owner: "Yes, drop it". No corpus restates a DEF's hash, and the validator has always rejected it. |
+| A6 | 2026-11-12 | Agent's calls, to confirm. (1) A named block stated again under its own hash and name, and a codex `ENTITY` restated to add sources, stay legal; §20 now says so. (2) §13's list of overlapping printings loses "a draft and a definitive edition", which are two editions under §19 and cannot be in one set. (3) The validator's `duplicate anchor` message now names the statements to write. | (1) was reported to the owner with the question and follows A4; l5r5e's 2020 errata repeats 13 entries of its 2019 errata. (2) and (3) follow from the ruling. |
+| A6 | 2026-11-12 | Part 2: a DEF of the same name under another hash is a second entity and replaces nothing; a consumer must not merge the two. Written into DECISION-27 and §13. The synthesist and the corpora follow in F16. | Owner: "Yes, two entities". The name match dropped 356 definitions in six compositions, and tor2e's built JSON lost its core Combat chapter. |
+| A6 | 2026-11-12 | Agent's calls, to confirm. (4) Both rulings are one decision, DECISION-27. (5) F16 says to triage a composition before rebuilding its JSON without the name match. (6) The gate's weaker treatment of a hashless `REFERENCES` target is logged as a gap and not fixed here. | (4): one subject. (5): a pair meant as one entity would otherwise arrive as two. (6): fixing it would raise new findings across the corpora, which was not asked for. |
+| A6 | 2026-11-12 | A6 is closed. The branch is committed and pushed. | Owner: "Close, commit, push". The agent's calls in the A6 rows marked "to confirm" were reported to him before he closed and were not separately ruled on. |
 
 ---
 
