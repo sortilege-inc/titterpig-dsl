@@ -125,6 +125,20 @@ ACTOR FILES (spec §2, DECISION-28). An .actor file is an EXTENSION file of inst
     file that declares SPEC_VERSION below 0.6, ERROR from 0.6).
   - a wrapped .actor declares SPEC_VERSION as any file does.
 
+VALUES AGAINST DECLARATIONS (spec §5, §5b, §6, §8, DECISION-32).
+
+  - errors at every version: an EXTENDS cycle; an ALIAS cycle; a bound reference with more
+    arguments than its base declares PARAMETERS, with arguments where the base declares none,
+    or with a string outside a parameter's list.
+  - WARNING in a file that declares SPEC_VERSION below 0.6, ERROR from 0.6, waived by FIAT: an
+    INTEGER outside the MIN / MAX it inherits; a value outside the ENUM it inherits; a value
+    of another kind than its type, or than the type it inherits; a named member of a
+    LIST OF ^"Type" that does not extend the type; one property written twice in a definition.
+  - a hash shorter than 16 characters, or with an underscore: the same gating, not waivable.
+  - not checked: a REQUIRED property left out (audit B4), a DEPENDS_ON VERSION pin (B5), a
+    value for a property no type declares, and the fields of a nested or unnamed DEF.
+  - a name two definitions share is not followed up an EXTENDS chain; give the hash (§5d).
+
 PORTS (spec §19, DECISION-26). A file made from another edition's file declares it in its
 header:  ORIGIN "arm5e" EXTENSION "ArM5_Grogs_Abilities".  A port keeps its origin's hashes.
 
@@ -838,6 +852,157 @@ def scan_modify_body(toks, lb):
             ops.append({'op': t.val, 'prop': prop, 'value': val, 'line': t.line})
         j += 1
     return ops
+
+# ═══════════════════════════════════════════════════════════════════════════
+# Values against declarations (§5, §5b, §6, §8, DECISION-32)
+# ═══════════════════════════════════════════════════════════════════════════
+
+VALUE_TYPES = ('STRING', 'INTEGER', 'BOOLEAN', 'ENUM', 'LIST', 'REF', 'ROLL', 'TEXT')
+VALUE_FAMILY = {'STRING': 'text', 'TEXT': 'text', 'ENUM': 'text', 'INTEGER': 'number', 'BOOLEAN': 'boolean'}
+TOKEN_FAMILY = {'STR': 'text', 'INT': 'number', 'BOOL': 'boolean'}
+
+
+def collect_definitions(fname, toks):
+    """One pass over a file's tokens, for the checks in value_pass.
+
+    -> (defs, bound). A def records its name, hash, what it EXTENDS, its PARAMETERS and every
+    property line at its own level or in its PROPERTIES block: the type keyword, an inline
+    value, MIN / MAX, an ENUM's values, and a LIST OF type with its named members. A DEF
+    inside another DEF's body is recorded as nested and is not checked. `bound` is every
+    bound reference ^"Base"(args): the base, the number of arguments, the string arguments
+    by position and by name."""
+    n = len(toks)
+    defs, bound, stack, pending = [], [], [], None
+
+    def same_line(j, line):
+        return j < n and toks[j].line == line
+
+    for i, t in enumerate(toks):
+        if t.kind == 'ID':
+            w = t.val
+            if w == 'DEF' and i >= 1 and toks[i - 1].kind in ('CARET', 'STR'):
+                k = i - 2
+                if k >= 0 and toks[k].kind == 'ID' and toks[k].val in ('ACTOR', 'TEMPLATE'):
+                    k -= 1
+                pending = {'name': toks[i - 1].val,
+                           'hash': toks[k].val if k >= 0 and toks[k].kind == 'HASH' else None,
+                           'extends': [], 'props': {}, 'params': None, 'file': fname, 'line': t.line,
+                           'nested': any(fr['kind'] in ('DEF', 'PROPS') for fr in stack)}
+            elif w == 'EXTENDS' and stack and stack[-1]['kind'] == 'DEF':
+                j, hsh = i + 1, None
+                if j < n and toks[j].kind == 'HASH':
+                    hsh, j = toks[j].val, j + 1
+                if j < n and toks[j].kind == 'CARET':
+                    stack[-1]['def']['extends'].append((toks[j].val, hsh, t.line))
+            elif w == 'PARAMETERS' and stack and stack[-1]['kind'] == 'DEF' \
+                    and i + 1 < n and toks[i + 1].kind == 'LBRACE':
+                params, j, depth = [], i + 2, 1
+                while j < n and depth:
+                    if toks[j].kind == 'LBRACE':
+                        depth += 1
+                    elif toks[j].kind == 'RBRACE':
+                        depth -= 1
+                    elif toks[j].kind == 'CARET' and j + 1 < n and toks[j + 1].kind == 'ID' \
+                            and toks[j + 1].val == 'OF':
+                        values = None
+                        if j + 2 < n and toks[j + 2].kind == 'LBRACK':
+                            values, q = [], j + 3
+                            while q < n and toks[q].kind != 'RBRACK':
+                                if toks[q].kind == 'STR':
+                                    values.append(toks[q].val)
+                                q += 1
+                        params.append({'name': toks[j].val, 'values': values})
+                    j += 1
+                stack[-1]['def']['params'] = params
+        if t.kind == 'CARET':
+            # a bound reference: ^"Base"( "x", ^"slot" = "y" )
+            if i + 1 < n and toks[i + 1].kind == 'LPAREN':
+                q, depth, nargs, pos, named, slot, seen = i + 2, 1, 0, [], {}, None, False
+                while q < n and depth:
+                    tk = toks[q]
+                    if tk.kind == 'LPAREN':
+                        depth += 1
+                    elif tk.kind == 'RPAREN':
+                        depth -= 1
+                    elif depth == 1:
+                        if tk.kind == 'COMMA':
+                            nargs, seen, slot = nargs + 1, False, None
+                        elif tk.kind == 'CARET' and q + 1 < n and toks[q + 1].kind == 'EQ':
+                            slot = tk.val
+                        elif tk.kind in ('STR', 'CARET'):
+                            seen = True
+                            if tk.kind == 'STR':
+                                if slot is not None:
+                                    named[slot] = tk.val
+                                else:
+                                    pos.append((nargs, tk.val))
+                    q += 1
+                bound.append({'base': t.val, 'nargs': nargs + 1 if (seen or nargs) else 0,
+                              'pos': pos, 'named': named, 'line': t.line})
+            # a property line: ^"Name" TYPE [value] [modifiers]
+            if stack and stack[-1]['kind'] in ('DEF', 'PROPS') and stack[-1]['def'] is not None \
+                    and i + 1 < n and toks[i + 1].kind == 'ID' and toks[i + 1].val in VALUE_TYPES \
+                    and not (i >= 1 and toks[i - 1].kind == 'ID'
+                             and toks[i - 1].val in ('AXIS', 'OF', 'SET', 'NEXT', 'COLUMNS')):
+                ty, j = toks[i + 1].val, i + 2
+                rec = {'type': ty, 'value': None, 'vkind': None, 'min': None, 'max': None,
+                       'enum': None, 'of': None, 'of_hash': None, 'members': None, 'line': t.line}
+                if ty == 'LIST' and j < n and toks[j].kind == 'ID' and toks[j].val == 'OF':
+                    j += 1
+                    if j < n and toks[j].kind == 'HASH':
+                        rec['of_hash'], j = toks[j].val, j + 1
+                    if j < n and toks[j].kind == 'CARET':
+                        rec['of'], j = toks[j].val, j + 1
+                    elif j < n and toks[j].kind == 'ID':
+                        j += 1                                   # LIST OF STRING
+                if same_line(j, t.line) and toks[j].kind == 'LBRACK':
+                    items, q, depth, braces = [], j + 1, 1, 0
+                    while q < n and depth:
+                        tk = toks[q]
+                        if tk.kind == 'LBRACK':
+                            depth += 1
+                        elif tk.kind == 'RBRACK':
+                            depth -= 1
+                        elif tk.kind == 'LBRACE':
+                            braces += 1
+                        elif tk.kind == 'RBRACE':
+                            braces -= 1
+                        elif depth == 1 and braces == 0:
+                            if tk.kind == 'STR':
+                                items.append(('STR', tk.val, None, tk.line))
+                            elif tk.kind == 'CARET':
+                                hsh = toks[q - 1].val if toks[q - 1].kind == 'HASH' else None
+                                items.append(('CARET', tk.val, hsh, tk.line))
+                        q += 1
+                    if ty == 'ENUM':
+                        rec['enum'] = [v for kind, v, _h, _l in items if kind == 'STR']
+                    else:
+                        rec['members'] = [(v, h, ln) for kind, v, h, ln in items if kind == 'CARET']
+                    j = q
+                elif same_line(j, t.line) and toks[j].kind in ('STR', 'INT', 'BOOL'):
+                    rec['value'], rec['vkind'] = toks[j].val, toks[j].kind
+                    j += 1
+                while same_line(j, t.line) and toks[j].kind == 'ID' \
+                        and toks[j].val in ('REQUIRED', 'FIXED', 'DEFAULT', 'MIN', 'MAX', 'FIAT'):
+                    m = toks[j].val
+                    if m in ('MIN', 'MAX') and j + 1 < n and toks[j + 1].kind == 'INT':
+                        rec[m.lower()] = int(toks[j + 1].val)
+                    j += 1 if m in ('REQUIRED', 'FIXED') else 2
+                stack[-1]['def']['props'].setdefault(t.val, []).append(rec)
+        if t.kind == 'LBRACE':
+            prev = toks[i - 1] if i else None
+            if pending is not None and prev is not None and prev.kind == 'ID' and prev.val == 'DEF':
+                stack.append({'kind': 'DEF', 'def': pending})
+                defs.append(pending)
+                pending = None
+            elif prev is not None and prev.kind == 'ID' and prev.val == 'PROPERTIES':
+                owner = stack[-1]['def'] if stack and stack[-1]['kind'] == 'DEF' else None
+                stack.append({'kind': 'PROPS', 'def': owner})
+            else:
+                stack.append({'kind': 'OTHER', 'def': None})
+        elif t.kind == 'RBRACE' and stack:
+            stack.pop()
+    return defs, bound
 
 
 def check_actor_file(fname, toks, spec_version, findings):
@@ -1983,10 +2148,17 @@ def analyze_file(fname, text, findings):
                                 'or LABEL block beside the text, or FIAT "reason" where the source '
                                 'prints the asterisks (§5c)' % what))
     for tk in toks:
+        # A hash is `#` and 16 or more of [A-Za-z0-9] (§5). Shorter, or with an underscore:
+        # a warning in a file below 0.6, an error from 0.6 (DECISION-32).
         if tk.kind == 'HASH' and len(tk.val) - 1 < HASH_MIN_BODY:
-            findings.append(Finding(fname, 'lint', 'warning', tk.line,
+            findings.append(Finding(fname, 'lint', 'error' if spec_version >= (0, 6) else 'warning', tk.line,
                                     "hash id '%s' shorter than %d chars" % (tk.val, HASH_MIN_BODY)))
+        elif tk.kind == 'HASH' and '_' in tk.val:
+            findings.append(Finding(fname, 'lint', 'error' if spec_version >= (0, 6) else 'warning', tk.line,
+                                    "hash id '%s' holds an underscore: a hash is letters and digits (§5)"
+                                    % tk.val))
     bare_actor = fname.endswith('.actor') and check_actor_file(fname, toks, spec_version, findings)
+    vdefs, bound = collect_definitions(fname, toks)
     if not has_spec_version and not bare_actor:
         # a bare .actor has its own warning (§2), which says it declares no SPEC_VERSION
         findings.append(Finding(fname, 'lint', 'warning', 1, "no SPEC_VERSION declared"))
@@ -2000,6 +2172,7 @@ def analyze_file(fname, text, findings):
         'rolls': rolls, 'tables': tables, 'containers': containers, 'froms': froms,
         'block_types': block_types, 'block_names': block_names, 'block_anchors': block_anchors,
         'block_anchor_lines': block_anchor_lines, 'anchor_names': anchor_names, 'origins': origins,
+        'vdefs': vdefs, 'bound': bound, 'spec_version': spec_version,
         'hash_refs': hash_refs,
     }
 
@@ -2599,6 +2772,195 @@ def port_pass(files_data, corpus_index, findings):
                                 '--corpus %s=<dir> (§20)' % (edition, len(where), edition)))
 
 
+def value_pass(files_data, findings):
+    """What a definition says against what it extends (DECISION-32).
+
+    Errors at every version: an EXTENDS cycle (§6), an ALIAS cycle (§5b), a bound reference
+    that does not fit its base's PARAMETERS (§5b).
+
+    A warning in a file that declares SPEC_VERSION below 0.6, an error from 0.6, and waived by
+    FIAT: an INTEGER outside the MIN / MAX it inherits, a value outside the ENUM it inherits,
+    a value of another kind than the type declared (§5, §8), a named member of a LIST OF
+    ^"Type" that is not of the type (§8), and one property written twice in a definition.
+
+    A name that two definitions share is not followed: §5d makes it ambiguous without a hash."""
+    by_file = {d['file']: d for d in files_data}
+    by_name, by_hash = {}, {}
+    for d in files_data:
+        for x in d.get('vdefs', []):
+            if x['nested']:
+                continue
+            by_name.setdefault(x['name'], []).append(x)
+            if x['hash']:
+                by_hash.setdefault(x['hash'], []).append(x)
+
+    def resolve(name, hsh):
+        if hsh and len(by_hash.get(hsh, [])) == 1:
+            return by_hash[hsh][0]
+        cands = by_name.get(name, [])
+        return cands[0] if len(cands) == 1 else None
+
+    def parents(x):
+        return [y for y in (resolve(nm, h) for nm, h, _ln in x['extends']) if y is not None]
+
+    def ancestors(x):
+        out, seen, todo = [], {id(x)}, parents(x)
+        while todo:
+            y = todo.pop(0)
+            if id(y) in seen:
+                continue
+            seen.add(id(y))
+            out.append(y)
+            todo.extend(parents(y))
+        return out
+
+    def gated(x, line):
+        d = by_file[x['file']]
+        return None if is_waived(line, d) else ('error' if d.get('spec_version', (0, 0)) >= (0, 6) else 'warning')
+
+    def waived(x, line):
+        return is_waived(line, by_file[x['file']])
+
+    # EXTENDS cycles (§6)
+    in_cycle = set()
+    for start in (x for xs in by_name.values() for x in xs):
+        path, cur, seen = [start], start, {id(start)}
+        while True:
+            nxt = parents(cur)
+            if not nxt:
+                break
+            cur = nxt[0]
+            if cur is start:
+                if id(start) not in in_cycle and not waived(start, start['line']):
+                    findings.append(Finding(start['file'], 'coherence', 'error', start['line'],
+                                            'EXTENDS cycle: %s (§6)'
+                                            % ' → '.join('^"%s"' % y['name'] for y in path + [start])))
+                in_cycle.add(id(start))
+                break
+            if id(cur) in seen:
+                break
+            seen.add(id(cur))
+            path.append(cur)
+
+    # ALIAS cycles (§5b)
+    alias_to, alias_site = {}, {}
+    for d in files_data:
+        for alias, target, line in d.get('aliases', []):
+            alias_to[alias] = target
+            alias_site[alias] = (d, line)
+    for alias in alias_to:
+        path, cur = [alias], alias_to[alias]
+        while cur in alias_to and cur not in path:
+            path.append(cur)
+            cur = alias_to[cur]
+        if cur == alias:
+            d, line = alias_site[alias]
+            if not is_waived(line, d):
+                findings.append(Finding(d['file'], 'coherence', 'error', line,
+                                        'ALIAS cycle: %s — alias chains must be acyclic (§5b)'
+                                        % ' → '.join('^"%s"' % a for a in path + [alias])))
+
+    # bound references against PARAMETERS (§5b)
+    for d in files_data:
+        for b in d.get('bound', []):
+            if is_waived(b['line'], d):
+                continue
+            base = resolve(b['base'], None)
+            if base is None:
+                continue
+            params = base['params']
+            if params is None:
+                for y in ancestors(base):
+                    if y['params'] is not None:
+                        params = y['params']
+                        break
+            if params is None:
+                findings.append(Finding(d['file'], 'coherence', 'error', b['line'],
+                                        '^"%s" is given arguments and declares no PARAMETERS (§5b)'
+                                        % b['base']))
+                continue
+            if b['nargs'] > len(params):
+                findings.append(Finding(d['file'], 'coherence', 'error', b['line'],
+                                        '^"%s" is given %d arguments and declares %d parameter(s) (§5b)'
+                                        % (b['base'], b['nargs'], len(params))))
+            slots = {prm['name']: prm for prm in params}
+            pairs = [(params[k], v) for k, v in b['pos'] if k < len(params)] \
+                + [(slots[nm], v) for nm, v in b['named'].items() if nm in slots]
+            for prm, v in pairs:
+                if prm['values'] is not None and v not in prm['values']:
+                    findings.append(Finding(d['file'], 'coherence', 'error', b['line'],
+                                            '^"%s": "%s" is not a value of ^"%s", which takes %s (§5b)'
+                                            % (b['base'], v, prm['name'],
+                                               ', '.join('"%s"' % o for o in prm['values']))))
+
+    for xs in by_name.values():
+        for x in xs:
+            anc = ancestors(x) if id(x) not in in_cycle else []
+            for prop, recs in x['props'].items():
+                # one property twice in a definition
+                for extra in recs[1:]:
+                    sev = gated(x, extra['line'])
+                    if sev:
+                        findings.append(Finding(x['file'], 'coherence', sev, extra['line'],
+                                                '^"%s" is written twice in ^"%s"; the first is on line %d (§8)'
+                                                % (prop, x['name'], recs[0]['line'])))
+                r = recs[0]
+                # a named member of LIST OF ^"Type" is of the type (§8)
+                if r['of'] and r['members']:
+                    want = resolve(r['of'], r['of_hash'])
+                    for nm, hsh, ln in r['members']:
+                        m = resolve(nm, hsh)
+                        if want is None or m is None or m is want or want in ancestors(m):
+                            continue
+                        msev = gated(x, ln)
+                        if not msev:
+                            continue
+                        findings.append(Finding(x['file'], 'coherence', msev, ln,
+                                                '^"%s" is in a LIST OF ^"%s" and is not one: it does not '
+                                                'extend ^"%s" (§8)' % (nm, r['of'], r['of'])))
+                if r['value'] is None:
+                    continue
+                sev = gated(x, r['line'])
+                if not sev:
+                    continue
+                if VALUE_FAMILY.get(r['type']) and TOKEN_FAMILY[r['vkind']] != VALUE_FAMILY[r['type']]:
+                    findings.append(Finding(x['file'], 'coherence', sev, r['line'],
+                                            '^"%s" %s is given a %s value (§8)'
+                                            % (prop, r['type'], TOKEN_FAMILY[r['vkind']])))
+                    continue
+                decl = None
+                for y in anc:
+                    for cand in y['props'].get(prop, []):
+                        if cand['value'] is None:
+                            decl = (y, cand)
+                            break
+                    if decl:
+                        break
+                if decl is None:
+                    continue
+                owner, dr = decl
+                if dr['type'] == 'INTEGER' and r['vkind'] == 'INT':
+                    v = int(r['value'])
+                    if (dr['min'] is not None and v < dr['min']) or (dr['max'] is not None and v > dr['max']):
+                        lim = ' and '.join(b for b in ('MIN %d' % dr['min'] if dr['min'] is not None else '',
+                                                       'MAX %d' % dr['max'] if dr['max'] is not None else '') if b)
+                        findings.append(Finding(x['file'], 'coherence', sev, r['line'],
+                                                '^"%s" is %d; ^"%s" declares it %s (§5, §8). A value the '
+                                                'source prints outside the range takes FIAT "reason"'
+                                                % (prop, v, owner['name'], lim)))
+                elif dr['enum'] is not None and r['vkind'] == 'STR' and r['value'] not in dr['enum']:
+                    findings.append(Finding(x['file'], 'coherence', sev, r['line'],
+                                            '^"%s" is "%s"; ^"%s" declares it ENUM [%s] (§8)'
+                                            % (prop, r['value'], owner['name'],
+                                               ', '.join('"%s"' % o for o in dr['enum'][:8])
+                                               + (', …' if len(dr['enum']) > 8 else ''))))
+                elif VALUE_FAMILY.get(dr['type']) and VALUE_FAMILY.get(r['type']) \
+                        and VALUE_FAMILY[dr['type']] != VALUE_FAMILY[r['type']]:
+                    findings.append(Finding(x['file'], 'coherence', sev, r['line'],
+                                            '^"%s" is written %s; ^"%s" declares it %s (§8)'
+                                            % (prop, r['type'], owner['name'], dr['type'])))
+
+
 def block_type_pass(files_data, findings):
     """TYPE of a SCENE or a CONFLICT (§16, DECISION-23). Where the loaded set defines ^"Scene Type"
     (or ^"Conflict Type"), the entity named must be one: it, or something that EXTENDS it. Where
@@ -2875,6 +3237,7 @@ def main(argv):
     from_pass(files_data, findings)
     block_type_pass(files_data, findings)
     port_pass(files_data, corpus_index, findings)
+    value_pass(files_data, findings)
     modification_pass(files_data, findings)
     bridge_coherence(files_data, corpora, findings, notes)
 

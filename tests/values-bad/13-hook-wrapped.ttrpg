@@ -1,0 +1,23 @@
+EXTENSION "Values_Bad_13" {
+    NAME "fault 13 — a HOOK whose THEN list wraps and names nothing defined (check_constructs.py)"
+    SPEC_VERSION "0.6"
+    VERSION "1.0"
+    RELEASE_DATE "2026-11-12"
+    DEPENDS_ON "Values_Bad_Core"
+
+    #ValBad13XxK2vQ9wN3cL7pA ^"Tadaji 13" DEF {
+        EXTENDS #ValActorH2nV6kQ9wX3mC7pL ^"Samurai"
+        PROPERTIES {
+            ^"Name" STRING "Tadaji"
+            ^"Air" INTEGER 2
+        }
+        HOOKS {
+            HOOK #ValBadHookxK2vQ9wN3cL7pA {
+                FORMALITY TAGGED
+                WHEN "the amulet is removed"
+                THEN [ #ValVirtueT5wZ1qE8uH3jL6p ^"Virtue",
+                       ^"Nonexistent Mechanic" ]                    # ERROR in check_constructs.py
+            }
+        }
+    }
+}

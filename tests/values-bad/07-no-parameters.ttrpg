@@ -1,0 +1,16 @@
+EXTENSION "Values_Bad_07" {
+    NAME "fault 7 — arguments to a DEF that declares no PARAMETERS"
+    SPEC_VERSION "0.6"
+    VERSION "1.0"
+    RELEASE_DATE "2026-11-12"
+    DEPENDS_ON "Values_Bad_Core"
+
+    #ValBad07XxK2vQ9wN3cL7pA ^"Tadaji 07" DEF {
+        EXTENDS #ValActorH2nV6kQ9wX3mC7pL ^"Samurai"
+        PROPERTIES {
+            ^"Name" STRING "Tadaji"
+            ^"Air" INTEGER 2
+        }
+        ^"Flaws" LIST [ ^"Plain"("x", "y") ]                     # ERROR
+    }
+}

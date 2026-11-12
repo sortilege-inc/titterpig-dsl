@@ -1,0 +1,10 @@
+EXTENSION "Values_Bad_12" {
+    NAME "fault 12 — a short hash, and a hash with an underscore"
+    SPEC_VERSION "0.6"
+    VERSION "1.0"
+    RELEASE_DATE "2026-11-12"
+    DEPENDS_ON "Values_Bad_Core"
+
+    #ValShort ^"Short Hash" DEF { EXTENDS #ValVirtueT5wZ1qE8uH3jL6p ^"Virtue" }                 # ERROR
+    #Val_under_score_K2vQ9wN3 ^"Underscore" DEF { EXTENDS #ValVirtueT5wZ1qE8uH3jL6p ^"Virtue" }    # ERROR
+}

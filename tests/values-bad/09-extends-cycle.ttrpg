@@ -1,0 +1,10 @@
+EXTENSION "Values_Bad_09" {
+    NAME "fault 9 — an EXTENDS cycle"
+    SPEC_VERSION "0.6"
+    VERSION "1.0"
+    RELEASE_DATE "2026-11-12"
+    DEPENDS_ON "Values_Bad_Core"
+
+    #ValBadCycAxK2vQ9wN3cL7pA ^"CycA" DEF { EXTENDS #ValBadCycBxK2vQ9wN3cL7pA ^"CycB" }    # ERROR
+    #ValBadCycBxK2vQ9wN3cL7pA ^"CycB" DEF { EXTENDS #ValBadCycAxK2vQ9wN3cL7pA ^"CycA" }    # ERROR
+}

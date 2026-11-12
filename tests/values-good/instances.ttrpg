@@ -1,0 +1,41 @@
+EXTENSION "Values_Instances" {
+    NAME "DECISION-32 fixture — instances that fit their type"
+    SPEC_VERSION "0.6"
+    VERSION "1.0"
+    RELEASE_DATE "2026-11-12"
+    DEPENDS_ON "Values_Core"
+
+    #ValTadajiP3tH8yL5sD1fG6b ^"Ide Tadaji" DEF {
+        EXTENDS #ValActorH2nV6kQ9wX3mC7pL ^"Samurai"
+        PROPERTIES {
+            ^"Name" STRING "Ide Tadaji"
+            ^"Air" INTEGER 3
+            ^"Kind" STRING "Gift"
+            ^"Skills" LIST OF #ValSkillR5tJ1yL8sD4fG0zX ^"Skill" [ #ValKenjutsuB9pK3xN7vM2cQ ^"Kenjutsu" ]
+            ^"Weight" INTEGER 60
+        }
+        # a bound reference that fits its PARAMETERS, by position and by name
+        ^"Flaws" LIST [ ^"Wrathful"("Major"), ^"Wrathful"(^"Size" = "Minor") ]
+    }
+
+    # the source prints a value outside the type's range: FIAT says so, with its reason
+    #ValAjaxR9cJ4nB7xV2kM1qW ^"Ajax the Invincible" DEF {
+        EXTENDS #ValActorH2nV6kQ9wX3mC7pL ^"Samurai"
+        PROPERTIES {
+            ^"Name" STRING "Ajax"
+            ^"Air" INTEGER 11 FIAT "The book prints Air 11 for this one adversary."
+        }
+    }
+
+    # a subtype narrows a property; that is a declaration, with no value to check
+    #ValAshigaruK7mQ2xW9vN4cZ ^"Ashigaru" DEF {
+        EXTENDS #ValActorH2nV6kQ9wX3mC7pL ^"Samurai"
+        PROPERTIES {
+            ^"Air" INTEGER MIN 1 MAX 3
+        }
+    }
+
+    # an alias chain that ends
+    ALIAS ^"Bushi" FOR #ValActorH2nV6kQ9wX3mC7pL ^"Samurai"
+    ALIAS ^"Warrior" FOR ^"Bushi"
+}

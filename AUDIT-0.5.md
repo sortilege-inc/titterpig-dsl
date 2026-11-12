@@ -783,7 +783,8 @@ scratchpad, reads `ttrpg.peg` as it stands on branch `0.6` and parses whole file
 
 ### B2. The validator checks little of what the spec says is checked
 
-**Status:** open
+**Status:** closed 2026-11-12 by the owner. Committed and pushed on branch `0.6`. The validator
+checks a value against what its definition extends (DECISION-32).
 
 `ttrpg_validator.py` is a token scanner. Its lint level checks lexing, brace balance, hash length
 (as a warning), a `FIAT` reason, the presence of `SPEC_VERSION`, and an inline integer against a
@@ -824,6 +825,104 @@ Other gaps in the gates:
 - The validator does not read `.selections` files.
 - The three lexers disagree on comments. §4 and the grammar: `#` then a space or end of line. The
   validator: `#` then any non-alphanumeric. `#TODO` is a hash ID in all three.
+
+**Evidence, re-run 2026-11-12 against the tools as they now stand.**
+
+*The probe, rebuilt.* One planted violation per file, each beside the same clean base, all
+declaring `SPEC_VERSION "0.6"`, and run through the validator, the reference gate,
+`check_constructs.py` and the grammar. A clean control instance passes all four.
+
+| # | Planted | Validator | Grammar | Other |
+|---|---|---|---|---|
+| 1 | `SPEC_VERSION "9.9"` | silent | accepts | |
+| 2 | `DEPENDS_ON … VERSION "99.0"`; the parent is 0.1 | silent | accepts | |
+| 3 | `INTEGER 7` against an inherited `MIN 1 MAX 5` | silent | accepts | |
+| 4 | a value outside the declared `ENUM` | silent | accepts | |
+| 5 | `INTEGER "heavy"` | silent | **refuses** | |
+| 6 | a `REQUIRED` property left out | silent | accepts | |
+| 7 | `LIST OF ^"Skill"` holding a Virtue | silent | accepts | |
+| 8 | a bound value outside the parameter's list | silent | accepts | |
+| 9 | arguments to a DEF with no `PARAMETERS` | silent | accepts | |
+| 10 | more arguments than `PARAMETERS` | silent | accepts | |
+| 11 | `CHOOSE DISTINCT 5` from two options | **error** | accepts | |
+| 12 | an `EXTENDS` cycle | silent | accepts | |
+| 13 | an `ALIAS` cycle | silent | accepts | |
+| 14 | `PROPERTEIS { … }` | silent | accepts | |
+| 15 | `EXTEND ^"Nonexistent Thing"` | silent | accepts | |
+| 16 | stray `>= \| →` | silent | **refuses** | |
+| 17 | a DEF after the container's closing brace | silent | **refuses** | |
+| 18 | a hash shorter than 16 characters | warning | accepts | |
+| 19 | an underscore in a hash | silent | accepts | |
+| 20 | `#TODO revisit this` | warning (as a short hash) | **refuses** | |
+| 21 | a `HOOK` whose `THEN` list wraps a line and names nothing defined | silent | accepts | `check_constructs.py` silent |
+| 22 | one property written twice in an instance | silent | accepts | |
+| 23 | a property the type does not declare | silent | accepts | |
+| 24 | a `.selections` file selecting an undeclared hash | not read | accepts | `check_constructs.py` **error** |
+
+Of 24, the validator reports one as an error and two as warnings, the grammar refuses four, and
+`check_constructs.py` reports one. Sixteen pass every tool. The reference gate reports none.
+
+*What each rule would cost.* A scratch reader built on the validator's tokenizer walked every
+DEF in the 22 corpus directories, followed each `EXTENDS` chain by name, and counted what each
+rule would report. These are a prototype's counts. It found 39,792 instances and compared
+201,527 instance values with a declaration up the chain.
+
+| Rule | Would report | Where |
+|---|---|---|
+| an `EXTENDS` cycle | 0 | |
+| an `ALIAS` cycle | 0 | |
+| a bound reference against its `PARAMETERS` (arity, value) | 0 of 107 bound references | |
+| a named member of a `LIST OF ^"Type"` that is not of the type | 0 of 1,243 | most list bodies hold unnamed records (F19) and are not counted |
+| a hash shorter than 16 | 0 of 221,433 hash tokens | |
+| an underscore in a hash | 118 | l5r5e (F2) |
+| an `INTEGER` outside the inherited `MIN`/`MAX` | 3 | draw-steel 2 (Ajax the Invincible is `Level 11`, the type says 1 to 10), daggerheart 1 |
+| a value not in the inherited `ENUM` | 229 | armdef 92, arm5e 87, draw-steel 50 (`^"Action Type"` "Triggered"; the list has "Triggered action") |
+| a value of another type than declared | 222 | arm5e 100, armdef 100, draw-steel 22 (`^"Soak" STRING "+21 (hardened bronze statue)"`, declared `INTEGER`) |
+| one property twice in a DEF | 66 | arm5e 33, armdef 33 |
+| an instance missing a `REQUIRED` property | 1,386 instances | daggerheart 348, root 331, armdef 236, l5r5e 182, draw-steel 148; most miss `^"Name"`, required on `^"Entity"`. B4 is about what `REQUIRED` means |
+| a value for a property no type up the chain declares | 52,123 | arm5e 22,933, armdef 23,075, l5r5e 4,504. No rule of the spec forbids it |
+| a `DEPENDS_ON … VERSION` that is not the parent's `VERSION` | 117 of 391 pins | draw-steel: every file pins `"0.5"` and `DS_Core` declares `"0.5.0"`. B5 is about pins |
+| a `SPEC_VERSION` that is not a version of the spec | 0 | all 6,316 declaring files say `"0.5"` |
+
+A first count of list members was wrong and is not in the table: it read the fields of unnamed
+records as members and reported 5,448. Counting named members only gives the row above.
+
+**Ruling (owner, 2026-11-12):** "Yes, add them". Written as DECISION-32.
+
+- **Validator.** A collector records each definition's properties, parameters and list members,
+  and a pass checks them against what the definition extends.
+  - Errors at every version: a cycle of `EXTENDS` or of `ALIAS`; a bound reference with too
+    many arguments, with arguments where its base declares no `PARAMETERS`, or with a string
+    outside a parameter's list.
+  - Gated (a warning below 0.6, an error from 0.6) and waived by `FIAT`: an `INTEGER` outside
+    the range it inherits, a value outside the `ENUM` it inherits, a value of another kind than
+    its type, a named list member that is not of the list's type, one property written twice.
+  - A hash under 16 characters, or with an underscore: the same gating, no waiver.
+- **`check_constructs.py`** reads every DSL file type (it read `.ttrpg` only), joins a `THEN`,
+  `CONCERNS` or `SCOPE` list that wraps a line, reads a list that a comment follows, and counts
+  a named block's hash as an anchor.
+- **Spec.** §6 says `EXTENDS` is acyclic. §5 states the hash format's severity. §20 lists what
+  is checked, at what severity, and what is not.
+- **Proof.**
+  - The probe: the validator now reports 14 of the 24 planted violations (3 before). With the
+    grammar and `check_constructs.py`, 18 are caught. The six that pass every tool are the two
+    left to B4 and B5, the two misspelt keywords, `SPEC_VERSION "9.9"`, and a value for an
+    undeclared property.
+  - Fixtures: `tests/values-good` gives 0 errors and 0 warnings in the validator and 0 errors
+    in `check_constructs.py`. `tests/values-bad` holds one fault per file and gives 15 errors
+    and 4 warnings in the validator, and 1 error in `check_constructs.py`.
+  - Every earlier fixture gives what it gave at the B1 commit.
+  - Old tools against new on the 22 corpus directories. Validator: 15 directories are
+    byte-identical and 7 gain warnings, 815 in all, with no new error (F20).
+    `check_constructs.py`: 0 errors in all 22, as before, and it now counts guidance in `.arc`
+    and `.actor` files (vtm5e 727 to 733, curseborne 6 to 11).
+- **Two corrections made on the way.**
+  - The list-member rule was to be an error at every version, on a count of zero. The count was
+    wrong: the prototype skipped definitions that extend nothing. The validator found 15
+    (curseborne 14, teeth 1), so the rule is gated like the other value rules.
+  - Reading `.arc` files, `check_constructs.py` first reported two `CONCERNS` hashes as
+    undeclared. Both name a `SCENE`, which is a legal target since DECISION-24. The tool now
+    indexes named blocks.
 
 ### B3. Name equality is undefined, and the gates use two different rules
 
@@ -1365,6 +1464,25 @@ read, so a file may hold further forms behind that one.
 - A corpus's `gates.sh` can run `check_grammar.py` once its own count is zero.
 - The four rulings belong with C5 (in heavy use and not in the spec).
 
+### F20. Seven corpora: what the value checks now report
+
+**From:** B2, DECISION-32. **Status:** open, not started. All are warnings today, in files that
+declare `SPEC_VERSION "0.5"`. Each becomes an error when its file declares 0.6.
+
+| Corpus | New warnings | What |
+|---|---|---|
+| armdef | 306 | as arm5e |
+| arm5e | 301 | 205 values written `STRING` where the type declares `INTEGER` (`^"Soak" STRING "+21 (hardened bronze statue)"`); 63 values outside an `ENUM` (`^"Magnitude"` "Major/Minor"); 33 properties written twice |
+| l5r5e | 118 | hashes with an underscore; F2 replaces them |
+| draw-steel | 74 | 50 values outside an `ENUM` (`^"Action Type"` "Triggered"; the list has "Triggered action"); 22 type mismatches; 2 out of range (Ajax the Invincible is `Level 11`) |
+| curseborne | 14 | members of a `LIST OF ^"Being a Ghost"` that do not extend it |
+| teeth | 1 | `^"Tallow candle"` in a `LIST OF ^"Courtier Item"` |
+| daggerheart | 1 | a `^"Complexity Rating"` of 4 where the type says 1 to 3 |
+
+- For each: fix the value, widen the type's declaration, or mark it `FIAT "reason"` where the
+  book prints it so. Which of the three is a call on the source, entry by entry.
+- arm5e's are fixed in `arm5e/0.5` and reach armdef through the retarget.
+
 ### F12. Seven corpora: scene and conflict types become entities
 
 **From:** A3, DECISION-23. **Status:** open, not started. The validator now reports these.
@@ -1499,6 +1617,21 @@ two parameter to-dos below.
   which the validator does not check; a result given as a bare value in place of a block.
 
 ### Known gaps left by this change
+
+- **Six of the probe's 24 violations still pass every tool:** a `REQUIRED` property left out
+  (B4), a `DEPENDS_ON` version that is not the parent's (B5), `SPEC_VERSION "9.9"`, two
+  misspelt keywords (`PROPERTEIS`, `EXTEND`) and a value for a property no type declares. None
+  has a rule the validator could apply without a ruling.
+- **The value checks follow a chain by name where there is no hash,** and stop at a name two
+  definitions share. An instance of an ambiguous type is not checked.
+- **A nested or unnamed DEF's fields are not checked.** `^"Rings" DEF { ^"Air" INTEGER 9 }` is
+  not compared with the type's nested declaration, and the records in a list body are not read.
+- **A bound reference's caret arguments are not checked against the parameter's type,** only
+  its string arguments against a list of strings.
+- **`check_constructs.py` still matches by line.** A `FORMALITY` or `DEFAULT` not alone on its
+  line is not seen. It normalises names its own way (B3).
+- **The hash-format gating applies to DSL files the validator reads as `.ttrpg`.** A short hash
+  in a `.bridge` or a `.codex` is still a warning at every version.
 
 - **The grammar's reserved list is not §15's word for word.** `RESERVED_WORD` holds 45 words.
   It leaves out `NAME`, `VERSION` and `ORIGIN`, which have rules of their own that any body may
@@ -1751,6 +1884,9 @@ Filled in as each finding is walked through.
 | B1 | 2026-11-12 | The grammar is run and gated on the repo's fixtures. `check_grammar.py` is added; `ttrpg.peg` is repaired until it accepts all 35 good fixture files and refuses twelve planted syntax faults. The corpora are measured (5,157 of 7,055 accepted) and not gated. Written as DECISION-31. | Owner: "Yes, make it run". The alternatives were to demote the grammar to a sketch or delete it. |
 | B1 | 2026-11-12 | Agent's calls, to confirm. (1) A keyword statement's arguments begin on the keyword's line. (2) `RESERVED_WORD` adds the annotation-block openers and leaves out the words listed in the gaps. (3) A list may be empty. (4) A DEF's hash may follow its name. (5) Forms the spec does not define stay refused: `ENUM "x"`, an unnamed `DEF { }` in a list, `"text" +6`, an annotation block in an `ENTRY`. (6) The interpreter is written here, with no dependency. | (1): it stops a statement from taking the next line's first token. (2): a malformed annotation block was being read as a system keyword. (3) and (4): the corpora and A3's convention. (5): a grammar that accepts what the spec lacks would hide F19. (6): the repo's tools are plain Python. |
 | B1 | 2026-11-12 | B1 is closed. The branch is committed and pushed. | Owner: "Close, commit, push". The agent's calls in the B1 row marked "to confirm" were reported to him before he closed and were not separately ruled on. |
+| B2 | 2026-11-12 | The validator gains six groups of checks: cycles, bound references, list members, values against the inherited declaration, a property written twice, and the hash format. `check_constructs.py` reads every DSL file type and wrapped lists. Written as DECISION-32. `REQUIRED` and version pins are left to B4 and B5. | Owner: "Yes, add them". The alternative was to cut the spec's claims down to what was checked. |
+| B2 | 2026-11-12 | Agent's calls, to confirm. (1) The list-member rule is gated by version; it was to be an error everywhere, and the corpora hold 15. (2) `EXTENDS` is declared acyclic in §6; the spec had not said. (3) A hash-format finding takes no `FIAT`. (4) A name two definitions share is not followed up a chain. (5) `check_constructs.py` counts a named block's hash as an anchor and reads a list that a comment follows. | (1): the zero came from a prototype that skipped definitions with no parent. (2): the owner approved the check. (3): a hash is not content. (4): §5d. (5): DECISION-24, and a comment was hiding a list from the check. |
+| B2 | 2026-11-12 | B2 is closed. The branch is committed and pushed. | Owner: "Close, commit, push". The agent's calls in the B2 row marked "to confirm" were reported to him before he closed and were not separately ruled on. |
 
 ---
 

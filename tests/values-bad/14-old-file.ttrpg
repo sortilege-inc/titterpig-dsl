@@ -1,0 +1,18 @@
+EXTENSION "Values_Bad_14" {
+    NAME "fault 14 — the gated findings in a file that declares 0.5: warnings there"
+    SPEC_VERSION "0.5"
+    VERSION "1.0"
+    RELEASE_DATE "2026-11-12"
+    DEPENDS_ON "Values_Bad_Core"
+
+    #ValBad14XxK2vQ9wN3cL7pA ^"Tadaji 14" DEF {
+        EXTENDS #ValActorH2nV6kQ9wX3mC7pL ^"Samurai"
+        PROPERTIES {
+            ^"Name" STRING "Tadaji"
+            ^"Air" INTEGER 9                                    # WARNING
+            ^"Kind" STRING "Neither"                            # WARNING
+            ^"Kind" STRING "Gift"                               # WARNING: written twice
+        }
+    }
+    #Val_old_under_score_K2vQ ^"Old Underscore" DEF { EXTENDS #ValVirtueT5wZ1qE8uH3jL6p ^"Virtue" }    # WARNING
+}

@@ -84,6 +84,10 @@ Changes made since v0.5, listed as they are decided. **Not all are additive.**
     files with it. The grammar is gated on this repo's fixtures. It now has rules for a keyword
     statement, the narrative containers and hash-qualified lists, and a rule for the words
     reserved everywhere.
+19. **The validator checks a value against what its definition extends** *(§5, §5b, §6, §8, §20,
+    DECISION-32)* — a range, an `ENUM`, a type, a list's members, a bound reference's
+    arguments, a property written twice, and a cycle of `EXTENDS` or of `ALIAS`. `EXTENDS` is
+    acyclic. A hash shorter than 16 characters, or with an underscore, is refused from 0.6.
 
 ### v0.5 — five new constructs, and one rule tightened *(current)*
 
@@ -510,6 +514,20 @@ stay valid.
   arguments of a keyword statement begin on the keyword's line. The words reserved everywhere
   are one rule, `RESERVED_WORD`, and include the openers of the annotation blocks. A list may
   be empty.
+
+- **DECISION-32 — The validator checks what §5 and §8 say is checked** *(resolved, v0.6,
+  2026-11-12)* (§5, §5b, §6, §8, §20): §5 said "coherence validation checks each value against
+  the constraint inherited from the actor type", and §5b called three faults of a bound
+  reference coherence errors. The validator checked none of them: of 24 violations planted one
+  to a file, it reported one. The decision adds six groups of checks. A cycle of `EXTENDS` or of
+  `ALIAS`, and a bound reference that does not fit its base's `PARAMETERS`, are errors at every
+  version; no corpus has one. An `INTEGER` outside the `MIN` / `MAX` it inherits, a value
+  outside the `ENUM` it inherits, a value of another kind than its type, a named member of a
+  `LIST OF ^"Type"` that does not extend the type, and one property written twice in a
+  definition are a warning in a file that declares a `SPEC_VERSION` below 0.6, or none, and an
+  error from 0.6; `FIAT` waives each. A hash shorter than 16 characters, or with an underscore,
+  takes the same gating and no waiver. The corpora gain 815 warnings and no error. A
+  `REQUIRED` property left out and a `DEPENDS_ON` version pin are left to their own findings.
 
 ## 1. Overview & Design Principles
 
@@ -1182,7 +1200,9 @@ Hash IDs are optional cross-reference anchors on any DEF or rule. When present:
   entity carried over by a **port** keeps the hash it had *(v0.6, §19, DECISION-26)*. A hash that
   two editions share outside a declared port means nothing. Within an edition, two *different*
   entities must never share a hash.
-- **Format:** `#` followed by `≥16` alphanumeric characters (`[A-Za-z0-9]{16,}`).
+- **Format:** `#` followed by `≥16` alphanumeric characters (`[A-Za-z0-9]{16,}`). A shorter hash,
+  or one with an underscore, is a warning in a file that declares a `SPEC_VERSION` below 0.6, or
+  none, and an **error** from 0.6 *(DECISION-32)*.
 - A short, non-semantic readability prefix is *tolerated* (e.g. `#L5R…`) but must not be depended on.
 
 ```
@@ -1381,6 +1401,9 @@ later.
 ## 6. Inheritance (EXTENDS)
 
 A DEF that `EXTENDS` another inherits all of its PROPERTIES and RULES. The child can add new properties, override defaults, and add rules.
+
+**`EXTENDS` is acyclic** *(v0.6, DECISION-32)*. A definition that extends itself, directly or through
+others, is an **error**.
 
 **By name:**
 ```
@@ -3511,6 +3534,28 @@ Validation of `.ttrpg`/`.lore` files has two levels, both operating on the files
 
 1. **Lint — spec adherence.** Does the file conform to this grammar/spec (structure, types, reserved-word usage, canonical forms)? `ttrpg.peg` states the syntax and `check_grammar.py` runs it *(v0.6, DECISION-31)*: every good fixture in this repo must be accepted and every planted syntax fault in `tests/grammar-bad` refused. `ttrpg_validator.py` is a second reader. It scans tokens and does not use the grammar, so the two can disagree about what is well-formed, and a disagreement is a defect in one of them.
 2. **Coherence / consilience — referential integrity.** Across **an edition's** corpus: is everything referenced actually defined? Do `^"Name"`, `#hash`, `EXTENDS`, `APPLIES TO`, `DEPENDS_ON` resolve to real, correctly-typed targets — **and unambiguously** (§5d)? No **dangling** anchors, and **no hash declared twice**: a second DEF under a hash the corpus already declares is a **duplicate anchor**, an error *(v0.6, DECISION-27; before v0.6 the spec read it as an implicit override, which the validator never accepted)*. Two restatements are not duplicates: a named block stated again under its own hash and name, and a codex `ENTITY` restated to add sources (§25). The same hash on two different names is an error in every case.
+
+**A value is checked against what its definition extends** *(v0.6, DECISION-32)*. The validator
+follows each `EXTENDS` chain to the nearest declaration of a property and reports:
+
+| What | Severity |
+|---|---|
+| a cycle of `EXTENDS` (§6) or of `ALIAS` (§5b) | error |
+| a bound reference with more arguments than its base's `PARAMETERS`, with arguments where the base declares none, or with a string outside a parameter's list (§5b) | error |
+| an `INTEGER` outside the `MIN` / `MAX` it inherits (§5, §8) | gated |
+| a value outside the `ENUM` it inherits (§8) | gated |
+| a value of another kind than its type keyword, or than the type it inherits (§8) | gated |
+| a named member of a `LIST OF ^"Type"` that does not extend the type (§8) | gated |
+| one property written twice in a definition (§8) | gated |
+
+"Gated" is a warning in a file that declares a `SPEC_VERSION` below 0.6, or none, and an error from
+0.6. `FIAT "reason"` waives a gated finding: a value the source prints outside its type's range is
+what `FIAT` is for (§8).
+
+Not checked, and why: a `REQUIRED` property left out and a `DEPENDS_ON` version pin, which wait on
+rulings of their own; a value for a property no type declares, which no rule forbids; the fields
+of a nested or unnamed DEF; and a misspelt keyword, which reads as a system's own (§15). A name that
+two definitions share is not followed up a chain: the reference needs its hash (§5d).
 
 **The modification system is part of coherence** *(v0.4, 2026-07-25)*. A `MODIFY` / `OVERRIDE`
 naming a target that does not exist modifies nothing, silently and permanently — rename the parent

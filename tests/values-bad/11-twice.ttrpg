@@ -1,0 +1,16 @@
+EXTENSION "Values_Bad_11" {
+    NAME "fault 11 — one property written twice"
+    SPEC_VERSION "0.6"
+    VERSION "1.0"
+    RELEASE_DATE "2026-11-12"
+    DEPENDS_ON "Values_Bad_Core"
+
+    #ValBad11XxK2vQ9wN3cL7pA ^"Tadaji 11" DEF {
+        EXTENDS #ValActorH2nV6kQ9wX3mC7pL ^"Samurai"
+        PROPERTIES {
+            ^"Name" STRING "Tadaji"
+            ^"Air" INTEGER 2
+            ^"Air" INTEGER 4                                    # ERROR
+        }
+    }
+}
