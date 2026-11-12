@@ -274,7 +274,8 @@ LIST_LITERAL    <- 'LIST' _ BRACKET_LIST
 # followed by a property type, DEF, CHOOSE, SET or TRANSFORM belongs to the next
 # statement and is not this property's value.
 #   REF OF #hash ^"Clan" REQUIRED                  on the type; the property is named ^"Clan"
-#   ^"Patron" REF OF #hash ^"Virtue"               on the type, when the name differs from the type
+#   ^"Patron" REF OF #hash ^"Virtue"               on the type, with a name of its own (a name
+#                                                  may always be written, even the type's)
 #   ^"Clan" REF #hash ^"Crab"                      on an instance
 REF_TYPE        <- 'REF' (_ 'OF' _ HASHED_REF)? (_ REF_TARGET)? (_ MODIFIER)*
 # The declaration with no name of its own: the property takes the type's name.

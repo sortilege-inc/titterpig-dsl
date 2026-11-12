@@ -994,10 +994,6 @@ def analyze_file(fname, text, findings):
                 findings.append(Finding(fname, 'lint', 'error', t.line,
                                         "a REF with no property name before it needs OF ^\"Type\"; "
                                         "to give a value write ^\"Name\" REF ^\"Entity\" (§8)"))
-            if named and rty is not None and toks[idx - 1].val == rty:
-                findings.append(Finding(fname, 'lint', 'warning', t.line,
-                                        "^\"%s\" REF OF ^\"%s\" writes the name twice: "
-                                        "REF OF ^\"%s\" declares the same property (§8)" % (rty, rty, rty)))
             if rty is not None:
                 refs.append(('ref type', rty, rth, rtl))
             if rval is not None:

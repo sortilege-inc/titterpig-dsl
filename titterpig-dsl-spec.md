@@ -1004,9 +1004,11 @@ REF OF #hash ^"Clan" REQUIRED
 ^"Clan" REF #hash ^"Crab"
 ```
 
-- `REF OF ^"Type"` declares the property, and the property takes the type's name: `REF OF ^"Clan"`
-  declares a property `^"Clan"`. The name is not written a second time.
-- A property whose name differs from its type writes the name: `^"Patron" REF OF #hash ^"Virtue"`.
+- `REF OF ^"Type"` declares the property. With no name written, the property takes the type's
+  name: `REF OF ^"Clan"` declares a property `^"Clan"`.
+- A name may always be written before `REF`. It must be when the property's name differs from its
+  type (`^"Patron" REF OF #hash ^"Virtue"`), and it may repeat the type's name
+  (`^"Clan" REF OF #hash ^"Clan"`).
 - `REF ^"Entity"`, after the property's name, gives its value. An instance inherits the declaration
   and writes only the value; both may be written on one line
   (`REF OF #hash ^"Clan" #hash ^"Crab"`).
@@ -2728,22 +2730,28 @@ BASE "ArM5e_Core" {
 
     # ============= Spells =============
 
+    ^"Voice" DEF {
+        EXTENDS ^"Range"
+        PARAMETERS { ^"spell" OF ^"Spell" }       # the spell cast at this Range comes in
+        PROPERTIES {
+            ^"Magnitudes" TRANSFORM ADD 2          # and gains 2 magnitudes
+        }
+    }
+
     ^"Pilum of Fire" DEF {
         EXTENDS ^"Formulaic Spell"
         PROPERTIES {
             ^"Technique" REF ^"Creo" FIXED
             ^"Form" REF ^"Ignem" FIXED
             ^"Level" INTEGER 20
-            ^"Range" STRING "Voice"
-            ^"Duration" STRING "Momentary"
-            ^"Target" STRING "Individual"
+            ^"Range" REF ^"Voice"
+            ^"Duration" REF ^"Momentary"
+            ^"Target" REF ^"Individual"
         }
         LEVEL_CALCULATION {
-            BASE 5
-            RANGE_MODIFIER "+2 Voice"
-            DAMAGE "+10"
+            BASE 10
         }
-        DESCRIPTION "A bolt of fire shoots from your hand, inflicting +15 damage on the target."
+        DESCRIPTION "A 2-foot, thick, spear-shaped jet of fire flies from your palms, doing +15 damage to the individual it hits."
     }
 
     # ============= Lab Activities =============

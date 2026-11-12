@@ -71,6 +71,7 @@ BASE "Demo_Decision6" {
         PROPERTIES {
             REF OF #Decision6Clan0000mmmmmmmmmm ^"Clan" REQUIRED
             ^"Patron" REF OF #Decision6Virtue00cccccccccc ^"Virtue"
+            ^"Glory" REF OF #Decision6Glory000oooooooooo ^"Glory"
             ^"Family Name" STRING REQUIRED
         }
     }

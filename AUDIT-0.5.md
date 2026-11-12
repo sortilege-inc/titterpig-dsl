@@ -609,6 +609,18 @@ The validator warns on every `CHOICE` as of 2026-11-11: root 130, TEETH 146, arm
 them. These corpora are generated: change the generators, then rebuild. arm5e's 310 options and
 root's 304 carry no hash.
 
+### F5. arm5e: spell magnitudes, derived level, and Range / Duration / Target as entities
+
+**From:** A1. **Repo:** `titterpig-dsl-arm5e` (and armdef by retarget). **Status:** open, not started.
+
+Owner, 2026-11-11: track both a spell's magnitudes and its level, the level derived from the
+magnitudes; the rule is more complex than five levels a magnitude. Each Range, Duration and Target
+becomes an entity that carries its change to the spell's magnitudes, and a spell points at them
+with `REF`. Today 405 `LEVEL_CALCULATION` blocks hold 870 lines such as `+2 "Voice"`; the grammar
+has no `+` on a number and the validator drops it. `^"Technique" STRING "Creo"` and
+`^"Form" STRING "Ignem"` become `REF`; arm5e already defines `^"Creo"` and `^"Ignem"`. Waits on the
+two parameter to-dos below.
+
 ### To-do recorded in the spec
 
 - **Nested conditions in `WITH`** (§5b). `A AND (B OR C)` is not defined; a `WITH` that mixes `AND`
@@ -629,6 +641,22 @@ root's 304 carry no hash.
   (`1D6+1D4`); 49 add another value (`1D6 + damage bonus`). No `d%`, `d66`, keep-highest or
   exploding form appears as a property value. The two earlier figures (694, then 866) counted
   lowercase `d` only.
+
+- **A change that targets a property of a parameter** (§5b, §8). §17's `^"Voice"` declares
+  `PARAMETERS { ^"spell" OF ^"Spell" }` and holds `^"Magnitudes" TRANSFORM ADD 2`. Nothing in the
+  DSL yet says that `^"Magnitudes"` there means the Magnitudes of the incoming spell. The validator
+  reads a change's target as an entity name, so it reports `^"Magnitudes"` as undefined unless an
+  entity of that name exists.
+- **Binding the referring definition to an incoming parameter** (§5b). A spell takes Voice as
+  `^"Range" REF ^"Voice"`. §5b binds a parameter with an argument, `^"Voice"(…)`; it has no rule
+  that the definition holding the reference is itself the argument.
+- **A spell's Magnitudes and derived Level** (arm5e, F5). §17's Pilum of Fire gives the printed
+  `Level 20` and `BASE 10`. The spell type's `Magnitudes` property and the rule that derives Level
+  from it are not written.
+- **Dice as DEFs and rolls as steps.** Direction set by the owner 2026-11-11; forms not settled:
+  how a die lists its values and weights, how a roll of n dice is written, how a later line names
+  an earlier line's result, where the base dice live given edition-scoped hashes, and what the
+  spec says about statement order now that some blocks are steps.
 
 ### Known gaps left by this change
 
@@ -686,7 +714,11 @@ Filled in as each finding is walked through.
 | A1 | 2026-11-11 | A `REF` declaration is written `REF OF ^"Clan"`, with no name before it; the property takes the type's name. `^"Clan" REF OF ^"Clan"` raises a warning. | Owner's syntax ruling. Agent's reading, to confirm: a property whose name differs from its type still writes the name (`^"Patron" REF OF ^"Virtue"`), and an instance still writes `^"Clan" REF ^"Crab"`. |
 | A1 | 2026-11-11 | The work is checked in on a `0.6` branch of `titterpig-dsl`. Not pushed. | Owner's call. |
 | A1 | 2026-11-11 | Spell levels: track both a spell's magnitudes and its level, the level derived from the magnitudes. "+2 Voice" is a `TRANSFORM` of the spell's magnitudes, and the spell's Range is set to Voice; Voice as an entity can carry that change. | Owner's direction. How a derived property is written is not yet defined; proposal pending. §17's Pilum of Fire is unchanged until then. |
-| A1 | 2026-11-11 | Open: a dice literal. | Owner asked for a proposal. |
+| A1 | 2026-11-11 | A `REF` property implicitly takes its type's name, and a name may always be written, the type's own included, with no warning. The warning is removed. | Owner's call, replacing the agent's reading. |
+| A1 | 2026-11-11 | Voice's change to the spell's magnitudes takes the spell as an incoming parameter: `PARAMETERS { ^"spell" OF ^"Spell" }`. | Owner: "now we're starting to need them". |
+| A1 | 2026-11-11 | Deriving a spell's Level from its Magnitudes is a to-do for arm5e (F5). The rule is more complex than "multiply by 5". | Owner's call. |
+| A1 | 2026-11-11 | §17's Pilum of Fire fixed as far as the DSL allows: `BASE 10`, the invented `DAMAGE` and `RANGE_MODIFIER` lines removed, the book's description, Range / Duration / Target as `REF`, and a `^"Voice"` entity that carries the +2 magnitudes. What could not be written is in the to-do list. | Owner: "fix as much as you are able, and mark anything you can't fix in the todo". |
+| A1 | 2026-11-11 | Dice are DEFs, starting with d2, d3, d4, d6, d8, d10, d20 and d100, each a list of values with a weight of 1. A thing that needs a roll declares the dice, transforms the value, stores the sum, and may add a property (a damage type). | Owner's direction, replacing the agent's proposal of a dice literal and a `DICE` type, which is withdrawn. The exact forms are not yet settled. |
 | A1 | 2026-11-11 | `REF` is the property type for a reference to one entity: `REF OF ^"Type"` on the type, `REF ^"Entity"` on an instance. Written into §8 as DECISION-17. The example's `^"Clan" STRING "Crab"` is now `^"Clan" REF #… ^"Crab"`. | Owner asked for the string to become a reference and chose `REF` from four candidate terms. |
 
 ---
