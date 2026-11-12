@@ -157,6 +157,7 @@ from __future__ import annotations
 import sys
 import os
 import re
+import unicodedata
 from dataclasses import dataclass
 
 HASH_MIN_BODY = 16
@@ -229,6 +230,17 @@ class Finding:
     msg: str
 
 
+def name_key(name):
+    """When two names are the same (§14, DECISION-33): the same characters once what a reader
+    cannot see, or should not care about, is folded. Unicode normal form; a run of white space
+    as one space; a curly quote as a straight one; \" read as the quote it writes. Case,
+    punctuation and accents count. check_references.py and check_constructs.py carry the same
+    function."""
+    s = unicodedata.normalize('NFC', name).replace('\\"', '"')
+    s = s.replace('\u2019', "'").replace('\u2018', "'").replace('\u201c', '"').replace('\u201d', '"')
+    return re.sub(r'\s+', ' ', s).strip()
+
+
 def tokenize(text, fname, findings):
     toks = []
     i, n, line = 0, len(text), 1
@@ -265,7 +277,7 @@ def tokenize(text, fname, findings):
             if j >= n:
                 findings.append(Finding(fname, 'lint', 'error', start, "unterminated caret reference"))
                 break
-            toks.append(Tok('CARET', text[i + 2:j], start)); i = j + 1; continue
+            toks.append(Tok('CARET', name_key(text[i + 2:j]), start)); i = j + 1; continue
         if c == '"':
             if text[i:i + 3] == '"""':
                 j = text.find('"""', i + 3)
@@ -884,7 +896,7 @@ def collect_definitions(fname, toks):
                 k = i - 2
                 if k >= 0 and toks[k].kind == 'ID' and toks[k].val in ('ACTOR', 'TEMPLATE'):
                     k -= 1
-                pending = {'name': toks[i - 1].val,
+                pending = {'name': name_key(toks[i - 1].val),
                            'hash': toks[k].val if k >= 0 and toks[k].kind == 'HASH' else None,
                            'extends': [], 'props': {}, 'params': None, 'file': fname, 'line': t.line,
                            'nested': any(fr['kind'] in ('DEF', 'PROPS') for fr in stack)}
@@ -1110,7 +1122,7 @@ def analyze_file(fname, text, findings):
         if _tk.kind != 'STR' or '^' not in _tk.val:
             continue
         for _m in EMBEDDED_REF.finditer(_tk.val):
-            refs.append(('embedded reference', _m.group(3), _m.group(1), _tk.line))
+            refs.append(('embedded reference', name_key(_m.group(3)), _m.group(1), _tk.line))
             if _m.group(4) is not None and not _m.group(4).strip():
                 findings.append(Finding(fname, 'lint', 'error', _tk.line,
                                         'embedded reference ^"%s" has an empty literal after the '
@@ -1344,7 +1356,7 @@ def analyze_file(fname, text, findings):
         elif w == 'DEF':
             k = idx - 1
             if k >= 0 and toks[k].kind in ('CARET', 'STR'):
-                name = toks[k].val; k -= 1
+                name = name_key(toks[k].val); k -= 1
                 if k >= 0 and toks[k].kind == 'ID' and toks[k].val in ('ACTOR', 'TEMPLATE'):
                     k -= 1
                 hsh = toks[k].val if k >= 0 and toks[k].kind == 'HASH' else None

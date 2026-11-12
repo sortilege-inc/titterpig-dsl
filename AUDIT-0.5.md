@@ -926,7 +926,8 @@ records as members and reported 5,448. Counting named members only gives the row
 
 ### B3. Name equality is undefined, and the gates use two different rules
 
-**Status:** open
+**Status:** closed 2026-11-12 by the owner. Committed and pushed on branch `0.6`. §14 says when
+two names are the same, and every tool here compares that way (DECISION-33).
 
 The spec does not say when two names are the same (case, punctuation, straight or curly
 apostrophe, Unicode form). The validator compares exactly. `check_references.py` and
@@ -937,6 +938,61 @@ fold together: vtm5e 221 groups (`Extortionist` / `Extortionist:`), arm5e 27, to
 
 In the probe, `EXTENDS ^"virtue"` is an undefined reference to the validator and a resolved,
 hashless reference to `check_references.py`.
+
+**Evidence, measured 2026-11-12.**
+
+*Who compares how.* The validator and the synthesist compare names exactly.
+`check_references.py`, `check_constructs.py` and `apply_references.py` fold a name first: lower
+case, a curly apostrophe made straight, then every character outside `a-z0-9` dropped. That
+fold drops an accented letter whole: `Mahō` becomes `mah`.
+
+*Definitions.* The 22 corpus directories define 98,095 names. Distinct names that become one:
+
+| Rule | Groups that merge | Examples |
+|---|---|---|
+| quote style, Unicode form and spacing only | 43 | `Jupiter's Touch` / `Jupiter’s Touch` (armdef); `I'll Take That` / `I’ll Take That` (root) |
+| case as well | 462 more | `Status` / `status` (l5r5e); `Exhaustion` / `exhaustion` (root); `PEOPLE PERSON` / `People Person` (vtm5e) |
+| the gates' fold as well | 518 more | `Orcs` / `Orcs!` (tor2e); `Feeding` / `Feeding:` (vtm5e); `16-18` / `16–18` (pendragon5e); `Long Bow` / `Longbow` (root); `Earth (op)` / `Earth (op)+` (l5r5e) |
+
+*References.* Two scans: the validator's sites (84,723 references) and the gate's own
+(`REFERENCES` arrows and `CONCERNS`, `THEN` and `SCOPE` lists: 13,293).
+
+- 86,291 references carry a hash. In all but 4 the name is the anchor's name, character for
+  character. The 4 are in callofcthulhu7e: `^"PILOT"` for `^"Pilot"`, `^"Key"` for `^"Key:"`,
+  and one sidebar title written twice in other capitals.
+- 11,703 hashless references match a definition exactly. One resolves only under the gates'
+  fold: l5r5e's embedded `^"Tent [Small]"`, for `^"Tent (Small)"`. 17 resolve under no rule
+  (F10).
+- So 5 references in about 98,000 depend on folding.
+
+*The gate, run three ways over the 22 directories.* Its own fold: 31 errors and 397 hashless
+WARNs. Exact comparison: 36 and 396. Quote style, Unicode form and spacing folded: 36 and 396.
+The two stricter rules give the same result as each other, and differ from today's in two
+corpora only: callofcthulhu7e gains 4 errors and l5r5e gains 1.
+
+**Ruling (owner, 2026-11-12):** "Yes, that rule". Written as DECISION-33.
+
+- **The rule.** Two names are the same when their characters are the same after Unicode normal
+  form, a run of white space read as one space, and a curly quote read as a straight one. Case,
+  punctuation and accents count.
+- **Spec.** §14 has a section, *When two names are the same*, with a table of pairs. §5d points
+  at it.
+- **Tools.** One function, written the same in three files: `name_key` in the validator, applied
+  to every caret name as it is read and to a definition named by a string; `nk` in
+  `check_references.py` and in `check_constructs.py`, in place of their fold.
+- **Proof.**
+  - `tests/names-good` writes each definition one way and references it another (a curly
+    apostrophe for a straight one, a combining accent, two spaces, a no-break space): 0 errors
+    and 0 warnings in the validator, 0 errors and 0 hashless WARNs in the gate, 0 errors in
+    `check_constructs.py`.
+  - `tests/names-bad` references by another case, without a `!`, without an accent, and with
+    brackets for parentheses: 4 errors in the validator, 4 in the gate, 1 in
+    `check_constructs.py`.
+  - Old tools against new on the 22 corpus directories. Validator: byte-identical output in all
+    22. Reference gate: identical in 20; callofcthulhu7e goes from 0 errors to 4 and l5r5e from
+    30 to 31. `check_constructs.py`: identical in 21; callofcthulhu7e goes from 0 errors to 4,
+    the same four `CONCERNS` lines.
+- **Not done.** The five references are not corrected, and the synthesist is not changed (F21).
 
 ### B4. `REQUIRED` means one thing in §8 and another in the only tool that checks it
 
@@ -1483,6 +1539,24 @@ declare `SPEC_VERSION "0.5"`. Each becomes an error when its file declares 0.6.
   book prints it so. Which of the three is a call on the source, entry by entry.
 - arm5e's are fixed in `arm5e/0.5` and reach armdef through the retarget.
 
+### F21. callofcthulhu7e, l5r5e and the synthesist: follow the one name rule
+
+**From:** B3, DECISION-33. **Status:** open, not started. The two corpora's gates fail on these
+today.
+
+- **callofcthulhu7e, 4 references**, each reported by `check_references.py` and by
+  `check_constructs.py`. Each `CONCERNS` line gives a hash and a name that is not the anchor's:
+  - `keeper-ch4-skills-pushing.ttrpg:246`: `^"PILOT"`, and the anchor is `^"Pilot"`.
+  - `keeper-ch7-chases.ttrpg:511`: `^"Key"`, and the anchor is `^"Key:"`.
+  - `keeper-ch3-creating.ttrpg:562` and `:567`: `^"When crafting background entries, be
+    specific, emotional and emphatic"`, and the anchor capitalises the title and has a comma
+    after "Emotional".
+- **l5r5e, 1 reference.** `writ-of-wilds-mechanics.ttrpg:895` embeds `^"Tent [Small]"`; the
+  definition is `^"Tent (Small)"`.
+- **synthesist.** It compares names exactly. Under DECISION-33 it folds Unicode form, white
+  space and quote style first. UNVERIFIED: whether any composition changes; the validator's
+  output did not change in any corpus when it took the rule.
+
 ### F12. Seven corpora: scene and conflict types become entities
 
 **From:** A3, DECISION-23. **Status:** open, not started. The validator now reports these.
@@ -1617,6 +1691,17 @@ two parameter to-dos below.
   which the validator does not check; a result given as a bare value in place of a block.
 
 ### Known gaps left by this change
+
+- **The name rule is written three times,** once in each of three tools, and nothing checks
+  that the three copies stay the same. The fixtures would catch a copy that drifted on the
+  cases they hold.
+- **`apply_references.py` still folds names its own way** (lower case, letters and digits only,
+  and "X, the" turned round). It searches prose for mentions and proposes references; it is not
+  a gate. UNVERIFIED: that what it writes is always the definition's own name.
+- **The validator's messages print a name as folded:** a curly apostrophe shows as a straight
+  one.
+- **The 43 pairs of definitions that are now one name** (`Jupiter's Touch` / `Jupiter’s Touch`)
+  were not looked at one by one. Each is two entities of one name, or one entity written twice.
 
 - **Six of the probe's 24 violations still pass every tool:** a `REQUIRED` property left out
   (B4), a `DEPENDS_ON` version that is not the parent's (B5), `SPEC_VERSION "9.9"`, two
@@ -1887,6 +1972,9 @@ Filled in as each finding is walked through.
 | B2 | 2026-11-12 | The validator gains six groups of checks: cycles, bound references, list members, values against the inherited declaration, a property written twice, and the hash format. `check_constructs.py` reads every DSL file type and wrapped lists. Written as DECISION-32. `REQUIRED` and version pins are left to B4 and B5. | Owner: "Yes, add them". The alternative was to cut the spec's claims down to what was checked. |
 | B2 | 2026-11-12 | Agent's calls, to confirm. (1) The list-member rule is gated by version; it was to be an error everywhere, and the corpora hold 15. (2) `EXTENDS` is declared acyclic in §6; the spec had not said. (3) A hash-format finding takes no `FIAT`. (4) A name two definitions share is not followed up a chain. (5) `check_constructs.py` counts a named block's hash as an anchor and reads a list that a comment follows. | (1): the zero came from a prototype that skipped definitions with no parent. (2): the owner approved the check. (3): a hash is not content. (4): §5d. (5): DECISION-24, and a comment was hiding a list from the check. |
 | B2 | 2026-11-12 | B2 is closed. The branch is committed and pushed. | Owner: "Close, commit, push". The agent's calls in the B2 row marked "to confirm" were reported to him before he closed and were not separately ruled on. |
+| B3 | 2026-11-12 | Two names are the same when their characters are the same after Unicode normal form, a run of white space read as one space, and a curly quote read as a straight one; case, punctuation and accents count. Written as DECISION-33 in §14, and the validator, the reference gate and `check_constructs.py` compare names that one way. | Owner: "Yes, that rule". The alternatives were fully exact, and the gates' fold. It follows his ruling of 2026-09-29 that quote style is not content. |
+| B3 | 2026-11-12 | Agent's calls, to confirm. (1) The rule is not gated by `SPEC_VERSION`: callofcthulhu7e's and l5r5e's gates fail on five references today. (2) `apply_references.py` keeps its looser match. (3) A no-break space counts as white space. | (1): the owner was shown the five before he ruled, and a name rule that depended on the file's version would give two answers for one reference. (2): it proposes references and gates nothing. (3): it is a difference a reader cannot see. |
+| B3 | 2026-11-12 | B3 is closed. The branch is committed and pushed. | Owner: "Close, commit, push". The agent's calls in the B3 row marked "to confirm" were reported to him before he closed and were not separately ruled on. |
 
 ---
 

@@ -88,6 +88,9 @@ Changes made since v0.5, listed as they are decided. **Not all are additive.**
     DECISION-32)* — a range, an `ENUM`, a type, a list's members, a bound reference's
     arguments, a property written twice, and a cycle of `EXTENDS` or of `ALIAS`. `EXTENDS` is
     acyclic. A hash shorter than 16 characters, or with an underscore, is refused from 0.6.
+20. **When two names are the same** *(§14, DECISION-33; not additive)* — the same characters,
+    once Unicode form, runs of white space and straight or curly quotes are set aside. Case,
+    punctuation and accents count. Every tool in this repo compares names this one way.
 
 ### v0.5 — five new constructs, and one rule tightened *(current)*
 
@@ -528,6 +531,17 @@ stay valid.
   error from 0.6; `FIAT` waives each. A hash shorter than 16 characters, or with an underscore,
   takes the same gating and no waiver. The corpora gain 815 warnings and no error. A
   `REQUIRED` property left out and a `DEPENDS_ON` version pin are left to their own findings.
+
+- **DECISION-33 — When two names are the same** *(resolved, v0.6, 2026-11-12)* (§14, §5d): the
+  spec did not say, and the tools disagreed. The validator and the synthesist compared names
+  exactly. The reference gate and `check_constructs.py` lower-cased a name and dropped every
+  character outside `a-z0-9`, so `Orcs` and `Orcs!` were one name, `+2` and `−2` were one name,
+  and `Mahō` lost a letter. That fold merges 1,023 groups of the corpora's 98,095 defined
+  names, and 5 of about 98,000 references need it. The decision is one rule for every tool: two
+  names are the same when their characters are the same after Unicode normal form, a run of
+  white space read as one space, and a curly quote read as a straight one. Case, punctuation
+  and accents count. `Jupiter's Touch` and `Jupiter’s Touch` are one name; `Status` and
+  `status` are two.
 
 ## 1. Overview & Design Principles
 
@@ -1274,7 +1288,7 @@ EXTENDS #tor5Shield000000001 ^"Shield"     # resolves to that anchor, whatever e
 EXTENDS ^"Shield"                          # resolves by name — and only if the name is unambiguous
 ```
 
-1. **Resolution is by hash when a hash is present.** The caret name must match the anchor's own name;
+1. **Resolution is by hash when a hash is present.** The caret name must be the anchor's own name (§14 says when two names are the same);
    a mismatch is an **ERROR** (it means one of the two was edited and the other was not). A hash that
    is not a declared anchor is an **ERROR**.
 2. **A hashless reference SHOULD carry the hash.** Where the name resolves to exactly one entity the
@@ -2109,6 +2123,30 @@ KATA ^"Lord Hida's Grip"
 
 A quote inside a name is written `\"`, as it is inside a string *(v0.6, DECISION-25)*:
 `^"Mrinmoy \"Vidyapati\" Mishra"`.
+
+### When two names are the same *(v0.6, DECISION-33)*
+
+Two names are the same when their characters are the same, once three differences are set aside
+that a reader cannot see or should not care about:
+
+- **Unicode form.** A letter with an accent written as one character, or as the letter and a
+  combining accent, is the same letter (the names are compared in normal form NFC).
+- **White space.** A run of spaces, a tab or a no-break space reads as one space, and space at
+  either end is dropped.
+- **Quote style.** `’` and `‘` read as `'`, and `“` and `”` as `"`.
+
+Everything else counts: **case, punctuation and accents**.
+
+| These are one name | These are two |
+|---|---|
+| `^"Jupiter's Touch"` and `^"Jupiter’s Touch"` | `^"Status"` and `^"status"` |
+| `^"Long Bow"` and `^"Long  Bow"` | `^"Long Bow"` and `^"Longbow"` |
+| | `^"Orcs"` and `^"Orcs!"` |
+| | `^"Maho"` and `^"Mahō"` |
+
+Every comparison of names uses this rule: a reference against a definition, a caret name against
+the name of the hash before it (§5d), an alias, a list member. Two definitions whose names are the
+same are two entities of one name where their hashes differ (§13).
 
 ### Hash IDs `#identifier`
 

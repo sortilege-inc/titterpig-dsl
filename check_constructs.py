@@ -26,7 +26,20 @@ POSTURE = {'on', 'off'}
 
 DEFLINE = re.compile(r'^\s*(?:(#\S+)\s+)?(?:\^"([^"]+)"|(?:TEMPLATE|ACTOR)\s+"([^"]+)")\s+DEF\b')
 REF = re.compile(r'(?:(#\S+)\s+)?\^"([^"]+)"')     # optional hash + caret, found anywhere
-nk = lambda s: re.sub(r'[^a-z0-9]+', '', s.strip().replace('’', "'").lower())
+import unicodedata
+
+
+def nk(name):
+    """When two names are the same (spec §14, DECISION-33): the same characters once what a
+    reader cannot see, or should not care about, is folded. Unicode normal form; a run of white
+    space as one space; a curly quote as a straight one; \\" read as the quote it writes. Case,
+    punctuation and accents count. Before v0.6 work this lower-cased the name and dropped every
+    character outside a-z0-9, so `Orcs` and `Orcs!` were one name and `Mahō` lost a letter.
+    ttrpg_validator.py carries the same function as name_key."""
+    s = unicodedata.normalize('NFC', name).replace('\\"', '"')
+    s = s.replace('\u2019', "'").replace('\u2018', "'").replace('\u201c', '"').replace('\u201d', '"')
+    return re.sub(r'\s+', ' ', s).strip()
+
 
 # Every DSL file that may hold these constructs: an .actor is an EXTENSION file (§2), and a
 # narrative container may carry GUIDANCE. Before v0.6 work this read .ttrpg only.

@@ -93,7 +93,20 @@ EMBEDDED = re.compile(r'(?:(#[A-Za-z0-9_]+)[ \t]+)?\^(\\?")((?:(?!\\?").)+?)\2'
                       r'(?:/\2((?:(?!\\?").)*?)\2)?')
 text_of = lambda raw: EMBEDDED.sub(lambda m: m.group(4) if m.group(4) is not None else m.group(3), raw)
 
-nk = lambda s: re.sub(r'[^a-z0-9]+', '', s.strip().replace('’', "'").lower())
+import unicodedata
+
+
+def nk(name):
+    """When two names are the same (spec §14, DECISION-33): the same characters once what a
+    reader cannot see, or should not care about, is folded. Unicode normal form; a run of white
+    space as one space; a curly quote as a straight one; \\" read as the quote it writes. Case,
+    punctuation and accents count. Before v0.6 work this lower-cased the name and dropped every
+    character outside a-z0-9, so `Orcs` and `Orcs!` were one name and `Mahō` lost a letter.
+    ttrpg_validator.py carries the same function as name_key."""
+    s = unicodedata.normalize('NFC', name).replace('\\"', '"')
+    s = s.replace('\u2019', "'").replace('\u2018', "'").replace('\u201c', '"').replace('\u201d', '"')
+    return re.sub(r'\s+', ' ', s).strip()
+
 
 # Every DSL container, not just .ttrpg: a REFERENCES target may be declared in a
 # narrative container (l5r5e's ^"Mountain Song Temple" is a LOCATION in an .arc),

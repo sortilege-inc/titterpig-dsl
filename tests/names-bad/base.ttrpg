@@ -1,0 +1,32 @@
+BASE "Names_Bad_Core" {
+    NAME "DECISION-33 fixture — names that are not the same (§14)"
+    SPEC_VERSION "0.6"
+    VERSION "1.0"
+    RELEASE_DATE "2026-11-12"
+
+    #   ttrpg_validator.py tests/names-bad           4 errors
+    #   check_references.py tests/names-bad          4 errors
+    #   check_constructs.py tests/names-bad          1 error
+    #
+    # Case, punctuation and accents count. Before v0.6 the two gates read every pair below as
+    # one name.
+
+    #NamBadSpellK2vQ9wN3cL7pX ^"Spell" DEF { }
+    #NamBadPilotB8tJ1yL4sD5fG ^"Pilot" DEF { EXTENDS #NamBadSpellK2vQ9wN3cL7pX ^"Spell" }
+    #NamBadOrcsC4pH7zR2wE9uX1 ^"Orcs!" DEF { EXTENDS #NamBadSpellK2vQ9wN3cL7pX ^"Spell" }
+    #NamBadMahoD4fG7hJ0kL2mNq ^"Mahō" DEF { EXTENDS #NamBadSpellK2vQ9wN3cL7pX ^"Spell" }
+    #NamBadTentE1vP5xJ9cL2sQ7 ^"Tent (Small)" DEF { EXTENDS #NamBadSpellK2vQ9wN3cL7pX ^"Spell" }
+
+    #NamBadUserF6gP2tR8mX4cJ1 ^"User" DEF {
+        EXTENDS #NamBadPilotB8tJ1yL4sD5fG ^"PILOT"                       # ERROR: case
+        APPLIES TO [ #NamBadOrcsC4pH7zR2wE9uX1 ^"Orcs" ]                 # ERROR: punctuation
+        ^"School" REF #NamBadMahoD4fG7hJ0kL2mNq ^"Maho"                  # ERROR: an accent
+        EFFECT "Pitch the ^\"Tent [Small]\" before dark."                # ERROR: brackets for parentheses
+        GUIDANCE {
+            ENTRY ^"on orcs" #NamBadEntryG9hT3yW7zK5vB {
+                CONCERNS [ #NamBadOrcsC4pH7zR2wE9uX1 ^"orcs!" ]          # ERROR in check_constructs.py: case
+                TEXT "They come at night."
+            }
+        }
+    }
+}

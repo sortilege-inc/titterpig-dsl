@@ -1,0 +1,45 @@
+BASE "Names_Core" {
+    NAME "DECISION-33 fixture — when two names are the same (§14)"
+    SPEC_VERSION "0.6"
+    VERSION "1.0"
+    RELEASE_DATE "2026-11-12"
+
+    #   ttrpg_validator.py tests/names-good          0 errors, 0 warnings
+    #   check_references.py tests/names-good         0 errors, 0 hashless WARNs
+    #   check_constructs.py tests/names-good         0 errors
+    #
+    # Each definition is written one way and referenced another. The difference is one a reader
+    # cannot see or should not care about, so each pair is one name.
+
+    #NamSpellAaK2vQ9wN3cL7pXd ^"Spell" DEF { }
+
+    # a curly apostrophe in the definition, a straight one in the references
+    #NamJupiterK2vQ9wN3cL7pXd ^"Jupiter’s Touch" DEF {
+        EXTENDS #NamSpellAaK2vQ9wN3cL7pXd ^"Spell"
+    }
+
+    # the letter a-grave as one character here, as a letter and a combining accent below
+    #NamFolieB8tJ1yL4sD5fG0zX ^"Folie à Deux" DEF {
+        EXTENDS #NamSpellAaK2vQ9wN3cL7pXd ^"Spell"
+    }
+
+    # one space here; two spaces, and a no-break space, below
+    #NamLongBowC4pH7zR2wE9uX1 ^"Long Bow" DEF {
+        EXTENDS #NamSpellAaK2vQ9wN3cL7pXd ^"Spell"
+    }
+
+    #NamGrimoireD4fG7hJ0kL2mN ^"Grimoire" DEF {
+        DESCRIPTION "It holds Jupiter's Touch, Folie à Deux and the Long Bow."
+        REFERENCES {
+            "Jupiter's Touch"   -> #NamJupiterK2vQ9wN3cL7pXd ^"Jupiter's Touch"
+            "Folie à Deux"     -> #NamFolieB8tJ1yL4sD5fG0zX ^"Folie à Deux"
+            "Long Bow"          -> #NamLongBowC4pH7zR2wE9uX1 ^"Long  Bow"
+        }
+        GUIDANCE {
+            ENTRY ^"on the bow" #NamEntryE1vP5xJ9cL2sQ7w {
+                CONCERNS [ #NamLongBowC4pH7zR2wE9uX1 ^"Long Bow" ]
+                TEXT "Strung before each battle."
+            }
+        }
+    }
+}
