@@ -620,10 +620,15 @@ root's 304 carry no hash.
   `SET` with a reference or a `CHOOSE` before it on the same line is a change. All 43 `SET`s in the
   corpora today are the §13 kind.
 - **Dice amounts** for `SET` and `TRANSFORM` (§8). Not defined; they wait on a dice literal (C1).
-  Recounted 2026-11-11 with spaces allowed (`4d8 + 8`): 866 property values are only a dice
-  expression (dnd5.5e 412, dnd5e 365, pendragon5e 67), 649 of them `Hit Dice`. A further 809 short
-  values hold a dice expression plus words, 678 of them Daggerheart damage such as `1d6+2 phy`.
-  The earlier figure of 694 used a pattern that missed the spaced form.
+  Counted 2026-11-11, third pass, with uppercase `D` and spaces allowed: 3,251 short `STRING`
+  property values in 13 corpora hold a dice expression (callofcthulhu7e 984, daggerheart 696,
+  pendragon6e 522, dnd5.5e 447, dnd5e 379, pendragon5e 174). By shape: 1,491 are one dice term
+  with an optional modifier (`2d6`, `d20`, `4d8 + 8`, `2D6+4`), 625 of those printed with an
+  uppercase `D`; 667 are dice and one word (`1d6+2 phy`); 276 are a number with dice and a
+  multiplier (`50 (3D6 ×5)`); 138 are a signed bonus (`+1D4`); 40 are two dice terms
+  (`1D6+1D4`); 49 add another value (`1D6 + damage bonus`). No `d%`, `d66`, keep-highest or
+  exploding form appears as a property value. The two earlier figures (694, then 866) counted
+  lowercase `d` only.
 
 ### Known gaps left by this change
 
