@@ -1,0 +1,25 @@
+BASE "Demo_NarBad_Base" {
+    NAME "DECISION-22 fixture (bad set) — the base the narrative files depend on"
+    SPEC_VERSION "0.6"
+    VERSION "1.0"
+    RELEASE_DATE "2026-11-12"
+
+    #NarBadXSceneTypeMMMMMMMMM ^"Scene Type" DEF { }
+    #NarBadXRoleplayNNNNNNNNNN ^"Roleplay" DEF { EXTENDS #NarBadXSceneTypeMMMMMMMMM ^"Scene Type" }
+
+    #NarBadXNpcTypeAAAAAAAAAAA ^"NPC" DEF {
+        PROPERTIES {
+            ^"Role" STRING
+            ^"Rings" DEF {
+                ^"Air" INTEGER MIN 1 MAX 5 DEFAULT 1
+                ^"Fire" INTEGER MIN 1 MAX 5 DEFAULT 1
+            }
+            # a skill group is a property of a character
+            ^"Skills" DEF {
+                ^"Artisan" INTEGER MIN 0 DEFAULT 0
+                ^"Martial" INTEGER MIN 0 DEFAULT 0
+                ^"Social" INTEGER MIN 0 DEFAULT 0
+            }
+        }
+    }
+}

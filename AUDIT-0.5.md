@@ -172,7 +172,17 @@ and mythic-gme2 do); Markdown inside the string (eight corpora); and embedded ca
 
 ### A3. The §16 examples break the §16 rules
 
-**Status:** open
+**Status:** closed 2026-11-12 by the owner. Committed and pushed on branch `0.6`. Every point
+raised was ruled and applied. DECISION-22: a `FROM` names its container's kind and is itself the declaration;
+the examples carry opaque hashes; the ARC example is the real Lost Writer arc; a block's name
+comes before its hash by convention and the other order is legal; a skill group is a property of a
+character. DECISION-23: a scene's type and a conflict's type are entities the system defines. Five
+smaller fixes: the stale DECISION-2 clause; `MODIFICATIONS` without `RANGE(…)`; a frame's `RULES`
+in §12's form; a location imported with `FROM SETTING … INCLUDE`; the dependency diagram. The
+CAMPAIGN example is the real Children of Fear campaign. The SETTING and FRAME examples are still
+invented, by the owner's leave, until l5r5e has a Rokugan setting. Run as files beside stubs for
+what they depend on, the five §16 examples now give 0 errors and 0 warnings, down from 23
+warnings.
 
 - Dependency rule 7: a `FROM` must target a container already declared as a dependency. The ARC
   example writes `CAST { FROM "RichFrogFrame" INCLUDE [#ide_tadaji] }` and declares no dependency on
@@ -187,6 +197,76 @@ and mythic-gme2 do); Markdown inside the string (eight corpora); and embedded ca
 - Hash IDs in §16 are `#ide_tadaji`, `#ink_room`, `#commission`: short, semantic, with underscores.
   §5 requires `[A-Za-z0-9]{16,}` and opacity. l5r5e's `.arc` files follow the examples
   (`#governors_neighborhood`).
+
+Further points of the same kind, found 2026-11-12:
+
+- No §16 structure block or example declares `SPEC_VERSION`, which §0 requires of every file.
+- The DECISION-2 note above the FRAME block says the deprecated NPC form is "left as-is" in the
+  blocks below. Those blocks now use the instance form; the sentence is stale.
+- FRAME's `MODIFICATIONS { status RANGE(20, 35) }` and `RULES { RULE rule_name ADDS_TO PARENT { } }`
+  are forms found nowhere else in the spec, and the grammar has no rule for either.
+- The ARC example's `FLOW` points at four scenes the example never defines (`#market_inquiry`,
+  `#ink_trail`, `#scorpion_encounter`, `#final_confrontation`), and the CAMPAIGN example lists two
+  arcs that do not exist.
+- `LOCATION ^"X" { FROM SETTING "SettingID" }` names the setting and not the location in it.
+- The CONFLICT block writes `TYPE "combat" | "intrigue"` inside a code block, and scene types are
+  capitalised (`"Intrigue"`) where conflict types are lowercase (`"intrigue"`).
+- A block is declared `SCENE ^"Name" #hash {`, name before hash; a DEF is `#hash ^"Name" DEF`.
+- The dependency diagram shows no arrow from ARC to SETTING, which rule 3 allows.
+
+**The spec's examples in the spec's validator.** The four §16 examples, written to files beside a
+stub base, give 0 errors and 23 warnings: 19 for hashes shorter than 16 characters and 4 for a
+missing `SPEC_VERSION`. With five faults planted in the arc (an undefined base, setting, frame,
+scene reference and `LEADS_TO` target), the validator reports one, the base. `check_references.py`
+reports none.
+
+**The corpora** (121 narrative files, counted 2026-11-12, armdef left out: 70 `.arc`, 32 `.frame`,
+18 `.setting`, 1 `.campaign`):
+
+| What §16 specifies | In the corpora |
+|---|---|
+| `SPEC_VERSION` absent | declared in all 121 |
+| `USES_SETTING`, `USES_FRAME` | 0 uses |
+| `FROM FRAME "id" INCLUDE`, `FROM SETTING "id"` | 0 uses |
+| `FROM "id" INCLUDE` | 14 uses. 11 target an `EXTENSION` (the file holding the NPCs), 3 target an id that is not a container in the corpus (curseborne 2, tor2e 1) |
+| `FROM ARC "id"` | 8 uses, in the one campaign |
+| rule 7 | 20 of the 22 `FROM` lines name a container their file does not declare. The 2 that comply are teeth's, through `USES_EXTENSION` |
+| `DEPENDS_ON` on every arc and frame | 14 l5r5e files write `ARC "id" EXTENDS "l5r5e" {` and have none |
+| semantic hashes | l5r5e only: 48, such as `#arrival_7933e585a909`. The other ten corpora use opaque hashes |
+| `SCENE ^"Name" #hash {` | 478. `SCENE #hash ^"Name" {`: 19 (coyotecrow 6, troika 13) |
+| `LOCATION ^"Name" #hash {` | 1,549 (arm5e 1,525). 458 more carry no hash |
+| name before hash on a block, all kinds | 9,913 headers (`ENTRY` 7,886, `LOCATION` 1,549, `SCENE` 478) against 20 the other way |
+| `SCENE_REF #hash` | 328, every one hash-only: `SCENE_REF #tQ2C3ShKhZRaG6de79YFMy9` |
+| a scene's `LOCATION` reference | `LOCATION #hash` 17 (l5r5e); `LOCATION ^"Name"` 69 (draw-steel 60, curseborne 9) |
+| `^"Skills" DEF { ^"Social" INTEGER 4 }` | 0. l5r5e's NPCs write `^"Skills" LIST OF STRING ["Artisan 1", "Martial 2", …]` |
+| `RANGE(…)` | 0. `MODIFICATIONS`: one block (curseborne), holding `DEFAULT` lines only |
+
+l5r5e holds the real adventure the ARC example imitates
+(`l5r5e-0.5-children-of-five-winds-lost-writer.arc`). Its people and places differ from the
+example's: the governor is Miya Tetsua, and the example's Ide Tadaji, Doji Fumiko and Bayushi Koto
+are not in it.
+
+**What the real arc shows** (read 2026-11-12):
+
+- It declares `DEPENDS_ON "L5R5e_Core_Core"` and `USES_EXTENSION "L5R5e_Children_of_Five_Winds"`,
+  and defines its nine cast members inline. It has no `FROM`.
+- Two of the nine are defined a second time in the book's GM file
+  (`l5r5e-0.5-children-of-five-winds-gm-tools.ttrpg`, `EXTENSION "L5R5e_Children_of_Five_Winds_GM"`),
+  under different hashes: `#L5RCW51lM3nO5pQ7rS9tU1v ^"Miya Tetsua"` in the arc and
+  `#AEzCQP2Drp0S9YJeerwTbW ^"Miya Tetsua"` there, with the same stat block restated. The same for
+  `^"Adventure Ifrit"`. Each name is now two entities.
+- All three `OPPONENTS` references point at hashes declared nowhere:
+  `OPPONENTS [#kaeru_haya_60be37c72620]`, where the cast declares
+  `#L5RCW54sT6uV8wX0yZ2aB4c ^"Kaeru Haya"`. They are hash-only, so nothing ties them to a name, and
+  neither tool reports them. The arc's other 36 hash-only references (`SCENE_REF` 9, `LOCATION` 9,
+  `LEADS_TO` 17, `COMPLETED_SCENES` 1) resolve.
+- Skill groups are not entities in l5r5e. A skill carries `SKILL_GROUP "Artisan Skills"` as a
+  string, and the `^"NPC"` type declares no properties at all, so an NPC's
+  `^"Skills" LIST OF STRING ["Artisan 3", "Martial 2", …]` is checked against nothing.
+
+Related findings, not repeated here: B1 (the grammar has no rule for a narrative container), B2
+(what the validator does not check), C3 (hash-only references carry no name to cross-check), C7
+(L5R mechanics reserved in scenes).
 
 ### A4. §20's definition of "defined" contradicts §16 and §25
 
@@ -621,6 +701,27 @@ What is known going in:
   in the same pass.
 - l5r5e has no `gates.sh` (B4).
 
+**Added from A3 (2026-11-12).**
+
+- **Define the setting.** Owner, 2026-11-12: l5r5e core should define the setting as Rokugan. It
+  does not: the corpus has no `SETTING` container, no `.setting` file and no `USES_SETTING`. Nine
+  arcs carry a free-text line instead (`SETTING "Tsuma, a small Crane fishing town, during the
+  three days of the Topaz Championship"`), which uses the container's keyword for a where-and-when
+  string.
+- **The Lost Writer arc** (`l5r5e-0.5-children-of-five-winds-lost-writer.arc`), which §16 now
+  shows in corrected form:
+  - all three `OPPONENTS` references point at hashes declared nowhere
+    (`#kaeru_haya_60be37c72620`, `#shinjo_higuchi_df4e0cc491ff`, `#adventure_ifrit_d9edc116c2e9`);
+  - `^"Miya Tetsua"` and `^"Adventure Ifrit"` are defined in the arc and again in the GM file under
+    other hashes; the arc should import them with `FROM EXTENSION "L5R5e_Children_of_Five_Winds_GM"`;
+  - its cast is attached with `APPLIES TO [ ^"NPC" ]` where the GM file writes `EXTENDS ^"NPC"`;
+  - two `OPTIONAL` objectives are written twice in "The Possessed Author".
+- **Skills as a property.** NPCs hold `^"Skills" LIST OF STRING ["Artisan 3", "Martial 2", …]`, and
+  three actor types in `l5r5e-0.5-core-base.ttrpg` declare `^"Skills" LIST OF ^"Skill"`. Both become
+  a keyed block (`^"Skills" DEF { ^"Artisan" INTEGER 3 … }`), declared on the type. The `^"NPC"`
+  type declares no properties today.
+- **14 arcs and frames** open with `ARC "id" EXTENDS "l5r5e" {` and have no `DEPENDS_ON`.
+
 ### F2. l5r5e: replace semantic hashes with opaque ones
 
 **From:** A1. **Repo:** `titterpig-dsl-l5r5e`. **Status:** open, not started.
@@ -704,6 +805,37 @@ their generators.
 - The synthesist has no code that names `EMPHASIS`; consumers find the blocks under an entity's
   generic `blocks`. It needs the kind and `LABEL` with its depth (add to F3). Its `GUIDANCE` parser
   does not accept `EMPHASIS` inside an `ENTRY` (recorded 2026-11-02 for mythic-gme2).
+
+### F11. Corpora: name the kind on every `FROM`
+
+**From:** A3, DECISION-22. **Status:** open, not started. The validator now reports these.
+
+18 `FROM "id"` lines name no kind: callofcthulhu7e 13, curseborne 2, teeth 2, tor2e 1. Each is a
+warning today and an error once its file declares 0.6. Three of them name a container that is not
+in their corpus and are errors now: curseborne's `Curseborne_Wolf_You_Feed_NPCs` and
+`Curseborne_Wolf_You_Feed_Adversaries`, and tor2e's `tor2e-adversaries`
+(`tor2e-0.5-core-star-of-the-mist.arc:16`). curseborne goes from 0 errors to 2 and tor2e from 0 to 1.
+
+### F12. Seven corpora: scene and conflict types become entities
+
+**From:** A3, DECISION-23. **Status:** open, not started. The validator now reports these.
+
+483 `TYPE "…"` strings sit in `SCENE` and `CONFLICT` blocks (478 and 5): tor2e 181,
+callofcthulhu7e 143, draw-steel 60, teeth 54, l5r5e 21, curseborne 14, vtm5e 10. armdef has 5
+more. Each is a warning today and an error once its file declares 0.6. Each system's BASE defines
+`^"Scene Type"` and its scene types, and `^"Conflict Type"` where it has conflicts, and each
+string becomes `TYPE #hash ^"Name"`. The values in use are Roleplay 293, Combat 86,
+Investigation 32, Exploration 28, Travel 26, Intrigue 11 and Montage 2; all 181 of tor2e's are
+Roleplay, which its generator writes for every scene.
+
+**Added 2026-11-12, from the smaller §16 fixes:**
+
+- curseborne's one `MODIFICATIONS` block holds `entanglement DEFAULT 1`, `held_curse_dice DEFAULT 1`
+  and `maximum_curse_dice DEFAULT 5`: lowercase words that point by spelling at real properties.
+  Each becomes `#hash ^"Entanglement" SET 1`.
+- 14 `RULE ^"Name" ADDS_TO PARENT { DESCRIPTION "…" }` blocks in four frames (curseborne 5, l5r5e
+  9) become §12 rules. l5r5e's nine are named "Hook", "Rising Action" and the like and hold
+  adventure-seed prose, so they are `ENTRY` blocks and not rules.
 
 ### F9. Corpora: move tables into `TABLE` blocks
 
@@ -804,12 +936,38 @@ two parameter to-dos below.
   as typed properties, because there they carry rules.
 - **A whole paragraph set in one face** (§5c). Owner agreed 2026-11-12 that this is a to-do. 1,305
   such spans sit in the corpora as `*…*` today (vtm5e 789, draw-steel 316, troika 72).
+- **A campaign's order of play** (§16). The real Children of Fear campaign holds a `FLOW` with
+  `PHASE`, `TRAVERSAL`, `NODES`, `GATE` and `EDGES`, because its middle chapters are played in any
+  order. §16 gives a CAMPAIGN only `FROM ARC` lines and `PROGRESSION`, so the spec's example
+  leaves that block out. Nothing in the spec defines it.
+- **`TYPE` tags on an `ENTRY`** (§16). 285 `ENTRY` blocks carry `TYPE "hook"`, `"gm-guidance"`,
+  `"special-rule"` and four more values as strings. Left as they are; belongs with C7.
+- **An arc that adds detail to a setting's location** (§16). A location is imported with
+  `FROM SETTING "id" INCLUDE [ … ]` and referenced. Nothing yet lets an arc or frame extend it.
+  The form this replaced, `FROM SETTING` inside a `LOCATION`, had no corpus uses.
 - **Tables: what is not covered** (§5e). Column headings in more than one tier; footnote marks on
   a cell (57 of the corpora's string grids carry them); whether every point of an axis has a cell,
   which the validator does not check; a result given as a bare value in place of a block.
 
 ### Known gaps left by this change
 
+- **§16's SETTING and FRAME examples are still invented.** They carry `SPEC_VERSION`, opaque
+  hashes and the 0.6 forms, and their content is unchanged. A real setting waits on l5r5e's Rokugan
+  (F1). The invented FRAME's NPC extends `^"Adversary"` with no hash, which the reference gate
+  WARNs on. The CAMPAIGN example is real but partial: the real file has no `RECURRING_CAST`, so the
+  example no longer shows one, and its `FLOW` is left out (see the to-do).
+- **A scene type is checked for membership only where the parent is defined.** The validator
+  resolves `TYPE #hash ^"Name"` always, and checks that the entity is a `^"Scene Type"` or a
+  `^"Conflict Type"` only when the loaded set defines that parent.
+- **An item imported `FROM SETTING` is not resolved.** A setting holds `LOCATION` and `ENTRY`
+  blocks, and a block's name and hash are not in the validator's name table (A4). Until A4 is
+  decided the validator checks that the setting exists and leaves the items alone.
+- A lowercase bare word in `MODIFICATIONS` (`entanglement DEFAULT 1`) raises no finding.
+- **What the validator still does not check in a narrative file.** `USES_SETTING`, `USES_FRAME`
+  and `USES_EXTENSION` targets; cycles through `FROM` (rule 5); a hash-only reference to a scene,
+  a location or a cast member, because block hashes are not registered as anchors. An `INCLUDE`
+  item written as `#hash ^"Name"` is resolved; one written as a bare hash is not. Belongs with B2
+  and C3.
 - `EMPHASIS` kinds and `LABEL` are read by `check_references.py` only where the keyword starts a
   line, as every block that gate reads is. The validator checks the words before the brace and
   nothing else about them.
@@ -910,6 +1068,23 @@ Filled in as each finding is walked through.
 | A2 | 2026-11-12 | Markdown emphasis inside a string is flagged by the validator: a warning in a file below 0.6, an error from 0.6. A `FIAT` with its reason excuses asterisks the source prints. Written into DECISION-19 and §5c. | Owner: "Yes, flag it", choosing this over a warning at every version. |
 | A2 | 2026-11-12 | What reads as a span: a paired `**…**` or `*…*` on one line of text. An asterisk followed by a space, or preceded by a letter, a digit or a closing bracket, does not open one. One finding per string. | Agent's calls, to confirm. They keep footnote marks, bullets and `Chirurgery 20*` from being flagged; the closing-bracket rule was added after the one false alarm found in the corpora (pendragon6e's `Courtesy 20 (+1)*`). |
 | A2 | 2026-11-12 | A2 is closed. The branch is committed and pushed. | Owner: "Close, commit, push". The agent's call on what reads as a Markdown span (the row above) was reported to him before he closed and was not separately ruled on. |
+| A3 | 2026-11-12 | §16's examples carry opaque hashes of 16 or more characters. | Owner: "opaque hashes please". |
+| A3 | 2026-11-12 | §16's examples are worked from the real Lost Writer arc (`l5r5e-0.5-children-of-five-winds-lost-writer.arc`). | Owner's call. Not yet applied: the rebuilt example depends on the rulings still open under A3. |
+| A3 | 2026-11-12 | Imports: option A. A `FROM` names its container's kind and is itself the declaration; rule 7's second declaration in the header is withdrawn. A `FROM "id"` with no kind is a warning below 0.6 and an error from 0.6. Written as DECISION-22. | Owner: "Let's go with option A". |
+| A3 | 2026-11-12 | Declaration order: both orders are legal for a block, and the convention stays (name, then hash). | Owner: "allow both, keep the convention". |
+| A3 | 2026-11-12 | A skill group is a property of a character. §16's NPC shows `^"Skills" DEF { ^"Artisan" INTEGER 1 … }`, and §17's schema and §8's type illustration no longer declare `^"Skills" LIST OF ^"Skill"`. | Owner's call, on the agent's corrected recommendation: l5r5e has no entity for a skill group. |
+| A3 | 2026-11-12 | l5r5e core should define the setting as Rokugan. It does not, so it is logged as a to-do under F1. | Owner's call. Checked: no `SETTING` container, `.setting` file or `USES_SETTING` in l5r5e. |
+| A3 | 2026-11-12 | In the rebuilt examples every reference to a scene, a location or a cast member is the §5d pair, `#hash ^"Name"`, where §16 showed a bare hash. The validator does not flag a bare hash. A `FROM` whose container is not in the loaded set is an error at every version, as an undefined `DEPENDS_ON` is. `FROM BASE` is accepted beside the four kinds named in the text. Every §16 block and example now declares `SPEC_VERSION`. | Agent's calls, to confirm. The first was recommended on 2026-11-12 and not ruled on; the example had to be written one way. |
+| A3 | 2026-11-12 | The stale clause in §16's DECISION-2 note is deleted. | Owner: "1, delete". |
+| A3 | 2026-11-12 | `MODIFICATIONS` holds a starting value as `#hash ^"Property" SET value` and a range as a property declaration with `MIN` / `MAX`. `RANGE(…)` is gone and `RANGE` leaves the FRAME keyword list (it stays a codex keyword). | Owner agreed. |
+| A3 | 2026-11-12 | A frame's `RULES` use §12's form. `RULE name ADDS_TO PARENT` is removed from §16. | Owner chose option A. |
+| A3 | 2026-11-12 | A setting's location is imported with `FROM SETTING "id" INCLUDE [ #hash ^"Location" ]`. `FROM SETTING` inside a `LOCATION` is removed. An arc adding detail to a setting's location is a to-do. | Owner agreed. |
+| A3 | 2026-11-12 | The dependency diagram is replaced by one line per container and a table of every edge with the keyword that makes it. | Owner agreed. The agent's reading of "redraw": a table carries the labels more reliably than drawn arrows. |
+| A3 | 2026-11-12 | How a type slot is written (the pipe in `CONFLICT`) is not fixed yet. | Owner: "let's review this more closely, probably should be a choice". |
+| A3 | 2026-11-12 | The CAMPAIGN example is taken from the real Children of Fear campaign (callofcthulhu7e). | Owner's call. |
+| A3 | 2026-11-12 | Scene types and conflict types are entities each system defines, and a scene or conflict points at one: `TYPE #hash ^"Investigation"`. The base spec fixes no list. Written as DECISION-23. | Owner chose option C of three. |
+| A3 | 2026-11-12 | A string in a scene's or conflict's `TYPE` is a warning below 0.6 and an error from 0.6. The parents are named `^"Scene Type"` and `^"Conflict Type"`, and membership is checked only where the loaded set defines the parent. The CAMPAIGN example shows only what §16 defines, so the real file's `FLOW` of phases and edges is left out. The SETTING and FRAME examples stay invented. | Agent's calls, to confirm. The first follows the owner's pattern for every form replaced in 0.6. The last was recommended on 2026-11-12 and not objected to. |
+| A3 | 2026-11-12 | A3 is closed. The branch is committed and pushed. | Owner: "Close, commit, push". The agent's calls in the rows above marked "to confirm" were reported to him before he closed and were not separately ruled on. |
 
 ---
 

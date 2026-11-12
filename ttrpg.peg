@@ -17,7 +17,10 @@
 # DECISION-17); dice as DEFs with FACES, ROLL n OF, and NEXT between steps (§8, DECISION-18);
 # EMPHASIS takes a kind (BOLD, ITALIC) and LABEL names a run-in label (§5c, DECISION-19);
 # an embedded reference in a string may keep a different literal (§5c, DECISION-20);
-# TABLE with AXIS, AT and COLUMNS (§5e, DECISION-21).
+# TABLE with AXIS, AT and COLUMNS (§5e, DECISION-21); FROM names its container's kind, and
+# a block's name and hash may stand in either order (§16, DECISION-22).
+# A SCENE's and a CONFLICT's TYPE is a reference to an entity the system defines (§16,
+# DECISION-23); the validator checks it, since the containers are not yet rules here.
 #
 # This grammar defines syntactically valid .ttrpg files. Semantic rules
 # (hash uniqueness, EXTENDS resolution, type consistency) are enforced
@@ -465,7 +468,19 @@ REMOVE_FROM_ENTRY <- 'REMOVE_FROM' _ CARET_REF _ VALUE
 
 GENERIC_BLOCK   <- UPPER_IDENT _ GENERIC_LABEL? _ GENERIC_VALUE
 
-GENERIC_LABEL   <- CARET_REF / STRING / HASH_ID / INTEGER_LIT
+# A named block gives its name and then its hash, by convention -- SCENE ^"Name" #hash { --
+# and hash before name is also legal (v0.6, DECISION-22). Either may stand alone.
+GENERIC_LABEL   <- CARET_REF _ HASH_ID / HASH_ID _ CARET_REF
+                 / CARET_REF / STRING / HASH_ID / INTEGER_LIT
+
+# §16 — an import *(v0.6, DECISION-22)*. The line names the KIND of container, then its id,
+# and is itself the declaration of that dependency. Each INCLUDE item is a reference (§5d).
+#   FROM EXTENSION "L5R5e_Children_of_Five_Winds_GM" INCLUDE [ #hash ^"Miya Tetsua" ]
+#   FROM ARC "ArcID"
+# The containers themselves (SETTING, FRAME, ARC, CAMPAIGN) are not yet rules of this
+# grammar; FILE lists only BASE, EXTENSION, BRIDGE, SELECTIONS and CODEX.
+FROM_IMPORT     <- 'FROM' _ CONTAINER_KIND _ STRING (_ 'INCLUDE' _ '[' _ HASHED_REF (_ ',' _ HASHED_REF)* _ ']')?
+CONTAINER_KIND  <- 'EXTENSION' / 'FRAME' / 'ARC' / 'SETTING' / 'BASE'
 
 GENERIC_VALUE   <- '{' _ GENERIC_BODY _ '}'
                  / BRACKET_LIST

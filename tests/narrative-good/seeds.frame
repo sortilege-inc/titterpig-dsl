@@ -1,0 +1,25 @@
+FRAME "Demo_Narrative_Frame" {
+    NAME "DECISION-22 fixture — a frame an arc and a campaign import from"
+    SPEC_VERSION "0.6"
+    VERSION "1.0"
+    DEPENDS_ON "Demo_Narrative_Base"
+
+    STARTING_CONDITIONS {
+        DESCRIPTION "The characters arrive in the city as strangers."
+        MODIFICATIONS {
+            # a starting value is a SET; a range is an ordinary property declaration (§8)
+            #NarDemoStandingKKKKKKKKKK ^"Standing" SET 1
+            ^"Status" INTEGER MIN 20 MAX 35
+        }
+    }
+
+    RULES {
+        #NarDemoRuleLLLLLLLLLLLLLL: starting_standing "At the start of this story, all characters set their Standing to 1."
+    }
+
+    #NarDemoStandingKKKKKKKKKK ^"Standing" DEF { INTEGER MIN 0 }
+
+    #NarDemoPublisherDDDDDDDDD ^"The Publisher" DEF {
+        EXTENDS #NarDemoNpcTypeAAAAAAAAAAA ^"NPC"
+    }
+}

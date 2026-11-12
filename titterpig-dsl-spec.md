@@ -45,6 +45,13 @@ Changes made since v0.5, listed as they are decided. **Not all are additive.**
 8. **`TABLE`** *(new, §5e, DECISION-21)* — a primitive block for a table: `AXIS` lines declare what
    it is looked up by, and `AT [ … ] { … }` gives the result at a coordinate. A table of records
    names its type and `COLUMNS` and holds no cells.
+9. **A `FROM` names its container's kind and is itself the declaration** *(§16, DECISION-22; not
+   additive)* — `FROM EXTENSION "id" INCLUDE [ #hash ^"Name" ]`. Rule 7's demand that the
+   container be declared a second time in the header is withdrawn. A `FROM "id"` with no kind is a
+   warning in a file below 0.6 and an error from 0.6.
+10. **A scene's type and a conflict's type are entities the system defines** *(§16, DECISION-23;
+    not additive)* — `TYPE #hash ^"Investigation"`. The base spec no longer fixes a list of scene
+    types. A string in that slot is a warning in a file below 0.6 and an error from 0.6.
 
 ### v0.5 — five new constructs, and one rule tightened *(current)*
 
@@ -343,6 +350,31 @@ stay valid.
   `COLUMNS`, so each value stays on its entity. `TABLE` is a primitive and not a shipped base DEF:
   a table type would carry no data of its own, and the keywords already say what the block is. A
   specified grid of printed strings was considered and not adopted.
+
+- **DECISION-22 — An import is one `FROM` line that names its container's kind** *(resolved, v0.6,
+  2026-11-12)* (§16): dependency rule 7 required every `FROM` to target a container already
+  declared as a dependency, and gave an ARC no way to declare a frame and nothing a way to declare
+  an arc. §16's own ARC example broke the rule, as did 20 of the 22 `FROM` lines in the corpora,
+  and no tool checked it. The decision is that the `FROM` line is itself the declaration. It always
+  names the kind of container (`FROM EXTENSION`, `FROM FRAME`, `FROM ARC`, `FROM SETTING`), the
+  container must be in the loaded set and be of that kind, and each `INCLUDE` item is a reference
+  site (§5d). The spelling with no kind, `FROM "id"`, is a warning in a file that declares a
+  `SPEC_VERSION` below 0.6, or none, and an error in one that declares 0.6 or later. Three smaller
+  rulings came with it. §16's examples carry opaque hashes and its ARC example is the real Lost
+  Writer arc from l5r5e. A block's name comes before its hash by convention (`SCENE ^"Name" #hash
+  {`), and hash before name is also legal. A skill group is a property of a character, so a
+  character's skills are a keyed block of values and not a list of references.
+
+- **DECISION-23 — A scene's type and a conflict's type are entities the system defines**
+  *(resolved, v0.6, 2026-11-12)* (§16): §16 fixed scene types to five strings (`"Roleplay"`,
+  `"Combat"`, `"Intrigue"`, `"Travel"`, `"Montage"`) and wrote a conflict's as `"combat" |
+  "intrigue"`, notation that is not DSL. Two of the five are L5R terms, 60 scenes in the corpora use
+  two values that are not on the list (`"Investigation"` 32, `"Exploration"` 28), and nothing
+  reported them. The decision is that the base spec fixes no list. A system defines its scene
+  types and conflict types as entities, and a scene or a conflict points at one: `TYPE #hash
+  ^"Investigation"`. It is a reference site (§5d). Where the source leaves the type open, a
+  `CHOOSE` stands in the slot (§5b). A string there is a warning in a file that declares a
+  `SPEC_VERSION` below 0.6, or none, and an error in one that declares 0.6 or later.
 
 ## 1. Overview & Design Principles
 
@@ -1228,7 +1260,7 @@ PROPERTIES {
     ^"Honor" INTEGER MIN 0 MAX 100 DEFAULT 50
     ^"Active" BOOLEAN DEFAULT true
     ^"Category" ENUM ["Kata", "Shuji", "Ritual"]
-    ^"Skills" LIST OF ^"Skill"
+    ^"Techniques" LIST OF ^"Technique"
     ^"Roles" LIST ["Bushi", "Courtier"]
     ^"Rings" DEF {
         ^"Air" INTEGER MIN 1 MAX 5 DEFAULT 1
@@ -1924,6 +1956,7 @@ A SETTING defines lore, geography, factions, history, and culture with no mechan
 SETTING "SettingID" {
     NAME "Human-readable Setting Name"
     VERSION "1.0.0"
+    SPEC_VERSION "0.6"
 
     THEMES {
         "Theme description"
@@ -1969,6 +2002,7 @@ SETTING "SettingID" {
 SETTING "RichFrog" {
     NAME "City of the Rich Frog"
     VERSION "0.1.0"
+    SPEC_VERSION "0.6"
 
     THEMES {
         "Commerce and corruption at the crossroads"
@@ -2017,12 +2051,13 @@ SETTING "RichFrog" {
 
 A FRAME provides a starting point for GMs: a setting combined with enough mechanical scaffolding to begin play, without defining complete scenes or arcs. It requires a BASE system and optionally references a SETTING.
 
-> **DECISION-2 (resolved, v0.4):** NPCs are **instances** — write them with the canonical instance form (§5, *Definitions vs. Instances*): a `#hash ^"Name" DEF` that `EXTENDS` its actor type with a `PROPERTIES` block of inline typed values. The looser `DEF ^"Name" #id { TYPE "npc" … STATS { rings.air = 4 } }` form in the illustrative FRAME/ARC blocks below — reversed order, `=` assignment, dotted paths, `TYPE`-as-tag — is **deprecated** and left as-is only pending re-conversion. No new grammar is added.
+> **DECISION-2 (resolved, v0.4):** NPCs are **instances** — write them with the canonical instance form (§5, *Definitions vs. Instances*): a `#hash ^"Name" DEF` that `EXTENDS` its actor type with a `PROPERTIES` block of inline typed values. The looser `DEF ^"Name" #id { TYPE "npc" … STATS { rings.air = 4 } }` form — reversed order, `=` assignment, dotted paths, `TYPE`-as-tag — is **deprecated**. No new grammar is added.
 
 ```
 FRAME "FrameID" {
     NAME "Human-readable Frame Name"
     VERSION "1.0.0"
+    SPEC_VERSION "0.6"
     DEPENDS_ON "BaseSystemID"
     USES_SETTING "SettingID"    # optional
 
@@ -2034,13 +2069,13 @@ FRAME "FrameID" {
         DESCRIPTION "How PCs enter the frame"
         MODIFICATIONS {
             # Character creation adjustments for this frame
-            attribute_name RANGE(new_min, new_max)
-            attribute_name DEFAULT new_value
+            #hash ^"Property" SET value                     # a starting value (§8)
+            ^"Property" INTEGER MIN new_min MAX new_max      # a range (§8)
         }
     }
 
     # NPC roster — canonical instances (see §5, Definitions vs. Instances)
-    #npc_id ^"NPC Name" DEF {
+    #hash ^"NPC Name" DEF {
         EXTENDS ^"Adversary"
         PROPERTIES {
             ^"Role" STRING "Role in the frame"
@@ -2058,9 +2093,7 @@ FRAME "FrameID" {
 
     # Optional lightweight rules specific to this frame
     RULES {
-        RULE rule_name ADDS_TO PARENT {
-            # Frame-specific rule
-        }
+        #hash: rule_label "The frame-specific rule, in the source's words"    # §12
     }
 }
 ```
@@ -2069,10 +2102,12 @@ FRAME "FrameID" {
 - `FrameID`: Unique identifier
 - `DEPENDS_ON`: Required BASE system
 - `USES_SETTING`: Optional SETTING reference for world-building context
-- `STARTING_CONDITIONS`: Character creation modifications
+- `STARTING_CONDITIONS`: Character creation modifications. `MODIFICATIONS` holds them in the forms
+  §8 already defines: `#hash ^"Property" SET value` for a starting value, and a property
+  declaration with `MIN` / `MAX` for a range
 - `DEF`: NPC definitions with mechanical stats
 - `ENTRY`: Adventure hooks and GM guidance
-- `RULES`: Lightweight frame-specific rules
+- `RULES`: Lightweight frame-specific rules, written as §12 defines a rule
 
 **Example:**
 
@@ -2080,6 +2115,7 @@ FRAME "FrameID" {
 FRAME "RichFrogFrame" {
     NAME "Rich Frog Chronicles"
     VERSION "0.1.0"
+    SPEC_VERSION "0.6"
     DEPENDS_ON "L5R5e"
     USES_SETTING "RichFrog"
 
@@ -2091,12 +2127,12 @@ FRAME "RichFrogFrame" {
     STARTING_CONDITIONS {
         DESCRIPTION "PCs are newly assigned samurai sent to represent their clan's interests in the City of the Rich Frog"
         MODIFICATIONS {
-            status RANGE(20, 35)
-            glory RANGE(10, 25)
+            ^"Status" INTEGER MIN 20 MAX 35
+            ^"Glory"  INTEGER MIN 10 MAX 25
         }
     }
 
-    #ide_tadaji ^"Ide Tadaji" DEF {
+    #k8Rw3NqT6yLm1XcV9bJp4ZsD ^"Ide Tadaji" DEF {
         EXTENDS ^"Adversary"
         PROPERTIES {
             ^"Role" STRING "Unicorn Trade Governor"
@@ -2135,6 +2171,7 @@ An ARC is a self-contained, playable narrative experience. It may span part of a
 ARC "ArcID" {
     NAME "Human-readable Arc Name"
     VERSION "1.0.0"
+    SPEC_VERSION "0.6"
     DEPENDS_ON "BaseSystemID"
     USES_SETTING "SettingID"        # optional
     USES_EXTENSION "ExtensionID"    # optional, repeatable
@@ -2144,10 +2181,11 @@ ARC "ArcID" {
     }
 
     CAST {
-        FROM "FrameID" INCLUDE [#npc_id1, #npc_id2]
-        FROM ARC "OtherArcID" INCLUDE [#npc_id3]
+        FROM EXTENSION "ExtensionID" INCLUDE [#hash ^"NPC Name", #hash ^"Another NPC"]
+        FROM FRAME "FrameID" INCLUDE [#hash ^"NPC Name"]
+        FROM ARC "OtherArcID" INCLUDE [#hash ^"NPC Name"]
 
-        #new_npc ^"New NPC" DEF {
+        #hash ^"New NPC" DEF {
             EXTENDS ^"Adversary"
             PROPERTIES {
                 ^"Role" STRING "Role in this arc"
@@ -2157,9 +2195,10 @@ ARC "ArcID" {
         }
     }
 
-    LOCATION ^"Location Name" {
+    FROM SETTING "SettingID" INCLUDE [#hash ^"Location Name"]    # a SETTING's location, imported
+
+    LOCATION ^"Location Name" #hash {
         DESCRIPTION "Description"
-        FROM SETTING "SettingID"    # references a SETTING location
     }
 
     FLOW {
@@ -2167,14 +2206,14 @@ ARC "ArcID" {
             DESCRIPTION "What this phase represents"
             PACING "Suggested pacing guidance"
 
-            SCENE_REF #scene_id
-            SCENE_REF #another_scene_id
+            SCENE_REF #hash ^"Scene Name"
+            SCENE_REF #hash ^"Another Scene"
         }
     }
 
-    SCENE ^"Scene Name" #scene_id {
-        TYPE "Roleplay"
-        LOCATION #location_ref
+    SCENE ^"Scene Name" #hash {
+        TYPE #hash ^"Scene Type Name"
+        LOCATION #hash ^"Location Name"
         DESCRIPTION "Scene overview for the GM"
 
         PREREQUISITES {
@@ -2207,7 +2246,7 @@ ARC "ArcID" {
             RESOLUTION ^"Outcome Name" {
                 CONDITION "What triggers this outcome"
                 OUTCOME "What happens"
-                LEADS_TO [#next_scene_id]
+                LEADS_TO [#hash ^"Next Scene"]
             }
         }
     }
@@ -2228,8 +2267,9 @@ ARC "ArcID" {
 - `DEPENDS_ON`: Required BASE system
 - `USES_SETTING`: Optional SETTING reference
 - `USES_EXTENSION`: Optional EXTENSION dependencies (repeatable)
-- `CAST`: NPC roster — imported via FROM or defined inline
-- `LOCATION`: Place definitions, optionally referencing a SETTING
+- `CAST`: NPC roster — imported via `FROM <KIND> "id" INCLUDE [ … ]` or defined inline. The
+  `FROM` line is the declaration of that dependency; no `USES_` line is written for it
+- `LOCATION`: Place definitions. A SETTING's location is imported with `FROM SETTING "id" INCLUDE [ … ]`
 - `FLOW`: Scene sequencing grouped into PHASEs
 - `SCENE`: Individual narrative/gameplay units (see Scene Block Specification)
 - `REWARDS`: XP and outcome-based rewards
@@ -2237,167 +2277,156 @@ ARC "ArcID" {
 **Example:**
 
 ```
-ARC "LostWriter" {
-    NAME "The Lost Writer of Rich Frog"
-    VERSION "0.1.0"
-    DEPENDS_ON "L5R5e"
-    USES_SETTING "RichFrog"
+ARC "L5R5e_LostWriter" {
+    NAME "The Lost Writer in the City of the Rich Frog"
+    VERSION "0.5.5"
+    SPEC_VERSION "0.6"
+    DEPENDS_ON "L5R5e_Core_Core"
+    USES_EXTENSION "L5R5e_Children_of_Five_Winds"
 
     THEMES {
-        "Art as resistance versus art as duty"
-        "The hidden cost of perfection"
+        "Duty versus ethics — must you obey orders that conflict with your conscience?"
+        "The tension between freedom and captivity, both literal and spiritual"
+        "Art as a vessel for truth, and the dangers of uncovering it"
     }
 
     CAST {
-        FROM "RichFrogFrame" INCLUDE [#ide_tadaji]
+        # defined once, in the book's GM file, and imported
+        FROM EXTENSION "L5R5e_Children_of_Five_Winds_GM" INCLUDE [
+            #AEzCQP2Drp0S9YJeerwTbW ^"Miya Tetsua",
+            #3XqIrJ05JKkc7Iz9bHiDuy ^"Adventure Ifrit"
+        ]
 
-        #doji_fumiko ^"Doji Fumiko" DEF {
-            EXTENDS ^"Adversary"
+        # defined here
+        #q7Lm2XvR9tKc4WbN8sHdPz3F ^"Shinjo Higuchi" DEF {
+            EXTENDS #t4540de6f35155c46f41f0 ^"NPC"
             PROPERTIES {
-                ^"Role" STRING "Missing calligrapher and secret author"
-                ^"Description" STRING "A Crane artisan who disappeared while visiting the city. She has been writing a seditious play in hiding."
+                ^"Role"        STRING "The missing author, possessed by an ifrit"
+                ^"Description" STRING "A popular—if a bit controversial—author of stories and poems, Hana-no-Ame (real name: Shinjo Higuchi) has reportedly gone missing while visiting the City of the Rich Frog."
+                ^"Combat Conflict Rank"   INTEGER 4
+                ^"Intrigue Conflict Rank" INTEGER 1
                 ^"Rings" DEF {
-                    ^"Air"  INTEGER 3
-                    ^"Fire" INTEGER 4
+                    ^"Air"   INTEGER 3
+                    ^"Earth" INTEGER 2
+                    ^"Fire"  INTEGER 5
+                    ^"Water" INTEGER 1
+                    ^"Void"  INTEGER 3
                 }
                 ^"Skills" DEF {
-                    ^"Artisan" INTEGER 5
-                    ^"Social"  INTEGER 3
+                    ^"Artisan" INTEGER 1
+                    ^"Martial" INTEGER 2
+                    ^"Scholar" INTEGER 1
+                    ^"Social"  INTEGER 1
+                    ^"Trade"   INTEGER 0
                 }
-                ^"Honor" INTEGER 55
-            }
-        }
-
-        #bayushi_koto ^"Bayushi Koto" DEF {
-            EXTENDS ^"Adversary"
-            PROPERTIES {
-                ^"Role" STRING "Scorpion fixer pursuing the manuscript"
-                ^"Description" STRING "A charming Scorpion agent tasked with acquiring Fumiko's manuscript before it embarrasses the Crane"
-                ^"Rings" DEF {
-                    ^"Air"  INTEGER 4
-                    ^"Fire" INTEGER 3
-                }
-                ^"Skills" DEF {
-                    ^"Social"  INTEGER 4
-                    ^"Martial" INTEGER 3
-                }
-                ^"Honor" INTEGER 25
+                ^"Honor"  INTEGER 60
+                ^"Glory"  INTEGER 50
+                ^"Status" INTEGER 39
             }
         }
     }
 
-    LOCATION ^"The Ink-Stained Room" #ink_room {
-        DESCRIPTION "A hidden workshop above a Leatherworkers' Road shop, cluttered with drafts, brushes, and stolen ink"
+    LOCATION ^"City of the Rich Frog" #b4Wn8KsY2pQx6TcV9mRj3LhD {
+        DESCRIPTION "Located at the junction of the Three Sides River and Drowned Merchant River, the City of the Rich Frog is one of Rokugan's most vital river ports, facilitating trade among its people. …"
+        TAGS ["urban", "trade-hub", "contested", "imperial-holding"]
+
+        LOCATION ^"Teahouse with No Name" #h2Vq7KcY4tGf8NwJ6pXa5ZrM {
+            DESCRIPTION "In the Lion Clan's district within the City of the Rich Frog, an old and renowned teahouse overlooks the banks of the Drowned Merchant River. …"
+            TAGS ["lion-district", "social", "formal"]
+        }
+
+        LOCATION ^"Manor Gardens" #n9Tc3JwE6yHk2RdL7sUo4BfG {
+            DESCRIPTION "Nao recommends moving Higuchi to the manor's interior garden for the confrontation, while Tetsua ensures that any potential prying eyes or innocent bystanders are sent away from the island."
+            TAGS ["island", "outdoor", "dangerous", "supernatural"]
+        }
     }
 
     FLOW {
-        PHASE ^"The Commission" {
-            DESCRIPTION "PCs receive their assignment and begin investigating"
-            PACING "1-2 scenes, establishing tone"
+        PHASE ^"Investigation" {
+            DESCRIPTION "In Part Two, the PCs follow a trail of clues to various locations in the City of the Rich Frog to track down Hana-no-Ame. …"
+            PACING "3-6 scenes depending on PC choices, player-driven exploration"
 
-            SCENE_REF #commission
-            SCENE_REF #market_inquiry
+            SCENE_REF #w5Zp1RmX8eLt4VbK9cJn2QsA ^"Tea Ceremony at the Teahouse with No Name"
+            SCENE_REF #d3Sg8QhT5yNk1McA7vPr6WxE ^"Audience with the Governor"
         }
 
-        PHASE ^"The Trail" {
-            DESCRIPTION "Investigation deepens, rival agents emerge"
-            PACING "2-3 scenes, rising tension"
+        PHASE ^"Confrontation" {
+            DESCRIPTION "In Part Three, the PCs meet with the governor of the City of the Rich Frog and ready their allies. …"
+            PACING "1 scene, climactic combat and moral decision"
 
-            SCENE_REF #ink_trail
-            SCENE_REF #scorpion_encounter
-        }
-
-        PHASE ^"The Choice" {
-            DESCRIPTION "PCs find Fumiko and must decide her fate"
-            PACING "1-2 scenes, climax"
-
-            SCENE_REF #hidden_workshop
-            SCENE_REF #final_confrontation
+            SCENE_REF #f6Bn2WxE9zHj4RdL1sUo8KcY ^"The Possessed Author"
         }
     }
 
-    SCENE ^"The Commission" #commission {
-        TYPE "Roleplay"
-        LOCATION ^"Licensed Quarter"
-        DESCRIPTION "A Crane dignitary hires the PCs to locate a missing calligrapher last seen in the city"
+    SCENE ^"Tea Ceremony at the Teahouse with No Name" #w5Zp1RmX8eLt4VbK9cJn2QsA {
+        TYPE #m8Kd4TqW1zNb6XcR3vLs9JhP ^"Intrigue"
+        LOCATION #h2Vq7KcY4tGf8NwJ6pXa5ZrM ^"Teahouse with No Name"
+        DESCRIPTION "Whether separately or together, the PCs have arrived at the Teahouse with No Name to gather more information about Hana-no-Ame's disappearance … "
 
         OBJECTIVES {
-            REQUIRED "Accept the commission and learn basic details about Doji Fumiko"
-            OPTIONAL "Negotiate terms for additional compensation"
-            OPTIONAL "Detect the Crane patron's hidden anxiety about what Fumiko may be writing"
+            REQUIRED "Appeal to Tea Master Ikoma Kotone."
+            OPTIONAL "Avoid breaching tea ceremony protocol"
         }
 
         CHECKS {
-            CHECK ^"Read the Patron" {
-                SKILL "social"
-                RING "air"
+            CHECK ^"Stir the Leaves" #0VDeckbNgpBJyQnoibqr0E {
+                SKILL "Courtesy"
+                SKILL "Performance"
+                RING "Air"
                 TN 3
-                ON_SUCCESS "The patron is hiding something — they fear the content of Fumiko's work, not just her safety"
-                ON_FAILURE "The patron seems genuinely worried about a missing artist"
-            }
-        }
-
-        CLUES {
-            CLUE ^"Last Known Location" {
-                DESCRIPTION "Fumiko was last seen purchasing unusual ink near Leatherworkers' Road"
-                DISCOVERED_BY "Provided freely by the patron"
-            }
-            CLUE ^"The Patron's Fear" {
-                DESCRIPTION "The Crane clan is worried about a manuscript, not just a missing person"
-                DISCOVERED_BY "Successful TN 3 Air/Social check"
+                ON_FAILURE "Each character who fails increases the TN of their next check targeting Kotone by 1."
             }
         }
 
         RESOLUTIONS {
-            RESOLUTION ^"Eager Acceptance" {
-                CONDITION "PCs accept without pressing for details"
-                OUTCOME "Begin investigation with limited information"
-                LEADS_TO [#market_inquiry]
-            }
-            RESOLUTION ^"Suspicious Acceptance" {
-                CONDITION "PCs detect the patron's hidden agenda"
-                OUTCOME "Begin investigation knowing the manuscript is the true target"
-                LEADS_TO [#market_inquiry, #ink_trail]
+            RESOLUTION ^"Productive Visit" {
+                CONDITION "PCs obtain at least one clue"
+                OUTCOME "As the PCs exit the teahouse, they are approached by a man who introduces himself as Daidoji Shin (see profile on page 174). …"
+                LEADS_TO [#d3Sg8QhT5yNk1McA7vPr6WxE ^"Audience with the Governor"]
             }
         }
     }
 
-    SCENE ^"The Hidden Workshop" #hidden_workshop {
-        TYPE "Intrigue"
-        LOCATION #ink_room
-        DESCRIPTION "PCs discover Fumiko's hiding place and must confront her about her work"
+    SCENE ^"Audience with the Governor" #d3Sg8QhT5yNk1McA7vPr6WxE {
+        TYPE #x1Gv7RnC5pLw3HbZ8sKt2MdQ ^"Roleplay"
+        DESCRIPTION "…"
+
+        RESOLUTIONS {
+            RESOLUTION ^"Governor Cooperates" {
+                CONDITION "When the PCs are ready"
+                OUTCOME "In this part of the adventure, the PCs—having gathered as many clues as they can—attempt to confront Higuchi. …"
+                LEADS_TO [#f6Bn2WxE9zHj4RdL1sUo8KcY ^"The Possessed Author"]
+            }
+        }
+    }
+
+    SCENE ^"The Possessed Author" #f6Bn2WxE9zHj4RdL1sUo8KcY {
+        TYPE #e5Wj2NxB9cTm4QfV7hDr6LpS ^"Combat"
+        LOCATION #n9Tc3JwE6yHk2RdL7sUo4BfG ^"Manor Gardens"
+        DESCRIPTION "Nao recommends moving Higuchi to the manor's interior garden for the confrontation, while Tetsua ensures that any potential prying eyes or innocent bystanders are sent away from the island. …"
 
         PREREQUISITES {
-            MINIMUM_CLUES 3
-            COMPLETED_SCENES [#ink_trail]
+            COMPLETED_SCENES [#d3Sg8QhT5yNk1McA7vPr6WxE ^"Audience with the Governor"]
         }
 
         OBJECTIVES {
-            REQUIRED "Locate Fumiko and learn the truth about her manuscript"
-            OPTIONAL "Read the manuscript and understand its significance"
+            REQUIRED "Resolve the ifrit's possession of Higuchi"
+            OPTIONAL "Save Higuchi's life"
+            OPTIONAL "Resolve the situation without destroying the ifrit"
         }
 
         CONFLICT {
-            TYPE "intrigue"
-            STAKES "Whether Fumiko's art survives or is destroyed"
-            OPPONENTS [#bayushi_koto]
+            TYPE #e5Wj2NxB9cTm4QfV7hDr6LpS ^"Combat"
+            STAKES "Higuchi's life, the ifrit's fate, and the safety of the City of the Rich Frog"
+            OPPONENTS [#q7Lm2XvR9tKc4WbN8sHdPz3F ^"Shinjo Higuchi", #3XqIrJ05JKkc7Iz9bHiDuy ^"Adventure Ifrit"]
         }
 
-        RESOLUTIONS {
-            RESOLUTION ^"Protect the Artist" {
-                CONDITION "PCs side with Fumiko and help her escape or publish"
-                OUTCOME "Fumiko's work survives; Crane and Scorpion are displeased"
-                LEADS_TO [#final_confrontation]
-            }
-            RESOLUTION ^"Duty First" {
-                CONDITION "PCs return Fumiko to the Crane"
-                OUTCOME "Fumiko is silenced; PCs earn Crane favor but lose something intangible"
-                LEADS_TO [#final_confrontation]
-            }
-            RESOLUTION ^"Scorpion Bargain" {
-                CONDITION "PCs negotiate with Bayushi Koto"
-                OUTCOME "The manuscript changes hands; consequences ripple outward"
-                LEADS_TO [#final_confrontation]
+        CHECKS {
+            CHECK ^"Recognize the Ifrit" {
+                SKILL "Theology"
+                RING "Fire"
+                TN 2
+                ON_SUCCESS "Anyone who passes a TN 2 Theology (Fire) check will recognize the spirit as an ifrit."
             }
         }
     }
@@ -2405,14 +2434,11 @@ ARC "LostWriter" {
     REWARDS {
         XP_BASE 3
         CONDITIONAL_REWARDS {
-            REWARD "Protected Fumiko's artistic freedom" {
+            REWARD "Each hour of play" {
                 XP 1
             }
-            REWARD "Resolved the situation without violence" {
-                XP 1
-            }
-            REWARD "Discovered all clues" {
-                XP 1
+            REWARD "any players felt that their character achieved their personal goal for this adventure" {
+                XP 2
             }
         }
     }
@@ -2427,6 +2453,7 @@ A CAMPAIGN collects multiple ARCs into a long-form narrative. It defines progres
 CAMPAIGN "CampaignID" {
     NAME "Human-readable Campaign Name"
     VERSION "1.0.0"
+    SPEC_VERSION "0.6"
     DEPENDS_ON "BaseSystemID"
     USES_SETTING "SettingID"    # optional
     USES_FRAME "FrameID"       # optional
@@ -2436,8 +2463,8 @@ CAMPAIGN "CampaignID" {
     }
 
     RECURRING_CAST {
-        FROM FRAME "FrameID" INCLUDE [#npc_id]
-        FROM ARC "ArcID" INCLUDE [#npc_id]
+        FROM FRAME "FrameID" INCLUDE [#hash ^"NPC Name"]
+        FROM ARC "ArcID" INCLUDE [#hash ^"NPC Name"]
     }
 
     # Arc sequence with FROM references
@@ -2466,35 +2493,30 @@ CAMPAIGN "CampaignID" {
 **Example:**
 
 ```
-CAMPAIGN "RichFrogChronicles" {
-    NAME "Rich Frog Chronicles"
-    VERSION "0.1.0"
-    DEPENDS_ON "L5R5e"
-    USES_SETTING "RichFrog"
-    USES_FRAME "RichFrogFrame"
+CAMPAIGN "ChildrenOfFear" {
+    NAME "The Children of Fear"
+    VERSION "0.5"
+    SPEC_VERSION "0.6"
+    DEPENDS_ON "CallOfCthulhu7e_Core_Base"
 
     THEMES {
-        "Power and influence at the crossroads of empires"
-        "The personal cost of duty across a career"
+        "An epic, player-led 1920s journey along Hiuen-Tsiang's Silk Road pilgrim route across China, Central Asia, northern India, and hidden Tibet."
+        "A race to decide the fate of a prophesied reincarnation — the 'King of Fear' — bound within Agartha as the balance with Shambhala fails."
     }
 
-    RECURRING_CAST {
-        FROM FRAME "RichFrogFrame" INCLUDE [#ide_tadaji]
-        FROM ARC "LostWriter" INCLUDE [#bayushi_koto]
-    }
-
-    FROM ARC "LostWriter"
-    FROM ARC "SilkAndSteel"
-    FROM ARC "FrogsFall"
+    FROM ARC "ChildrenOfFear_Ch1_City_of_Decaying_Splendor"
+    FROM ARC "ChildrenOfFear_Ch2_To_the_Gates_of_the_Sun"
+    FROM ARC "ChildrenOfFear_Ch3_Song_of_the_Lost_and_Forgotten"
+    FROM ARC "ChildrenOfFear_Ch4_Old_Bones"
+    FROM ARC "ChildrenOfFear_Ch5_Feast_and_Famine"
+    FROM ARC "ChildrenOfFear_Ch6_Liberation"
+    FROM ARC "ChildrenOfFear_Ch7_Spirits_of_the_Earth"
+    FROM ARC "ChildrenOfFear_Ch8_The_Heart_of_the_World"
 
     PROGRESSION {
-        BETWEEN "LostWriter" AND "SilkAndSteel" {
-            DOWNTIME "Three months pass. PCs may pursue personal projects or train."
-            ADVANCEMENT "PCs gain 5 XP and one new distinction reflecting events of the first arc"
-        }
-        BETWEEN "SilkAndSteel" AND "FrogsFall" {
-            DOWNTIME "A full year passes. Political tensions escalate across Rokugan."
-            ADVANCEMENT "PCs gain 8 XP, increase status by 5, and receive a new assignment"
+        BETWEEN "ChildrenOfFear_Ch1_City_of_Decaying_Splendor" AND "ChildrenOfFear_Ch2_To_the_Gates_of_the_Sun" {
+            DOWNTIME "Overland travel westward out of Peking toward Chang'an (Sian) — weeks of preparation, research, and investigator development."
+            ADVANCEMENT "Standard 7e experience: skill-improvement checks from the chapter's rolls; the party builds its expedition and contacts."
         }
     }
 }
@@ -2506,27 +2528,36 @@ A SCENE represents a single narrative or gameplay unit within an ARC. Scenes can
 
 #### Scene Types
 
+A scene's `TYPE` is a reference to a **scene type**, an entity the system defines *(v0.6,
+DECISION-23)*. The base spec fixes no list. A system's BASE defines one parent, `^"Scene Type"`,
+and each of its scene types as a DEF that extends it:
+
 ```
-ENUM ["Roleplay", "Combat", "Intrigue", "Travel", "Montage"]
+#hash ^"Scene Type" DEF { }
+#hash ^"Roleplay"      DEF { EXTENDS #hash ^"Scene Type" }
+#hash ^"Combat"        DEF { EXTENDS #hash ^"Scene Type" }
+#hash ^"Investigation" DEF { EXTENDS #hash ^"Scene Type" }
 ```
 
-- **Roleplay** — Exposition, social interaction, NPC dialogue
-- **Combat** — Skirmish, duel, mass battle
-- **Intrigue** — Social conflict with structured momentum and objectives
-- **Travel** — Journey between locations with hazards and encounters
-- **Montage** — Multiple brief sub-moments summarized (training, time passage)
+A conflict's `TYPE` is a reference to a **conflict type**, defined the same way under
+`^"Conflict Type"`. Both are reference sites (§5d). Where the source leaves the type open, a
+`CHOOSE` stands in the slot: `TYPE CHOOSE 1 [#hash ^"Skirmish", #hash ^"Intrigue"]`.
+
+A string in either slot (`TYPE "Roleplay"`) is the older form. It raises a **warning** in a file
+that declares a `SPEC_VERSION` below 0.6, or none, and an **error** in one that declares 0.6 or
+later.
 
 #### Scene Structure
 
 ```
-SCENE ^"Scene Name" #scene_id {
-    TYPE "SceneType"
-    LOCATION #location_ref
+SCENE ^"Scene Name" #hash {
+    TYPE #hash ^"Scene Type Name"
+    LOCATION #hash ^"Location Name"
     DESCRIPTION "GM-facing overview"
 
     PREREQUISITES {
         MINIMUM_CLUES count
-        COMPLETED_SCENES [#scene_id, #scene_id]
+        COMPLETED_SCENES [#hash ^"Scene Name", #hash ^"Scene Name"]
         CONDITION "Custom gating expression"
     }
 
@@ -2560,20 +2591,20 @@ SCENE ^"Scene Name" #scene_id {
     }
 
     CONFLICT {
-        TYPE "combat" | "intrigue"
+        TYPE #hash ^"Conflict Type Name"
         STAKES "What is at risk"
-        OPPONENTS [#npc_ref, #npc_ref]
+        OPPONENTS [#hash ^"NPC Name", #hash ^"NPC Name"]
     }
 
     RESOLUTIONS {
         RESOLUTION ^"Outcome Name" {
             CONDITION "What triggers this outcome"
             OUTCOME "What happens"
-            LEADS_TO [#next_scene_id]
+            LEADS_TO [#hash ^"Next Scene"]
         }
     }
 
-    # Only for TYPE "Montage"
+    # Only for a scene type that summarises several brief moments
     MONTAGE {
         MOMENT ^"Moment Name" {
             DESCRIPTION "Brief sub-moment"
@@ -2619,7 +2650,7 @@ SCENE ^"Scene Name" #scene_id {
 - `DISCOVERED_BY`: Method of discovery (free, check result, NPC interaction)
 
 **CONFLICT** — Combat or intrigue encounter parameters.
-- `TYPE`: Either `"combat"` or `"intrigue"`
+- `TYPE`: A reference to a conflict type the system defines
 - `STAKES`: What the conflict determines
 - `OPPONENTS`: NPC references from the CAST
 
@@ -2628,7 +2659,7 @@ SCENE ^"Scene Name" #scene_id {
 - `OUTCOME`: Narrative result
 - `LEADS_TO`: List of scene IDs that become available
 
-**MONTAGE** — Only valid in scenes with `TYPE "Montage"`. Contains brief sub-moments.
+**MONTAGE** — Brief sub-moments, for a scene whose type summarises several (a montage).
 
 #### Standalone Scenes
 
@@ -2638,9 +2669,10 @@ Scenes can be defined outside an ARC for reuse as encounter templates:
 EXTENSION "EncounterPack" EXTENDS "L5R5e" {
     NAME "Rich Frog Encounters"
     VERSION "0.1.0"
+    SPEC_VERSION "0.6"
 
-    SCENE ^"Roadside Duel" #roadside_duel {
-        TYPE "Combat"
+    SCENE ^"Roadside Duel" #y4Hc9PvM2xQe7JrW5tLf8NdB {
+        TYPE #e5Wj2NxB9cTm4QfV7hDr6LpS ^"Combat"
         DESCRIPTION "A traveling ronin challenges a PC to a formal duel at a crossroads shrine"
 
         OBJECTIVES {
@@ -2649,7 +2681,7 @@ EXTENSION "EncounterPack" EXTENDS "L5R5e" {
         }
 
         CONFLICT {
-            TYPE "combat"
+            TYPE #e5Wj2NxB9cTm4QfV7hDr6LpS ^"Combat"
             STAKES "Honor and reputation"
         }
 
@@ -2676,12 +2708,11 @@ EXTENSION "EncounterPack" EXTENDS "L5R5e" {
 A LOCATION defines a named place that can be used across SETTING, FRAME, and ARC containers. Locations support nesting for hierarchical geography.
 
 ```
-LOCATION ^"Location Name" #location_id {
+LOCATION ^"Location Name" #hash {
     DESCRIPTION "Physical and atmospheric description"
     TAGS ["tag1", "tag2"]
-    FROM SETTING "SettingID"    # optional: inherits from a SETTING location
 
-    LOCATION ^"Sub-Location" #sub_id {
+    LOCATION ^"Sub-Location" #hash {
         DESCRIPTION "Nested location"
     }
 }
@@ -2689,30 +2720,30 @@ LOCATION ^"Location Name" #location_id {
 
 **Fields:**
 - `^"Location Name"`: Caret-quoted display name
-- `#location_id`: Optional hash ID for cross-referencing
+- `#hash`: Optional hash ID for cross-referencing
 - `DESCRIPTION`: GM-facing description
 - `TAGS`: Categorical tags (e.g., `"urban"`, `"dangerous"`, `"sacred"`)
-- `FROM SETTING`: Links this location to a SETTING-defined location, inheriting its properties
 - Nested `LOCATION` blocks: Sub-locations within this location
 
 #### Cross-Referencing Locations
 
-Locations defined in a SETTING can be referenced from FRAME or ARC containers:
+A location defined in a SETTING is imported into a FRAME or an ARC with `FROM SETTING`, and is then
+referenced as any other location is:
 
 ```
 # In a SETTING
 SETTING "RichFrog" {
-    LOCATION ^"Licensed Quarter" #licensed_quarter {
+    LOCATION ^"Licensed Quarter" #c2Hn7VdM9sXq5JrW8eLf3TbK {
         DESCRIPTION "The regulated commercial district"
     }
 }
 
 # In an ARC
-ARC "LostWriter" {
-    USES_SETTING "RichFrog"
+ARC "MarketInquiry" {
+    FROM SETTING "RichFrog" INCLUDE [#c2Hn7VdM9sXq5JrW8eLf3TbK ^"Licensed Quarter"]
 
-    SCENE ^"Market Inquiry" #market_inquiry {
-        LOCATION #licensed_quarter    # references the SETTING location
+    SCENE ^"Market Inquiry" #p6Tz1LwQ8nRv3YbK5xGs9FdC {
+        LOCATION #c2Hn7VdM9sXq5JrW8eLf3TbK ^"Licensed Quarter"    # the SETTING's location
     }
 }
 ```
@@ -2745,39 +2776,57 @@ USES_EXTENSION "ExtensionID"
 ```
 Used by: ARC
 
-**FROM** — Cross-container import:
+**FROM** — Cross-container import *(v0.6, DECISION-22)*:
 ```
-FROM "FrameID" INCLUDE [#npc_id1, #npc_id2]
-FROM ARC "ArcID" INCLUDE [#npc_id]
-FROM FRAME "FrameID" INCLUDE [#npc_id]
-FROM SETTING "SettingID"
+FROM EXTENSION "ExtensionID" INCLUDE [#hash ^"NPC Name", #hash ^"Another NPC"]
+FROM FRAME "FrameID" INCLUDE [#hash ^"NPC Name"]
+FROM ARC "ArcID" INCLUDE [#hash ^"NPC Name"]
 FROM ARC "ArcID"
+FROM SETTING "SettingID" INCLUDE [#hash ^"Location Name"]
 ```
+A `FROM` names the kind of container it imports from, then the container's id. It is itself the
+declaration of that dependency: no `USES_` line is written for it. Each `INCLUDE` item is a
+reference to something that container defines (§5d).
+
+A `FROM "id"` with no kind is the older spelling. It raises a **warning** in a file that declares
+a `SPEC_VERSION` below 0.6, or none, and an **error** in one that declares 0.6 or later.
+
+**Declaring a block.** A named block (`SCENE`, `LOCATION`, `ENTRY`, `CHECK`) gives its name and then
+its hash, by convention: `SCENE ^"Scene Name" #hash {`. Hash before name is also legal. A reference
+to a scene, a location or a cast member is written as any other reference (§5d): `#hash ^"Name"`.
 
 **LEADS_TO** — Scene transitions within RESOLUTION blocks:
 ```
-LEADS_TO [#scene_id1, #scene_id2]
+LEADS_TO [#hash ^"Scene Name", #hash ^"Another Scene"]
 ```
 
 ### Dependency Hierarchy
 
-Containers form an acyclic dependency graph:
+Containers form an acyclic dependency graph. Each line lists what a container may depend on:
 
 ```
-SETTING (system-agnostic, .setting files)
-    ^
-    | USES_SETTING
-    |
-FRAME (.frame) ---------> BASE (.ttrpg)
-    ^                        ^
-    | USES_FRAME             | DEPENDS_ON
-    |                        |
-CAMPAIGN (.campaign) --> ARC (.arc) --> EXTENSION (.ttrpg)
-                          |
-                          | contains
-                          v
-                        SCENE blocks
+CAMPAIGN  (.campaign)  ->  ARC, FRAME, SETTING, BASE
+ARC       (.arc)       ->  ARC, FRAME, EXTENSION, SETTING, BASE
+FRAME     (.frame)     ->  SETTING, BASE
+EXTENSION (.ttrpg)     ->  BASE
+SETTING   (.setting)   ->  nothing
+SCENE blocks sit inside an ARC, or inside an EXTENSION as reusable encounters
 ```
+
+| From | To | By |
+|---|---|---|
+| CAMPAIGN | BASE | `DEPENDS_ON` |
+| CAMPAIGN | SETTING | `USES_SETTING` |
+| CAMPAIGN | FRAME | `USES_FRAME`, `FROM FRAME` |
+| CAMPAIGN | ARC | `FROM ARC` |
+| ARC | BASE | `DEPENDS_ON` |
+| ARC | SETTING | `USES_SETTING`, `FROM SETTING` |
+| ARC | EXTENSION | `USES_EXTENSION`, `FROM EXTENSION` |
+| ARC | FRAME | `FROM FRAME` |
+| ARC | ARC | `FROM ARC` |
+| FRAME | BASE | `DEPENDS_ON` |
+| FRAME | SETTING | `USES_SETTING`, `FROM SETTING` |
+| EXTENSION | BASE | `EXTENDS` |
 
 #### Dependency Rules
 
@@ -2787,7 +2836,7 @@ CAMPAIGN (.campaign) --> ARC (.arc) --> EXTENSION (.ttrpg)
 4. **CAMPAIGN** requires exactly one BASE via `DEPENDS_ON`, optionally one SETTING, and optionally one FRAME via `USES_FRAME`
 5. **Cycles are forbidden** — no container may directly or transitively depend on itself
 6. **SCENE** blocks exist within ARCs or within EXTENSIONs (as standalone reusable encounters)
-7. Cross-references via `FROM` must target containers that are already declared as dependencies (via `DEPENDS_ON`, `USES_SETTING`, `USES_FRAME`, or `USES_EXTENSION`)
+7. A `FROM` names the kind of the container it imports from, and that container must be in the loaded set and be of that kind. The `FROM` line is itself a dependency of the file and counts under rule 5 *(v0.6, DECISION-22; before v0.6 this rule required the container to be declared a second time in the header)*
 
 ---
 
@@ -2827,7 +2876,11 @@ BASE "L5R5e_Core" {
                 ^"Water" INTEGER MIN 1 MAX 5 DEFAULT 1
                 ^"Void" INTEGER MIN 1 MAX 5 DEFAULT 1
             }
-            ^"Skills" LIST OF ^"Skill"
+            ^"Skills" DEF {
+                ^"Command" INTEGER MIN 0 DEFAULT 0
+                ^"Tactics" INTEGER MIN 0 DEFAULT 0
+                # … one property for each skill
+            }
             ^"Techniques" LIST OF ^"Technique"
         }
         RULES {
@@ -3127,7 +3180,7 @@ These keywords are reserved by the base spec for use within narrative containers
 
 **SETTING:** `THEMES`, `HISTORY`, `ENTRY`, `PERIOD`
 
-**FRAME:** `STARTING_CONDITIONS`, `MODIFICATIONS`, `RANGE`
+**FRAME:** `STARTING_CONDITIONS`, `MODIFICATIONS`
 
 **ARC:** `CAST`, `FLOW`, `PHASE`, `SCENE_REF`, `REWARDS`, `XP_BASE`, `CONDITIONAL_REWARDS`, `REWARD`, `XP`
 

@@ -1,0 +1,18 @@
+EXTENSION "Demo_NarBad_NPCs" EXTENDS "Demo_NarBad_Base" {
+    NAME "DECISION-22 fixture (bad set) — people an arc imports"
+    SPEC_VERSION "0.6"
+    VERSION "1.0"
+    RELEASE_DATE "2026-11-12"
+
+    #NarBadXGovernorBBBBBBBBBB ^"The Governor" DEF {
+        EXTENDS #NarBadXNpcTypeAAAAAAAAAAA ^"NPC"
+        PROPERTIES {
+            ^"Role" STRING "Governor of the city"
+            ^"Rings" DEF { ^"Air" INTEGER 4  ^"Fire" INTEGER 4 }
+            ^"Skills" DEF { ^"Artisan" INTEGER 3  ^"Martial" INTEGER 2  ^"Social" INTEGER 4 }
+        }
+    }
+    #NarBadXSpiritCCCCCCCCCCCC ^"The Spirit" DEF {
+        EXTENDS #NarBadXNpcTypeAAAAAAAAAAA ^"NPC"
+    }
+}

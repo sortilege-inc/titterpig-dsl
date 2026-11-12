@@ -30,6 +30,12 @@ Two levels of validation over one or more .ttrpg files (or directories):
       of a kind the axis takes and inside its range or list; no two cells cover the same
       coordinates; an entity on an axis OF a type is of that type; COLUMNS needs one axis
       OF a type and names its properties. A TABLE with no AXIS is left alone below 0.6.
+    - TYPE of a SCENE or CONFLICT (v0.6, DECISION-23, §16): a reference that resolves and,
+      where ^"Scene Type" / ^"Conflict Type" is defined, names one. A string is a warning
+      below 0.6 and an error from 0.6.
+    - FROM (v0.6, DECISION-22, §16): the import names its container's kind, the container
+      is in the loaded set and is of that kind, and each INCLUDE item resolves. A bare
+      FROM "id" is a warning below 0.6 and an error from 0.6.
     - Markdown emphasis in a string (v0.6, DECISION-19): a paired **…** or *…* is a warning
       in a file below 0.6 and an error from 0.6; FIAT excuses asterisks the source prints.
     - EMPHASIS / LABEL (v0.6, DECISION-19): the words before the brace are a kind
@@ -119,6 +125,7 @@ PROP_TYPE_KW = ('STRING', 'INTEGER', 'BOOLEAN', 'ENUM', 'LIST', 'DEF', 'TEXT', '
 NEXT_STATEMENT_KW = PROP_TYPE_KW + ('CHOOSE', 'SET', 'TRANSFORM', 'MODIFY')
 CHANGE_METHODS = ('ADD', 'SUBTRACT', 'MULTIPLY', 'DIVIDE')
 EMPHASIS_KINDS = ('BOLD', 'ITALIC')      # v0.6, DECISION-19 (§5c)
+CONTAINER_KINDS = ('BASE', 'EXTENSION', 'SETTING', 'FRAME', 'ARC', 'CAMPAIGN')    # §3, §16
 # Markdown emphasis inside a string (§5c, DECISION-19): a paired **…** or *…* on one line of
 # text. An asterisk with a space after it (a footnote mark, a bullet) or a letter or digit
 # or a closing bracket before it (`20*`, `5*3`, `20 (+1)*`) does not open a span, so the
@@ -803,6 +810,9 @@ def analyze_file(fname, text, findings):
                                          # a later step names the result by it, so it is not a ref
     next_lbrace_is_modify = False
     tables = []                          # TABLE { AXIS … AT … } blocks  (§5e, DECISION-21)
+    block_types = []                     # TYPE of a SCENE / CONFLICT: (block kw, entity, line)  (§16)
+    containers = {}                      # container id -> kind (BASE, EXTENSION, SETTING, …)  (§16)
+    froms = []                           # FROM [KIND] "id" imports: (kind or None, id, line)  (§16)
 
     # Embedded references (§5c, DECISION-20): every ^\"Name\" inside a string is a reference
     # site and resolves like any other. Before v0.6 no tool read inside a string.
@@ -902,8 +912,14 @@ def analyze_file(fname, text, findings):
 
     for idx, t in enumerate(toks):
         if t.kind == 'LBRACE':
+            # the keyword that opened this block: SCENE ^"Name" #hash {  ->  SCENE
+            _k = idx - 1
+            while _k >= 0 and toks[_k].kind in ('CARET', 'HASH', 'STR', 'INT'):
+                _k -= 1
+            _kw = toks[_k].val if _k >= 0 and toks[_k].kind == 'ID' else None
             frames.append({'open': t.line, 'is_def': next_lbrace_is_def, 'waived': False,
-                           'def_name': next_lbrace_def_name, 'is_modify': next_lbrace_is_modify})
+                           'def_name': next_lbrace_def_name, 'is_modify': next_lbrace_is_modify,
+                           'kw': _kw})
             next_lbrace_is_modify = False
             next_lbrace_is_def = False
             next_lbrace_def_name = None
@@ -944,6 +960,62 @@ def analyze_file(fname, text, findings):
         if w in ('BASE', 'EXTENSION'):
             if idx + 1 < len(toks) and toks[idx + 1].kind == 'STR':
                 file_ids.append(toks[idx + 1].val)
+        # A container's id and kind (§16). Only where the keyword opens the container: the id is
+        # followed by its brace, or by EXTENDS "base" and the brace. `FROM ARC "id"` and a
+        # `SETTING "free text"` line inside an arc are not declarations.
+        if w in CONTAINER_KINDS and idx + 2 < len(toks) and toks[idx + 1].kind == 'STR' \
+                and not (idx > 0 and toks[idx - 1].kind == 'ID' and toks[idx - 1].val == 'FROM'):
+            k = idx + 2
+            if toks[k].kind == 'ID' and toks[k].val == 'EXTENDS' and k + 2 < len(toks) \
+                    and toks[k + 1].kind == 'STR':
+                k += 2
+            if toks[k].kind == 'LBRACE':
+                containers[toks[idx + 1].val] = w
+        if w == 'TYPE' and frames and frames[-1].get('kw') in ('SCENE', 'CONFLICT'):
+            # A scene's type and a conflict's type are entities the system defines (§16,
+            # DECISION-23): TYPE [#hash] ^"Name", or a CHOOSE where the source leaves it open.
+            # A string here is the older form: a warning below 0.6, an error from 0.6.
+            k = idx + 1
+            bh = None
+            if k < len(toks) and toks[k].kind == 'HASH':
+                bh = toks[k].val
+                k += 1
+            if k < len(toks) and toks[k].kind == 'CARET':
+                refs.append(('%s type' % frames[-1]['kw'].lower(), toks[k].val, bh, toks[k].line))
+                block_types.append((frames[-1]['kw'], toks[k].val, toks[k].line))
+            elif k < len(toks) and toks[k].kind == 'STR':
+                findings.append(Finding(fname, 'lint', 'error' if spec_version >= (0, 6) else 'warning',
+                                        t.line, 'the TYPE of a %s is a reference to an entity the system '
+                                        'defines (TYPE #hash ^"%s"), not a string (§16)'
+                                        % (frames[-1]['kw'], toks[k].val)))
+        if w == 'FROM':
+            # FROM <KIND> "id" [INCLUDE [ #hash ^"Name", … ]]  (§16, DECISION-22). The line is
+            # itself the declaration of the dependency. The kind is always named; a bare
+            # FROM "id" is the older spelling: a warning below 0.6, an error from 0.6.
+            k = idx + 1
+            kind = None
+            if k < len(toks) and toks[k].kind == 'ID' and toks[k].val in CONTAINER_KINDS:
+                kind = toks[k].val
+                k += 1
+            if k < len(toks) and toks[k].kind == 'STR' and toks[k].line == t.line:
+                cid = toks[k].val
+                froms.append((kind, cid, t.line))
+                if kind is None:
+                    findings.append(Finding(fname, 'lint', 'error' if spec_version >= (0, 6) else 'warning',
+                                            t.line, 'FROM "%s" does not name the kind of container: write '
+                                            'FROM EXTENSION, FROM FRAME, FROM ARC or FROM SETTING (§16)' % cid))
+                k += 1
+                if k + 1 < len(toks) and toks[k].kind == 'ID' and toks[k].val == 'INCLUDE' \
+                        and toks[k + 1].kind == 'LBRACK':
+                    k += 2
+                    while k < len(toks) and toks[k].kind != 'RBRACK':
+                        # What a SETTING holds is LOCATION and ENTRY blocks, and a block's name
+                        # and hash are not in this tool's name table (audit A4), so an item
+                        # imported FROM SETTING is not resolved yet. Everything else is.
+                        if toks[k].kind == 'CARET' and kind != 'SETTING':
+                            ih = toks[k - 1].val if toks[k - 1].kind == 'HASH' else None
+                            refs.append(('include', toks[k].val, ih, toks[k].line))
+                        k += 1
         elif w == 'SPEC_VERSION':
             has_spec_version = True
         elif w == 'DEF':
@@ -1736,7 +1808,8 @@ def analyze_file(fname, text, findings):
         'waived_ranges': waived_ranges, 'waived_lines': waived_lines,
         'def_props': def_props, 'def_extends': def_extends, 'mods': mods, 'adds': adds,
         'reprints': reprints, 'aliases': aliases, 'chooses': chooses, 'ref_values': ref_values,
-        'rolls': rolls, 'tables': tables,
+        'rolls': rolls, 'tables': tables, 'containers': containers, 'froms': froms,
+        'block_types': block_types,
     }
 
 
@@ -2227,6 +2300,57 @@ def roll_pass(files_data, findings):
                                         "ROLL n OF ^\"%s\": ^\"%s\" is not a ^\"Die\"" % (die, die)))
 
 
+def from_pass(files_data, findings):
+    """FROM <KIND> "id" (§16, DECISION-22): the container exists in the loaded set and is of
+    the kind named. A FROM with no kind is checked for existence only."""
+    kinds = {}
+    for d in files_data:
+        for cid, kind in d.get('containers', {}).items():
+            kinds.setdefault(cid, set()).add(kind)
+    for d in files_data:
+        for kind, cid, line in d.get('froms', []):
+            if is_waived(line, d):
+                continue
+            if cid not in kinds:
+                findings.append(Finding(d['file'], 'coherence', 'error', line,
+                                        'FROM names "%s", and no container of that id is in the '
+                                        'loaded set (§16)' % cid))
+            elif kind and kind not in kinds[cid]:
+                findings.append(Finding(d['file'], 'coherence', 'error', line,
+                                        'FROM %s "%s": that container is %s, not %s (§16)'
+                                        % (kind, cid, ' / '.join(sorted(kinds[cid])), kind)))
+
+
+def block_type_pass(files_data, findings):
+    """TYPE of a SCENE or a CONFLICT (§16, DECISION-23). Where the loaded set defines ^"Scene Type"
+    (or ^"Conflict Type"), the entity named must be one: it, or something that EXTENDS it. Where
+    the parent is not defined the reference is resolved and nothing more is checked."""
+    parent = {'SCENE': 'Scene Type', 'CONFLICT': 'Conflict Type'}
+    extends, known = {}, set()
+    for d in files_data:
+        if d.get('kind') != 'ttrpg':
+            continue
+        known.update(d['names'])
+        for nm, parents in d['def_extends'].items():
+            extends.setdefault(nm, []).extend(parents)
+
+    def is_a(entity, ty, seen):
+        if entity == ty:
+            return True
+        if entity in seen:
+            return False
+        seen.add(entity)
+        return any(is_a(p, ty, seen) for p in extends.get(entity, ()))
+
+    for d in files_data:
+        for kw, entity, line in d.get('block_types', []):
+            ty = parent[kw]
+            if ty in known and entity in known and not is_a(entity, ty, set()) and not is_waived(line, d):
+                findings.append(Finding(d['file'], 'coherence', 'error', line,
+                                        'TYPE ^"%s": a %s takes a ^"%s", and ^"%s" is not one (§16)'
+                                        % (entity, kw, ty, entity)))
+
+
 def table_pass(files_data, findings):
     """TABLE (§5e, DECISION-21): an entity given as a coordinate on an axis OF ^"Type" is of
     that type, and each of a record table's COLUMNS is a property the axis type declares, its
@@ -2468,6 +2592,8 @@ def main(argv):
     ref_pass(files_data, findings)
     roll_pass(files_data, findings)
     table_pass(files_data, findings)
+    from_pass(files_data, findings)
+    block_type_pass(files_data, findings)
     modification_pass(files_data, findings)
     bridge_coherence(files_data, corpora, findings, notes)
 
