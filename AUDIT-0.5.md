@@ -270,12 +270,66 @@ Related findings, not repeated here: B1 (the grammar has no rule for a narrative
 
 ### A4. §20's definition of "defined" contradicts §16 and §25
 
-**Status:** open
+**Status:** closed 2026-11-12 by the owner. Committed and pushed on branch `0.6`.
+DECISION-24: two tiers. A definition, now including a codex `ENTITY`, is a name every file may
+use. A named block is a target through its hash, and its name is a label inside its own file.
+Both tools follow it, and references between scenes, locations and cast are resolved.
+DECISION-25, which came out of the work: a caret name may hold an escaped quote.
 
 §20: name resolution collects `^"Name" DEF`, `ACTOR`/`TEMPLATE` definitions and `ALIAS` names "and
-nothing else". §25: a codex `ENTITY` "is a first-class caret target". §16 references a `LOCATION` by
-caret. `check_references.py` already indexes anchors from every container, with a comment naming an
-l5r5e `LOCATION` that a `REFERENCES` entry targets.
+nothing else". §25: a codex `ENTITY` "is a first-class caret target". §16 has scenes point at a
+`LOCATION` and flows point at a `SCENE`. §21 and §22 call an `ENTRY`'s caret "a local label, not a
+reference".
+
+**Corrected 2026-11-12.** This finding said `check_references.py` indexes anchors from every
+container and names an l5r5e `LOCATION` that a `REFERENCES` entry targets. It indexes DEFs in every
+kind of file, and nothing else. The l5r5e example, `^"Mountain Song Temple"`, is a DEF nested
+inside an arc (`l5r5e-0.5-imperfect-land.arc:54`), written that way so a reference can reach it.
+
+**What each source counts as a thing a reference may point at:**
+
+| | DEF | codex `ENTITY` | `LOCATION`, `SCENE` | `ENTRY` |
+|---|---|---|---|---|
+| §20 | yes | no | no | no |
+| §25 | | yes | | |
+| §16 | | | yes | |
+| §21, §22 | | | | no: "a local label" |
+| `ttrpg_validator.py` | yes | yes | no | no |
+| `check_references.py` | yes | no | no | no |
+
+Probed 2026-11-12 with one referrer pointing at each kind. The validator reports the references to
+the location and the scene as undefined and accepts the codex entity. The gate reports all four
+that are not DEFs: 7 errors. A `SCENE_REF` and a scene's `LOCATION` that point at hashes declared
+nowhere are reported by neither tool.
+
+**Named blocks in the corpora** (armdef left out):
+
+| Block | Declared | With a hash | Names repeated within a corpus | Also the name of a DEF |
+|---|---|---|---|---|
+| `LOCATION` | 2,007 | 1,549 | 107 | 165 |
+| `SCENE` | 497 | 497 | 60 | 63 |
+| `ENTRY` | 8,187 | 7,894 | 2,095 | 362 |
+| `RESOLUTION` | 436 | 0 | 237 | 0 |
+| `CLUE` | 257 | 0 | 0 | 1 |
+| `PHASE` | 124 | 0 | 6 | 4 |
+| `CHECK` | 73 | 1 | 0 | 1 |
+| codex `ENTITY` | 1,496 | 1,496 | 249 (amends across files, which §25 allows) | 104 |
+
+- **Locations and scenes are referenced.** `SCENE_REF` 328, `LEADS_TO` 49, a scene's `LOCATION` 86
+  (17 by hash, 69 by name), `COMPLETED_SCENES` 1. Every one resolves to a declared block.
+- **An `ENTRY`'s name is a label.** invisiblesun has 245 entries named `Sidebar 1`, pendragon6e 209
+  named `margin-note-1`, marvelmultiverse 76 named `example-1`. draw-steel has 57 `RESOLUTION`
+  blocks named `Tactics`.
+- **Nothing checks a block's hash.** arm5e has four hashes that each sit on two different entries
+  (`#t1ed6d9b1394ac006d6d3be` on "New Virtues (Mythic Judaism)" and "New Virtues (Mythic Islam)").
+  l5r5e has 10 `OPPONENTS` references to hashes declared nowhere, across its arcs; the Lost Writer's
+  three (A3) are part of that count.
+- **Places are declared twice to make them referenceable.** 160 names are both a `LOCATION` or
+  `SCENE` block and a DEF: arm5e 84, root 62, tor2e 14. "The Tomb of Queen Cleopatra" is a
+  `LOCATION` in a setting and a DEF in an `.actor`. 523 references to those names carry a hash and
+  10 do not (arm5e 8, tor2e 2).
+- One block shares its hash with a DEF: l5r5e's `CHECK #0VDeckbNgpBJyQnoibqr0E ^"Stir the Leaves"`
+  and a DEF of the same name.
 
 ### A5. The spec's example of two editions shares most of its hashes
 
@@ -816,6 +870,26 @@ in their corpus and are errors now: curseborne's `Curseborne_Wolf_You_Feed_NPCs`
 `Curseborne_Wolf_You_Feed_Adversaries`, and tor2e's `tor2e-adversaries`
 (`tor2e-0.5-core-star-of-the-mist.arc:16`). curseborne goes from 0 errors to 2 and tor2e from 0 to 1.
 
+### F13. arm5e and l5r5e: what the two tiers now report
+
+**From:** A4, DECISION-24. **Status:** open, not started. Both tools now fail these.
+
+- **arm5e (and armdef): 4 errors.** Four hashes each sit on two or three different sidebar
+  entries: `#t1ed6d9b1394ac006d6d3be` on "New Virtues (Mythic Islam)", "New Virtues (Mythic
+  Judaism)" and "New Virtues (Realms of Power: The Divine)"; `#t040be207d050bed657aca4` on the
+  three "New Flaws" entries; `#tbfbaa4c8f66731c72ab45c` on two "New Abilities" entries;
+  `#t8dd814b6b5cd82a1b96418` on two "New Shape and Material Bonuses" entries. Two more hashes are
+  written twice in one file on the same name (`ENTRY ^"sidebar on page 15"`), which is not an
+  error and wants a look.
+- **l5r5e: 10 errors in the validator.** Every one is an `OPPONENTS` reference to a hash declared
+  nowhere, in two arcs (the Lost Writer's three, and `#azif_9fc007a20ec3`, `#yaguro_b9b70348c102`,
+  `#yumiko_81f780d897df` and `#gaku_f6b1b6e5d2c8` elsewhere). The validator goes from 17 errors to
+  27. The reference gate gains one: an embedded `^"Mahō"` is now ambiguous, because the name is
+  both a DEF and a codex entity.
+- **callofcthulhu7e: resolved by DECISION-25.** Its one new error was an import of a DEF named
+  `^"Mrinmoy \"Vidyapati\" Mishra"`, which neither tool could see until a caret name was allowed
+  an escaped quote. It is back to 0 errors.
+
 ### F12. Seven corpora: scene and conflict types become entities
 
 **From:** A3, DECISION-23. **Status:** open, not started. The validator now reports these.
@@ -959,9 +1033,22 @@ two parameter to-dos below.
 - **A scene type is checked for membership only where the parent is defined.** The validator
   resolves `TYPE #hash ^"Name"` always, and checks that the entity is a `^"Scene Type"` or a
   `^"Conflict Type"` only when the loaded set defines that parent.
-- **An item imported `FROM SETTING` is not resolved.** A setting holds `LOCATION` and `ENTRY`
-  blocks, and a block's name and hash are not in the validator's name table (A4). Until A4 is
-  decided the validator checks that the setting exists and leaves the items alone.
+- **An escaped quote in a caret name is read by the validator and the reference gate only.**
+  `check_constructs.py`, `check_structure.py`, the synthesist and the VTT parsers were not checked
+  for it. 33 lines in five corpora write such a name (arm5e 16, callofcthulhu7e 8, draw-steel 6,
+  teeth 2, vtm5e 1).
+- **A reference by name alone to a block raises no warning yet.** §20 says it WARNs as any
+  hashless reference does. The validator resolves it inside its file and says nothing, because the
+  hashless warning lives in `check_references.py`, which does not count the references between
+  narrative blocks as §5d sites. 69 scene `LOCATION ^"Name"` lines are of this kind (draw-steel 60,
+  curseborne 9).
+- **The same hash on the same name is accepted as a restatement, for blocks.** §5 allows it
+  across files, and l5r5e's 2020 errata restates 13 entries of the 2019 errata that way. The
+  validator still flags every repeated DEF hash, which the spec already records as pending. One
+  block and one DEF share a hash and a name (l5r5e's `CHECK` and DEF "Stir the Leaves", and
+  `SCHOOL_ABILITY` "Way of the Carp"); those pass as restatements.
+- **A codex category is a name in the validator and not in the gate.** The gate now indexes
+  codex entities; it does not read `CATEGORIES`.
 - A lowercase bare word in `MODIFICATIONS` (`entanglement DEFAULT 1`) raises no finding.
 - **What the validator still does not check in a narrative file.** `USES_SETTING`, `USES_FRAME`
   and `USES_EXTENSION` targets; cycles through `FROM` (rule 5); a hash-only reference to a scene,
@@ -1085,6 +1172,10 @@ Filled in as each finding is walked through.
 | A3 | 2026-11-12 | Scene types and conflict types are entities each system defines, and a scene or conflict points at one: `TYPE #hash ^"Investigation"`. The base spec fixes no list. Written as DECISION-23. | Owner chose option C of three. |
 | A3 | 2026-11-12 | A string in a scene's or conflict's `TYPE` is a warning below 0.6 and an error from 0.6. The parents are named `^"Scene Type"` and `^"Conflict Type"`, and membership is checked only where the loaded set defines the parent. The CAMPAIGN example shows only what §16 defines, so the real file's `FLOW` of phases and edges is left out. The SETTING and FRAME examples stay invented. | Agent's calls, to confirm. The first follows the owner's pattern for every form replaced in 0.6. The last was recommended on 2026-11-12 and not objected to. |
 | A3 | 2026-11-12 | A3 is closed. The branch is committed and pushed. | Owner: "Close, commit, push". The agent's calls in the rows above marked "to confirm" were reported to him before he closed and were not separately ruled on. |
+| A4 | 2026-11-12 | Two tiers. A definition (DEF, `ACTOR`, `TEMPLATE`, `ALIAS`, codex `ENTITY`) is a name every file may use. A named block is a target through its hash, and its name is a label inside the file that declares it. Written as DECISION-24. | Owner: "Yes, two tiers", choosing option B of three. |
+| A4 | 2026-11-12 | Any named block that carries a hash is an anchor, whatever its keyword. A hash declared on two different names is an error; on the same name it is a restatement and legal. The one block that shares a hash and a name with a DEF therefore passes. | Agent's calls, to confirm. The second replaces what the agent told the owner beforehand (that the shared `CHECK` / DEF hash would be a duplicate): l5r5e's errata files restate 13 entries under the same hash and name, which §5 allows, so repeating a hash could not be the error. |
+| A4 | 2026-11-12 | A caret name may hold an escaped quote: `^"Mrinmoy \"Vidyapati\" Mishra"`. Written as DECISION-25, and read that way by the validator, the reference gate and the grammar. | Owner: "Yes, allow it", over renaming the 31 definitions that carry one. |
+| A4 | 2026-11-12 | A4 is closed. The branch is committed and pushed. | Owner: "Close, commit, push". The agent's calls in the A4 row marked "to confirm" were reported to him before he closed and were not separately ruled on. |
 
 ---
 

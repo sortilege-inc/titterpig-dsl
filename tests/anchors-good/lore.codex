@@ -1,0 +1,7 @@
+CODEX "Demo_Anchors_Codex" {
+    NAME "DECISION-24 fixture — a codex entity is a name any file may use (§25)"
+    SPEC_VERSION "0.6"
+    VERSION "1.0"
+
+    ENTITY #AncDemoIfritEEEEEEEEEEEE ^"Ifrit King" { }
+}

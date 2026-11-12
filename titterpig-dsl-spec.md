@@ -52,6 +52,12 @@ Changes made since v0.5, listed as they are decided. **Not all are additive.**
 10. **A scene's type and a conflict's type are entities the system defines** *(§16, DECISION-23;
     not additive)* — `TYPE #hash ^"Investigation"`. The base spec no longer fixes a list of scene
     types. A string in that slot is a warning in a file below 0.6 and an error from 0.6.
+11. **What a reference may point at: two tiers** *(§20, DECISION-24)* — a definition (a DEF, an
+    `ACTOR`, a `TEMPLATE`, an `ALIAS`, a codex `ENTITY`) is a name every file may use. A named
+    block (`SCENE`, `LOCATION`, `ENTRY`) is a target through its hash, and its name is a label
+    inside its own file. References between scenes and locations are now checked.
+12. **A caret name may hold an escaped quote** *(§14, DECISION-25)* — `^"Mrinmoy \"Vidyapati\"
+    Mishra"`. The grammar allowed no escape there and both tools cut such a name short.
 
 ### v0.5 — five new constructs, and one rule tightened *(current)*
 
@@ -375,6 +381,27 @@ stay valid.
   ^"Investigation"`. It is a reference site (§5d). Where the source leaves the type open, a
   `CHOOSE` stands in the slot (§5b). A string there is a warning in a file that declares a
   `SPEC_VERSION` below 0.6, or none, and an error in one that declares 0.6 or later.
+
+- **DECISION-24 — Two tiers of target: a definition by name, a named block by its hash**
+  *(resolved, v0.6, 2026-11-12)* (§20): §20 said only a DEF, an `ACTOR`, a `TEMPLATE` or an `ALIAS`
+  is defined, "and nothing else". §25 called a codex entity a first-class caret target, and §16 had
+  scenes point at locations and flows at scenes. The validator followed §25 and the reference gate
+  followed §20, and neither resolved a reference between two blocks. The corpora hold 2,007
+  `LOCATION` and 497 `SCENE` blocks that 464 references point at, beside 8,187 `ENTRY` blocks whose
+  names are labels (245 named `Sidebar 1` in one corpus). 160 places were declared twice, as a
+  block and as a DEF, so that a reference could reach them. The decision is two tiers. A
+  definition, now including a codex `ENTITY`, is a name every file may use. A named block is a
+  target through its hash: referenced as `#hash ^"Name"` from anywhere, with the hash unique in
+  the corpus, while its name alone resolves only inside the file that declares it. `SCENE_REF`,
+  `LEADS_TO`, `COMPLETED_SCENES`, `OPPONENTS`, a scene's `LOCATION` and an `INCLUDE` item are
+  reference sites under §5d and are resolved.
+
+- **DECISION-25 — A caret name may hold an escaped quote** *(resolved, v0.6, 2026-11-12)* (§14):
+  the grammar's caret name ran to the first quote and allowed no escape, and both tools read it
+  that way. 33 lines in five corpora write a name with a quote in it
+  (`^"Mrinmoy \"Vidyapati\" Mishra"`), 31 of them a DEF's own name, so 31 definitions were
+  invisible to the validator and to the reference gate. The decision is that `\"` inside a caret
+  name is a quote, as it is inside a string.
 
 ## 1. Overview & Design Principles
 
@@ -1056,8 +1083,11 @@ A **reference site** is any place one definition names *an entity that already e
 `APPLIES TO`, `LIST OF`, `CONCERNS`, `OVERRIDE`, `MODIFY`, the target of `ALIAS … FOR`, an entity
 option or `OF` type of a `CHOOSE` (§5b), the type and the value of a `REF`, the target of a `SET`
 or `TRANSFORM` and the die of a `ROLL` (§8), the type of an `AXIS … OF`, an entity listed as an
-axis point and an entity given as a coordinate of an `AT` (§5e), and the `REFERENCES` /
-`REFERENCED BY` targets and embedded references of §5c. All of them obey the same rule.
+axis point and an entity given as a coordinate of an `AT` (§5e), the `REFERENCES` /
+`REFERENCED BY` targets and embedded references of §5c, and the references between narrative
+blocks of §16: `SCENE_REF`, `LEADS_TO`, `COMPLETED_SCENES`, `OPPONENTS`, a scene's `LOCATION`, and
+each `INCLUDE` item of a `FROM`. All of them obey the same rule. What a reference may point at is
+set out in §20.
 
 **Declaration sites are not reference sites.** `ADD #hash ^"Name" DEF { … }` (§13) *asserts new
 content*, so its hash is an anchor being minted, not a pointer to one; `ALIAS ^"New" FOR ^"Existing"`
@@ -1869,6 +1899,9 @@ APPLIES TO [^"Samurai"]
 LIST OF ^"Technique"
 KATA ^"Lord Hida's Grip"
 ```
+
+A quote inside a name is written `\"`, as it is inside a string *(v0.6, DECISION-25)*:
+`^"Mrinmoy \"Vidyapati\" Mishra"`.
 
 ### Hash IDs `#identifier`
 
@@ -2794,6 +2827,8 @@ a `SPEC_VERSION` below 0.6, or none, and an **error** in one that declares 0.6 o
 **Declaring a block.** A named block (`SCENE`, `LOCATION`, `ENTRY`, `CHECK`) gives its name and then
 its hash, by convention: `SCENE ^"Scene Name" #hash {`. Hash before name is also legal. A reference
 to a scene, a location or a cast member is written as any other reference (§5d): `#hash ^"Name"`.
+The hash makes the block a target for any file; the name alone is a label inside the file that
+declares it (§20).
 
 **LEADS_TO** — Scene transitions within RESOLUTION blocks:
 ```
@@ -3242,9 +3277,23 @@ alongside the per-directive rules in §13: `SET` against an undeclared property 
 `REMOVE_FROM` against a non-`LIST` are errors; a colliding `ADD`, a `REMOVE_FROM` of an absent
 value, and an enum narrowed out from under a live instance are warnings.
 
-**What counts as "defined."** Name resolution collects `^"Name" DEF` (including nested and `ADD`-ed
-ones), `ACTOR` / `TEMPLATE` definitions, and `ALIAS` names — and nothing else. A bare
-`^"Name" { … }` block declares no name: §5 is the only spelling of a definition, and a caret that
+**What counts as "defined."** *(v0.6, DECISION-24)* There are two tiers.
+
+1. **A definition is a name every file may use.** Name resolution collects `^"Name" DEF`
+   (including nested and `ADD`-ed ones), `ACTOR` / `TEMPLATE` definitions, `ALIAS` names, and the
+   `ENTITY` nodes of a codex (§25).
+2. **A named block is a target through its hash.** A block that gives a name after its keyword
+   (`SCENE ^"Name" #hash {`, `LOCATION ^"Name" #hash {`, `ENTRY ^"Name" #hash {`) declares an
+   **anchor** when it carries a hash: any file may reference it as `#hash ^"Name"`, the hash is
+   unique in the corpus as a DEF's is, and the name must be the block's own. The block's **name**
+   is a label local to the file that declares it. A reference by name alone resolves to it only
+   inside that file, and WARNs as any hashless reference does (§5d). A block with no hash can be
+   named only there.
+
+Before v0.6 this section counted definitions and "nothing else", while §16 had scenes point at
+locations and §25 called a codex entity a first-class caret target.
+
+A bare `^"Name" { … }` block, with no keyword before the caret, declares no name: a caret that
 opens a statement without `DEF` resolves nothing. Frozen pre-0.4 content directories (§19) that
 still use the old spelling are historical artifacts and are not expected to validate against this
 spec version.

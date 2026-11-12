@@ -470,6 +470,8 @@ GENERIC_BLOCK   <- UPPER_IDENT _ GENERIC_LABEL? _ GENERIC_VALUE
 
 # A named block gives its name and then its hash, by convention -- SCENE ^"Name" #hash { --
 # and hash before name is also legal (v0.6, DECISION-22). Either may stand alone.
+# The hash makes the block a target for any file; the name alone is a label inside the file
+# that declares it (§20, DECISION-24).
 GENERIC_LABEL   <- CARET_REF _ HASH_ID / HASH_ID _ CARET_REF
                  / CARET_REF / STRING / HASH_ID / INTEGER_LIT
 
@@ -723,7 +725,9 @@ BOOLEAN_LIT     <- 'true' / 'false'
 # or by name (^"subject" = ^"Single Weapon"); each is a caret ref (an entity of
 # the declared parameter type) or a string (a free-text slot). The derived
 # display name ("Puissant Single Weapon") is rendered by consumers, not stored.
-CARET_REF       <- '^' '"' (!'"' .)* '"' PARAM_BINDING?
+# A quote inside a name is escaped, as in a string (v0.6, DECISION-25):
+#   ^"Mrinmoy \"Vidyapati\" Mishra"
+CARET_REF       <- '^' '"' STRING_CHAR* '"' PARAM_BINDING?
 PARAM_BINDING   <- _ '(' _ PARAM_ARG (_ ',' _ PARAM_ARG)* _ ')'
 PARAM_ARG       <- (CARET_REF _ '=' _)? (CARET_REF / STRING)
 

@@ -25,6 +25,9 @@ Per edition-scoped corpus root:
      counts as a reference from the entity around it, so REFERENCED BY may mirror it. Surface forms
      are matched against a string's TEXT: the string with each embedded reference read as its
      literal, or as its name where it has none.
+  7. Two tiers of target (v0.6, DECISION-24, §20): a DEF or a codex ENTITY is a name any file may
+     use; a named block (SCENE, LOCATION, ENTRY, …) is reachable from any file by its #hash, and by
+     its name only inside the file that declares it.
 Exit 1 on any ERROR (unresolved / bad-hash / name-hash mismatch / surface-drift / mirror-inconsistency).
 WARNs (hashless targets) do not fail the gate but are reported and counted.
 
@@ -41,7 +44,7 @@ WITH = [sys.argv[i + 1] for i, a in enumerate(sys.argv) if a == '--with' and i +
 WARN_FATAL = '--strict-warn-as-error' in sys.argv
 SHOW_WARNS = '--show-warns' in sys.argv          # per-line hashless WARNs (noisy on 0.4 corpora)
 
-DEF   = re.compile(r'^\s*(?:(#\S+)\s+)?(?:\^"([^"]+)"|(?:TEMPLATE|ACTOR)\s+"([^"]+)")\s+DEF\b')
+DEF   = re.compile(r'^\s*(?:(#\S+)\s+)?(?:\^"((?:[^"\\]|\\.)+)"|(?:TEMPLATE|ACTOR)\s+"([^"]+)")\s+DEF\b')
 DESC  = re.compile(r'^\s*DESCRIPTION\s+"(.*)"\s*$')
 # A surface form has to be found in the prose it annotates, and not every
 # corpus writes that prose on a bare DESCRIPTION line. Root holds a move's
@@ -77,9 +80,9 @@ EMPH  = re.compile(r'^\s*"((?:[^"\\]|\\.)*)"(?:@\d+)?\s*$')
 ONELINE = re.compile(r'^\s*' + HEAD + r'\s*\{(.*)\}\s*$')
 CLOSE = re.compile(r'^\s*\}\s*$')
 # "surface" -> [#hash] ^"Target"      (optional @n occurrence index tolerated on surface)
-REF   = re.compile(r'^\s*"((?:[^"\\]|\\.)*)"(?:@\d+)?\s*->\s*(?:(#\S+)\s+)?\^"([^"]+)"\s*$')
+REF   = re.compile(r'^\s*"((?:[^"\\]|\\.)*)"(?:@\d+)?\s*->\s*(?:(#\S+)\s+)?\^"((?:[^"\\]|\\.)+)"\s*$')
 # ["surface"] <- [#hash] ^"Referrer"
-RBY   = re.compile(r'^\s*(?:"((?:[^"\\]|\\.)*)"\s*)?<-\s*(?:(#\S+)\s+)?\^"([^"]+)"\s*$')
+RBY   = re.compile(r'^\s*(?:"((?:[^"\\]|\\.)*)"\s*)?<-\s*(?:(#\S+)\s+)?\^"((?:[^"\\]|\\.)+)"\s*$')
 
 # §5c embedded references (v0.6, DECISION-20): [#hash ]^\"Name\"[/\"literal\"] inside a string.
 # The quotes are escaped in an ordinary string and bare in a triple-quoted one; group 2 is the
@@ -99,8 +102,19 @@ PART_A_EXT = ('.ttrpg', '.actor', '.arc', '.frame', '.setting', '.campaign', '.b
 files = [os.path.join(dp, f) for dp, _, fs in os.walk(root) for f in fs if f.endswith(PART_A_EXT)]
 context = [os.path.join(dp, f) for w in WITH for dp, _, fs in os.walk(w) for f in fs if f.endswith(PART_A_EXT)]
 
+# A caret name may hold an escaped quote -- ^"Mrinmoy \\"Vidyapati\\" Mishra" (v0.6, DECISION-25) --
+# so every pattern here reads a name with the escape-aware body QUOTED uses. Before that, a
+# DEF so named matched no pattern and was indexed nowhere.
 # Pass 1: declared entities. name_key -> set(hash); hash -> name_key.
+# Two tiers (§20, DECISION-24). A DEF and a codex ENTITY are names any file may use. A named
+# block -- SCENE ^"Name" #hash {, LOCATION #hash ^"Name" { -- is reachable from anywhere by its
+# hash, and by its name only inside its own file.
+BLOCKDECL = re.compile(r'^\s*([A-Z_]+)\s+(?:(#[A-Za-z0-9_]+)\s+)?\^"((?:[^"\\]|\\.)+)"(?:\s+(#[A-Za-z0-9_]+))?\s*\{')
+NOT_A_BLOCK = ('DEF', 'MODIFY', 'OVERRIDE', 'ADD', 'EXTENDS', 'ALIAS', 'FOR', 'OF', 'REF', 'FROM',
+               'INCLUDE', 'TO', 'REPRINT', 'SELECT', 'CONCERNS', 'AXIS', 'AT', 'ROLL', 'CHOOSE',
+               'WITH', 'TYPE', 'SCENE_REF', 'LEADS_TO', 'OPPONENTS', 'COMPLETED_SCENES')
 names, hash_name = {}, {}
+local_names = {}        # file -> name_keys of the named blocks it declares
 for f in files + context:
     for l in open(f, encoding='utf-8'):
         m = DEF.match(l)
@@ -109,6 +123,18 @@ for f in files + context:
             names.setdefault(k, set())
             if h:
                 names[k].add(h); hash_name[h] = k
+            continue
+        m = BLOCKDECL.match(l)
+        if m and m.group(1) not in NOT_A_BLOCK:
+            h = m.group(2) or m.group(4); k = nk(m.group(3))
+            if m.group(1) == 'ENTITY':             # a codex entity: a name for every file (§25)
+                names.setdefault(k, set())
+                if h:
+                    names[k].add(h)
+            else:
+                local_names.setdefault(f, set()).add(k)
+            if h:
+                hash_name[h] = k
 
 # Pass 2: collect REFERENCES pairs (referrer_def -> target) and REFERENCED BY claims.
 errors = warns = total = rby_total = emph_total = label_total = embedded_total = 0
@@ -135,7 +161,7 @@ def warn(msg):
 # a DEF. A reader that only opens a scope on `DEF` finds no prose at all on those
 # and reports every one of them as unprosed.
 QSTRIP = re.compile(r'"(?:[^"\\]|\\.)*"')
-CARET = re.compile(r'\^"([^"]+)"')
+CARET = re.compile(r'\^"((?:[^"\\]|\\.)+)"')
 
 TRIPLE = '"""'
 CODE, IN_TRIPLE, IN_STR = 0, 1, 2
@@ -200,8 +226,10 @@ def string_parts(l, state):
         elif l.startswith(TRIPLE, i):
             state = IN_TRIPLE; i += 3; start = i
         elif c == '^' and l.startswith('^"', i):
-            j = l.find('"', i + 2)             # a caret name in code is not string content
-            i = n if j < 0 else j + 1
+            j = i + 2                          # a caret name in code is not string content
+            while j < n and l[j] != '"':       # and may hold an escaped quote (DECISION-25)
+                j += 2 if l[j] == '\\' else 1
+            i = j + 1
         elif c == '"':
             state = IN_STR; i += 1; start = i
         elif c == '#' and (i + 1 >= n or l[i + 1].isspace()):
@@ -302,11 +330,11 @@ for f in files:
                 err(f'{b}:{ln} target hash {thash} is not a declared anchor')
             elif hash_name[thash] != tk:
                 err(f'{b}:{ln} hash {thash} names "{hash_name[thash]}" but caret says ^"{tname}"')
-        elif tk not in names:
+        elif tk not in names and tk not in local_names.get(f, ()):
             err(f'{b}:{ln} unresolved target ^"{tname}"')
         else:
             warn(f'{b}:{ln} hashless target ^"{tname}" (strict: add #hash; name has '
-                 f'{len(names[tk])} anchor(s))')
+                 f'{len(names.get(tk, ()))} anchor(s))')
         p = prose_at(ln - 1)
         if p is None:
             err(f'{b}:{ln} surface "{surface}" has no prose in this DEF to appear in')
@@ -388,15 +416,15 @@ for f in files:
                             err(f'{b}:{ln} embedded reference hash {ehash} is not a declared anchor')
                         elif hash_name[ehash] != ek:
                             err(f'{b}:{ln} embedded hash {ehash} names "{hash_name[ehash]}" but caret says ^"{ename}"')
-                    elif ek not in names:
+                    elif ek not in names and ek not in local_names.get(f, ()):
                         err(f'{b}:{ln} unresolved embedded reference ^"{ename}"')
-                    elif len(names[ek]) > 1:
+                    elif len(names.get(ek, ())) > 1:
                         # §5d rule 3: hashless, and the name is more than one entity
                         err(f'{b}:{ln} embedded reference ^"{ename}" is ambiguous: the name has '
                             f'{len(names[ek])} anchors and the reference carries no #hash')
                     else:
                         warn(f'{b}:{ln} hashless embedded reference ^"{ename}" (strict: add #hash; name has '
-                             f'{len(names[ek])} anchor(s))')
+                             f'{len(names.get(ek, ()))} anchor(s))')
                     rf = referrer(ln - 1)
                     if rf:
                         ref_pairs.add((rf, ek))
@@ -470,7 +498,7 @@ all_ctx = [os.path.join(dp, f) for w in WITH for dp, _, fs in os.walk(w)
 # the same hash (a legal restatement across files, §13/DECISION-4). Hashless DEFs
 # cannot be told apart, so they collapse into at most one further entity.
 ent_hashes, ent_nohash, anchor_name = {}, set(), {}
-ADD_DEF = re.compile(r'^\s*ADD\s+(?:(#\S+)\s+)?\^"([^"]+)"\s+DEF\b')
+ADD_DEF = re.compile(r'^\s*ADD\s+(?:(#\S+)\s+)?\^"((?:[^"\\]|\\.)+)"\s+DEF\b')
 # A narrative container and a GUIDANCE entry declare their anchor AFTER the name:
 # `SCENE ^"Rosa's House" #tCUxd... {`, `ENTRY ^"Roleplaying Caitlyn" #to6Pa... {`,
 # and some DEFs are written `^"Name" #hash DEF`. 3,302 anchors corpus-wide use
@@ -481,7 +509,7 @@ ADD_DEF = re.compile(r'^\s*ADD\s+(?:(#\S+)\s+)?\^"([^"]+)"\s+DEF\b')
 # reference (§5d), not a declaration of `^"Nature"`, and indexing it as one
 # filed the target's anchor under the property's name -- so the next construct
 # that referenced that anchor was told its hash names something else.
-POST_HASH = re.compile(r'^\s*(?:[A-Z_]+\s+)?\^"([^"]+)"\s+(#[A-Za-z0-9_]+)\b(?![ \t]*\^")')
+POST_HASH = re.compile(r'^\s*(?:[A-Z_]+\s+)?\^"((?:[^"\\]|\\.)+)"\s+(#[A-Za-z0-9_]+)\b(?![ \t]*\^")')
 for f in all_files + all_ctx:
     for l in open(f, encoding='utf-8', errors='ignore'):
         m = DEF.match(l)
@@ -522,18 +550,18 @@ def distinct(k):
 # which is how root's ^"Paladin" and ^"Luminary" resolved to nothing in silence.
 # The hash is required: a hashless `^"Prop" ^"Target"` cannot be told apart
 # from two adjacent properties (`^"Category" ^"Wroth"  ^"Rating" INTEGER 3`).
-PROP_REF = re.compile(r'^[ \t]*\^"[^"]+"[ \t]+((?:#[A-Za-z0-9_]+[ \t]+)\^"[^"]+")[ \t]*$',
+PROP_REF = re.compile(r'^[ \t]*\^"(?:[^"\\]|\\.)+"[ \t]+((?:#[A-Za-z0-9_]+[ \t]+)\^"(?:[^"\\]|\\.)+")[ \t]*$',
                       re.M)
 SITE = re.compile(r'\b(EXTENDS|LIST\s+OF|CONCERNS|OVERRIDE|MODIFY|REPRINT)\b'
-                  r'[ \t]*((?:(?:#[A-Za-z0-9_]+[ \t]+)?\^"[^"]+"[ \t]*,?[ \t]*)+)')
+                  r'[ \t]*((?:(?:#[A-Za-z0-9_]+[ \t]+)?\^"(?:[^"\\]|\\.)+"[ \t]*,?[ \t]*)+)')
 # Only APPLIES TO / CONCERNS take a BRACKETED list of references. `LIST OF [`
 # is an inline list of VALUES -- `^"Attacks" LIST OF [ ^"Creature Attack" DEF {...} ]`
 # -- whose contents are nested definitions and property names, not references to
 # anything. `LIST OF ^"Type"` puts its type before the bracket and SITE catches it.
 SITE_LIST = re.compile(r'\b(APPLIES\s+TO|CONCERNS)\b[ \t]*\[([^\]]*)\]', re.S)
 ALIAS_FOR = re.compile(r'\bALIAS\b[^\n]*?\bFOR\b[ \t]+(?:ORIGIN[ \t]+|DESTINATION[ \t]+)?'
-                       r'((?:#[A-Za-z0-9_]+[ \t]+)?\^"[^"]+")')
-TARGET = re.compile(r'(#[A-Za-z0-9_]+)?[ \t]*\^"([^"]+)"')
+                       r'((?:#[A-Za-z0-9_]+[ \t]+)?\^"(?:[^"\\]|\\.)+")')
+TARGET = re.compile(r'(#[A-Za-z0-9_]+)?[ \t]*\^"((?:[^"\\]|\\.)+)"')
 
 b_err = b_warn = b_sites = 0
 amb_by_name = {}

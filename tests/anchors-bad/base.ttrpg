@@ -1,0 +1,14 @@
+BASE "Demo_AncBad_Base" {
+    NAME "DECISION-24 fixture — each reference here holds one intentional finding"
+    SPEC_VERSION "0.6"
+    VERSION "1.0"
+    RELEASE_DATE "2026-11-12"
+
+    #AncBadXGuideBBBBBBBBBBBBB ^"Pilgrim's Guide" DEF {
+        DESCRIPTION "The road ends at the Mountain Song Temple, where the Tea Ceremony is held."
+        REFERENCES {
+            "Mountain Song Temple" -> ^"Mountain Song Temple"
+            "Tea Ceremony"         -> #AncBadXTempleCCCCCCCCCCC ^"Tea Ceremony"
+        }
+    }
+}

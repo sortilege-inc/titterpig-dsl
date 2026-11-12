@@ -30,6 +30,10 @@ Two levels of validation over one or more .ttrpg files (or directories):
       of a kind the axis takes and inside its range or list; no two cells cover the same
       coordinates; an entity on an axis OF a type is of that type; COLUMNS needs one axis
       OF a type and names its properties. A TABLE with no AXIS is left alone below 0.6.
+    - Named blocks (v0.6, DECISION-24, §20): the hash of a named block (SCENE, LOCATION,
+      ENTRY, …) is an anchor like a DEF's: unique, and referenceable from any file. A
+      block's name is a label local to its file. SCENE_REF, LEADS_TO, COMPLETED_SCENES,
+      OPPONENTS and a scene's LOCATION are reference sites and resolve.
     - TYPE of a SCENE or CONFLICT (v0.6, DECISION-23, §16): a reference that resolves and,
       where ^"Scene Type" / ^"Conflict Type" is defined, names one. A string is a warning
       below 0.6 and an error from 0.6.
@@ -126,6 +130,13 @@ NEXT_STATEMENT_KW = PROP_TYPE_KW + ('CHOOSE', 'SET', 'TRANSFORM', 'MODIFY')
 CHANGE_METHODS = ('ADD', 'SUBTRACT', 'MULTIPLY', 'DIVIDE')
 EMPHASIS_KINDS = ('BOLD', 'ITALIC')      # v0.6, DECISION-19 (§5c)
 CONTAINER_KINDS = ('BASE', 'EXTENSION', 'SETTING', 'FRAME', 'ARC', 'CAMPAIGN')    # §3, §16
+# Keywords whose `#hash ^"Name" {` names something that exists already, and so declare no block.
+NOT_A_BLOCK = ('DEF', 'MODIFY', 'OVERRIDE', 'ADD', 'EXTENDS', 'ALIAS', 'FOR', 'OF', 'REF', 'FROM',
+               'INCLUDE', 'TO', 'REPRINT', 'SELECT', 'CONCERNS', 'ENTITY', 'AXIS', 'AT', 'ROLL',
+               'CHOOSE', 'WITH', 'TYPE', 'SCENE_REF', 'LEADS_TO', 'OPPONENTS', 'COMPLETED_SCENES')
+# References between narrative blocks (§16, §5d): keyword -> what the finding calls it.
+BLOCK_REF_ONE = {'SCENE_REF': 'scene ref'}
+BLOCK_REF_LIST = {'LEADS_TO': 'leads-to', 'COMPLETED_SCENES': 'completed scene', 'OPPONENTS': 'opponent'}
 # Markdown emphasis inside a string (§5c, DECISION-19): a paired **…** or *…* on one line of
 # text. An asterisk with a space after it (a footnote mark, a bullet) or a letter or digit
 # or a closing bracket before it (`20*`, `5*3`, `20 (+1)*`) does not open a span, so the
@@ -203,6 +214,10 @@ def tokenize(text, fname, findings):
         if c == '^' and i + 1 < n and text[i + 1] == '"':
             j, start = i + 2, line
             while j < n and text[j] != '"':
+                # a quote inside a name is written \" (v0.6, DECISION-25), as in a string
+                if text[j] == '\\' and j + 1 < n:
+                    j += 2
+                    continue
                 if text[j] == '\n':
                     line += 1
                 j += 1
@@ -810,6 +825,11 @@ def analyze_file(fname, text, findings):
                                          # a later step names the result by it, so it is not a ref
     next_lbrace_is_modify = False
     tables = []                          # TABLE { AXIS … AT … } blocks  (§5e, DECISION-21)
+    block_names = {}                     # names of named blocks in this file: local labels  (§20)
+    block_anchors = {}                   # hash -> {name} for each hashed named block  (§20)
+    block_anchor_lines = {}              # hash -> [(name, line)]
+    anchor_names = {}                    # DEF hash -> {name}: to tell a restatement from a clash
+    hash_refs = []                       # a reference written as a bare hash: (kind, hash, line)
     block_types = []                     # TYPE of a SCENE / CONFLICT: (block kw, entity, line)  (§16)
     containers = {}                      # container id -> kind (BASE, EXTENSION, SETTING, …)  (§16)
     froms = []                           # FROM [KIND] "id" imports: (kind or None, id, line)  (§16)
@@ -917,6 +937,18 @@ def analyze_file(fname, text, findings):
             while _k >= 0 and toks[_k].kind in ('CARET', 'HASH', 'STR', 'INT'):
                 _k -= 1
             _kw = toks[_k].val if _k >= 0 and toks[_k].kind == 'ID' else None
+            # A named block (§20, DECISION-24): SCENE ^"Name" #hash {  or  SCENE #hash ^"Name" {.
+            # Its hash is an anchor, referenceable from anywhere; its name is a label local to
+            # this file. Keywords that name an entity which already exists declare nothing.
+            if _kw and _kw not in NOT_A_BLOCK and toks[_k].line == t.line:
+                _carets = [x for x in toks[_k + 1:idx] if x.kind == 'CARET']
+                _hashes = [x for x in toks[_k + 1:idx] if x.kind == 'HASH']
+                if len(_carets) == 1 and len(_hashes) <= 1 \
+                        and all(x.kind in ('CARET', 'HASH') for x in toks[_k + 1:idx]):
+                    block_names.setdefault(_carets[0].val, []).append(t.line)
+                    if _hashes:
+                        block_anchors.setdefault(_hashes[0].val, set()).add(_carets[0].val)
+                        block_anchor_lines.setdefault(_hashes[0].val, []).append((_carets[0].val, t.line))
             frames.append({'open': t.line, 'is_def': next_lbrace_is_def, 'waived': False,
                            'def_name': next_lbrace_def_name, 'is_modify': next_lbrace_is_modify,
                            'kw': _kw})
@@ -988,6 +1020,28 @@ def analyze_file(fname, text, findings):
                                         t.line, 'the TYPE of a %s is a reference to an entity the system '
                                         'defines (TYPE #hash ^"%s"), not a string (§16)'
                                         % (frames[-1]['kw'], toks[k].val)))
+        # References between narrative blocks (§16; reference sites under §5d, DECISION-24).
+        if w in BLOCK_REF_ONE or (w == 'LOCATION' and frames and frames[-1].get('kw') == 'SCENE'):
+            what = BLOCK_REF_ONE.get(w, 'scene location')
+            k = idx + 1
+            rh = None
+            if k < len(toks) and toks[k].kind == 'HASH' and toks[k].line == t.line:
+                rh = toks[k].val
+                k += 1
+            if k < len(toks) and toks[k].kind == 'CARET' and toks[k].line == t.line \
+                    and not (k + 1 < len(toks) and toks[k + 1].kind in ('LBRACE', 'HASH')):
+                refs.append((what, toks[k].val, rh, t.line))
+            elif rh and not (k < len(toks) and toks[k].kind in ('CARET', 'LBRACE')):
+                hash_refs.append((what, rh, t.line))
+        elif w in BLOCK_REF_LIST and idx + 1 < len(toks) and toks[idx + 1].kind == 'LBRACK':
+            k = idx + 2
+            while k < len(toks) and toks[k].kind != 'RBRACK':
+                if toks[k].kind == 'CARET':
+                    rh = toks[k - 1].val if toks[k - 1].kind == 'HASH' else None
+                    refs.append((BLOCK_REF_LIST[w], toks[k].val, rh, toks[k].line))
+                elif toks[k].kind == 'HASH' and not (k + 1 < len(toks) and toks[k + 1].kind == 'CARET'):
+                    hash_refs.append((BLOCK_REF_LIST[w], toks[k].val, toks[k].line))
+                k += 1
         if w == 'FROM':
             # FROM <KIND> "id" [INCLUDE [ #hash ^"Name", … ]]  (§16, DECISION-22). The line is
             # itself the declaration of the dependency. The kind is always named; a bare
@@ -1009,12 +1063,11 @@ def analyze_file(fname, text, findings):
                         and toks[k + 1].kind == 'LBRACK':
                     k += 2
                     while k < len(toks) and toks[k].kind != 'RBRACK':
-                        # What a SETTING holds is LOCATION and ENTRY blocks, and a block's name
-                        # and hash are not in this tool's name table (audit A4), so an item
-                        # imported FROM SETTING is not resolved yet. Everything else is.
-                        if toks[k].kind == 'CARET' and kind != 'SETTING':
+                        if toks[k].kind == 'CARET':
                             ih = toks[k - 1].val if toks[k - 1].kind == 'HASH' else None
                             refs.append(('include', toks[k].val, ih, toks[k].line))
+                        elif toks[k].kind == 'HASH' and not (k + 1 < len(toks) and toks[k + 1].kind == 'CARET'):
+                            hash_refs.append(('include', toks[k].val, toks[k].line))
                         k += 1
         elif w == 'SPEC_VERSION':
             has_spec_version = True
@@ -1028,6 +1081,7 @@ def analyze_file(fname, text, findings):
                 defined_names.setdefault(name, []).append(t.line)
                 if hsh:
                     anchors.setdefault(hsh, []).append(t.line)
+                    anchor_names.setdefault(hsh, set()).add(name)
                 next_lbrace_is_def = True
                 next_lbrace_def_name = name
         elif w == 'PROPERTIES':
@@ -1809,7 +1863,9 @@ def analyze_file(fname, text, findings):
         'def_props': def_props, 'def_extends': def_extends, 'mods': mods, 'adds': adds,
         'reprints': reprints, 'aliases': aliases, 'chooses': chooses, 'ref_values': ref_values,
         'rolls': rolls, 'tables': tables, 'containers': containers, 'froms': froms,
-        'block_types': block_types,
+        'block_types': block_types, 'block_names': block_names, 'block_anchors': block_anchors,
+        'block_anchor_lines': block_anchor_lines, 'anchor_names': anchor_names,
+        'hash_refs': hash_refs,
     }
 
 
@@ -2050,6 +2106,34 @@ def coherence_pass(files_data, findings):
             findings.append(Finding(f0, 'coherence', 'error', l0,
                                     "duplicate anchor %s (%s)" % (h, where)))
 
+    block_hash_names = {}     # hash -> names of the named blocks that carry it, corpus-wide
+    for d in files_data:
+        for h, nms in d.get('block_anchors', {}).items():
+            block_hash_names.setdefault(h, set()).update(nms)
+    every_hash = set(all_anchors) | set(block_hash_names)
+    # One hash, one thing (§5, §20). The same hash on the same name is a restatement, which §5
+    # allows (an errata file restating an entry). The same hash on two different names is two
+    # things sharing an anchor, whether both are blocks or one is a DEF.
+    def_hash_names = {}
+    for d in files_data:
+        for h, nms in d.get('anchor_names', {}).items():
+            def_hash_names.setdefault(h, set()).update(nms)
+    reported = set()
+    for d in files_data:
+        for h, decls in d.get('block_anchor_lines', {}).items():
+            names_on_hash = block_hash_names.get(h, set()) | def_hash_names.get(h, set())
+            if len(names_on_hash) > 1 and h not in reported:
+                reported.add(h)
+                findings.append(Finding(d['file'], 'coherence', 'error', decls[0][1],
+                                        "hash %s is declared on %d different names: %s"
+                                        % (h, len(names_on_hash),
+                                           ", ".join('^"%s"' % n for n in sorted(names_on_hash)))))
+    for d in files_data:
+        for kind, h, line in d.get('hash_refs', []):
+            if h not in every_hash and not is_waived(line, d):
+                findings.append(Finding(d['file'], 'coherence', 'error', line,
+                                        "%s references undefined hash %s" % (kind, h)))
+
     for d in files_data:
         if d.get('kind') == 'bridge':
             continue
@@ -2063,7 +2147,12 @@ def coherence_pass(files_data, findings):
                 if not is_waived(line, d):
                     findings.append(Finding(d['file'], 'coherence', 'error', line, name))
                 continue
-            if name not in corpus_names and not is_waived(line, d):
+            # Two tiers (§20, DECISION-24). A name resolves everywhere if it is a definition; a
+            # named block's name resolves inside its own file; and a reference that carries a
+            # block's hash resolves from anywhere, the name being checked against that block's.
+            by_block_hash = hsh is not None and name in block_hash_names.get(hsh, ())
+            if name not in corpus_names and name not in d.get('block_names', ()) \
+                    and not by_block_hash and not is_waived(line, d):
                 findings.append(Finding(d['file'], 'coherence', 'error', line,
                                         "%s references undefined ^\"%s\"" % (kind, name)))
             if hsh and hsh not in d['anchors'] and hsh not in {a for a in _all_hashes(files_data)} \
@@ -2528,6 +2617,7 @@ def _all_hashes(files_data):
     out = set()
     for d in files_data:
         out.update(d['anchors'].keys())
+        out.update(d.get('block_anchors', {}).keys())
     return out
 
 
