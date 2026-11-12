@@ -1,0 +1,48 @@
+BASE "Demo_Emphasis" {
+    NAME "DECISION-19 fixture — EMPHASIS kinds and LABEL (§5c)"
+    SPEC_VERSION "0.6"
+    VERSION "1.0"
+    RELEASE_DATE "2026-11-12"
+
+    # Run it with the reference gate, which is the tool that reads these blocks:
+    #   check_references.py tests/emphasis-good
+
+    # three markings in one paragraph, one block per kind
+    #EmphDemoLobbyAAAAAAAAAAAA ^"The Lobby" DEF {
+        DESCRIPTION "A sweet old lady in a blue shawl enters. She gives a red bonbon to the mandrill. Outside the door is a cloud of green gas."
+        EMPHASIS BOLD { "cloud of green gas" }
+        EMPHASIS ITALIC { "red bonbon" }
+        EMPHASIS BOLD ITALIC {
+            "sweet old lady"
+            "the mandrill"
+        }
+    }
+
+    # the two kind words in the other order, and a block with no kind (marked, kind not recorded)
+    #EmphDemoTravelBBBBBBBBBBB ^"Travel Through the Forest" DEF {
+        TRIGGER "When you travel from clearing to clearing through the forest, the band collectively decides how it travels."
+        EMPHASIS { "travel from clearing to clearing through the forest" }
+        EMPHASIS ITALIC BOLD { "collectively" }
+    }
+
+    # run-in labels: depth 1 unless a depth is written
+    #EmphDemoArmorCCCCCCCCCCCC ^"Armor Table Key" DEF {
+        DESCRIPTION "Prot: The bonus the armor grants to the character's Soak score.\nLoad: The amount the armor adds to the character's Burden.\nCost: A general indication of the armor's price."
+        LABEL {
+            "Prot:"
+            "Load:"
+            "Cost:"
+        }
+    }
+
+    # a label under a label, and a label that is also set in bold
+    #EmphDemoBloodDDDDDDDDDDDD ^"Dwarf Blood" DEF {
+        DESCRIPTION "IMMUNE TO THE CALL\nDwarf Blood: You are descended from the mountain folk.\nStone Sense: You always know which way is down."
+        LABEL { "IMMUNE TO THE CALL" }
+        LABEL 2 {
+            "Dwarf Blood:"
+            "Stone Sense:"
+        }
+        EMPHASIS BOLD { "IMMUNE TO THE CALL" }
+    }
+}

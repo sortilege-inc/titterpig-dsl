@@ -80,7 +80,10 @@ own `CHOICE [ … ]` (§5b) is unused in l5r5e, which has about 300 `CHOOSE n [�
 
 ### A2. Inline markup is banned in one section and demonstrated in two others
 
-**Status:** open
+**Status:** closed 2026-11-12 by the owner. Committed and pushed on branch `0.6`. `EMPHASIS`
+kinds, `LABEL` and the Markdown-emphasis finding (DECISION-19); embedded references with an
+optional literal, checked by both tools (DECISION-20); the `TABLE` primitive (DECISION-21). The
+follow-ups are F7 to F10, and the to-dos and gaps are listed below.
 
 §5c: "No inline markup is ever inserted into the text." DECISION-7 rejected `[[…]]` markup for that
 reason, and `EMPHASIS` exists so that bold is recorded beside the text.
@@ -90,33 +93,81 @@ reason, and `EMPHASIS` exists so that bold is recorded beside the text.
 - §21's `PROCEDURE` example has `TEXT "**Abilities:** Leave at the old value…"` in a field the
   section calls verbatim.
 
-Evidence: l5r5e holds 420 embedded `^\"…\"` references (100 distinct names). 14 of the distinct names
-resolve to no definition, and no gate reads inside strings. vtm5e has 2,302 string literals
-containing `**` (1,900 of them `DESCRIPTION`), arm5e 1,267. They are run-in headings such as
-`**IMMUNE TO THE CALL**` and `**Dwarf Blood:**`. vtm5e descriptions also open with `*italic*`
-fiction. No gate counts either.
+Evidence, recounted 2026-11-12 with a string-literal reader over the 22 corpus directories
+(1,430,006 string literals outside comments; armdef mirrors arm5e and is left out of the tables).
+An earlier version of this section gave slightly different counts from line patterns, and said 14
+distinct embedded names were dangling. The figure is 10 distinct names in 14 places.
 
-Across all corpora (string literals outside comments, counted 2026-11-11):
+Strings that carry each kind:
 
-| Corpus | `**bold**` | `*italic*` | bullet lines | Markdown table rows | embedded `^\"` |
-|---|---|---|---|---|---|
-| vtm5e | 2,286 | 2,297 | 667 | 0 | 0 |
-| arm5e | 1,220 | 1,941 | 243 | 0 | 0 |
-| tor2e | 935 | 984 | 0 | 0 | 0 |
-| daggerheart | 516 | 251 | 66 | 0 | 0 |
-| draw-steel | 462 | 361 | 475 | 285 | 0 |
-| dnd5.5e | 244 | 1,023 | 9 | 0 | 0 |
-| dnd5e | 116 | 736 | 43 | 0 | 0 |
-| troika | 63 | 167 | 0 | 0 | 0 |
-| l5r5e | 0 | 0 | 0 | 0 | 300 |
+| Corpus | `**bold**` | `*italic*` | Markdown `- ` list lines | Markdown tables | embedded `^\"` | `EMPHASIS` blocks | `REFERENCES` blocks |
+|---|---|---|---|---|---|---|---|
+| vtm5e | 2,286 | 2,279 | 0 | 0 | 0 | 0 | 0 |
+| arm5e | 1,094 | 1,791 | 20 | 0 | 0 | 0 | 937 |
+| tor2e | 737 | 965 | 0 | 0 | 0 | 0 | 0 |
+| daggerheart | 516 | 251 | 0 | 0 | 0 | 0 | 0 |
+| draw-steel | 462 | 361 | 871 | 285 | 0 | 142 | 6 |
+| dnd5.5e | 244 | 1,023 | 0 | 0 | 0 | 0 | 0 |
+| dnd5e | 116 | 735 | 0 | 0 | 0 | 0 | 0 |
+| troika | 63 | 167 | 0 | 0 | 0 | 0 | 0 |
+| l5r5e | 0 | 0 | 0 | 0 | 300 | 0 | 44 |
 
-The other eleven corpora have no bold and at most five italics each. The italic column is a
-pattern match and will include some literal asterisks. The counts are strings, so l5r5e's 420
-embedded references sit in 300 strings.
+The other corpora hold ten such strings between them (invisiblesun 5, root 4, callofcthulhu7e 1,
+pendragon6e 1). The stand-off users are pendragon6e (1,423 `EMPHASIS` blocks), pendragon5e (425),
+marvelmultiverse (326), aegean (148), draw-steel (142), root (137), coyotecrow (74) and
+mythic-gme2 (46).
+
+The bold and italic columns are pattern matches and include asterisks the books print: arm5e's
+footnote marks (`arm5e-0.5-hermetic-magic.ttrpg:578`, `"* Baptismal names … \n** Caster must …"`),
+pendragon6e's `Chirurgery 20*`, troika's `* indicates a Weapon`. The printed bullet `•` is the book's
+own character and is not counted as markup (vtm5e has 2,368 such lines, draw-steel 1,523, arm5e
+609).
+
+What the marked spans are, by where they sit (15,072 bold spans, 13,292 italic spans; the sorting is
+by position and is rough):
+
+| Bold span | Count | Example |
+|---|---|---|
+| inside a sentence | 9,849 | daggerheart: `take **1d8+3** physical damage` |
+| run-in label opening a paragraph | 2,273 | arm5e: `**Prot:** The bonus the armor grants…` |
+| other bold opening a paragraph | 2,031 | daggerheart: `**Spend a Fear** to summon…` |
+| heading on its own line | 577 | vtm5e: `**IMMUNE TO THE CALL**` |
+| the whole string | 342 | troika table rows |
+
+| Italic span | Count | Example |
+|---|---|---|
+| inside a paragraph | 11,987 | dnd5.5e: `created by the *Bestow Curse* spell` |
+| a whole paragraph | 842 | draw-steel: `*You become an actual shadow.*` |
+| the whole string | 463 | vtm5e fiction and attributions |
+
+Troika marks three ways in one paragraph (`troika-0.5-core-blancmange-and-thistle.arc:41`):
+`A ***sweet old lady*** … gives a *red bonbon* to ***the mandrill***`, and elsewhere
+`a **cloud of green gas**`. `EMPHASIS { "…" }` records that a span is marked and has no place for
+which marking.
+
+Embedded references: l5r5e holds 420 in 300 strings (100 distinct names), under `EFFECTS` (66
+strings), `OPPORTUNITIES` (61), `SUB_TABLE` (57), `ACTIVATION` (35) and others. 10 of the names, in
+14 places, resolve to no definition (`Shadowlands Taint` 4, `Otherworldly` 2, eight more once
+each). No gate reads inside strings.
+
+Draw Steel's source is itself Markdown (Steel Compendium, per that repo's README), so its strings
+hold whole Markdown passages: 285 strings with tables (1,447 rows), 338 with `####` headings, 68
+with links. One caret name there runs 1,317 characters over several lines and holds an entire
+ability (`draw-steel-0.5-core-ancestries.ttrpg:388`).
+
+Who reads which:
+
+- The vtm5e VTT turns `**…**` in a string into bold (`sortilege-vtt-vtm5e/system/vtm5e/entity.js:31`,
+  `engine/gm-text.js:41`). Taking the markers out of that corpus changes what its screen shows until
+  the VTT reads `EMPHASIS`.
+- The pendragon6e VTT reads `EMPHASIS` blocks (`sortilege-vtt-pendragon6e/system/pendragon6e/data.js:96`).
+- The synthesist has no code that names `EMPHASIS` (grep, 0 hits in `*.go`). The pendragon6e VTT
+  finds the blocks under an entity's generic `blocks`.
+- I found no code in the l5r5e VTT that reads a caret inside a string (one grep; not proven absent).
 
 So three content models for a string are live: plain text with stand-off `EMPHASIS` and
-`REFERENCES` (what §5c says, and what root, both Pendragons, marvelmultiverse, aegean and
-coyotecrow do); Markdown inside the string (eight corpora); and embedded caret references
+`REFERENCES` (what §5c says, and what root, both Pendragons, marvelmultiverse, aegean, coyotecrow
+and mythic-gme2 do); Markdown inside the string (eight corpora); and embedded caret references
 (l5r5e). The spec states the first, shows the other two in its examples, and no gate checks any.
 
 ### A3. The §16 examples break the §16 rules
@@ -629,6 +680,73 @@ show (`(op)`, `(su)`, `(st)`, `(ex)`), which are strings today.
 
 The synthesist (F3) needs `FACES`, `ROLL` and `NEXT`.
 
+### F7. Eight corpora: move Markdown emphasis out of strings
+
+**From:** A2, DECISION-19. **Status:** open, not started.
+
+vtm5e, arm5e (and armdef by retarget), tor2e, daggerheart, draw-steel, dnd5.5e, dnd5e and troika
+write `**bold**` and `*italic*` inside strings: about 5,500 strings with bold and 7,600 with
+italic. Each marked span becomes an entry in an `EMPHASIS BOLD`, `EMPHASIS ITALIC` or
+`EMPHASIS BOLD ITALIC` block beside the string, and each run-in label (2,273 of the bold spans by
+position) an entry in a `LABEL` block. vtm5e and tor2e are generated, so the change is made in
+their generators.
+
+- The validator now reports them (counted 2026-11-12): 11,566 strings flagged, all as warnings
+  because every corpus declares a version below 0.6. vtm5e 4,143, arm5e 2,525, tor2e 1,516,
+  dnd5.5e 1,154, dnd5e 816, daggerheart 624, draw-steel 563, troika 216, invisiblesun 5, root 4.
+  armdef mirrors arm5e with 2,618 more. Each becomes an error when its file declares 0.6. root's 4
+  and invisiblesun's 5 are leftovers in corpora that otherwise record emphasis beside the text.
+- The 1,305 paragraphs and strings set wholly in italic have nowhere to go yet (to-do below).
+- The asterisks a book prints stay: arm5e's footnote marks, pendragon6e's `Chirurgery 20*`.
+- The vtm5e VTT turns `**…**` into bold on screen (`system/vtm5e/entity.js:31`,
+  `engine/gm-text.js:41`). It has to read `EMPHASIS` before its corpus loses the markers. The other
+  VTTs were not checked.
+- The synthesist has no code that names `EMPHASIS`; consumers find the blocks under an entity's
+  generic `blocks`. It needs the kind and `LABEL` with its depth (add to F3). Its `GUIDANCE` parser
+  does not accept `EMPHASIS` inside an `ENTRY` (recorded 2026-11-02 for mythic-gme2).
+
+### F9. Corpora: move tables into `TABLE` blocks
+
+**From:** A2, DECISION-21. **Status:** open, not started. Nothing forces it until a file declares
+`SPEC_VERSION "0.6"`.
+
+No corpus uses the primitive. What exists today (counted 2026-11-12, armdef left out):
+
+- 973 `TABLE { COLUMNS [ … ] ROW [ … ] }` grids of strings, 12,384 rows, in 13 corpora (tor2e 269,
+  vtm5e 172, callofcthulhu7e 130, dnd5.5e 109, dnd5e 85, mythic-gme2 75). 397 are roll lookups
+  whose first column is a range in a string, and become a roll axis with `AT` cells. The rest are
+  tables of records or printed layouts and need a type before they can be a `COLUMNS` table.
+- 667 arm5e `TABLE { "Light" "1 Fatigue level" }` blocks of string pairs.
+- 6,507 Pendragon `^"Table Row"` DEFs holding `^"Cells" LIST OF STRING`.
+- mythic-gme2's 162 `^"Fate Chart Cell"` DEFs, which already hold their coordinates as properties
+  and convert directly.
+- l5r5e's roll-keyed blocks (164 keyed lines, 30 `SUB_TABLE`), teeth's 473 `^"Roll Table Entry"`,
+  aegean's and mythic-gme2's 60 `^"Roll Result"`, daggerheart's 21 `ROLL_TABLE`.
+
+The synthesist needs `TABLE` (add to F3).
+
+### F10. l5r5e and armdef: embedded references that resolve to nothing, or to more than one entity
+
+**From:** A2, DECISION-20. **Status:** open, not started. Both tools now fail these.
+
+l5r5e holds 420 embedded references. The validator reports 14 as undefined (10 names:
+`Shadowlands Taint` 4, `Otherworldly` 2, eight more once each), taking the corpus from 3 errors to
+17. `check_references.py` reports 29 errors: 13 unresolved, and 16 hashless references to a name
+with more than one anchor (`Compromised` 9, `Games` 2, `Righteousness (Gi)` 2, `Strike` 2,
+`Sixth Sense` 1). The other 391 are hashless and WARN. armdef holds 4, one unresolved
+(`^"Hermetic Art"`, `armdef-0.5-core-concepts.ttrpg:101`).
+
+The synthesist should emit each embedded reference as a link (add to F3).
+
+### F8. draw-steel: Markdown passages inside strings
+
+**From:** A2. **Repo:** `titterpig-dsl-draw-steel`. **Status:** open, not started. Its tables can
+now be written as `TABLE` blocks (F9).
+
+The source is Markdown, and the strings hold it whole: 285 strings with tables (1,447 rows), 338
+with `####` headings, 68 with links, 871 `- ` list lines. One caret name is 1,317 characters long
+and holds an entire ability (`draw-steel-0.5-core-ancestries.ttrpg:388`).
+
 ### F5. arm5e: spell magnitudes, derived level, and Range / Duration / Target as entities
 
 **From:** A1. **Repo:** `titterpig-dsl-arm5e` (and armdef by retarget). **Status:** open, not started.
@@ -681,7 +799,29 @@ two parameter to-dos below.
 - **Dice forms not covered** (§8): keep-highest, drop-lowest, exploding and step dice. None appears
   as a property value in any corpus today.
 
+- **Kinds of emphasis beyond bold and italic** (§5c). Underline, strike-through and small capitals
+  are not defined. pendragon5e records the Book of Knights & Ladies' underlines and strike-throughs
+  as typed properties, because there they carry rules.
+- **A whole paragraph set in one face** (§5c). Owner agreed 2026-11-12 that this is a to-do. 1,305
+  such spans sit in the corpora as `*…*` today (vtm5e 789, draw-steel 316, troika 72).
+- **Tables: what is not covered** (§5e). Column headings in more than one tier; footnote marks on
+  a cell (57 of the corpora's string grids carry them); whether every point of an axis has a cell,
+  which the validator does not check; a result given as a bare value in place of a block.
+
 ### Known gaps left by this change
+
+- `EMPHASIS` kinds and `LABEL` are read by `check_references.py` only where the keyword starts a
+  line, as every block that gate reads is. The validator checks the words before the brace and
+  nothing else about them.
+- **Embedded references.** The validator resolves the name and the hash; that a hash and a name
+  agree, and that a hashless name is one entity, are checked by `check_references.py` only, as for
+  every other reference. Neither tool reads embedded references in `.bridge` or `.codex` strings
+  in the validator, and the gate's hashless-and-ambiguous rule is stricter for an embedded
+  reference (ERROR, as §5d says) than for a `REFERENCES` target (WARN, as the gate has always done).
+- **Tables.** `check_references.py` does not count an `AXIS … OF` type, an axis point or a
+  coordinate as a §5d site. The validator resolves all three.
+- `AUTHORING-GUIDELINES.md` and the hub skill say nothing about `EMPHASIS`, `LABEL`, embedded
+  references or `TABLE`. They did not cover `EMPHASIS` before either.
 
 - **§17's worked examples do not validate, and did not before.** Run as files, the three sketches
   reported 6, 4 and 7 undefined references before the 2026-11-11 edits, because they name types
@@ -754,6 +894,22 @@ Filled in as each finding is walked through.
 | A1 | 2026-11-11 | The printed form of a roll may be kept beside the structure; no convention is set yet. Two or three lines per dice value is acceptable. | Owner's call. |
 | A1 | 2026-11-11 | Dice are DEFs, starting with d2, d3, d4, d6, d8, d10, d20 and d100, each a list of values with a weight of 1. A thing that needs a roll declares the dice, transforms the value, stores the sum, and may add a property (a damage type). | Owner's direction, replacing the agent's proposal of a dice literal and a `DICE` type, which is withdrawn. The exact forms are not yet settled. |
 | A1 | 2026-11-11 | `REF` is the property type for a reference to one entity: `REF OF ^"Type"` on the type, `REF ^"Entity"` on an instance. Written into §8 as DECISION-17. The example's `^"Clan" STRING "Crab"` is now `^"Clan" REF #… ^"Crab"`. | Owner asked for the string to become a reference and chose `REF` from four candidate terms. |
+| A2 | 2026-11-12 | Embedded references (`^\"Name\"` inside a string) stay in the DSL and are to be better supported. | Owner's call, over the agent's recommendation to remove them. What the support covers is a proposal awaiting his choice; nothing is applied yet. |
+| A2 | 2026-11-12 | `EMPHASIS` takes its kind after the keyword: `EMPHASIS BOLD { … }`, `EMPHASIS ITALIC { … }`, `EMPHASIS BOLD ITALIC { … }`. Written into §5c as DECISION-19. | Owner chose this from three options. |
+| A2 | 2026-11-12 | A run-in label is recorded in a `LABEL` block, with an optional depth after the keyword (`LABEL 2`), 1 when none is written. | Owner's call, replacing the agent's proposal to record a label as emphasis. |
+| A2 | 2026-11-12 | A whole paragraph set in one face is a to-do, stated in §5c. | Owner agreed. |
+| A2 | 2026-11-12 | Tables get a coherent structure that carries more than rows and columns: a special DEF with a list of coordinates and the results at them. | Owner's direction. Proposals requested; nothing is applied yet. |
+| A2 | 2026-11-12 | The kinds are `BOLD` and `ITALIC` only, in either order, each at most once, and a block with no kind stays legal. A depth-2 label sits under the depth-1 label before it. A label may be a line of its own as well as the opening words of a paragraph. | Agent's calls, to confirm. Needed to write the text; the owner named the form and not these details. |
+| A2 | 2026-11-12 | The `EMPHASIS` and `LABEL` approach is confirmed, including the three details the agent had flagged. | Owner: "Confirming our approach on EMPHASIS". |
+| A2 | 2026-11-12 | Tables: the coordinate table and the table of records are adopted. The specified grid of printed strings is not. | Owner chose ideas 1 and 2 of three. |
+| A2 | 2026-11-12 | The table is a primitive of the DSL and not a hashed definition that tables extend. | Owner's call. The agent agrees: it had proposed a shipped `^"Table"` DEF by analogy with the dice, and the analogy fails. A die DEF carries data (its faces); a table type would carry none, and would add a module every corpus must load. |
+| A2 | 2026-11-12 | An embedded reference may point at a DEF and keep a different literal text, so that it works as an index and the text a reader sees is unchanged. Form: `^\"Enraged\"/\"state of rage\"`. Written as DECISION-20. | Owner's direction and proposed form ("could be one approach"), adopted as proposed. This replaces the agent's proposal to leave differing words to the `REFERENCES` block. |
+| A2 | 2026-11-12 | Tables, as written (DECISION-21): a `TABLE { }` block in a DEF's body; `AXIS ^"Name"` with points `OF ^"Type"`, `lo-hi`, `INTEGER`, `ROLL n OF ^"die"` or a list; `AT [ … ] { … }` with coordinates that are a number, a range, `MIN n`, `MAX n`, an entity, a string or `ANY`; the result is always a block; `COLUMNS [ ^"Property", … ]` for a table of records. Two cells that cover the same coordinates are an error. A `TABLE` with no `AXIS` is left alone below 0.6 and is an error from 0.6. | Agent's calls, to confirm. The owner saw `AXIS`, `AT [ … ]`, ranges, `MIN`, `ANY` and `COLUMNS` in the proposal and chose the ideas; he did not rule on each word. `AXIS` and not `AXES`, because l5r5e has an `AXES { }` block for its axe weapons. |
+| A2 | 2026-11-12 | Embedded references, as written (DECISION-20): the literal's quotes are escaped inside an ordinary string, as the name's are, and bare inside a triple-quoted one; a `#hash` may stand before the caret; §5d applies unchanged (hashless WARNs, hashless and ambiguous is an ERROR); each counts as a reference for `REFERENCED BY`; the `REFERENCES` block stays legal; an empty literal is an error. | Agent's calls, to confirm. The first is forced by the lexer: an unescaped quote ends the string. |
+| A2 | 2026-11-12 | The table forms (DECISION-21) and the embedded-reference forms (DECISION-20) stand as written, including the agent's calls in the two rows above: a result is always a block, overlapping cells are an error, an older `TABLE` grid is an error from 0.6, and a hashless embedded reference follows §5d unchanged. | Owner: "Yes, as written". |
+| A2 | 2026-11-12 | Markdown emphasis inside a string is flagged by the validator: a warning in a file below 0.6, an error from 0.6. A `FIAT` with its reason excuses asterisks the source prints. Written into DECISION-19 and §5c. | Owner: "Yes, flag it", choosing this over a warning at every version. |
+| A2 | 2026-11-12 | What reads as a span: a paired `**…**` or `*…*` on one line of text. An asterisk followed by a space, or preceded by a letter, a digit or a closing bracket, does not open one. One finding per string. | Agent's calls, to confirm. They keep footnote marks, bullets and `Chirurgery 20*` from being flagged; the closing-bracket rule was added after the one false alarm found in the corpora (pendragon6e's `Courtesy 20 (+1)*`). |
+| A2 | 2026-11-12 | A2 is closed. The branch is committed and pushed. | Owner: "Close, commit, push". The agent's call on what reads as a Markdown span (the row above) was reported to him before he closed and was not separately ruled on. |
 
 ---
 

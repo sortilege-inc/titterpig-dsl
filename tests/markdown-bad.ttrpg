@@ -1,0 +1,17 @@
+BASE "Demo_Markdown_Bad" {
+    NAME "DECISION-19 fixture — each string here holds Markdown emphasis, one finding each"
+    SPEC_VERSION "0.6"
+    VERSION "1.0"
+    RELEASE_DATE "2026-11-12"
+
+    #MdBadGasFormAAAAAAAAAAAAA ^"The Gas Form" DEF {
+        DESCRIPTION "Outside the door is a **cloud of green gas** with little balloon bladders."
+        TEXT "She gives a *red bonbon* to the mandrill."
+        NOTE "A ***sweet old lady*** in a blue shawl enters."
+        KEY "**Prot:** The bonus the armor grants.\n**Load:** The amount the armor adds."
+        PROPERTIES {
+            ^"Damage" STRING "take **1d8+3** physical damage"
+            ^"Quote" STRING "*You become an actual shadow.*"
+        }
+    }
+}

@@ -24,6 +24,17 @@ Two levels of validation over one or more .ttrpg files (or directories):
       value.
     - REF (v0.6, DECISION-17): the OF type and the entity resolve; where a type up the
       chain declares the property REF OF a type, the entity is of that type.
+    - Embedded references (v0.6, DECISION-20): every ^\"Name\" inside a string resolves,
+      with or without a #hash before it and a /\"literal\" after it; a literal is not empty.
+    - TABLE (v0.6, DECISION-21): at least one AXIS; each AT gives one coordinate per axis,
+      of a kind the axis takes and inside its range or list; no two cells cover the same
+      coordinates; an entity on an axis OF a type is of that type; COLUMNS needs one axis
+      OF a type and names its properties. A TABLE with no AXIS is left alone below 0.6.
+    - Markdown emphasis in a string (v0.6, DECISION-19): a paired **…** or *…* is a warning
+      in a file below 0.6 and an error from 0.6; FIAT excuses asterisks the source prints.
+    - EMPHASIS / LABEL (v0.6, DECISION-19): the words before the brace are a kind
+      (BOLD, ITALIC, each once) or a depth (a whole number, 1 or more). That each span
+      is in its DEF's prose is check_references.py's rule, not this tool's.
     - Dice (v0.6, DECISION-18): FACES lists at least one face, a range runs low to high,
       a WEIGHT is a positive integer; ROLL n OF ^"die" has a count of 1 or more and a die
       that resolves and EXTENDS ^"Die"; NEXT has a statement before and after it.
@@ -70,7 +81,8 @@ FIAT: a value or element marked  FIAT "reason"  is exempt from the COHERENCE and
 inline-range findings it would otherwise raise. An element-level FIAT (a `FIAT "reason"`
 statement alone on a line in a DEF body) cascades over that DEF's whole subtree; a
 property-level FIAT (trailing a property declaration) waives just that line. FIAT does
-NOT waive structural/lexical lint (unbalanced braces, a missing reason, etc.).
+NOT waive structural/lexical lint (unbalanced braces, a missing reason, etc.). It does
+waive the Markdown-emphasis finding, for asterisks the source prints.
 
 BRIDGES (spec §21) — .bridge files are checked in TWO-CORPUS mode. A bridge spans two
 edition namespaces, so an ORIGIN-side caret reference is resolved against the ORIGIN
@@ -106,6 +118,18 @@ PROP_TYPE_KW = ('STRING', 'INTEGER', 'BOOLEAN', 'ENUM', 'LIST', 'DEF', 'TEXT', '
 # these belongs to that next statement and is not the REF's value (§8, DECISION-17).
 NEXT_STATEMENT_KW = PROP_TYPE_KW + ('CHOOSE', 'SET', 'TRANSFORM', 'MODIFY')
 CHANGE_METHODS = ('ADD', 'SUBTRACT', 'MULTIPLY', 'DIVIDE')
+EMPHASIS_KINDS = ('BOLD', 'ITALIC')      # v0.6, DECISION-19 (§5c)
+# Markdown emphasis inside a string (§5c, DECISION-19): a paired **…** or *…* on one line of
+# text. An asterisk with a space after it (a footnote mark, a bullet) or a letter or digit
+# or a closing bracket before it (`20*`, `5*3`, `20 (+1)*`) does not open a span, so the
+# asterisks books print mostly pass.
+MD_BOLD = re.compile(r'\*\*(?=[^\s*])((?:(?!\\n|\*\*).)+?)(?<=[^\s*])\*\*')
+MD_ITALIC = re.compile(r'(?<![*\w\\)\]])\*(?=[^\s*])((?:(?!\\n)[^*\n])+?)(?<=[^\s*])\*(?![*\w])')
+# An embedded reference inside a string (§5c, DECISION-20): [#hash ]^\"Name\"[/\"literal\"].
+# In an ordinary string the quotes are escaped; in a triple-quoted one they are not. Group 2
+# is whichever quote form opened the name, and the closers must match it.
+EMBEDDED_REF = re.compile(r'(?:(#[A-Za-z0-9_]+)[ \t]+)?\^(\\?")((?:(?!\\?").)+?)\2'
+                          r'(?:/\2((?:(?!\\?").)*?)\2)?', re.S)
 
 
 def parse_ref(toks, j):
@@ -778,6 +802,19 @@ def analyze_file(fname, text, findings):
     step_names = set()                   # (enclosing DEF, name) of each property a roll sits under:
                                          # a later step names the result by it, so it is not a ref
     next_lbrace_is_modify = False
+    tables = []                          # TABLE { AXIS … AT … } blocks  (§5e, DECISION-21)
+
+    # Embedded references (§5c, DECISION-20): every ^\"Name\" inside a string is a reference
+    # site and resolves like any other. Before v0.6 no tool read inside a string.
+    for _tk in toks:
+        if _tk.kind != 'STR' or '^' not in _tk.val:
+            continue
+        for _m in EMBEDDED_REF.finditer(_tk.val):
+            refs.append(('embedded reference', _m.group(3), _m.group(1), _tk.line))
+            if _m.group(4) is not None and not _m.group(4).strip():
+                findings.append(Finding(fname, 'lint', 'error', _tk.line,
+                                        'embedded reference ^"%s" has an empty literal after the '
+                                        'slash (§5c)' % _m.group(3)))
 
     def change_target(idx):
         """toks[idx] is SET or TRANSFORM. Return 'choose' when what precedes it on the line is a
@@ -1111,6 +1148,276 @@ def analyze_file(fname, text, findings):
             if nxt is None or nxt.kind == 'RBRACE' or (nxt.kind == 'ID' and nxt.val == 'NEXT'):
                 findings.append(Finding(fname, 'lint', 'error', t.line,
                                         "NEXT needs a statement after it (§8)"))
+        elif w == 'TABLE' and idx + 1 < len(toks) and toks[idx + 1].kind == 'LBRACE':
+            # TABLE { AXIS … AT [ … ] { … } … }  /  TABLE { AXIS ^"X" OF ^"Type"  COLUMNS [ … ] }
+            # (v0.6, DECISION-21, §5e). A TABLE block with no AXIS in a file below 0.6 is the
+            # older system-defined block (COLUMNS / ROW grids, string pairs) and is left alone.
+            end, depth = idx + 1, 0
+            while end < len(toks):
+                if toks[end].kind == 'LBRACE':
+                    depth += 1
+                elif toks[end].kind == 'RBRACE':
+                    depth -= 1
+                    if depth == 0:
+                        break
+                end += 1
+            body_has_axis, k, depth = False, idx + 2, 0
+            while k < end:
+                if toks[k].kind == 'LBRACE':
+                    depth += 1
+                elif toks[k].kind == 'RBRACE':
+                    depth -= 1
+                elif depth == 0 and toks[k].kind == 'ID' and toks[k].val == 'AXIS':
+                    body_has_axis = True
+                k += 1
+            if not body_has_axis:
+                if spec_version >= (0, 6):
+                    findings.append(Finding(fname, 'lint', 'error', t.line,
+                                            'a TABLE declares at least one AXIS; the older COLUMNS / ROW '
+                                            'grid of strings is not the v0.6 form (§5e)'))
+                continue
+            tbl = {'line': t.line, 'axes': [], 'cells': [], 'columns': None, 'owner': cur_def()}
+            tables.append(tbl)
+
+            def terr(line, msg):
+                findings.append(Finding(fname, 'lint', 'error', line, msg + ' (§5e)'))
+
+            def int_span(k):
+                """An integer or a range lo-hi at k (a range lexes as lo then -hi). -> (lo, hi, next k)"""
+                lo = int(toks[k].val)
+                if k + 1 < end and toks[k + 1].kind == 'INT' and toks[k + 1].val.startswith('-') \
+                        and toks[k + 1].line == toks[k].line:
+                    hi = -int(toks[k + 1].val)
+                    if hi < lo:
+                        terr(toks[k].line, "a range runs from low to high")
+                    return lo, hi, k + 2
+                return lo, lo, k + 1
+
+            k = idx + 2
+            stray = False
+            while k < end:
+                tk = toks[k]
+                if tk.kind == 'ID' and tk.val == 'AXIS':
+                    k += 1
+                    if not (k < end and toks[k].kind in ('CARET', 'STR')):
+                        terr(tk.line, 'AXIS needs a name: AXIS ^"Name" …')
+                        continue
+                    ax = {'name': toks[k].val, 'line': tk.line, 'kind': None}
+                    tbl['axes'].append(ax)
+                    k += 1
+                    if k < end and toks[k].kind == 'ID' and toks[k].val == 'OF':
+                        k += 1
+                        hsh = None
+                        if k < end and toks[k].kind == 'HASH':
+                            hsh = toks[k].val; k += 1
+                        if k < end and toks[k].kind == 'CARET':
+                            ax['kind'], ax['type'] = 'type', toks[k].val
+                            refs.append(('axis type', toks[k].val, hsh, toks[k].line))
+                            k += 1
+                        else:
+                            terr(tk.line, 'AXIS … OF needs a ^"Type"')
+                    elif k < end and toks[k].kind == 'INT' and toks[k].line == tk.line:
+                        lo, hi, k = int_span(k)
+                        ax['kind'], ax['lo'], ax['hi'] = 'range', lo, hi
+                    elif k < end and toks[k].kind == 'ID' and toks[k].val == 'ROLL':
+                        ax['kind'] = 'number'          # the ROLL handler checks the count and the die
+                        k += 1
+                        while k < end and toks[k].line == tk.line and (
+                                toks[k].kind in ('INT', 'HASH', 'CARET')
+                                or (toks[k].kind == 'ID' and toks[k].val == 'OF')):
+                            k += 1
+                    elif k < end and toks[k].kind == 'ID' and toks[k].val == 'INTEGER':
+                        ax['kind'] = 'number'
+                        k += 1
+                    elif k < end and toks[k].kind == 'LBRACK':
+                        ax['kind'], ax['points'] = 'list', set()
+                        k += 1
+                        while k < end and toks[k].kind != 'RBRACK':
+                            if toks[k].kind == 'STR':
+                                ax['points'].add(('s', toks[k].val))
+                            elif toks[k].kind == 'CARET':
+                                ph = toks[k - 1].val if toks[k - 1].kind == 'HASH' else None
+                                refs.append(('axis point', toks[k].val, ph, toks[k].line))
+                                ax['points'].add(('e', toks[k].val))
+                            k += 1
+                        k += 1
+                        if not ax['points']:
+                            terr(tk.line, 'AXIS ^"%s" lists no point' % ax['name'])
+                    else:
+                        terr(tk.line, 'AXIS ^"%s" needs its points: OF ^"Type", a range lo-hi, '
+                                      'INTEGER, ROLL n OF ^"die", or a list [ … ]' % ax['name'])
+                elif tk.kind == 'ID' and tk.val == 'AT':
+                    if not (k + 1 < end and toks[k + 1].kind == 'LBRACK'):
+                        terr(tk.line, 'AT is followed by its coordinates: AT [ … ] { … }')
+                        k += 1
+                        continue
+                    coords, k, cur = [], k + 2, None
+                    while k < end and toks[k].kind != 'RBRACK':
+                        c = toks[k]
+                        if c.kind == 'COMMA':
+                            if cur is None:
+                                terr(c.line, 'a coordinate is missing before a comma')
+                            cur = None
+                            k += 1
+                            continue
+                        if cur is not None and not (cur[0] == 'pending_hash'):
+                            terr(c.line, 'coordinates are separated by commas')
+                        if c.kind == 'INT':
+                            lo, hi, k = int_span(k)
+                            cur = ('n', lo, hi)
+                        elif c.kind == 'ID' and c.val in ('MIN', 'MAX'):
+                            if k + 1 < end and toks[k + 1].kind == 'INT':
+                                n1 = int(toks[k + 1].val)
+                                cur = ('n', n1, float('inf')) if c.val == 'MIN' else ('n', float('-inf'), n1)
+                                k += 2
+                            else:
+                                terr(c.line, '%s in a coordinate is followed by a whole number' % c.val)
+                                cur = ('bad',)
+                                k += 1
+                        elif c.kind == 'ID' and c.val == 'ANY':
+                            cur = ('any',)
+                            k += 1
+                        elif c.kind == 'HASH':
+                            cur = ('pending_hash',)
+                            k += 1
+                            continue
+                        elif c.kind == 'CARET':
+                            ch = toks[k - 1].val if toks[k - 1].kind == 'HASH' else None
+                            refs.append(('table coordinate', c.val, ch, c.line))
+                            cur = ('e', c.val)
+                            k += 1
+                        elif c.kind == 'STR':
+                            cur = ('s', c.val)
+                            k += 1
+                        else:
+                            terr(c.line, 'a coordinate is a number, a range, MIN n, MAX n, an entity, '
+                                         'a string or ANY')
+                            cur = ('bad',)
+                            k += 1
+                        if cur[0] != 'pending_hash':
+                            coords.append(cur)
+                    k += 1                                    # past ]
+                    tbl['cells'].append((coords, tk.line))
+                    if not (k < end and toks[k].kind == 'LBRACE'):
+                        terr(tk.line, 'AT [ … ] is followed by its result in a block { … }')
+                        if k < end and toks[k].kind in ('STR', 'INT', 'CARET'):
+                            k += 1
+                        continue
+                    depth = 0
+                    while k < end:                            # skip the result; the main loop reads it
+                        if toks[k].kind == 'LBRACE':
+                            depth += 1
+                        elif toks[k].kind == 'RBRACE':
+                            depth -= 1
+                            if depth == 0:
+                                break
+                        k += 1
+                    k += 1
+                elif tk.kind == 'ID' and tk.val == 'COLUMNS' and k + 1 < end and toks[k + 1].kind == 'LBRACK':
+                    cols, k = [], k + 2
+                    while k < end and toks[k].kind != 'RBRACK':
+                        if toks[k].kind == 'CARET':
+                            cols.append((toks[k].val, toks[k].line))
+                        elif toks[k].kind == 'STR':
+                            terr(toks[k].line, 'COLUMNS lists properties of the axis type as ^"Name", '
+                                               'not strings')
+                        k += 1
+                    k += 1
+                    tbl['columns'] = (cols, tk.line)
+                else:
+                    if not stray:
+                        terr(tk.line, 'a TABLE holds AXIS lines and then AT cells or COLUMNS; '
+                                      'the older COLUMNS / ROW grid of strings is not the v0.6 form')
+                        stray = True
+                    # step over a bracket list or a block so one stray statement is one finding
+                    if tk.kind in ('LBRACK', 'LBRACE'):
+                        opener, closer = tk.kind, 'RBRACK' if tk.kind == 'LBRACK' else 'RBRACE'
+                        depth = 0
+                        while k < end:
+                            if toks[k].kind == opener:
+                                depth += 1
+                            elif toks[k].kind == closer:
+                                depth -= 1
+                                if depth == 0:
+                                    break
+                            k += 1
+                    k += 1
+
+            axes = tbl['axes']
+            if not axes:
+                terr(t.line, 'a TABLE declares at least one AXIS')
+                continue
+            if tbl['columns'] is not None:
+                if tbl['cells']:
+                    terr(tbl['columns'][1], 'a TABLE has AT cells or COLUMNS, not both')
+                if len(axes) != 1 or axes[0]['kind'] != 'type':
+                    terr(tbl['columns'][1], 'COLUMNS needs exactly one axis, and that axis OF ^"Type"')
+            elif not tbl['cells']:
+                terr(t.line, 'a TABLE lists AT cells, or COLUMNS for a table of records')
+            typed = []                    # (entity, type, line) for table_pass
+            for coords, cline in tbl['cells']:
+                if len(coords) != len(axes):
+                    terr(cline, 'AT gives %d coordinate(s) and the table has %d axis/axes'
+                                % (len(coords), len(axes)))
+                    continue
+                for c, ax in zip(coords, axes):
+                    if c[0] in ('any', 'bad') or ax['kind'] is None:
+                        continue
+                    if ax['kind'] in ('range', 'number'):
+                        if c[0] != 'n':
+                            terr(cline, 'axis ^"%s" takes numbers' % ax['name'])
+                        elif ax['kind'] == 'range':
+                            lo = ax['lo'] if c[1] == float('-inf') else c[1]
+                            hi = ax['hi'] if c[2] == float('inf') else c[2]
+                            if lo < ax['lo'] or hi > ax['hi']:
+                                terr(cline, 'coordinate is outside axis ^"%s", which runs %d-%d'
+                                            % (ax['name'], ax['lo'], ax['hi']))
+                    elif ax['kind'] == 'list':
+                        if c[0] not in ('s', 'e') or (c[0], c[1]) not in ax['points']:
+                            terr(cline, 'coordinate is not one of the points axis ^"%s" lists' % ax['name'])
+                    elif ax['kind'] == 'type':
+                        if c[0] != 'e':
+                            terr(cline, 'axis ^"%s" takes an entity of ^"%s"' % (ax['name'], ax['type']))
+                        else:
+                            typed.append((c[1], ax['type'], cline))
+            tbl['typed'] = typed
+
+            def meets(a, b):
+                if a[0] == 'any' or b[0] == 'any':
+                    return True
+                if a[0] == 'n' and b[0] == 'n':
+                    return a[1] <= b[2] and b[1] <= a[2]
+                return a[0] == b[0] and a[0] in ('s', 'e') and a[1] == b[1]
+
+            good = [(c, ln) for c, ln in tbl['cells'] if len(c) == len(axes) and all(x[0] != 'bad' for x in c)]
+            for i2 in range(len(good)):
+                for i1 in range(i2):
+                    if all(meets(a, b2) for a, b2 in zip(good[i1][0], good[i2][0])):
+                        terr(good[i2][1], 'this cell and the one on line %d cover the same coordinates'
+                                          % good[i1][1])
+                        break
+        elif w in ('EMPHASIS', 'LABEL'):
+            # EMPHASIS [BOLD] [ITALIC] { "span" … }  /  LABEL [depth] { "span" … }
+            # (v0.6, DECISION-19, §5c). Only the words before the brace are checked here; that
+            # each span is in the DEF's prose is check_references.py's rule.
+            k = idx + 1
+            head = []
+            while k < len(toks) and toks[k].kind in ('ID', 'INT') and toks[k].line == t.line and len(head) < 4:
+                head.append(toks[k]); k += 1
+            if k < len(toks) and toks[k].kind == 'LBRACE':
+                if w == 'EMPHASIS':
+                    for h in head:
+                        if h.val not in EMPHASIS_KINDS:
+                            findings.append(Finding(fname, 'lint', 'error', h.line,
+                                                    f'EMPHASIS kind "{h.val}" is not one of '
+                                                    f'{", ".join(EMPHASIS_KINDS)} (§5c)'))
+                    for kind in EMPHASIS_KINDS:
+                        if [h.val for h in head].count(kind) > 1:
+                            findings.append(Finding(fname, 'lint', 'error', t.line,
+                                                    f'EMPHASIS kind {kind} is written more than once (§5c)'))
+                elif len(head) > 1 or (head and not (head[0].kind == 'INT' and int(head[0].val) >= 1)):
+                    findings.append(Finding(fname, 'lint', 'error', t.line,
+                                            'LABEL depth is a whole number of 1 or more (§5c)'))
         elif w == 'FACES' and idx + 1 < len(toks) and toks[idx + 1].kind == 'LBRACE':
             # FACES { face … }  (v0.6, DECISION-18): a face is a number or a range low-high, then
             # optionally what it shows (a string or a reference), then optionally WEIGHT n.
@@ -1395,6 +1702,26 @@ def analyze_file(fname, text, findings):
             findings.append(Finding(fname, 'lint', 'warning', a.line,
                                     "rule %s (%s) has no text: give it the source's statement of the rule, "
                                     "or a structured WHEN … THEN (§12)" % (a.val, c.val)))
+    # Markdown emphasis inside a string (§5c, DECISION-19). The span belongs in an EMPHASIS or
+    # LABEL block beside the text. A warning in a file below 0.6, an error from 0.6. A FIAT on
+    # the property's line, or on the DEF around it, excuses asterisks the source prints.
+    for tk in toks:
+        if tk.kind != 'STR' or '*' not in tk.val:
+            continue
+        nbold = len(MD_BOLD.findall(tk.val))
+        nital = len(MD_ITALIC.findall(MD_BOLD.sub('', tk.val)))
+        if not (nbold or nital):
+            continue
+        last = tk.line + tk.val.count('\n')
+        if tk.line in waived_lines or last in waived_lines \
+                or any(a <= tk.line <= b for a, b in waived_ranges):
+            continue
+        what = ' and '.join(x for x in ('%d bold' % nbold if nbold else '',
+                                        '%d italic' % nital if nital else '') if x)
+        findings.append(Finding(fname, 'lint', 'error' if spec_version >= (0, 6) else 'warning', tk.line,
+                                'string holds Markdown emphasis (%s): record each span in an EMPHASIS '
+                                'or LABEL block beside the text, or FIAT "reason" where the source '
+                                'prints the asterisks (§5c)' % what))
     for tk in toks:
         if tk.kind == 'HASH' and len(tk.val) - 1 < HASH_MIN_BODY:
             findings.append(Finding(fname, 'lint', 'warning', tk.line,
@@ -1409,7 +1736,7 @@ def analyze_file(fname, text, findings):
         'waived_ranges': waived_ranges, 'waived_lines': waived_lines,
         'def_props': def_props, 'def_extends': def_extends, 'mods': mods, 'adds': adds,
         'reprints': reprints, 'aliases': aliases, 'chooses': chooses, 'ref_values': ref_values,
-        'rolls': rolls,
+        'rolls': rolls, 'tables': tables,
     }
 
 
@@ -1900,6 +2227,47 @@ def roll_pass(files_data, findings):
                                         "ROLL n OF ^\"%s\": ^\"%s\" is not a ^\"Die\"" % (die, die)))
 
 
+def table_pass(files_data, findings):
+    """TABLE (§5e, DECISION-21): an entity given as a coordinate on an axis OF ^"Type" is of
+    that type, and each of a record table's COLUMNS is a property the axis type declares, its
+    own or inherited."""
+    props, extends, known = {}, {}, set()
+    for d in files_data:
+        if d.get('kind') != 'ttrpg':
+            continue
+        known.update(d['names'])
+        for nm, table in d['def_props'].items():
+            props.setdefault(nm, {}).update(table)
+        for nm, parents in d['def_extends'].items():
+            extends.setdefault(nm, []).extend(parents)
+
+    def is_a(entity, ty, seen):
+        if entity == ty:
+            return True
+        if entity in seen:
+            return False
+        seen.add(entity)
+        return any(is_a(parent, ty, seen) for parent in extends.get(entity, ()))
+
+    for d in files_data:
+        if d.get('kind') != 'ttrpg':
+            continue
+        for tbl in d.get('tables', []):
+            for entity, ty, line in tbl.get('typed', []):
+                if entity in known and ty in known and not is_a(entity, ty, set()) \
+                        and not is_waived(line, d):
+                    findings.append(Finding(d['file'], 'coherence', 'error', line,
+                                            'coordinate ^"%s" is on an axis OF ^"%s" and is not one '
+                                            '(§5e)' % (entity, ty)))
+            if tbl.get('columns') and len(tbl['axes']) == 1 and tbl['axes'][0].get('type') in known:
+                ty = tbl['axes'][0]['type']
+                for col, line in tbl['columns'][0]:
+                    if _resolve_prop(ty, col, props, extends) is None and not is_waived(line, d):
+                        findings.append(Finding(d['file'], 'coherence', 'error', line,
+                                                'COLUMNS names ^"%s", which ^"%s" does not declare '
+                                                '(its own properties or inherited) (§5e)' % (col, ty)))
+
+
 def modification_pass(files_data, findings):
     """Coherence for the §13 modification system.
 
@@ -2099,6 +2467,7 @@ def main(argv):
     choose_pass(files_data, findings)
     ref_pass(files_data, findings)
     roll_pass(files_data, findings)
+    table_pass(files_data, findings)
     modification_pass(files_data, findings)
     bridge_coherence(files_data, corpora, findings, notes)
 

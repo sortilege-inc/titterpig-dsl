@@ -33,6 +33,18 @@ Changes made since v0.5, listed as they are decided. **Not all are additive.**
    ^"Die"` and lists its `FACES`. The spec ships a dice module (`modules/0.6/`) that every edition
    includes. `ROLL n OF ^"die"` rolls dice, and `NEXT` before a statement makes it a step that
    follows the one above.
+6. **`EMPHASIS` takes a kind, and `LABEL`** *(§5c, DECISION-19)* — `EMPHASIS BOLD { … }`,
+   `EMPHASIS ITALIC { … }` and `EMPHASIS BOLD ITALIC { … }` say how a marked span is set; a bare
+   `EMPHASIS { … }` stays legal. `LABEL { … }` names a run-in label, and `LABEL 2 { … }` one at
+   depth 2. Markdown emphasis inside a string (`**…**`, `*…*`) is flagged: a warning in a file
+   below 0.6, an error from 0.6 *(not additive)*.
+7. **Embedded references are checked, and may keep a different literal** *(§5c, §14, DECISION-20)*
+   — `^\"Enraged\"` inside a string points at a DEF where the text names it, and
+   `^\"Enraged\"/\"state of rage\"` points at the DEF and leaves "state of rage" as the text.
+   Every one resolves, as any reference does.
+8. **`TABLE`** *(new, §5e, DECISION-21)* — a primitive block for a table: `AXIS` lines declare what
+   it is looked up by, and `AT [ … ] { … }` gives the result at a coordinate. A table of records
+   names its type and `COLUMNS` and holds no cells.
 
 ### v0.5 — five new constructs, and one rule tightened *(current)*
 
@@ -287,6 +299,50 @@ stay valid.
   statement makes it a step that follows the statement above. `NEXT` was chosen over `THEN`, which
   already means the consequence of a `WHEN` in rules and hooks. A chain runs forward only: this is
   not a rules engine, and there is no branch and no loop.
+
+- **DECISION-19 — `EMPHASIS` says how a span is set, and a run-in label is a `LABEL`** *(resolved,
+  v0.6, 2026-11-12)* (§5c): `EMPHASIS { "…" }` recorded that the source marks a span and had no
+  place for which marking. Eight corpora kept the distinction by writing Markdown inside their
+  strings instead (about 5,500 strings with `**bold**` and 7,600 with `*italic*`), which §5c
+  forbids; Troika sets bold, italic and bold italic in one paragraph, each for a different kind of
+  thing. The decision is a kind between the keyword and the brace: `BOLD`, `ITALIC`, or both. A
+  block with no kind stays legal, so the 2,721 existing blocks are unchanged. 2,273 of the bold
+  spans in those corpora are run-in labels (`Prot:`, `Ease Factor:`), which are structure and not
+  stress. They get a block of their own, **`LABEL`**, with an optional depth after the keyword
+  (`LABEL 2`), 1 when none is written. Both blocks stay beside the text, as DECISION-7 settled. A
+  whole paragraph set in one face (fiction, an epigraph) is **not yet recordable (to-do)**. With a
+  place for every marked span, Markdown emphasis inside a string becomes a validator finding: a
+  **warning** in a file that declares a `SPEC_VERSION` below 0.6, or none, and an **error** in one
+  that declares 0.6 or later. A `FIAT` with its reason excuses asterisks the source itself prints.
+
+- **DECISION-20 — Embedded references stay, are checked, and may keep a different literal**
+  *(resolved, v0.6, 2026-11-12; amends DECISION-7)* (§5c, §14): §14 documented `^\"Name\"` inside a
+  string while §5c said no markup is ever inserted into the text, and no tool read inside a string.
+  l5r5e holds 420 embedded references; 14 pointed at nothing and nothing reported them. The decision
+  is that the embedded form stays and becomes a full reference site. `^\"Name\"` cites the DEF where
+  the text prints its name. **`^\"Name\"/\"literal\"`** cites the DEF and keeps `literal` as the
+  text, for the plural, the inflection or the paraphrase the source prints. A `#hash` may stand
+  before the caret. In a triple-quoted string the quotes are written without the backslash. The
+  purpose is an index: a tool finds every place a rule's DEF is cited, and the text a reader sees
+  is unchanged. A string's **text** is the string with each embedded reference read as its literal,
+  or as its name where it has none; verbatim checks and the surface forms of `REFERENCES`,
+  `EMPHASIS` and `LABEL` are matched against the text. DECISION-7's stand-off `REFERENCES` block
+  stays legal, and emphasis and labels stay beside the text.
+
+- **DECISION-21 — A table is a `TABLE` block with axes and cells** *(resolved, v0.6, 2026-11-12)*
+  (§5e): the spec defined no table, and the corpora wrote five kinds: a grid of strings (973
+  tables, 12,384 rows, in 13 corpora), pairs of strings, a DEF per row holding a list of cell
+  strings, a DEF per cell holding its coordinates as properties, and roll-keyed system blocks. 397
+  of the string grids are roll lookups whose range sits in a string (`"3–7"`). The decision is a
+  primitive **`TABLE`** block in a DEF's body. `AXIS ^"Name"` declares what the table is looked up
+  by: the entities of a type, a range of numbers, any whole number, a roll, or a list. **`AT [ … ]
+  { … }`** gives the result at a coordinate, one coordinate per axis; a coordinate may be a range,
+  an open range (`MIN n`, `MAX n`) or `ANY`. The result is a block, so it holds whatever the table
+  yields: values, a `REF`, a `TRANSFORM`, a further roll, a named DEF. A table of records (a weapon
+  list) holds no cells: it names the type as its one axis and lists the type's properties as
+  `COLUMNS`, so each value stays on its entity. `TABLE` is a primitive and not a shipped base DEF:
+  a table type would carry no data of its own, and the keywords already say what the block is. A
+  specified grid of printed strings was considered and not adopted.
 
 ## 1. Overview & Design Principles
 
@@ -751,6 +807,105 @@ alias, still accepted so 0.4 corpora keep validating). Three additions:
    claim about the page, and like every other such claim it should be derived from the source rather
    than decided — Root's 234 are read out of the PDF's font runs, not typed.
 
+**v0.6 changes (DECISION-19).**
+
+1. **`EMPHASIS` may say how the span is set.** `BOLD`, `ITALIC` or both stand between the keyword
+   and its brace, and a DEF holds one block per kind:
+
+   ```
+   SCENE #txWKzqF0ygAjNWBHNG3TOPs ^"2nd Floor Passenger: The Gas Form" {
+       DESCRIPTION "Outside the door is a cloud of green gas with little balloon bladders floating
+                    in it supporting decorative jewelry much like your ear would. The mandrill takes
+                    a little gas mask (mandrill-sized only) out from a compartment in the wall by
+                    his panel and put it on. …"
+       EMPHASIS BOLD        { "cloud of green gas" }
+       EMPHASIS ITALIC {
+           "decorative jewelry"
+           "little gas mask"
+       }
+       EMPHASIS BOLD ITALIC { "The mandrill" }
+   }
+   ```
+
+   `EMPHASIS { … }` with no kind stays legal: the span is marked and the kind was not recorded.
+   Other kinds (underline, strike-through, small capitals) are **not yet defined (to-do)**.
+
+2. **`LABEL` — a run-in label.** `LABEL { "surface form" }`. A label the source sets at the head of
+   the text it labels stays in the string as printed and is named here:
+
+   ```
+   DESCRIPTION "Prot: The bonus the armor grants to the character’s Soak score.\nLoad: The amount
+                the armor adds to the character’s Burden.\nCost: A general indication of the expense
+                of the armor. More expensive armor is better."
+   LABEL {
+       "Prot:"
+       "Load:"
+       "Cost:"
+   }
+   ```
+
+   A whole number after the keyword is the label's **depth**; with none written the depth is 1. A
+   label of depth 2 sits under the depth-1 label before it:
+
+   ```
+   DESCRIPTION "Sample Vestals Initiation: Nature Lore\n\nEase Factor: 15 (Minor Virtue known to the
+                Mystagogue)\n\nScript Bonus: +10 Script Details: The Initiate must prepare a cake
+                using ritual ingredients. …"
+   LABEL   { "Sample Vestals Initiation: Nature Lore" }
+   LABEL 2 {
+       "Ease Factor:"
+       "Script Bonus:"
+       "Script Details:"
+   }
+   ```
+
+   The rule is the one `EMPHASIS` has: **the surface form must appear in the DEF's own prose**, and
+   an `@n` occurrence index is accepted on the same terms.
+
+3. **A whole paragraph set in one face is not yet recordable (to-do).** Opening fiction, an epigraph
+   or a line of flavour set wholly in italic is the paragraph's style and not a span marked inside
+   it. Listing it under `EMPHASIS` would repeat the paragraph as its own surface form.
+
+4. **Markdown emphasis inside a string is flagged.** A paired `**…**` or `*…*` in a string raises
+   a **warning** in a file that declares a `SPEC_VERSION` below 0.6, or none, and an **error** in
+   one that declares 0.6 or later. The span belongs in an `EMPHASIS` or `LABEL` block.
+
+   An asterisk the source prints is text and stays. One followed by a space (a footnote mark, a
+   bullet) or preceded by a letter, a digit or a closing bracket (`Chirurgery 20*`, `Courtesy 20 (+1)*`) does not read as the start of a
+   span and is not flagged. Where two printed asterisks do read as a span, a `FIAT` (§8) records
+   that the source prints them:
+
+   ```
+   ^"Marks" STRING "Weapons marked *thus* need two hands." FIAT "printed asterisks"
+   ```
+
+**v0.6 changes (DECISION-20): embedded references.** A reference may also be written inside the
+string, at the words that cite the DEF:
+
+```
+EFFECT "… When the character becomes Compromised, they also become ^\"Enraged\" (see page 272)."
+EFFECT "… they fly into a ^\"Enraged\"/\"state of rage\" …"
+EFFECT "… they also become #hash ^\"Enraged\" …"
+```
+
+| Written in the string | Cites | Text |
+|---|---|---|
+| `^\"Enraged\"` | `^"Enraged"` | `Enraged` |
+| `^\"Enraged\"/\"state of rage\"` | `^"Enraged"` | `state of rage` |
+| `#hash ^\"Enraged\"/\"state of rage\"` | `^"Enraged"`, by its hash | `state of rage` |
+
+- **The literal.** A slash and a second quoted string directly after the name give the words the
+  text keeps. It is not empty. Without it the text is the name.
+- **In a triple-quoted string** (§10) the quotes carry no backslash: `^"Enraged"/"state of rage"`.
+- **Each one is a reference site (§5d).** It resolves by its hash when it carries one; a hashless
+  one WARNs, and a hashless one whose name is more than one entity is an ERROR. It counts as a
+  reference from the entity around the string, so a `REFERENCED BY` may mirror it.
+- **A string's text** is the string with each embedded reference read as its literal, or as its
+  name where it has none. The verbatim rule below is a rule about the text, and the surface forms
+  of `REFERENCES`, `EMPHASIS` and `LABEL` are matched against it.
+- A `REFERENCES` block and embedded references are two ways to record the same fact, and both are
+  legal.
+
 The rest of this section (byte-verbatim `DESCRIPTION`, exact-surface-form rules, page-cite stripping)
 is unchanged — read `MENTIONS` below as `REFERENCES`.
 
@@ -783,7 +938,9 @@ Rules:
   whitespace/HTML-escape normalisation **and** stripping a cross-rulebook page citation
   (`(ArM5, page 179)`, `(see ArM5 p. 42)`) — the `MENTIONS`/`EXTENDS` reference supersedes the
   citation, which would otherwise be a dead pointer once the entity has a DEF. Nothing else is
-  added, removed, or reworded. No inline markup is ever inserted into the text.
+  added, removed, or reworded. No inline markup is ever inserted into the text. From v0.6 an
+  embedded reference (above) is the one thing a string may hold besides its text, and the rule
+  applies to the text: the string with each embedded reference read as its literal or its name.
 - **Each `MENTIONS` entry is `"<surface form>" -> <caret ref>`.** The surface form is the term
   **exactly as printed in this `DESCRIPTION`** (including case and inflection — `"recovery roll"`,
   not `"Recovery Roll"`). This is what lets a renderer locate and link the occurrence, and lets two
@@ -831,6 +988,7 @@ A DEF body can contain any combination of:
 - `APPLIES TO` — scope constraint
 - Bare type constraints (see §8)
 - Nested DEFs
+- `TABLE { }` — a table (see §5e)
 - System-defined sub-blocks (see §10)
 - Inline text strings
 
@@ -865,8 +1023,9 @@ Instances use the **same** grammar as definitions — no `=` assignments, no dot
 A **reference site** is any place one definition names *an entity that already exists*: `EXTENDS`,
 `APPLIES TO`, `LIST OF`, `CONCERNS`, `OVERRIDE`, `MODIFY`, the target of `ALIAS … FOR`, an entity
 option or `OF` type of a `CHOOSE` (§5b), the type and the value of a `REF`, the target of a `SET`
-or `TRANSFORM` and the die of a `ROLL` (§8), and the `REFERENCES` / `REFERENCED BY` targets of §5c. All of them obey the same
-rule.
+or `TRANSFORM` and the die of a `ROLL` (§8), the type of an `AXIS … OF`, an entity listed as an
+axis point and an entity given as a coordinate of an `AT` (§5e), and the `REFERENCES` /
+`REFERENCED BY` targets and embedded references of §5c. All of them obey the same rule.
 
 **Declaration sites are not reference sites.** `ADD #hash ^"Name" DEF { … }` (§13) *asserts new
 content*, so its hash is an anchor being minted, not a pointer to one; `ALIAS ^"New" FOR ^"Existing"`
@@ -901,6 +1060,108 @@ already resolves — so backfilling is a scripted, reviewable edit, not re-autho
 cannot be backfilled mechanically: they need the intended target chosen, which is the point.
 
 ---
+
+### §5e — Tables: `TABLE`, `AXIS` and `AT` *(v0.6, DECISION-21)*
+
+A table is a `TABLE` block in the body of a DEF. The DEF gives it its name and hash. `TABLE` is a
+primitive of the language, as `PROPERTIES` is: there is no table type to extend.
+
+**A lookup table** declares its axes, then gives a result at each coordinate.
+
+```
+#hash ^"Fate Chart" DEF {
+    TABLE {
+        AXIS ^"Odds" OF #hash ^"Odds"
+        AXIS ^"Chaos Factor" 1-9
+
+        AT [ #hash ^"Certain", 1 ]        { ^"Exceptional Yes" INTEGER 10  ^"Yes" INTEGER 50  ^"Exceptional No" INTEGER 91 }
+        AT [ #hash ^"Certain", 2 ]        { ^"Exceptional Yes" INTEGER 13  ^"Yes" INTEGER 65  ^"Exceptional No" INTEGER 94 }
+        AT [ #hash ^"Nearly Certain", 1 ] { ^"Exceptional Yes" INTEGER 7   ^"Yes" INTEGER 35  ^"Exceptional No" INTEGER 88 }
+        …
+    }
+}
+```
+
+`AXIS ^"Name"` is followed by the axis's points:
+
+| Written | The points of the axis |
+|---|---|
+| `OF #hash ^"Type"` | the entities of that type |
+| `1-9` | the whole numbers in the range |
+| `INTEGER` | any whole number |
+| `ROLL n OF #hash ^"die"` | the totals of that roll (§8) |
+| `[ "Light", "Medium", "Heavy" ]` | the strings or entities listed |
+
+`AT [ … ] { … }` gives one coordinate for each axis, in the order the axes are declared, and then
+the result in a block.
+
+| Coordinate | Covers |
+|---|---|
+| `4` | that number |
+| `3-7` | the numbers in the range |
+| `MIN 16` | 16 and every number above it |
+| `MAX 1` | 1 and every number below it |
+| `#hash ^"Certain"` | that entity |
+| `"Light"` | that string |
+| `ANY` | every point of the axis |
+
+The result block holds what a DEF body holds: values, a `REF`, a `SET` or `TRANSFORM`, a `ROLL`,
+a named DEF, or another `TABLE`.
+
+**A roll table** is a table whose one axis is a roll.
+
+```
+#hash ^"Cursed Punishment" DEF {
+    TABLE {
+        AXIS ^"Roll" ROLL 2 OF #hash ^"d10"
+
+        AT [ 2 ]   { ^"Punishment" STRING "Forgiven"
+                     ^"Effect" STRING "The character is forgiven or forgotten by the gods. Reduce their Hubris by 1."
+                     #hash ^"Hubris" TRANSFORM SUBTRACT 1 }
+        AT [ 3-7 ] { ^"Punishment" STRING "No effect"
+                     ^"Effect" STRING "The character remains unpunished." }
+        AT [ 8 ]   { ^"Punishment" STRING "Incompetent"
+                     ^"Effect" STRING "One randomly determined skill is always rolled at a -2D penalty." }
+        …
+    }
+}
+```
+
+**A table of records** holds no cells. Where each row of a printed table is an entity and each
+column one of its properties, the table names the type as its one axis and lists the properties as
+`COLUMNS`, in the order printed. The values stay on the entities.
+
+```
+#hash ^"Armor Table" DEF {
+    TABLE {
+        AXIS ^"Material" OF #hash ^"Armor"
+        COLUMNS [ ^"Partial Prot", ^"Partial Load", ^"Full Prot", ^"Full Load", ^"Cost" ]
+    }
+}
+```
+
+**References.** The type after `OF`, an entity listed as an axis point and an entity given as a
+coordinate are reference sites (§5d). A name in `COLUMNS` is a property of the axis type and is
+not one.
+
+**Coherence.**
+
+- A `TABLE` declares at least one `AXIS`, and holds `AT` cells or `COLUMNS`, not both.
+- Each `AT` gives as many coordinates as the table has axes.
+- A coordinate is of a kind its axis takes: a number on a range, `INTEGER` or roll axis; an entity
+  of the type on an `OF` axis; one of the listed points on a list axis. A number lies inside a
+  range axis, and a range runs from low to high.
+- No two cells cover the same coordinates.
+- `COLUMNS` needs exactly one axis, declared `OF` a type, and each column is a property that type
+  declares, its own or inherited.
+
+**Not yet defined (to-do).** Column headings in more than one tier; footnote marks on a cell;
+whether every point of an axis has a cell, which is not checked.
+
+**A `TABLE` block in an older file.** Corpora wrote `TABLE { COLUMNS [ … ] ROW [ … ] }` grids of
+strings as a system-defined block before v0.6. A `TABLE` with no `AXIS` is left alone in a file
+that declares a `SPEC_VERSION` below 0.6, or none, and is an **error** in one that declares 0.6 or
+later.
 
 ## 6. Inheritance (EXTENDS)
 
@@ -1167,6 +1428,8 @@ integer; a range runs from low to high; `NEXT` has a statement before it and a s
 
 **Scope guidance:** use the **narrowest** `FIAT` that covers the deviation. Property-level for a single odd value; element-level only when the whole definition is exceptional — the cascade will also suppress genuine mistakes beneath it. Standard NPCs/adversaries should be *defined against their own actor type* (so they are complete on their own terms and need no `FIAT`); reserve `FIAT` for true one-offs.
 
+**Printed asterisks *(v0.6)*.** A `FIAT` also excuses the Markdown-emphasis finding of §5c, for a string whose asterisks the source prints.
+
 **Tooling:** both the DSL validator and downstream consumers honor `FIAT`. Because every `FIAT` carries a reason, tooling can emit a **FIAT report** — the full list of intentional deviations in a corpus — for review.
 
 ---
@@ -1294,28 +1557,40 @@ FAMILIES {
 }
 
 HERITAGE_TABLE {
-    1 ^"Famous Deed" DEF {
-        MODIFIERS { #hash ^"Glory" TRANSFORM ADD 3 }
-        SUB_TABLE "1d10" {
-            "1-2" "A famous weapon: Receive one weapon of rarity 7 or lower"
-        }
-    }
+    TABLE {
+        AXIS ^"Roll" ROLL 1 OF #hash ^"d10"
 
-    # An entry keyed to a span of die results uses a roll range. Supplement
-    # heritage tables assign one result to several rolls; the range is part
-    # of the structure, never a note in prose.
-    2-3 ^"Triumph over the Lion" DEF {
-        MODIFIERS { #hash ^"Honor" TRANSFORM ADD 5 }
-        SUB_TABLE "1d10" {
-            "1-3" "A weapon"
-            "9" "A horse or another animal"
+        AT [ 1 ] {
+            ^"Famous Deed" DEF {
+                MODIFIERS { #hash ^"Glory" TRANSFORM ADD 3 }
+                TABLE {
+                    AXIS ^"Roll" ROLL 1 OF #hash ^"d10"
+                    AT [ 1-2 ] { EFFECT { "A famous weapon: Receive one weapon of rarity 7 or lower" } }
+                }
+            }
         }
-    }
 
-    # Where an entry grants something outright instead of a second roll.
-    10 ^"Imperial Heritage" DEF {
-        MODIFIERS { #hash ^"Status" TRANSFORM ADD 10 }
-        EFFECT { "Gain the ^\"Blessed Lineage\" distinction" }
+        # A result that covers a span of die results gives the span as its coordinate.
+        # Supplement heritage tables assign one result to several rolls; the range is
+        # part of the structure, never a note in prose.
+        AT [ 2-3 ] {
+            ^"Triumph over the Lion" DEF {
+                MODIFIERS { #hash ^"Honor" TRANSFORM ADD 5 }
+                TABLE {
+                    AXIS ^"Roll" ROLL 1 OF #hash ^"d10"
+                    AT [ 1-3 ] { EFFECT { "A weapon" } }
+                    AT [ 9 ]   { EFFECT { "A horse or another animal" } }
+                }
+            }
+        }
+
+        # Where an entry grants something outright instead of a second roll.
+        AT [ 10 ] {
+            ^"Imperial Heritage" DEF {
+                MODIFIERS { #hash ^"Status" TRANSFORM ADD 10 }
+                EFFECT { "Gain the ^\"Blessed Lineage\" distinction" }
+            }
+        }
     }
 }
 
@@ -1574,12 +1849,17 @@ Unique anchors for cross-file traceability:
 
 ### Embedded References in Strings
 
-Caret references can appear inside quoted strings with escaped quotes:
+A caret reference can appear inside a quoted string, with its quotes escaped. A slash and a second
+quoted string after it give the words the text keeps where they differ from the name, and a hash
+may stand before the caret (§5c, DECISION-20):
 
 ```
 ACTIVATION "When you make a ^\"Fitness\" check..."
 EFFECT "If you fail, you suffer ^\"Disoriented\"."
+EFFECT "You fly into a #hash ^\"Enraged\"/\"state of rage\"."
 ```
+
+Each is a reference site and resolves under §5d.
 
 ### Combined Hash + Caret
 
@@ -1617,6 +1897,10 @@ Only these keywords are reserved by the base spec:
 **Modification:** `OVERRIDE`, `ADD`, `MODIFY`, `SET`, `ADD_TO`, `REMOVE_FROM`, `REPRINT`
 
 **Text:** `DESCRIPTION`, `TEXT`
+
+**Tables (§5e):** `TABLE`, `AXIS`, `AT`, `COLUMNS`, `ANY` (`OF`, `INTEGER` and `ROLL` are shared with **Types**, `MIN` / `MAX` with **Modifiers**, `AT` with **Codex**)
+
+**Annotation beside text (§5c):** `REFERENCES`, `MENTIONS`, `REFERENCED`, `BY`, `EMPHASIS`, `BOLD`, `ITALIC`, `LABEL`
 
 **Narrative containers:** `SETTING`, `FRAME`, `ARC`, `CAMPAIGN`, `SCENE`, `LOCATION` (and their sub-keywords as defined in §16)
 

@@ -1,0 +1,22 @@
+BASE "Demo_Emphasis_Bad" {
+    NAME "DECISION-19 fixture — every block here is an intentional finding"
+    SPEC_VERSION "0.6"
+    VERSION "1.0"
+    RELEASE_DATE "2026-11-12"
+
+    #EmphBadLobbyAAAAAAAAAAAAA ^"The Lobby" DEF {
+        DESCRIPTION "A sweet old lady gives a red bonbon to the mandrill.\nProt: The bonus the armor grants."
+        EMPHASIS UNDERLINE { "red bonbon" }
+        EMPHASIS BOLD BOLD { "sweet old lady" }
+        EMPHASIS BOLD { "blue shawl" }
+        EMPHASIS ITALIC {
+            "green gas"
+        }
+        LABEL 0 { "Prot:" }
+        LABEL two { "Prot:" }
+        LABEL { "Load:" }
+        LABEL 2 {
+            "Cost:"
+        }
+    }
+}

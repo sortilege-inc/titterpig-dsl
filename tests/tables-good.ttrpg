@@ -1,0 +1,74 @@
+BASE "Demo_Tables" {
+    NAME "DECISION-21 fixture — TABLE, AXIS, AT, COLUMNS (§5e)"
+    SPEC_VERSION "0.6"
+    VERSION "1.0"
+    RELEASE_DATE "2026-11-12"
+    DEPENDS_ON "Titterpig_Dice"
+
+    # Validate with the dice module passed alongside:
+    #   ttrpg_validator.py tests/tables-good.ttrpg modules/0.6/
+
+    #TblDemoOddsAAAAAAAAAAAAAA ^"Odds" DEF { }
+    #TblDemoCertainBBBBBBBBBBB ^"Certain" DEF { EXTENDS #TblDemoOddsAAAAAAAAAAAAAA ^"Odds" }
+    #TblDemoLikelyCCCCCCCCCCCC ^"Likely" DEF { EXTENDS #TblDemoOddsAAAAAAAAAAAAAA ^"Odds" }
+    #TblDemoHubrisDDDDDDDDDDDD ^"Hubris" DEF { INTEGER MIN 0 }
+    #TblDemoForgivenEEEEEEEEEE ^"Forgiven" DEF { }
+
+    # two axes, one of entities and one a range; each cell holds several values
+    #TblDemoFateChartFFFFFFFFF ^"Fate Chart" DEF {
+        TABLE {
+            AXIS ^"Odds" OF #TblDemoOddsAAAAAAAAAAAAAA ^"Odds"
+            AXIS ^"Chaos Factor" 1-9
+            AT [ #TblDemoCertainBBBBBBBBBBB ^"Certain", 1 ]   { ^"Exceptional Yes" INTEGER 10  ^"Yes" INTEGER 50  ^"Exceptional No" INTEGER 91 }
+            AT [ #TblDemoCertainBBBBBBBBBBB ^"Certain", 2-9 ] { ^"Exceptional Yes" INTEGER 13  ^"Yes" INTEGER 65  ^"Exceptional No" INTEGER 94 }
+            AT [ #TblDemoLikelyCCCCCCCCCCCC ^"Likely", ANY ]  { ^"Exceptional Yes" INTEGER 5   ^"Yes" INTEGER 25  ^"Exceptional No" INTEGER 86 }
+        }
+    }
+
+    # one axis that is a roll; ranges, an open range, and results that change a value or name an entity
+    #TblDemoPunishmentGGGGGGGG ^"Punishment of the Gods" DEF {
+        TABLE {
+            AXIS ^"Roll" ROLL 2 OF #tbgOQaN6xUuzn8GiibKkGw62 ^"d10"
+            AT [ 2 ]      { ^"Punishment" REF #TblDemoForgivenEEEEEEEEEE ^"Forgiven"  #TblDemoHubrisDDDDDDDDDDDD ^"Hubris" TRANSFORM SUBTRACT 1 }
+            AT [ 3-7 ]    { ^"Punishment" STRING "No effect" }
+            AT [ 8-15 ]   { ^"Punishment" STRING "Cursed"
+                            TABLE {
+                                AXIS ^"Curse" ROLL 1 OF #tbgOQaN6xUuzn8GiibKkGw62 ^"d10"
+                                AT [ MAX 5 ] { ^"Curse" STRING "Blindness" }
+                                AT [ MIN 6 ] { ^"Curse" STRING "Madness" }
+                            } }
+            AT [ MIN 16 ] { ^"Punishment" STRING "Struck down" }
+        }
+    }
+
+    # an axis that lists its points, and an axis of any whole number
+    #TblDemoFatigueHHHHHHHHHHH ^"Wound to Fatigue" DEF {
+        TABLE {
+            AXIS ^"Wound" [ "Light", "Medium", "Heavy" ]
+            AXIS ^"Rounds" INTEGER
+            AT [ "Light", MAX 3 ]  { ^"Fatigue Levels" INTEGER 1 }
+            AT [ "Light", MIN 4 ]  { ^"Fatigue Levels" INTEGER 2 }
+            AT [ "Medium", ANY ]   { ^"Fatigue Levels" INTEGER 2 }
+            AT [ "Heavy", ANY ]    { ^"Fatigue Levels" INTEGER 3 }
+        }
+    }
+
+    # a table of records: the rows are the entities of a type, the columns its properties
+    #TblDemoArmorIIIIIIIIIIIII ^"Armor" DEF {
+        PROPERTIES {
+            ^"Protection" INTEGER REQUIRED
+            ^"Load" INTEGER REQUIRED
+            ^"Cost" STRING
+        }
+    }
+    #TblDemoChainMailJJJJJJJJJ ^"Chain Mail" DEF {
+        EXTENDS #TblDemoArmorIIIIIIIIIIIII ^"Armor"
+        PROPERTIES { ^"Protection" INTEGER 9  ^"Load" INTEGER 6  ^"Cost" STRING "Exp." }
+    }
+    #TblDemoArmorTableKKKKKKKK ^"Armor Table" DEF {
+        TABLE {
+            AXIS ^"Armor" OF #TblDemoArmorIIIIIIIIIIIII ^"Armor"
+            COLUMNS [ ^"Protection", ^"Load", ^"Cost" ]
+        }
+    }
+}

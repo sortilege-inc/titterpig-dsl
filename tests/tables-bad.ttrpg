@@ -1,0 +1,32 @@
+BASE "Demo_Tables_Bad" {
+    NAME "DECISION-21 fixture — every table here holds one intentional finding"
+    SPEC_VERSION "0.6"
+    VERSION "1.0"
+    RELEASE_DATE "2026-11-12"
+
+    #TblBadOddsAAAAAAAAAAAAAAA ^"Odds" DEF { }
+    #TblBadCertainBBBBBBBBBBBB ^"Certain" DEF { EXTENDS #TblBadOddsAAAAAAAAAAAAAAA ^"Odds" }
+    #TblBadArmorCCCCCCCCCCCCCC ^"Armor" DEF { PROPERTIES { ^"Protection" INTEGER REQUIRED } }
+    #TblBadChainDDDDDDDDDDDDDD ^"Chain Mail" DEF { EXTENDS #TblBadArmorCCCCCCCCCCCCCC ^"Armor" }
+
+    ^"T01 no axis" DEF { TABLE { AT [ 1 ] { ^"R" STRING "x" } } }
+    ^"T02 old grid" DEF { TABLE { COLUMNS ["Roll", "Result"] ROW ["1", "x"] } }
+    ^"T03 too few coordinates" DEF { TABLE { AXIS ^"A" 1-6  AXIS ^"B" 1-6  AT [ 1 ] { ^"R" STRING "x" } } }
+    ^"T04 outside the range" DEF { TABLE { AXIS ^"A" 1-6  AT [ 7 ] { ^"R" STRING "x" } } }
+    ^"T05 range backwards" DEF { TABLE { AXIS ^"A" 1-6  AT [ 5-2 ] { ^"R" STRING "x" } } }
+    ^"T06 overlap" DEF { TABLE { AXIS ^"A" 1-6  AT [ 1-3 ] { ^"R" STRING "x" }  AT [ 3-6 ] { ^"R" STRING "y" } } }
+    ^"T07 not a listed point" DEF { TABLE { AXIS ^"A" [ "Light", "Heavy" ]  AT [ "Medium" ] { ^"R" STRING "x" } } }
+    ^"T08 number on an entity axis" DEF { TABLE { AXIS ^"A" OF ^"Odds"  AT [ 3 ] { ^"R" STRING "x" } } }
+    ^"T09 entity of the wrong type" DEF { TABLE { AXIS ^"A" OF ^"Odds"  AT [ ^"Chain Mail" ] { ^"R" STRING "x" } } }
+    ^"T10 undefined coordinate" DEF { TABLE { AXIS ^"A" OF ^"Odds"  AT [ ^"Nobody" ] { ^"R" STRING "x" } } }
+    ^"T11 undefined axis type" DEF { TABLE { AXIS ^"A" OF ^"Nothing"  AT [ ANY ] { ^"R" STRING "x" } } }
+    ^"T12 no result block" DEF { TABLE { AXIS ^"A" 1-6  AT [ 1 ] "x" } }
+    ^"T13 axis without points" DEF { TABLE { AXIS ^"A"  AT [ 1 ] { ^"R" STRING "x" } } }
+    ^"T14 columns and cells" DEF { TABLE { AXIS ^"A" OF ^"Armor"  COLUMNS [ ^"Protection" ]  AT [ ^"Chain Mail" ] { ^"R" STRING "x" } } }
+    ^"T15 column not a property" DEF { TABLE { AXIS ^"A" OF ^"Armor"  COLUMNS [ ^"Protection", ^"Weight" ] } }
+    ^"T16 columns on a number axis" DEF { TABLE { AXIS ^"A" 1-6  COLUMNS [ ^"Protection" ] } }
+    ^"T17 neither cells nor columns" DEF { TABLE { AXIS ^"A" 1-6 } }
+    ^"T18 MIN without a number" DEF { TABLE { AXIS ^"A" INTEGER  AT [ MIN ] { ^"R" STRING "x" } } }
+    ^"T19 ANY overlaps a cell" DEF { TABLE { AXIS ^"A" 1-6  AXIS ^"B" [ "x", "y" ]  AT [ 2, "x" ] { ^"R" STRING "x" }  AT [ ANY, "x" ] { ^"R" STRING "y" } } }
+    ^"T20 string columns" DEF { TABLE { AXIS ^"A" OF ^"Armor"  COLUMNS [ "Protection" ] } }
+}

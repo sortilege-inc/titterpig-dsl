@@ -1,0 +1,38 @@
+BASE "Demo_Embedded" {
+    NAME "DECISION-20 fixture — embedded references, with and without a literal (§5c)"
+    SPEC_VERSION "0.6"
+    VERSION "1.0"
+    RELEASE_DATE "2026-11-12"
+
+    # Run both tools:
+    #   ttrpg_validator.py tests/embedded-good
+    #   check_references.py tests/embedded-good
+
+    #EmbDemoEnragedAAAAAAAAAAA ^"Enraged" DEF {
+        DESCRIPTION "The character sees only their goal."
+        REFERENCED BY { <- #EmbDemoFireBBBBBBBBBBBBBB ^"Fire Outburst" }
+    }
+    #EmbDemoFitnessCCCCCCCCCCC ^"Fitness" DEF { }
+    #EmbDemoWarAxDDDDDDDDDDDDD ^"War Ax" DEF { }
+
+    # the name as printed; the name with a different literal; each with and without a hash
+    #EmbDemoFireBBBBBBBBBBBBBB ^"Fire Outburst" DEF {
+        DESCRIPTION "Fire: When the character becomes Compromised, they also become #EmbDemoEnragedAAAAAAAAAAA ^\"Enraged\" (see page 272)."
+        ACTIVATION "When you make a ^\"Fitness\" check, you may fly into a #EmbDemoEnragedAAAAAAAAAAA ^\"Enraged\"/\"state of rage\"."
+        EFFECT "Characters armed with ^\"War Ax\"/\"War Axes\" add one kept die."
+        # surface forms are matched against the text, with the markers read as their words
+        LABEL { "Fire:" }
+        EMPHASIS BOLD { "become Enraged" }
+        EMPHASIS ITALIC { "a state of rage" }
+        REFERENCES { "kept die" -> #EmbDemoFitnessCCCCCCCCCCC ^"Fitness" }
+    }
+
+    # in a triple-quoted string the quotes are not escaped
+    #EmbDemoCrabEEEEEEEEEEEEEE ^"Way of the Crab" DEF {
+        DESCRIPTION """
+            Once per round, before making a ^"Fitness" check, you may
+            enter a #EmbDemoEnragedAAAAAAAAAAA ^"Enraged"/"cold fury" until the end of the scene.
+        """
+        EMPHASIS { "a cold fury until" }
+    }
+}

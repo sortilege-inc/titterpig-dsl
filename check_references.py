@@ -17,7 +17,14 @@ Per edition-scoped corpus root:
   3. Every surface form appears as a substring of its entry's DESCRIPTION (drift check).
   4. REFERENCED BY (optional inverse mirror): its referrer resolves, AND each entry corresponds to
      a real REFERENCES pointing at this DEF (consistency). Absence of REFERENCED BY is never an error.
+  5. EMPHASIS and LABEL (v0.6, DECISION-19): each surface form appears in its DEF's own prose; an
+     EMPHASIS kind is BOLD and/or ITALIC, each once; a LABEL depth is a whole number of 1 or more.
 
+  6. Embedded references (v0.6, DECISION-20): every ^\"Name\" inside a string resolves, by its
+     #hash when it carries one; a hashless one WARNs; a /\"literal\" after it is not empty. Each
+     counts as a reference from the entity around it, so REFERENCED BY may mirror it. Surface forms
+     are matched against a string's TEXT: the string with each embedded reference read as its
+     literal, or as its name where it has none.
 Exit 1 on any ERROR (unresolved / bad-hash / name-hash mismatch / surface-drift / mirror-inconsistency).
 WARNs (hashless targets) do not fail the gate but are reported and counted.
 
@@ -47,7 +54,15 @@ DESC  = re.compile(r'^\s*DESCRIPTION\s+"(.*)"\s*$')
 # and the REFERENCES block excepted, since an entry there would otherwise let
 # every surface form prove its own presence.
 QUOTED = re.compile(r'"((?:[^"\\]|\\.)*)"')
-OPEN  = re.compile(r'^\s*(REFERENCES|MENTIONS|REFERENCED\s+BY|EMPHASIS)\s*\{')
+# v0.6 (DECISION-19): `EMPHASIS` may name its kind before the brace -- `EMPHASIS BOLD {`,
+# `EMPHASIS BOLD ITALIC {` -- and `LABEL {` / `LABEL 2 {` marks a run-in label at a depth.
+# The words between the keyword and the brace are captured whole and checked by head_words(),
+# so a kind this spec does not define is reported instead of the block being skipped: before
+# this, `EMPHASIS BOLD {` matched nothing here, its entries were never checked, and the lines
+# of a multi-line block were folded into the DEF's prose.
+HEAD  = r'(REFERENCES|MENTIONS|REFERENCED\s+BY|EMPHASIS|LABEL)((?:[ \t]+[A-Za-z0-9_+-]+)*)'
+OPEN  = re.compile(r'^\s*' + HEAD + r'\s*\{')
+EMPH_KINDS = ('BOLD', 'ITALIC')
 # §5c EMPHASIS: a marked span with no referent, so there is nothing to resolve.
 # The one rule it shares with REFERENCES is the one that matters -- the surface
 # form has to be in the prose it claims to mark.
@@ -59,12 +74,21 @@ EMPH  = re.compile(r'^\s*"((?:[^"\\]|\\.)*)"(?:@\d+)?\s*$')
 # how a corpus with one span per DEF reads best. Its closing brace is not on a
 # line of its own, so a reader that only closes on a bare `}` never closes it
 # and swallows the rest of the file.
-ONELINE = re.compile(r'^\s*(REFERENCES|MENTIONS|REFERENCED\s+BY|EMPHASIS)\s*\{(.*)\}\s*$')
+ONELINE = re.compile(r'^\s*' + HEAD + r'\s*\{(.*)\}\s*$')
 CLOSE = re.compile(r'^\s*\}\s*$')
 # "surface" -> [#hash] ^"Target"      (optional @n occurrence index tolerated on surface)
 REF   = re.compile(r'^\s*"((?:[^"\\]|\\.)*)"(?:@\d+)?\s*->\s*(?:(#\S+)\s+)?\^"([^"]+)"\s*$')
 # ["surface"] <- [#hash] ^"Referrer"
 RBY   = re.compile(r'^\s*(?:"((?:[^"\\]|\\.)*)"\s*)?<-\s*(?:(#\S+)\s+)?\^"([^"]+)"\s*$')
+
+# §5c embedded references (v0.6, DECISION-20): [#hash ]^\"Name\"[/\"literal\"] inside a string.
+# The quotes are escaped in an ordinary string and bare in a triple-quoted one; group 2 is the
+# form that opened the name, and the closers match it. The TEXT of a string is what is left when
+# each embedded reference is replaced by its literal, or by its name where it has none; that
+# text is what a REFERENCES / EMPHASIS / LABEL surface form is matched against.
+EMBEDDED = re.compile(r'(?:(#[A-Za-z0-9_]+)[ \t]+)?\^(\\?")((?:(?!\\?").)+?)\2'
+                      r'(?:/\2((?:(?!\\?").)*?)\2)?')
+text_of = lambda raw: EMBEDDED.sub(lambda m: m.group(4) if m.group(4) is not None else m.group(3), raw)
 
 nk = lambda s: re.sub(r'[^a-z0-9]+', '', s.strip().replace('’', "'").lower())
 
@@ -87,7 +111,7 @@ for f in files + context:
                 names[k].add(h); hash_name[h] = k
 
 # Pass 2: collect REFERENCES pairs (referrer_def -> target) and REFERENCED BY claims.
-errors = warns = total = rby_total = emph_total = 0
+errors = warns = total = rby_total = emph_total = label_total = embedded_total = 0
 ref_pairs = set()      # (referrer_defkey, target_namekey)
 rby_claims = []        # (target_defkey, referrer_namekey, referrer_hash, surface, file, line)
 
@@ -156,31 +180,67 @@ def braces(l, state):
     return op, cl, state
 
 
+def string_parts(l, state):
+    """The pieces of this line that are string content, given the state it starts in."""
+    parts, i, n, start = [], 0, len(l), 0
+    while i < n:
+        c = l[i]
+        if state == IN_TRIPLE:
+            if l.startswith(TRIPLE, i):
+                parts.append(l[start:i]); state = CODE; i += 3
+            else:
+                i += 1
+        elif state == IN_STR:
+            if c == '\\':
+                i += 2
+            elif c == '"':
+                parts.append(l[start:i]); state = CODE; i += 1
+            else:
+                i += 1
+        elif l.startswith(TRIPLE, i):
+            state = IN_TRIPLE; i += 3; start = i
+        elif c == '^' and l.startswith('^"', i):
+            j = l.find('"', i + 2)             # a caret name in code is not string content
+            i = n if j < 0 else j + 1
+        elif c == '"':
+            state = IN_STR; i += 1; start = i
+        elif c == '#' and (i + 1 >= n or l[i + 1].isspace()):
+            break
+        else:
+            i += 1
+    if state != CODE:
+        parts.append(l[start:])
+    return parts
+
+
 for f in files:
     b = os.path.basename(f)
     lines = open(f, encoding='utf-8').read().split('\n')
 
     # Pass A -- brace-scoped spans and the prose of each line.
     # A span is [start, end, kind, namekey]; kind 'ref' is a REFERENCES /
-    # MENTIONS / REFERENCED BY / EMPHASIS block, which owns no prose and is never
+    # MENTIONS / REFERENCED BY / EMPHASIS / LABEL block, which owns no prose and is never
     # a referrer -- the entity around it is.
     spans = []
     prose_line = [''] * len(lines)
+    start_state = [CODE] * len(lines)      # scanner state each line begins in
     stack, depth, block, broken, st = [], 0, None, False, CODE
     for i, l in enumerate(lines):
         mid = st != CODE               # this line starts inside a string
+        start_state[i] = st
         if mid:
-            # A continuation line is the entity's prose, verbatim.
-            prose_line[i] = l
+            # A continuation line is the entity's prose: its text, embedded references read
+            # as their literal or their name (§5c).
+            prose_line[i] = text_of(l)
         d = None if mid else DEF.match(l)
         ol = None if mid else ONELINE.match(l)
-        # Never inside a REFERENCES / REFERENCED BY / EMPHASIS block: an entry
+        # Never inside a REFERENCES / REFERENCED BY / EMPHASIS / LABEL block: an entry
         # line is itself `"surface" -> ^"Target"`, and folding that into the
         # prose would let every surface form prove its own presence.
         if not mid and block is None and not d and not ol and '->' not in l and '<-' not in l:
             q = QUOTED.findall(l)
             if q:
-                prose_line[i] = ' '.join(q)
+                prose_line[i] = text_of(' '.join(q))
         refblock = not mid and bool(OPEN.match(l))      # incl. the one-line form
         opener = refblock and not ol
         if opener:
@@ -256,23 +316,47 @@ for f in files:
         if rf:
             ref_pairs.add((rf, tk))
 
-    block = None            # 'REF' | 'RBY' | 'EMP' | None
+    def head_words(kind, words, ln):
+        """Check what stands between a block keyword and its brace."""
+        w = words.split()
+        if kind == 'EMPHASIS':
+            for x in w:
+                if x not in EMPH_KINDS:
+                    err(f'{b}:{ln} EMPHASIS kind "{x}" is not one of {", ".join(EMPH_KINDS)}')
+            for x in EMPH_KINDS:
+                if w.count(x) > 1:
+                    err(f'{b}:{ln} EMPHASIS kind {x} is written {w.count(x)} times')
+        elif kind == 'LABEL':
+            if len(w) > 1 or (w and not (w[0].isdigit() and int(w[0]) >= 1)):
+                err(f'{b}:{ln} LABEL depth "{" ".join(w)}" is not a whole number of 1 or more')
+        elif w:
+            err(f'{b}:{ln} {kind} takes nothing before its brace, found "{" ".join(w)}"')
+
+    def check_span(word, surface, ln):
+        """The one rule EMPHASIS and LABEL share with REFERENCES: the span is in the prose."""
+        p = prose_at(ln - 1)
+        if p is None:
+            err(f'{b}:{ln} {word} "{surface}" has no prose in this DEF to mark')
+        elif surface not in p:
+            err(f'{b}:{ln} {word} "{surface}" not a substring of its DEF\'s prose')
+
+    block = None            # 'REF' | 'RBY' | 'EMP' | 'LAB' | None
     for ln, l in enumerate(lines, 1):
         ol = ONELINE.match(l)
         if ol:
             kind = ol.group(1)
-            inner = ol.group(2).strip()
-            if kind == 'EMPHASIS':
+            inner = ol.group(3).strip()
+            head_words(kind, ol.group(2), ln)
+            if kind in ('EMPHASIS', 'LABEL'):
                 em = EMPH.match(' ' + inner)
                 if not em:
-                    err(f'unparseable EMPHASIS entry in {b}:{ln}: {inner}')
-                else:
+                    err(f'unparseable {kind} entry in {b}:{ln}: {inner}')
+                elif kind == 'EMPHASIS':
                     emph_total += 1
-                    p = prose_at(ln - 1)
-                    if p is None:
-                        err(f'{b}:{ln} emphasis "{em.group(1)}" has no prose in this DEF to mark')
-                    elif em.group(1) not in p:
-                        err(f'{b}:{ln} emphasis "{em.group(1)}" not a substring of its DEF\'s prose')
+                    check_span('emphasis', em.group(1), ln)
+                else:
+                    label_total += 1
+                    check_span('label', em.group(1), ln)
             elif kind.startswith('REFERENCED'):
                 rm = RBY.match(' ' + inner)
                 if not rm:
@@ -289,10 +373,39 @@ for f in files:
                     # shape of the construct the gate never looked at.
                     check_ref(rm, ln)
             continue
+        if block is None and '^' in l and not OPEN.match(l):
+            # Embedded references: reference sites like any other (§5d). The referrer is the
+            # nearest named entity around the string, so REFERENCED BY can mirror them.
+            for part in string_parts(l, start_state[ln - 1]):
+                for em in EMBEDDED.finditer(part):
+                    embedded_total += 1
+                    ehash, ename, elit = em.group(1), em.group(3), em.group(4)
+                    ek = nk(ename)
+                    if elit is not None and not elit.strip():
+                        err(f'{b}:{ln} embedded reference ^"{ename}" has an empty literal after the slash')
+                    if ehash:
+                        if ehash not in hash_name:
+                            err(f'{b}:{ln} embedded reference hash {ehash} is not a declared anchor')
+                        elif hash_name[ehash] != ek:
+                            err(f'{b}:{ln} embedded hash {ehash} names "{hash_name[ehash]}" but caret says ^"{ename}"')
+                    elif ek not in names:
+                        err(f'{b}:{ln} unresolved embedded reference ^"{ename}"')
+                    elif len(names[ek]) > 1:
+                        # §5d rule 3: hashless, and the name is more than one entity
+                        err(f'{b}:{ln} embedded reference ^"{ename}" is ambiguous: the name has '
+                            f'{len(names[ek])} anchors and the reference carries no #hash')
+                    else:
+                        warn(f'{b}:{ln} hashless embedded reference ^"{ename}" (strict: add #hash; name has '
+                             f'{len(names[ek])} anchor(s))')
+                    rf = referrer(ln - 1)
+                    if rf:
+                        ref_pairs.add((rf, ek))
         o = OPEN.match(l)
         if o:
+            head_words(o.group(1), o.group(2), ln)
             block = ('RBY' if o.group(1).startswith('REFERENCED')
-                     else 'EMP' if o.group(1) == 'EMPHASIS' else 'REF')
+                     else 'EMP' if o.group(1) == 'EMPHASIS'
+                     else 'LAB' if o.group(1) == 'LABEL' else 'REF')
             continue
         if block and CLOSE.match(l):
             block = None; continue
@@ -303,19 +416,18 @@ for f in files:
                     err(f'unparseable REFERENCES entry in {b}:{ln}: {l.strip()}')
                 continue
             check_ref(m, ln)
-        elif block == 'EMP':
+        elif block in ('EMP', 'LAB'):
             m = EMPH.match(l)
             if not m:
                 if l.strip() and not l.strip().startswith('#'):
-                    err(f'unparseable EMPHASIS entry in {b}:{ln}: {l.strip()}')
+                    err(f'unparseable {"EMPHASIS" if block == "EMP" else "LABEL"} entry in {b}:{ln}: {l.strip()}')
                 continue
-            emph_total += 1
-            surface = m.group(1)
-            p = prose_at(ln - 1)
-            if p is None:
-                err(f'{b}:{ln} emphasis "{surface}" has no prose in this DEF to mark')
-            elif surface not in p:
-                err(f'{b}:{ln} emphasis "{surface}" not a substring of its DEF\'s prose')
+            if block == 'EMP':
+                emph_total += 1
+                check_span('emphasis', m.group(1), ln)
+            else:
+                label_total += 1
+                check_span('label', m.group(1), ln)
         elif block == 'RBY':
             m = RBY.match(l)
             if not m:
@@ -342,7 +454,7 @@ for target_def, referrer, loc in rby_claims:
         err(f'{loc} REFERENCED BY claims "{referrer}" references this entry, but no REFERENCES '
             f'from "{referrer}" -> "{target_def}" exists')
 
-print(f'REFERENCES: {total} refs | {rby_total} referenced-by | {emph_total} emphasis | '
+print(f'REFERENCES: {total} refs | {rby_total} referenced-by | {emph_total} emphasis | {label_total} labels | {embedded_total} embedded | '
       f'{errors} error(s) | {warns} hashless WARN(s)')
 
 # ---------------------------------------------------------------------------

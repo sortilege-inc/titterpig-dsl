@@ -1,0 +1,24 @@
+BASE "Demo_Embedded_Bad" {
+    NAME "DECISION-20 fixture — each string here holds one intentional finding"
+    SPEC_VERSION "0.6"
+    VERSION "1.0"
+    RELEASE_DATE "2026-11-12"
+
+    #EmbBadEnragedAAAAAAAAAAAA ^"Enraged" DEF { }
+    #EmbBadFitnessBBBBBBBBBBBB ^"Fitness" DEF { }
+    #EmbBadStrikeOneDDDDDDDDDD ^"Strike" DEF { }
+    #EmbBadStrikeTwoEEEEEEEEEE ^"Strike" DEF { }
+
+    #EmbBadFireCCCCCCCCCCCCCCC ^"Fire Outburst" DEF {
+        DESCRIPTION "They suffer the ^\"Shadowlands Taint\" at once."
+        ACTIVATION "They fly into a ^\"Furious\"/\"state of rage\"."
+        EFFECT "They become #EmbBadNoSuchHashZZZZZZZZ ^\"Enraged\"."
+        TRIGGER "They become #EmbBadFitnessBBBBBBBBBBBB ^\"Enraged\"."
+        OPPORTUNITY "They may perform a ^\"Strike\" action."
+        BURST "They become ^\"Enraged\"/\"\" at once."
+        EMPHASIS { "a ^\"Enraged\"" }
+        NOTE """
+            A ^"Nobody" arrives.
+        """
+    }
+}

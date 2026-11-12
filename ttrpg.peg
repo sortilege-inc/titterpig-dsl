@@ -14,7 +14,10 @@
 # v0.6 working draft: CHOOSE n replaces CHOICE / PICK / WHERE (§5b, DECISION-15), with
 # DISTINCT / INDISTINCT and a WITH clause; BOOLEAN takes an inline value (§8); SET and
 # TRANSFORM, a change to a value (§8, DECISION-16); REF, a reference to one entity (§8,
-# DECISION-17); dice as DEFs with FACES, ROLL n OF, and NEXT between steps (§8, DECISION-18).
+# DECISION-17); dice as DEFs with FACES, ROLL n OF, and NEXT between steps (§8, DECISION-18);
+# EMPHASIS takes a kind (BOLD, ITALIC) and LABEL names a run-in label (§5c, DECISION-19);
+# an embedded reference in a string may keep a different literal (§5c, DECISION-20);
+# TABLE with AXIS, AT and COLUMNS (§5e, DECISION-21).
 #
 # This grammar defines syntactically valid .ttrpg files. Semantic rules
 # (hash uniqueness, EXTENDS resolution, type consistency) are enforced
@@ -55,6 +58,8 @@ BODY_ENTRY      <- METADATA
                  / REFERENCES_BLOCK          # v0.5, §5c — renamed from MENTIONS
                  / REFERENCED_BY_BLOCK       # v0.5, §5c — optional inverse mirror
                  / EMPHASIS_BLOCK            # v0.5, §5c — emphasis with no referent
+                 / LABEL_BLOCK               # v0.6, §5c — a run-in label (DECISION-19)
+                 / TABLE_BLOCK               # v0.6, §5e — a table (DECISION-21)
                  / GUIDANCE_BLOCK            # v0.5, §22 — generalized from BRIDGE
                  / HOOKS_BLOCK               # v0.5, §23 — conditional emit hooks
                  / OPTIONAL_BLOCK            # v0.5, §24 — optional/variant rule marker
@@ -154,9 +159,20 @@ OCC_INDEX           <- '@' [0-9]+
 # display face marks where the triggering fiction ends and the mechanics begin.
 # No target, so no hash and no resolution: the only coherence rule is the one
 # REFERENCES already has, that the surface form appear in the DEF's own prose.
-EMPHASIS_BLOCK      <- 'EMPHASIS' _ '{' _ (EMPHASIS_ENTRY _)* '}'
+# v0.6 (DECISION-19): the block may say how the span is set -- BOLD, ITALIC, or both in
+# either order, each at most once. With no kind the span is marked and the kind unrecorded.
+EMPHASIS_BLOCK      <- 'EMPHASIS' _ EMPHASIS_KIND? _ '{' _ (EMPHASIS_ENTRY _)* '}'
+EMPHASIS_KIND       <- 'BOLD' _ 'ITALIC' / 'ITALIC' _ 'BOLD' / 'BOLD' / 'ITALIC'
 EMPHASIS_ENTRY      <- STRING OCC_INDEX?
                      / COMMENT
+
+# §5c — LABEL: a run-in label, beside the text *(v0.6, DECISION-19)*.
+# `Prot: The bonus the armor grants...` keeps its label in the string as printed; the
+# LABEL block names it. The optional whole number is the label's depth (1 when absent):
+# a depth-2 label sits under the depth-1 label before it. Same coherence rule as
+# EMPHASIS: the surface form appears in the DEF's own prose.
+LABEL_BLOCK         <- 'LABEL' _ LABEL_DEPTH? _ '{' _ (EMPHASIS_ENTRY _)* '}'
+LABEL_DEPTH         <- [1-9] [0-9]*
 
 # Optional inverse mirror: what references THIS entry. Tool-derivable; when present,
 # each entry must correspond to a real REFERENCES pointing here (validator gate).
@@ -303,6 +319,35 @@ ROLL_TYPE       <- 'ROLL' _ INTEGER_LIT _ 'OF' _ HASHED_REF (_ TRANSFORM_CHANGE)
 # follows the statement above it. A chain runs forward only: no branch, no loop.
 #   NEXT #hash ^"Hit Points" SET ^"Roll"
 STEP            <- 'NEXT' _ (CHANGE / CHOOSE_KEYED / PROPERTY_DECL)
+
+# §5e — TABLE: a table, as a primitive block in a DEF's body *(v0.6, DECISION-21)*.
+# AXIS lines declare what the table is looked up by; AT gives the result at one coordinate
+# per axis, in the order the axes are declared. A table of records has no cells: one axis
+# OF a type, and COLUMNS naming that type's properties in printed order.
+#   TABLE {
+#       AXIS ^"Odds" OF #hash ^"Odds"
+#       AXIS ^"Chaos Factor" 1-9
+#       AT [ #hash ^"Certain", 1 ] { ^"Yes" INTEGER 50 }
+#   }
+#   TABLE { AXIS ^"Material" OF #hash ^"Armor"  COLUMNS [ ^"Prot", ^"Load" ] }
+# That each AT gives one coordinate per axis, of a kind the axis takes, and that no two
+# cells cover the same coordinates, is the validator's to check, not this grammar's.
+TABLE_BLOCK     <- 'TABLE' _ '{' _ (AXIS_DECL _)+ ((AT_CELL _)+ / TABLE_COLUMNS _) '}'
+AXIS_DECL       <- 'AXIS' _ (CARET_REF / STRING) _ AXIS_POINTS
+AXIS_POINTS     <- 'OF' _ HASHED_REF
+                 / INTEGER_LIT '-' INTEGER_LIT
+                 / 'INTEGER'
+                 / 'ROLL' _ INTEGER_LIT _ 'OF' _ HASHED_REF
+                 / '[' _ AXIS_POINT (_ ',' _ AXIS_POINT)* _ ']'
+AXIS_POINT      <- STRING / HASHED_REF
+AT_CELL         <- 'AT' _ '[' _ COORDINATE (_ ',' _ COORDINATE)* _ ']' _ '{' _ BODY '}'
+COORDINATE      <- 'ANY'
+                 / 'MIN' _ INTEGER_LIT
+                 / 'MAX' _ INTEGER_LIT
+                 / INTEGER_LIT ('-' INTEGER_LIT)?
+                 / HASHED_REF
+                 / STRING
+TABLE_COLUMNS   <- 'COLUMNS' _ '[' _ CARET_REF (_ ',' _ CARET_REF)* _ ']'
 
 # A change to a value (v0.6, DECISION-16). The target is a reference to the thing changed,
 # or a CHOOSE, in which case the change applies to each option chosen.
@@ -637,6 +682,20 @@ STRING_CHAR     <- '\\' ESCAPE_CHAR / !'"' .
 ESCAPE_CHAR     <- ["\\/nrt] / 'u' HEX HEX HEX HEX
 HEX             <- [0-9a-fA-F]
 
+# §5c — embedded references *(v0.6, DECISION-20)*. A string is one token to the rules
+# above. Its CONTENT may hold references, read after the string is lexed:
+#   "… they also become ^\"Enraged\" (see page 272)."            cites ^"Enraged"; text: Enraged
+#   "… fly into a ^\"Enraged\"/\"state of rage\" …"              cites ^"Enraged"; text: state of rage
+#   "… become #hash ^\"Enraged\" …"                              cites it by its hash
+# In a SINGLE_QUOTED string Q is the escaped quote; in a TRIPLE_QUOTED one it is the bare
+# quote. The text of a string is its content with each EMBEDDED_REF read as its literal,
+# or as its name where it has none.
+STRING_CONTENT  <- (EMBEDDED_REF / .)*
+EMBEDDED_REF    <- (HASH_ID ' '+)? '^' Q EMBEDDED_NAME Q ('/' Q EMBEDDED_LITERAL Q)?
+EMBEDDED_NAME   <- (!Q .)+
+EMBEDDED_LITERAL <- (!Q .)+
+Q               <- '\\"' / '"'
+
 # Integer: optional sign, digits
 INTEGER_LIT     <- '-'? [0-9]+
 
@@ -702,6 +761,8 @@ EOF             <- !.
 # Parameterize:  PARAMETERS, OF (also a type keyword), ALIAS, FOR   (DECISION-6)
 # Choice:        CHOOSE, DISTINCT, INDISTINCT, OF, WITH, AND, OR, NOT   (v0.6, DECISION-15)
 # References:    REFERENCES, MENTIONS (deprecated alias), REFERENCED, BY       (v0.5, §5c)
+# Beside text:   EMPHASIS (v0.5), BOLD, ITALIC, LABEL                 (v0.6, §5c, DECISION-19)
+# Tables:        TABLE, AXIS, AT, COLUMNS, ANY, MIN, MAX              (v0.6, §5e, DECISION-21)
 # Hooks:         HOOKS, HOOK, FORMALITY, WHEN, TRIGGER, THEN,
 #                PROSE, TAGGED, CONDITIONAL, FORMAL                            (v0.5, §23)
 # Optional:      OPTIONAL, DEFAULT, SCOPE, GLOBAL, on, off                    (v0.5, §24)
