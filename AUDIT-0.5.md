@@ -653,10 +653,18 @@ two parameter to-dos below.
 - **A spell's Magnitudes and derived Level** (arm5e, F5). §17's Pilum of Fire gives the printed
   `Level 20` and `BASE 10`. The spell type's `Magnitudes` property and the rule that derives Level
   from it are not written.
-- **Dice as DEFs and rolls as steps.** Direction set by the owner 2026-11-11; forms not settled:
-  how a die lists its values and weights, how a roll of n dice is written, how a later line names
-  an earlier line's result, where the base dice live given edition-scoped hashes, and what the
-  spec says about statement order now that some blocks are steps.
+- **Dice as DEFs and rolls as steps.** Direction set by the owner 2026-11-11. Ruled so far: the
+  spec ships a dice module that every edition includes; the printed form ("4d8 + 12") may be kept
+  beside the structure, with no convention set yet; two or three lines per value is acceptable.
+  Not settled: how a die lists its values and weights, how a roll of n dice is written, how a
+  later line names an earlier line's result, how an edition includes the module given
+  edition-scoped hashes (§19), and how order is marked. The owner raised a `THEN` or `NEXT`
+  separator between steps.
+  Precedent found 2026-11-11: l5r5e already defines dice as DEFs. `^"Ring Die"` and `^"Skill Die"`
+  in `l5r5e-0.5-core-base.ttrpg` each hold a `FACES { 1 "Blank"  2 "(op) (st)" … }` block, one line
+  per physical face, and their faces are symbols. l5r5e also writes `ROLL "1d10"` (7 uses) to name
+  the die a table is rolled on. §15 lists `FACES` as a system-defined keyword.
+  `THEN` has 31 uses in 9 corpora, every one the consequence of a `WHEN`. `NEXT` has none.
 
 ### Known gaps left by this change
 
@@ -718,6 +726,8 @@ Filled in as each finding is walked through.
 | A1 | 2026-11-11 | Voice's change to the spell's magnitudes takes the spell as an incoming parameter: `PARAMETERS { ^"spell" OF ^"Spell" }`. | Owner: "now we're starting to need them". |
 | A1 | 2026-11-11 | Deriving a spell's Level from its Magnitudes is a to-do for arm5e (F5). The rule is more complex than "multiply by 5". | Owner's call. |
 | A1 | 2026-11-11 | §17's Pilum of Fire fixed as far as the DSL allows: `BASE 10`, the invented `DAMAGE` and `RANGE_MODIFIER` lines removed, the book's description, Range / Duration / Target as `REF`, and a `^"Voice"` entity that carries the +2 magnitudes. What could not be written is in the to-do list. | Owner: "fix as much as you are able, and mark anything you can't fix in the todo". |
+| A1 | 2026-11-11 | The spec ships a dice module that every edition includes. | Owner's call, over the agent's lean toward each system defining its own dice. |
+| A1 | 2026-11-11 | The printed form of a roll may be kept beside the structure; no convention is set yet. Two or three lines per dice value is acceptable. | Owner's call. |
 | A1 | 2026-11-11 | Dice are DEFs, starting with d2, d3, d4, d6, d8, d10, d20 and d100, each a list of values with a weight of 1. A thing that needs a roll declares the dice, transforms the value, stores the sum, and may add a property (a damage type). | Owner's direction, replacing the agent's proposal of a dice literal and a `DICE` type, which is withdrawn. The exact forms are not yet settled. |
 | A1 | 2026-11-11 | `REF` is the property type for a reference to one entity: `REF OF ^"Type"` on the type, `REF ^"Entity"` on an instance. Written into §8 as DECISION-17. The example's `^"Clan" STRING "Crab"` is now `^"Clan" REF #… ^"Crab"`. | Owner asked for the string to become a reference and chose `REF` from four candidate terms. |
 
