@@ -42,10 +42,10 @@ The problems are in four places.
 
 ### A1. The first example of "structure over prose" loses content
 
-**Status:** applied 2026-11-11 and committed on branch `0.6`; awaiting the owner's sign-off to close.
-`CHOOSE n` replaces `CHOICE` (DECISION-15); `SET` and `TRANSFORM` (DECISION-16); `REF`
-(DECISION-17); dice as DEFs, `ROLL` and `NEXT` (DECISION-18); `BOOLEAN` inline value; the §1 example
-is three full DEFs with opaque hashes. Follow-ups F1 to F6 and the to-dos below remain open.
+**Status:** closed 2026-11-11 by the owner. Committed and pushed on branch `0.6`. `CHOOSE n`
+replaces `CHOICE` (DECISION-15); `SET` and `TRANSFORM` (DECISION-16); `REF` (DECISION-17); dice as
+DEFs, `ROLL` and `NEXT` (DECISION-18); `BOOLEAN` inline value; the §1 example is three full DEFs with
+opaque hashes. Follow-ups F1 to F6 and the to-dos listed after them stay open and are tracked there.
 
 **Resolution.** The example in spec §1, `AUTHORING-GUIDELINES.md` §1 and
 `.claude/skills/titterpig-dsl/SKILL.md` (a third copy, found while fixing) now follows the l5r5e Hida
@@ -619,8 +619,13 @@ becomes a `ROLL n OF ^"die"` with `TRANSFORM`, `SET` and `REF` steps (§8). Each
 declares `DEPENDS_ON "Titterpig_Dice"` and its `gates.sh` passes `modules/0.6/`. A system whose
 book prints `D6` may `ALIAS` the module's die or define its own.
 
-l5r5e (with F1): `^"Ring Die"` and `^"Skill Die"` already hold `FACES` blocks and need only
+l5r5e (with F1): `^"Ring Die"` and `^"Skill Die"` already hold `FACES` blocks and need
 `EXTENDS ^"Die"`; 7 `ROLL "1d10"` / `ROLL "d100"` lines become `ROLL 1 OF`.
+
+**To-do (owner, 2026-11-11): the Blank face is a DEF.** l5r5e writes the blank face as the string
+`"Blank"`. It should be an entity, as Opportunity is, because other rules name it (Inversions and
+similar). The faces then read `1 #hash ^"Blank"`. The same applies to the other symbols the dice
+show (`(op)`, `(su)`, `(st)`, `(ex)`), which are strings today.
 
 The synthesist (F3) needs `FACES`, `ROLL` and `NEXT`.
 
@@ -742,6 +747,8 @@ Filled in as each finding is walked through.
 | A1 | 2026-11-11 | §17's Pilum of Fire fixed as far as the DSL allows: `BASE 10`, the invented `DAMAGE` and `RANGE_MODIFIER` lines removed, the book's description, Range / Duration / Target as `REF`, and a `^"Voice"` entity that carries the +2 magnitudes. What could not be written is in the to-do list. | Owner: "fix as much as you are able, and mark anything you can't fix in the todo". |
 | A1 | 2026-11-11 | Dice forms agreed and written into §8 as DECISION-18: a die is a DEF that `EXTENDS ^"Die"` with a `FACES` block (a range for a numeric die; weight 1 unless `WEIGHT n`); a roll is `ROLL n OF ^"die"`, its value the sum where the faces are numbers; a step's result is named by the property it sits under; `NEXT` before each later step; one module file defining `^"Die"` and d2, d3, d4, d6, d8, d10, d20, d100. | Owner agreed to all five forms. `NEXT` over `THEN`: `THEN` already means the consequence of a `WHEN` (31 uses in 9 corpora). |
 | A1 | 2026-11-11 | The dice module is edition-neutral: its hashes are the same wherever it is included (§19), and a system's BASE may declare `DEPENDS_ON "Titterpig_Dice"` (§3). A corpus that uses it is validated with the module passed alongside. | Owner agreed to the mechanism. |
+| A1 | 2026-11-11 | A1 is closed. The branch is committed and pushed. A2 is not to be started yet. | Owner's call. |
+| A1 | 2026-11-11 | To-do for l5r5e: the Blank face of its dice is a DEF, like Opportunity, since Inversions and similar rules name it. Logged under F6. | Owner's call. |
 | A1 | 2026-11-11 | A face may be followed by what it shows, a string or a reference (`1 "Blank"`). An older `ROLL "1d10"` is left alone in a file below 0.6 and is an error from 0.6 on. | Agent's calls, to confirm. The first keeps l5r5e's existing `FACES` blocks valid as written; the second follows the owner's `CHOICE` ruling. |
 | A1 | 2026-11-11 | The spec ships a dice module that every edition includes. | Owner's call, over the agent's lean toward each system defining its own dice. |
 | A1 | 2026-11-11 | The printed form of a roll may be kept beside the structure; no convention is set yet. Two or three lines per dice value is acceptable. | Owner's call. |
