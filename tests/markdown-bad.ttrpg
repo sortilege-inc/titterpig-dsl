@@ -6,7 +6,7 @@ BASE "Demo_Markdown_Bad" {
 
     #MdBadGasFormAAAAAAAAAAAAA ^"The Gas Form" DEF {
         DESCRIPTION "Outside the door is a **cloud of green gas** with little balloon bladders."
-        TEXT "She gives a *red bonbon* to the mandrill."
+        EFFECT "She gives a *red bonbon* to the mandrill."
         NOTE "A ***sweet old lady*** in a blue shawl enters."
         KEY "**Prot:** The bonus the armor grants.\n**Load:** The amount the armor adds."
         PROPERTIES {

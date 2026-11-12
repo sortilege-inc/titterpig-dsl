@@ -1,0 +1,44 @@
+BASE "Text_Core" {
+    NAME "DECISION-29 and DECISION-30 fixture — prose fields, and a block's keywords (§10, §15)"
+    SPEC_VERSION "0.6"
+    VERSION "1.0"
+    RELEASE_DATE "2026-11-12"
+
+    #   ttrpg_validator.py tests/text-good           0 errors, 0 warnings
+
+    # a definition's prose is DESCRIPTION
+    #TxtTiebreakG4mK8wQ2xN6vB1 ^"Universal Tiebreaker" DEF {
+        DESCRIPTION "Adversary NPCs act before minion NPCs."
+    }
+
+    # SKILL, TYPE and TRIGGER are a SCENE's and a HOOK's keywords. Outside those blocks a system
+    # may use each word for a field of its own (DECISION-29).
+    #TxtSchoolP7cJ3yT9hL5sD2fA ^"Kakita Duelist" DEF {
+        DESCRIPTION "A school of duelists."
+        TYPE "Bushi"
+        TRIGGER "When you draw your blade"
+        CURRICULUM {
+            RANK 1 {
+                SKILL "Aesthetics"
+            }
+        }
+    }
+
+    # TEXT in a block that is not a definition: a system block inside a DEF, and a guidance ENTRY
+    #TxtSceneR5tJ1yL8sD4fG0zX ^"Dark Arts Coffee" DEF {
+        DESCRIPTION "The crew begins the adventure at its local coffee shop."
+        READ_ALOUD {
+            TEXT "The rain beats a steady rhythm against the metal roof."
+        }
+    }
+
+    MODIFY #TxtTiebreakG4mK8wQ2xN6vB1 ^"Universal Tiebreaker" {
+        GUIDANCE {
+            ENTRY ^"errata-universal-tiebreaker-0" #TxtEntryB9pK3xN7vM2cQ6hW {
+                CONCERNS [ #TxtTiebreakG4mK8wQ2xN6vB1 ^"Universal Tiebreaker" ]
+                TOPICS [ "errata" ]
+                TEXT "The second bullet should read \"Adversary NPCs supersede minion NPCs\""
+            }
+        }
+    }
+}

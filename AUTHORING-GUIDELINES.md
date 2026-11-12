@@ -119,7 +119,7 @@ in `.lore`) — mirror, don't duplicate.
 
 ## 4. Identity & references
 
-- **Hash IDs** are opaque, `≥16` alphanumeric chars, globally unique, and carry **no semantics** a
+- **Hash IDs** are opaque, `≥16` alphanumeric chars, unique within an edition, and carry **no semantics** a
   tool parses out. Add one to anything that will be cross-referenced or corrected by errata.
 - Use caret refs `^"Name"` for readability. **Define before you reference**, and keep every
   reference resolvable — coherence/consilience validation will flag danglers.

@@ -1,0 +1,18 @@
+BASE "Text_Bad_New" {
+    NAME "DECISION-30 fixture — TEXT directly in a DEF, in a file that declares 0.6"
+    SPEC_VERSION "0.6"
+    VERSION "1.0"
+    RELEASE_DATE "2026-11-12"
+
+    #   ttrpg_validator.py tests/text-bad            2 errors, 1 warning
+
+    #TxtBadElvesH6tJ3yL9sD2fG ^"Elves High" DEF {
+        TEXT "The children of the solar celestials."                     # ERROR
+    }
+
+    #TxtBadGroupK2xV6yNc9TqJ4m ^"Monster Group" DEF {
+        ^"Role" DEF {
+            TEXT "Librarians and heralds."                               # ERROR: a nested DEF too
+        }
+    }
+}

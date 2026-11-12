@@ -1,6 +1,6 @@
 #!/usr/bin/env python3
 """
-Titterpig DSL validator (v0.5, with the v0.6 working-draft CHOOSE construct).
+Titterpig DSL validator (v0.5, with the v0.6 working draft).
 
 Two levels of validation over one or more .ttrpg files (or directories):
 
@@ -111,6 +111,10 @@ and reported, never silently passed. A non-EXTERNAL side with no --corpus mappin
 ERROR: "not checked" must never read as "checked and fine". An untyped referent (a plain
 string where a caret ref could have gone) is not gated, but WARNS if it would in fact
 have resolved — so quoting cannot be used to dodge the reference gate.
+
+PROSE FIELDS (spec §10, DECISION-30). A definition's prose is DESCRIPTION. TEXT "…" as a
+statement directly in a DEF is a WARNING in a file that declares SPEC_VERSION below 0.6, or
+none, and an ERROR from 0.6. TEXT inside an ENTRY or any other block is not looked at.
 
 ACTOR FILES (spec §2, DECISION-28). An .actor file is an EXTENSION file of instances.
 
@@ -1888,6 +1892,14 @@ def analyze_file(fname, text, findings):
         elif w == 'DEPENDS_ON':
             if idx + 1 < len(toks) and toks[idx + 1].kind == 'STR':
                 depends.append((toks[idx + 1].val, t.line))
+        elif w == 'TEXT' and idx + 1 < len(toks) and toks[idx + 1].kind == 'STR' \
+                and frames and frames[-1].get('kw') == 'DEF' and not caret_earlier_on_line(idx):
+            # A definition's prose is DESCRIPTION (§10, DECISION-30). TEXT is the prose field
+            # of an ENTRY and of other blocks that are not definitions.
+            findings.append(Finding(fname, 'lint', 'error' if spec_version >= (0, 6) else 'warning',
+                                    t.line, "TEXT directly in a DEF: a definition's prose is "
+                                    "DESCRIPTION; TEXT is the prose field of an ENTRY and of "
+                                    "other blocks that are not definitions (§10)"))
         elif w == 'ORIGIN' and idx + 1 < len(toks) and toks[idx + 1].kind == 'STR':
             # A port's source (§19, DECISION-26): ORIGIN "edition" <KIND> "id", in the header.
             # `ORIGIN {` with no string is a block some frozen pre-0.4 files use, and is left alone.

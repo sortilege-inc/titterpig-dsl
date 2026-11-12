@@ -297,9 +297,10 @@ DEF_INLINE      <- 'DEF' _ '{' _ ((STEP / CHANGE / CHOOSE_KEYED / REF_DECL / PRO
 STRING_TYPE     <- 'STRING' (_ STRING)? (_ MODIFIER)*
 INTEGER_TYPE    <- 'INTEGER' (_ INTEGER_LIT)? (_ MODIFIER)*
 BOOLEAN_TYPE    <- 'BOOLEAN' (_ BOOLEAN_LIT)? (_ MODIFIER)*
-ENUM_TYPE       <- 'ENUM' _ BRACKET_LIST
-LIST_OF_TYPE    <- 'LIST' _ 'OF' _ (CARET_REF / 'STRING') (_ BRACKET_LIST)?
-LIST_LITERAL    <- 'LIST' _ BRACKET_LIST
+# A modifier follows any type (§8). ENUM and the LIST forms took none before v0.6.
+ENUM_TYPE       <- 'ENUM' _ BRACKET_LIST (_ MODIFIER)*
+LIST_OF_TYPE    <- 'LIST' _ 'OF' _ (CARET_REF / 'STRING') (_ BRACKET_LIST)? (_ MODIFIER)*
+LIST_LITERAL    <- 'LIST' _ BRACKET_LIST (_ MODIFIER)*
 
 # REF — a reference to one entity (v0.6, DECISION-17). `REF OF ^"Type"` declares the
 # property; `REF ^"Entity"` gives its value; both may be written. A reference that is

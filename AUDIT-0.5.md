@@ -564,7 +564,8 @@ instances only. mark historical persona as a todo". Written as DECISION-28.
 
 ### A8. Stale and inconsistent text
 
-**Status:** open
+**Status:** closed 2026-11-12 by the owner. Committed and pushed on branch `0.6`. All eleven
+items are settled, two of them as DECISION-29 and DECISION-30.
 
 - §0 says the decisions run "through DECISION-13". DECISION-14 follows.
 - The footer says "Last Updated: 2026-08-08". Dated addenda in the text run to 2026-10-17.
@@ -585,6 +586,98 @@ instances only. mark historical persona as a todo". Written as DECISION-28.
 - §8's type table gives modifiers per type (`STRING … [REQUIRED|FIXED]`, `INTEGER … [REQUIRED]`),
   then says modifiers "apply to any type".
 - §10 allows `TEXT` as an alias for `DESCRIPTION`. §21 to §24 use `TEXT` as a field of its own.
+
+**Checked against the spec as it stands, 2026-11-12.** The items above are numbered 1 to 11 in
+order.
+
+- **1 is already fixed.** "through DECISION-13" left §0 in commit `1193d69` (A1).
+- **2 stands.** The footer reads "Spec Version: 0.5", "Last Updated: 2026-08-08".
+- **3 stands in two of three places.** §19 still says "*this specification* (v0.4)" and the
+  guidelines are titled "(v0.4)". The validator's header no longer says "v4"; it says "v0.5, with
+  the v0.6 working-draft CHOOSE construct", which names one of the 0.6 constructs it now checks.
+- **4 stands.** §5c, DECISION-11: "Three additions:" followed by items 1 to 4.
+- **5 and 6 stand.** Every corpus repo is laid out
+  `titterpig-dsl-<system>/<contentver>/<system>-<contentver>-<book>-<facet>.<ext>`
+  (`DSL/CLAUDE.md`, "File naming"), with the content version in the directory and in the
+  filename.
+- **7 stands,** and A5 has since settled it: a hash is unique within an edition (DECISION-26).
+  The guidelines still say "globally unique".
+- **8, recounted.** §15 has gained the 0.6 keywords. 17 keywords that the grammar matches by
+  name are in neither §15 nor §18: `SPEC_VERSION`, `PARAMETERS`, `HOOKS`, `HOOK`, `FORMALITY`,
+  `TRIGGER`, `PROSE`, `TAGGED`, `CONDITIONAL`, `FORMAL`, `SELECT`, `SELECTIONS`, `GLOBAL`, `on`,
+  `off`, `true`, `false`. `OPTIONAL` is listed only as a SCENE keyword in §18. §15 still calls
+  `TRIGGER` system-defined.
+- **9, counted.** As the first word of a line in the 22 corpus directories: `SKILL` stands 95
+  times inside a `SCENE` and 1,698 times outside one (l5r5e's curricula write
+  `SKILL "Aesthetics"`); `TYPE` 488 inside and 317 outside; `OPTIONAL` 122 inside and 16 outside;
+  `REQUIRED` 205 inside and none outside as a line's first word.
+- **10, counted.** The corpora follow "apply to any type" and not the table: `INTEGER … FIXED`
+  1,019 times, `STRING … DEFAULT` 322, `ENUM … REQUIRED` 115, `BOOLEAN … REQUIRED` 11,
+  `LIST OF STRING … REQUIRED` 15. `MIN` and `MAX` stand only on `INTEGER`.
+- **11, counted.** 14,926 `TEXT "…"` lines: 10,895 in an `ENTRY`, 3,512 directly in a DEF, the
+  rest in system blocks (`READ_ALOUD` 69). No block holds both a `TEXT` and a `DESCRIPTION`.
+- **Not in the first list.** The spec's title and status line say v0.5 is current while §0
+  carries a v0.6 working draft. That is true until 0.6 is released, and is left alone.
+
+**More detail on the four open items, 2026-11-12.**
+
+- **6.** All 8,066 DSL and `.lore` files in the 22 corpus directories carry their directory's
+  version in the filename.
+- **9.** Counting a reserved word as the first word of a line outside the block that reserves
+  it: `SKILL` 1,698 (all l5r5e), `TRIGGER` 438 (root 234, draw-steel 203), `TYPE` 317 (root 194,
+  l5r5e 106), `TAGS` 78, `THEMES` 49, `SOURCE` 15, and seven more words on one or two lines
+  each. 51 of §18's 58 words are not grammar keywords at all, so the grammar reads them as
+  system keywords wherever they stand.
+- **11.** All 3,512 `TEXT` lines that sit directly in a DEF are in draw-steel, whose DEFs hold 32
+  `DESCRIPTION` lines. The other 21 directories write a DEF's prose as `DESCRIPTION` (42,126
+  lines in all). The reference gate reads every string in a DEF as its prose, so the two names
+  are the same to it. `MODIFY … SET DESCRIPTION` (§13) names one of them: on a DEF whose prose is
+  a `TEXT` it would add a second prose field beside the first. draw-steel has no synthesist
+  manifest, so no built JSON shows how a consumer reads its `TEXT`.
+
+**Rulings on 5, 6, 9 and 11 (owner, 2026-11-12):** "accept all recommendations".
+
+- **5.** §2's File Organization now shows the real layout,
+  `titterpig-dsl-<system>/<contentver>/<system>-<contentver>-<book>-<facet>.<ext>`. It describes
+  how the corpora are laid out. No tool checks it.
+- **6.** §19 says the content version stands in the directory and in each filename, and that it
+  is neither the file's `VERSION` nor its `SPEC_VERSION`.
+- **9.** DECISION-29: a keyword listed under a block is reserved inside that block, and a system
+  may use the word elsewhere. The file-level, definition, type, modifier, scope, choice and
+  modification keywords are reserved everywhere. Stated in §15 and §18. No tool changes: the
+  grammar and the validator already read the words that way.
+- **11.** DECISION-30: a definition's prose is `DESCRIPTION`, and `TEXT` is not its alias. `TEXT`
+  is the prose field of an `ENTRY` and of other blocks that are not definitions. The validator
+  reports `TEXT "…"` directly in a DEF: a warning below 0.6, an error from 0.6.
+- **Proof.**
+  - `tests/text-good` (a DEF with `DESCRIPTION`; `SKILL`, `TYPE` and `TRIGGER` as a system's own
+    fields; `TEXT` in a system block and in an `ENTRY`) gives 0 errors and 0 warnings.
+    `tests/text-bad` gives 2 errors in a file that declares 0.6 and 1 warning in one that
+    declares 0.5.
+  - Old validator against new on the 22 corpus directories: 21 give byte-identical output.
+    draw-steel gains 3,513 warnings, all for `TEXT` directly in a DEF, and no error. The line
+    count above found 3,512; the validator reads tokens and is the number to trust.
+- **Not done.** draw-steel's lines are not renamed (F18).
+
+**Applied (owner, 2026-11-12: "Yes, apply them").**
+
+- **2.** The footer's date is 2026-11-12.
+- **3.** §19 says "the version of *this specification*", with no number. The validator's header
+  says "v0.5, with the v0.6 working draft". The guidelines' title still says "(v0.4)": they have
+  not been revised for the 0.5 or 0.6 constructs, so a newer label would claim too much.
+- **4.** §5c says "Four additions".
+- **7.** The guidelines say a hash is "unique within an edition".
+- **8.** §15 gains `SPEC_VERSION`, `true` and `false`, a Parameters line (`PARAMETERS`), a Hooks
+  line (`HOOKS`, `HOOK`, `FORMALITY`, `PROSE`, `TAGGED`, `CONDITIONAL`, `FORMAL`, `TRIGGER`) and
+  an Optional-rules line (`OPTIONAL`, `GLOBAL`, `SELECTIONS`, `SELECT`, `on`, `off`). A recount
+  finds no grammar keyword outside §15 and §18. `TRIGGER` is listed as reserved inside a `HOOK`
+  and stays in the system-defined list "outside a `HOOK`": 438 corpus lines write
+  `TRIGGER "…"` as a system field, and two files hold a `HOOKS` block. It is one more case of
+  item 9.
+- **10.** §8's type table shows the type and its value only, and the Modifiers heading says a
+  modifier follows any type, with `MIN` and `MAX` for `INTEGER`. The grammar's `ENUM`, `LIST` and
+  `LIST OF` rules now take modifiers too; they took none, which would have refused 136 corpus
+  lines. Unproven, as every grammar change is.
 
 ---
 
@@ -1166,6 +1259,17 @@ DEF with a later one of the same name, so every built JSON still carries the mer
   synthesist does, for arm5e.
 - Done when the validator gives no bare-file warning in any of the seven.
 
+### F18. draw-steel: a DEF's prose becomes `DESCRIPTION`
+
+**From:** A8, DECISION-30. **Status:** open, not started. The validator warns on each.
+
+- 3,513 statements in `titterpig-dsl-draw-steel/0.5` write `TEXT "…"` directly in a DEF. Each
+  becomes `DESCRIPTION "…"`. The string does not change, so the verbatim text is untouched.
+- `TEXT` inside an `ENTRY`, an `OPTIONAL` block or a system block stays.
+- 32 DEFs in the corpus already hold a `DESCRIPTION`. UNVERIFIED: whether any DEF would end up
+  with two after the rename. None holds both today.
+- Done when the validator gives no "TEXT directly in a DEF" finding there.
+
 ### F12. Seven corpora: scene and conflict types become entities
 
 **From:** A3, DECISION-23. **Status:** open, not started. The validator now reports these.
@@ -1300,6 +1404,16 @@ two parameter to-dos below.
   which the validator does not check; a result given as a bare value in place of a block.
 
 ### Known gaps left by this change
+
+- **The guidelines are still titled "(v0.4)"** and have not been revised for the 0.5 or 0.6
+  constructs.
+- **`TEXT` is also accepted as a property type.** The validator reads `^"Name" TEXT "…"` as it
+  reads `STRING`, and 170 corpus lines write it. §8's type table does not list it, and
+  DECISION-30 does not touch it.
+- **Nothing checks the layout or the filenames** that §2 and §19 now describe.
+- **Nothing checks where a block's keyword stands.** DECISION-29 is a statement of what the
+  grammar already allows; no tool reports a block keyword misused.
+- **The spec's title, status line and footer still say v0.5.** That holds until 0.6 is released.
 
 - **An `.actor` instance's type is not checked for being a type.** The validator asks only that
   each top-level DEF has an `EXTENDS`. It does not ask what the target is, and it does not
@@ -1514,6 +1628,12 @@ Filled in as each finding is walked through.
 | A7 | 2026-11-12 | An `.actor` file always opens with the `EXTENSION` wrapper; it holds one or more DEFs; it holds instances only. Written as DECISION-28 in §2, §3 and §5, and checked by the validator. Moving l5r5e's `^"Historical Persona"` is a to-do in F1. | Owner: "part 1: always wrapped / part 2: one or more / part 3: instances only. mark historical persona as a todo". |
 | A7 | 2026-11-12 | Agent's calls, to confirm. (1) A bare `.actor` is a warning, and replaces the missing-`SPEC_VERSION` warning. (2) A type or a modification in an `.actor` is a warning below 0.6 and an error from 0.6. (3) An `.actor` that opens with a container other than `EXTENSION` gets the same treatment. (4) The type an instance extends need not be an `ACTOR` type. (5) An instance may extend another instance in the same file. (6) The guidelines' file-type row is updated. (7) The audit's first count (2,420 wrapped) is replaced by a recount (2,407). | (1) and (2): the owner's pattern for an older form. (4) was put to the owner with part 3. (5): four arm5e DEFs do it. (6): the row stated the withdrawn rule. |
 | A7 | 2026-11-12 | A7 is closed. The branch is committed and pushed. | Owner: "Close, commit, push". The agent's calls in the A7 row marked "to confirm" were reported to him before he closed and were not separately ruled on. |
+| A8 | 2026-11-12 | Six fixes with one obvious answer are applied: the footer date, §19's version label and the validator's header, "Four additions", "unique within an edition" in the guidelines, §15's missing keywords, and §8's type table. | Owner: "Yes, apply them". |
+| A8 | 2026-11-12 | Agent's calls, to confirm. (1) `TRIGGER` is listed as reserved inside a `HOOK` and kept as a system keyword outside one; the proposal had been to move it to the reserved list outright. (2) The guidelines' "(v0.4)" title is left. (3) The grammar's `ENUM` and `LIST` rules take modifiers. | (1): 438 corpus lines use `TRIGGER` as a system field. (2) was put to the owner with the list. (3): item 10's rule, in the grammar. |
+| A8 | 2026-11-12 | Items 5, 6, 9 and 11: §2 shows the real layout; §19 puts the content version in the directory and the filename; a block's keywords are reserved inside that block (DECISION-29); a definition's prose is `DESCRIPTION` and `TEXT` is not its alias (DECISION-30). | Owner: "accept all recommendations". On 11 the agent's recommendation had changed to withdrawing the alias, once the count showed one corpus uses it. |
+| A8 | 2026-11-12 | Agent's calls, to confirm. (4) `TEXT` directly in a DEF is a warning below 0.6 and an error from 0.6; `TEXT` in any block that is not a DEF is left alone, including a system block such as `READ_ALOUD`. (5) Items 5 and 6 are written as description, with no decision number. (6) §10's example of `TEXT` is l5r5e's errata entry. | (4) was put to the owner with item 11. (5): no language rule changes. (6): a real example. |
+| A8 | 2026-11-12 | `tests/markdown-bad.ttrpg` wrote one of its faulty strings as `TEXT` directly in a DEF, which DECISION-30 now also reports (7 errors where the fixture states 6). The field is renamed `EFFECT` so the fixture holds only its own kind of fault. | Agent's call, found on the pre-commit run and reported with the close. |
+| A8 | 2026-11-12 | A8 is closed. The branch is committed and pushed. | Owner: "Close, commit, push". The agent's calls in the A8 rows marked "to confirm" were reported to him before he closed and were not separately ruled on. |
 
 ---
 

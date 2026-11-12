@@ -72,6 +72,13 @@ Changes made since v0.5, listed as they are decided. **Not all are additive.**
     it opens with the `EXTENSION` wrapper as a `.ttrpg` does, holds one or more instance DEFs, and
     holds nothing else. §2 had called it a standalone single DEF. A file that opens with a bare
     DEF is the older form and the validator warns on it.
+16. **A block's keywords are reserved inside that block** *(§15, §18, DECISION-29)* — `SKILL` is a
+    SCENE keyword, and outside a scene a system may use the word for a field of its own. The
+    file-level, definition, type, modifier, scope, choice and modification keywords are reserved
+    everywhere.
+17. **A definition's prose is `DESCRIPTION`** *(§10, DECISION-30; not additive)* — `TEXT` is no
+    longer an alias for it. `TEXT` is the prose field of an `ENTRY` and of other blocks that are
+    not definitions.
 
 ### v0.5 — five new constructs, and one rule tightened *(current)*
 
@@ -463,6 +470,27 @@ stay valid.
   holds instances only: each DEF extends a type, and a type declaration belongs in a `.ttrpg`.
   The type need not be an `ACTOR` type, since arm5e's creatures and covenants extend plain DEFs.
 
+- **DECISION-29 — A block's keywords are reserved inside that block** *(resolved, v0.6,
+  2026-11-12)* (§15, §18): §15 said "only these keywords are reserved" and §18 reserved its list
+  "for use within narrative containers", and neither said what the same word is elsewhere. The
+  corpora use six of those words as a system's own field outside the block that reserves them:
+  `SKILL` on 1,698 lines (l5r5e's curricula), `TRIGGER` on 438, `TYPE` on 317, `TAGS` on 78,
+  `THEMES` on 49 and `SOURCE` on 15. The grammar already read them so: 51 of §18's 58 words are
+  not grammar keywords. The decision is that a keyword listed under a block (Tables, Hooks,
+  Codex, Bridge, the narrative containers) is reserved inside that block, and a system may use
+  the word elsewhere. The file-level, definition, type, modifier, scope, choice and modification
+  keywords are reserved everywhere.
+
+- **DECISION-30 — A definition's prose is `DESCRIPTION`; `TEXT` is not its alias** *(resolved,
+  v0.6, 2026-11-12)* (§10, §22): §10 let a system write `TEXT` for `DESCRIPTION` "when the
+  content is mechanical rather than narrative", while §21 to §24 use `TEXT` as the prose field of
+  an `ENTRY`. One corpus took up the alias: all 3,513 `TEXT` statements that sit directly in a DEF
+  are in draw-steel. The other 21 corpus directories write a DEF's prose as `DESCRIPTION`, on 42,126
+  lines, and `MODIFY … SET DESCRIPTION` (§13) names that field. The decision is one name for the
+  field. A DEF's prose is `DESCRIPTION`. `TEXT` is the prose field of an `ENTRY` and of other
+  blocks that are not definitions. `TEXT` directly in a DEF is a warning in a file that declares a
+  `SPEC_VERSION` below 0.6, or none, and an error from 0.6.
+
 ## 1. Overview & Design Principles
 
 Titterpig is a domain-specific language (DSL) for defining tabletop role-playing game (TTRPG) systems, content, and narrative structures. The base specification defines a **system-agnostic syntax toolkit** — it owns the grammar, while each game system owns its vocabulary.
@@ -607,15 +635,22 @@ When a tool must query the *facts inside* a `.lore` essay — who a person is, w
 
 ### File Organization
 
-Files are organized as:
-- `systems/{system_id}/core.ttrpg` — Base system definitions
-- `extensions/{system_id}/{extension_id}.ttrpg` — Extensions, errata, sourcebooks, house rules
-- `settings/{setting_id}.setting` — World-building and lore
-- `frames/{system_id}/{frame_id}.frame` — Campaign scaffolds
-- `arcs/{system_id}/{arc_id}.arc` — Playable adventures
-- `campaigns/{system_id}/{campaign_id}.campaign` — Multi-arc campaigns
-- `actors/{character_id}.actor` — Character instances (PC or NPC), one or more to a file
-- `bridges/{origin}-to-{destination}-{doc}.bridge` — Cross-edition conversions (§21), in the canonical repo or beside a system's corpus; never inside either edition's corpus
+The corpora are organised as one repository per system, with one directory per content version
+(§19):
+
+```
+titterpig-dsl-<system>/
+  <contentver>/
+    <system>-<contentver>-<book>-<facet>.<ext>
+```
+
+`titterpig-dsl-l5r5e/0.5/l5r5e-0.5-core-base.ttrpg` and
+`titterpig-dsl-l5r5e/0.5/l5r5e-0.5-emerald-empire-adventure-seeds.frame` sit side by side. The
+extension says what a file holds (the table above); the directory does not sort files by type. Two
+editions kept in one repository take a directory each (`arm5e/0.5/`, `armdef/0.5/`). A `.bridge`
+lives outside both corpora it joins (§21).
+
+This is how the corpora are laid out. No tool checks it.
 
 ---
 
@@ -922,7 +957,7 @@ writes `CHOICE` raises a **warning**; its options are still resolved. A file tha
 ### §5c — In-prose references: the `REFERENCES` block *(v0.4 as `MENTIONS`; v0.5, DECISION-11)*
 
 **v0.5 changes (DECISION-11).** The block is renamed **`REFERENCES`** (`MENTIONS` remains a deprecated
-alias, still accepted so 0.4 corpora keep validating). Three additions:
+alias, still accepted so 0.4 corpora keep validating). Four additions:
 1. **Hash-qualified targets, strict.** A target may be written `#hash ^"Name"` and — per the strict
    rule — SHOULD be; a **hashless target WARNs** (a name may resolve to several DEFs, and a later
    same-name entity must not silently re-point the link). Resolution is by hash when present (the hash
@@ -1401,9 +1436,9 @@ PROPERTIES {
 
 | Type | Syntax | Description |
 |------|--------|-------------|
-| STRING | `STRING [value] [REQUIRED\|FIXED]` | Text value |
-| INTEGER | `INTEGER [MIN n] [MAX n] [DEFAULT n] [REQUIRED]` | Numeric value with optional constraints |
-| BOOLEAN | `BOOLEAN [true\|false] [DEFAULT true\|false]` | True/false |
+| STRING | `STRING [value]` | Text value |
+| INTEGER | `INTEGER [value]` | Numeric value |
+| BOOLEAN | `BOOLEAN [true\|false]` | True/false |
 | ENUM | `ENUM ["val1", "val2", ...]` | Constrained choice |
 | LIST | `LIST ["val1", "val2"]` | Literal list of values |
 | LIST OF | `LIST OF ^"TypeName"` | Typed collection referencing another DEF |
@@ -1413,6 +1448,9 @@ PROPERTIES {
 | DEF (nested) | `^"Name" DEF { ... }` | Nested structured object |
 
 ### Modifiers (apply to any type)
+
+A modifier follows the type and its value, on any type in the table above. `MIN` and `MAX` are the
+exception: they constrain an `INTEGER` only.
 
 - `REQUIRED` — must be provided
 - `FIXED` — cannot be changed after creation
@@ -1668,7 +1706,26 @@ For multi-line descriptive content where preserving line breaks matters, use tri
 }
 ```
 
-Systems may use `TEXT` as an alias for `DESCRIPTION` when the content is mechanical rather than narrative.
+**A definition's prose is `DESCRIPTION`** *(v0.6, DECISION-30)*, as in the examples above. `TEXT` is
+the prose field of a block that is not a definition: a guidance `ENTRY` (§22), the units of a bridge
+(§21), an `OPTIONAL` block (§24), and a system block that carries prose of its own (curseborne's
+scenes hold `READ_ALOUD { TEXT "…" }`).
+
+```
+MODIFY #tbebb8a5383255856b3d30 ^"Universal Tiebreaker" {
+    GUIDANCE {
+        ENTRY ^"errata-universal-tiebreaker-0" #L5RERG0TplpshcZa3oDYQ3 {
+            CONCERNS [ #tbebb8a5383255856b3d30 ^"Universal Tiebreaker" ]
+            TOPICS [ "errata" ]
+            TEXT "p. 26, Margin Note \"Universal Tiebreaker\": The second bullet should read \"Adversary NPCs supersede minion NPCs\""
+        }
+    }
+}
+```
+
+Before v0.6 a system could write `TEXT` for a DEF's `DESCRIPTION` "when the content is mechanical
+rather than narrative". `TEXT` directly in a DEF is a warning in a file that declares a `SPEC_VERSION`
+below 0.6, or none, and an error from 0.6.
 
 ---
 
@@ -2046,13 +2103,19 @@ EXTENDS #L5R001aB2cD4eF6gH8iJ0kL ^"Entity"
 
 ## 15. Reserved Keywords (Base Spec)
 
-Only these keywords are reserved by the base spec:
+Only these keywords are reserved by the base spec.
 
-**File-level:** `BASE`, `EXTENSION`, `EXTENDS`, `NAME`, `VERSION`, `RELEASE_DATE`, `DEPENDS_ON`, `ORIGIN` (a port's source, §19; shared with **Bridge**)
+**Where a keyword is reserved** *(v0.6, DECISION-29)*. A keyword listed under a block (Tables, Hooks,
+Codex, Bridge, the narrative containers of §18) is reserved inside that block. Outside it, a system
+may use the word for a field of its own: l5r5e's curricula write `SKILL "Aesthetics"`, and `SKILL`
+is a SCENE keyword. The file-level, definition, type, modifier, scope, choice and modification
+keywords are reserved everywhere.
+
+**File-level:** `BASE`, `EXTENSION`, `EXTENDS`, `NAME`, `VERSION`, `SPEC_VERSION`, `RELEASE_DATE`, `DEPENDS_ON`, `ORIGIN` (a port's source, §19; shared with **Bridge**)
 
 **Definition:** `DEF`, `ACTOR`, `TEMPLATE`, `CHOICES`, `PROPERTIES`, `RULES`
 
-**Types:** `STRING`, `INTEGER`, `BOOLEAN`, `ENUM`, `LIST`, `OF`, `REF`, `ROLL`
+**Types:** `STRING`, `INTEGER`, `BOOLEAN`, `ENUM`, `LIST`, `OF`, `REF`, `ROLL`, and the `BOOLEAN` values `true` and `false`
 
 **Dice (§8):** `FACES`, `WEIGHT`, `ROLL`, `NEXT`
 
@@ -2062,9 +2125,15 @@ Only these keywords are reserved by the base spec:
 
 **Scope:** `APPLIES`, `TO`, `ALIAS`
 
+**Parameters (§5b):** `PARAMETERS` (`OF` is shared with **Types**, `ALIAS` and `FOR` with **Scope** and **Codex**)
+
 **Choice (§5b):** `CHOOSE`, `DISTINCT`, `INDISTINCT`, `WITH`, `AND`, `OR`, `NOT` (`OF` is shared with **Types**)
 
 **Rule structure:** `WHEN`, `THEN`
+
+**Hooks (§23):** `HOOKS`, `HOOK`, `FORMALITY`, `PROSE`, `TAGGED`, `CONDITIONAL`, `FORMAL`, and `TRIGGER` inside a `HOOK` (`WHEN` and `THEN` are shared with **Rule structure**)
+
+**Optional rules and selections (§24):** `OPTIONAL`, `GLOBAL`, `SELECTIONS`, `SELECT`, `on`, `off` (`DEFAULT` is shared with **Modifiers**, `SCOPE` with **Bridge**, `FOR` and `VERSION` with §3/§19; `OPTIONAL` is also a SCENE keyword, §18)
 
 **Modification:** `OVERRIDE`, `ADD`, `MODIFY`, `SET`, `ADD_TO`, `REMOVE_FROM`, `REPRINT`
 
@@ -2080,7 +2149,7 @@ Only these keywords are reserved by the base spec:
 
 **Bridge (§21):** `BRIDGE`, `ORIGIN`, `DESTINATION`, `EXTERNAL`, `DISPOSITIONS`, `DISPOSITION`, `ALIASES`, `CONVERSION`, `GUIDANCE`, `MAP`, `REMAINDER`, `PROCEDURE`, `SUBJECT`, `SCOPE`, `ASPECT`, `CONCERNS`, `TOPICS`, `EXHAUSTIVE`, `CONVERT`, `INTO`, `UNCHANGED`, `SCALE`, `OVER`, `RESTATE`, `MANUAL` (`ALIAS`/`FOR` are shared with §5b; `ENTRY` and `TEXT` with §16/§10)
 
-All other keywords — `CURRICULUM`, `SCHOOL_ABILITY`, `POWERS`, `AMALGAMS`, `TRIGGER`, `CHARACTERISTICS`, `HERITAGE_TABLE`, `ACTIVATION`, `OPPORTUNITIES`, `PREDATOR_TEMPLATES`, `DICE_POOL`, `COST`, `DURATION`, etc. — are **system-defined**. They belong to L5R5e, VTM5e, or whatever system uses them.
+All other keywords — `CURRICULUM`, `SCHOOL_ABILITY`, `POWERS`, `AMALGAMS`, `TRIGGER` (outside a `HOOK`), `CHARACTERISTICS`, `HERITAGE_TABLE`, `ACTIVATION`, `OPPORTUNITIES`, `PREDATOR_TEMPLATES`, `DICE_POOL`, `COST`, `DURATION`, etc. — are **system-defined**. They belong to L5R5e, VTM5e, or whatever system uses them.
 
 ---
 
@@ -3318,7 +3387,8 @@ All three systems use only base-spec grammar (`DEF`, `EXTENDS`, `PROPERTIES`, `A
 
 ## 18. Narrative Container Keywords (Reference)
 
-These keywords are reserved by the base spec for use within narrative containers:
+These keywords are reserved by the base spec inside the narrative container named, and only there
+(§15, DECISION-29). Outside it a system may use the word for a field of its own.
 
 **SETTING:** `THEMES`, `HISTORY`, `ENTRY`, `PERIOD`
 
@@ -3340,9 +3410,9 @@ These keywords are reserved by the base spec for use within narrative containers
 
 Three distinct version axes, kept separate:
 
-- **DSL-spec version** — the version of *this specification* (v0.4). Files pin the spec they target via `SPEC_VERSION`.
+- **DSL-spec version** — the version of *this specification*. Files pin the spec they target via `SPEC_VERSION`.
 - **File content `VERSION`** — the version of a file's game content (semantic or date-based), independent of the spec version.
-- **Directory organization** — systems organize files under a content-version directory (e.g. `0.3/`, `1.0/`). Version lives in the directory, not re-encoded redundantly in every filename.
+- **Directory organization** — a system keeps its files under a content-version directory (`0.5/`), and each filename carries that version too (`l5r5e-0.5-core-base.ttrpg`), so a file names its version wherever it is copied. That number is the corpus's content version. It is neither the file's own `VERSION` nor its `SPEC_VERSION`.
 
 `DEPENDS_ON "Parent" VERSION "x"` pins a required parent *content* version. Tooling treats `SPEC_VERSION` as the conformance target.
 
@@ -4039,5 +4109,5 @@ ENTITY #hash ^"Name" {
 ---
 
 **Spec Version:** 0.5
-**Last Updated:** 2026-08-08
+**Last Updated:** 2026-11-12
 **Status:** Canonical (supersedes v0.4)
