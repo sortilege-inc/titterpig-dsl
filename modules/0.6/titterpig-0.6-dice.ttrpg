@@ -1,0 +1,55 @@
+# Titterpig dice module (spec §8, DECISION-18).
+# Shipped with the spec and included by every edition. It is edition-neutral: these hashes are
+# the same wherever the module is included (§19). A system's BASE declares
+# DEPENDS_ON "Titterpig_Dice", and a corpus is validated with this file passed alongside it.
+
+BASE "Titterpig_Dice" {
+    NAME "Titterpig dice"
+    VERSION "0.6.0"
+    SPEC_VERSION "0.6"
+    RELEASE_DATE "2026-11-11"
+
+    # The type every die extends. A die lists its faces in a FACES block; each face has a
+    # weight of 1 unless it says WEIGHT n.
+    #tx5rnK3W3skTZ1JHSIzRfZwk ^"Die" DEF { }
+
+    #t9qDiDzzBgmnL1eNEix61eZU ^"d2" DEF {
+        EXTENDS #tx5rnK3W3skTZ1JHSIzRfZwk ^"Die"
+        FACES { 1-2 }
+    }
+
+    #tCQx4f3lY7cWPMmrGJZP909I ^"d3" DEF {
+        EXTENDS #tx5rnK3W3skTZ1JHSIzRfZwk ^"Die"
+        FACES { 1-3 }
+    }
+
+    #tAOghFO1Qnl47jCE32rHXZgY ^"d4" DEF {
+        EXTENDS #tx5rnK3W3skTZ1JHSIzRfZwk ^"Die"
+        FACES { 1-4 }
+    }
+
+    #tr4xhMjlSWpvjY9Mapv5gbzB ^"d6" DEF {
+        EXTENDS #tx5rnK3W3skTZ1JHSIzRfZwk ^"Die"
+        FACES { 1-6 }
+    }
+
+    #tTYf5vyovfAVlmLvvMXSQAwK ^"d8" DEF {
+        EXTENDS #tx5rnK3W3skTZ1JHSIzRfZwk ^"Die"
+        FACES { 1-8 }
+    }
+
+    #tbgOQaN6xUuzn8GiibKkGw62 ^"d10" DEF {
+        EXTENDS #tx5rnK3W3skTZ1JHSIzRfZwk ^"Die"
+        FACES { 1-10 }
+    }
+
+    #tqtQ2anAhvm29UdzTfTeCLqp ^"d20" DEF {
+        EXTENDS #tx5rnK3W3skTZ1JHSIzRfZwk ^"Die"
+        FACES { 1-20 }
+    }
+
+    #tIOrC9zpJPeb9MqJAWtXAPM0 ^"d100" DEF {
+        EXTENDS #tx5rnK3W3skTZ1JHSIzRfZwk ^"Die"
+        FACES { 1-100 }
+    }
+}

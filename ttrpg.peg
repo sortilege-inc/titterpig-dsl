@@ -14,7 +14,7 @@
 # v0.6 working draft: CHOOSE n replaces CHOICE / PICK / WHERE (§5b, DECISION-15), with
 # DISTINCT / INDISTINCT and a WITH clause; BOOLEAN takes an inline value (§8); SET and
 # TRANSFORM, a change to a value (§8, DECISION-16); REF, a reference to one entity (§8,
-# DECISION-17).
+# DECISION-17); dice as DEFs with FACES, ROLL n OF, and NEXT between steps (§8, DECISION-18).
 #
 # This grammar defines syntactically valid .ttrpg files. Semantic rules
 # (hash uniqueness, EXTENDS resolution, type consistency) are enforced
@@ -65,6 +65,8 @@ BODY_ENTRY      <- METADATA
                  / MODIFY_STATEMENT
                  / OVERRIDE_STATEMENT
                  / ADD_STATEMENT
+                 / FACES_BLOCK               # v0.6, §8 — a die's faces
+                 / STEP                      # v0.6, §8 — NEXT <statement>
                  / CHANGE                    # v0.6, §8 — <target> SET n / TRANSFORM …
                  / CHOOSE_KEYED              # v0.6, §5b — a CHOOSE in place of a name
                  / CHOOSE_VALUE              # v0.6, §5b — a CHOOSE alone in a block
@@ -246,13 +248,14 @@ ARROW            <- '->'
 # 4. Properties Block
 # ═══════════════════════════════════════════════════════════
 
-PROPERTIES_BLOCK <- 'PROPERTIES' _ '{' _ ((CHANGE / REF_DECL / PROPERTY_DECL) _)* '}'
+PROPERTIES_BLOCK <- 'PROPERTIES' _ '{' _ ((STEP / CHANGE / REF_DECL / PROPERTY_DECL) _)* '}'
 
 PROPERTY_DECL   <- (CARET_REF / STRING) _ PROPERTY_TYPE
 
 PROPERTY_TYPE   <- DEF_INLINE
                  / CHOOSE_VALUE              # v0.6, §5b — ^"Background" CHOOSE 1 [ … ]
                  / REF_TYPE                  # v0.6, §8 — ^"Clan" REF #hash ^"Crab"
+                 / ROLL_TYPE                 # v0.6, §8 — ^"Roll" ROLL 4 OF #hash ^"d8"
                  / LIST_OF_TYPE
                  / LIST_LITERAL
                  / ENUM_TYPE
@@ -260,7 +263,7 @@ PROPERTY_TYPE   <- DEF_INLINE
                  / INTEGER_TYPE
                  / BOOLEAN_TYPE
 
-DEF_INLINE      <- 'DEF' _ '{' _ ((CHANGE / CHOOSE_KEYED / REF_DECL / PROPERTY_DECL) _)* '}'
+DEF_INLINE      <- 'DEF' _ '{' _ ((STEP / CHANGE / CHOOSE_KEYED / REF_DECL / PROPERTY_DECL) _)* '}'
 
 STRING_TYPE     <- 'STRING' (_ STRING)? (_ MODIFIER)*
 INTEGER_TYPE    <- 'INTEGER' (_ INTEGER_LIT)? (_ MODIFIER)*
@@ -281,8 +284,25 @@ REF_TYPE        <- 'REF' (_ 'OF' _ HASHED_REF)? (_ REF_TARGET)? (_ MODIFIER)*
 # The declaration with no name of its own: the property takes the type's name.
 REF_DECL        <- 'REF' _ 'OF' _ HASHED_REF (_ REF_TARGET)? (_ MODIFIER)*
 REF_TARGET      <- HASHED_REF !(_ NEXT_STATEMENT_KW)
-NEXT_STATEMENT_KW <- 'STRING' / 'INTEGER' / 'BOOLEAN' / 'ENUM' / 'LIST' / 'REF' / 'DEF'
+NEXT_STATEMENT_KW <- 'STRING' / 'INTEGER' / 'BOOLEAN' / 'ENUM' / 'LIST' / 'REF' / 'ROLL' / 'DEF'
                    / 'CHOOSE' / 'SET' / 'TRANSFORM' / 'MODIFY'
+
+# Dice and rolls (v0.6, DECISION-18).
+# A die is a DEF that EXTENDS ^"Die" and lists its faces. A face is a number, or a range
+# standing for one face each; it may be followed by what it shows (a string or a
+# reference) and by WEIGHT n. Each face has a weight of 1 unless it says otherwise.
+#   FACES { 1-8 }
+#   FACES { 1 "Blank"  2 #hash ^"Opportunity"  3 WEIGHT 2 }
+FACES_BLOCK     <- 'FACES' _ '{' _ (FACE _)* '}'
+FACE            <- ROLL_KEY (_ (STRING / HASHED_REF))? (_ 'WEIGHT' _ INTEGER_LIT)?
+# A roll of n dice. Where the faces are numbers its value is their sum. A TRANSFORM may
+# follow it in the same statement and changes that value.
+#   ^"Roll" ROLL 4 OF #hash ^"d8" TRANSFORM ADD 12
+ROLL_TYPE       <- 'ROLL' _ INTEGER_LIT _ 'OF' _ HASHED_REF (_ TRANSFORM_CHANGE)*
+# Statements in a block have no order. NEXT before a statement makes it a step that
+# follows the statement above it. A chain runs forward only: no branch, no loop.
+#   NEXT #hash ^"Hit Points" SET ^"Roll"
+STEP            <- 'NEXT' _ (CHANGE / CHOOSE_KEYED / PROPERTY_DECL)
 
 # A change to a value (v0.6, DECISION-16). The target is a reference to the thing changed,
 # or a CHOOSE, in which case the change applies to each option chosen.
@@ -411,6 +431,7 @@ GENERIC_VALUE   <- '{' _ GENERIC_BODY _ '}'
 GENERIC_BODY    <- (GENERIC_BODY_ENTRY _)*
 
 GENERIC_BODY_ENTRY <- DEF_BLOCK
+                    / STEP
                     / CHANGE
                     / CHOOSE_KEYED
                     / CHOOSE_VALUE
@@ -671,6 +692,7 @@ EOF             <- !.
 #                RELEASE_DATE, DEPENDS_ON
 # Definition:    DEF, ACTOR, TEMPLATE, PROPERTIES, RULES
 # Types:         STRING, INTEGER, BOOLEAN, ENUM, LIST, OF, REF            (REF: v0.6, DECISION-17)
+# Dice:          FACES, WEIGHT, ROLL, NEXT                               (v0.6, DECISION-18)
 # Changes:       SET, TRANSFORM, ADD, SUBTRACT, MULTIPLY, DIVIDE, ROUND, UP, DOWN,
 #                NEAREST, MANUAL, MIN, MAX                               (v0.6, DECISION-16)
 # Modifiers:     REQUIRED, FIXED, DEFAULT, MIN, MAX, FIAT

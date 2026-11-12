@@ -24,6 +24,9 @@ Two levels of validation over one or more .ttrpg files (or directories):
       value.
     - REF (v0.6, DECISION-17): the OF type and the entity resolve; where a type up the
       chain declares the property REF OF a type, the entity is of that type.
+    - Dice (v0.6, DECISION-18): FACES lists at least one face, a range runs low to high,
+      a WEIGHT is a positive integer; ROLL n OF ^"die" has a count of 1 or more and a die
+      that resolves and EXTENDS ^"Die"; NEXT has a statement before and after it.
     - SET / TRANSFORM (v0.6, DECISION-16): a target precedes it on the line and resolves;
       the method is ADD, SUBTRACT, MULTIPLY, DIVIDE or MANUAL "…"; the amount is an
       integer or a reference that resolves. A SET directly inside a MODIFY body is the
@@ -97,7 +100,7 @@ HASH_MIN_BODY = 16
 
 # Property types the spec declares (§8). A caret followed by one of these inside a
 # PROPERTIES block is a property declaration; anything else is not.
-PROP_TYPE_KW = ('STRING', 'INTEGER', 'BOOLEAN', 'ENUM', 'LIST', 'DEF', 'TEXT', 'REF')
+PROP_TYPE_KW = ('STRING', 'INTEGER', 'BOOLEAN', 'ENUM', 'LIST', 'DEF', 'TEXT', 'REF', 'ROLL')
 
 # What may open the statement AFTER a `REF [OF ^"Type"]`: a reference followed by one of
 # these belongs to that next statement and is not the REF's value (§8, DECISION-17).
@@ -661,6 +664,18 @@ def parse_prop_decl(toks, k):
     elif ty == 'REF':
         rty, _th, _tl, rval, _vh, _vl, j = parse_ref(toks, j)
         rec['ref_of'], rec['value'] = rty, rval
+    elif ty == 'ROLL':
+        # ROLL n OF [#h] ^"Die"  (§8, DECISION-18). An older `ROLL "1d10"` is a system keyword
+        # use, not a roll; leave it to the main loop.
+        if j < len(toks) and toks[j].kind == 'INT':
+            j += 1
+            if j < len(toks) and toks[j].kind == 'ID' and toks[j].val == 'OF':
+                j += 1
+                if j < len(toks) and toks[j].kind == 'HASH':
+                    j += 1
+                if j < len(toks) and toks[j].kind == 'CARET':
+                    rec['value'] = toks[j].val
+                    j += 1
     return rec, j
 
 
@@ -759,6 +774,9 @@ def analyze_file(fname, text, findings):
     aliases = []                         # ALIAS ^"A" FOR ^"B" sites: (alias, target, line)  (§5b)
     chooses = []                         # CHOOSE n OF ^"T" WITH { } sites  (§5b, DECISION-15)
     ref_values = []                      # ^"P" REF ^"Entity" sites: (owner, prop, entity, line)  (§8)
+    rolls = []                           # ROLL n OF ^"Die" sites: (die, line)  (§8, DECISION-18)
+    step_names = set()                   # (enclosing DEF, name) of each property a roll sits under:
+                                         # a later step names the result by it, so it is not a ref
     next_lbrace_is_modify = False
 
     def change_target(idx):
@@ -816,6 +834,8 @@ def analyze_file(fname, text, findings):
             nxt = toks[k + 1] if k + 1 < len(toks) else None
             if nxt is not None and nxt.kind == 'ID' and nxt.val in NEXT_STATEMENT_KW:
                 return None       # that reference opens the next statement; no amount here
+            if h is None and (cur_def(), toks[k].val) in step_names:
+                return k + 1      # the result of an earlier step, named by its property (§8)
             refs.append(('change amount', toks[k].val, h, toks[k].line))
             return k + 1
         return None
@@ -1010,7 +1030,7 @@ def analyze_file(fname, text, findings):
                                             "TRANSFORM needs a target before it on the line: a "
                                             "reference, or a CHOOSE (§8)"))
                 continue          # a SET with no target on its line is not a change
-            if isinstance(tgt, tuple):
+            if isinstance(tgt, tuple) and not (tgt[1] is None and (cur_def(), tgt[0]) in step_names):
                 refs.append(('change target', tgt[0], tgt[1], tgt[2]))
             k = idx + 1
             if w == 'SET':
@@ -1049,6 +1069,91 @@ def analyze_file(fname, text, findings):
                                             "%s is followed by an integer (§8)" % toks[k].val))
                     break
                 k += 2
+        elif w == 'ROLL':
+            # [^"Name"] ROLL n OF [#h] ^"Die"  (v0.6, DECISION-18). The die is a reference site.
+            # A ROLL not followed by a count is the older system-keyword use (l5r5e's
+            # `ROLL "1d10"`): legal vocabulary in a file below 0.6, an error from 0.6 on.
+            k = idx + 1
+            if not (k < len(toks) and toks[k].kind == 'INT'):
+                if spec_version >= (0, 6):
+                    findings.append(Finding(fname, 'lint', 'error', t.line,
+                                            "ROLL needs a count and a die: ROLL n OF ^\"die\" (§8)"))
+                continue
+            if int(toks[k].val) < 1:
+                findings.append(Finding(fname, 'lint', 'error', t.line,
+                                        "ROLL needs a count of 1 or more (§8)"))
+            k += 1
+            if not (k < len(toks) and toks[k].kind == 'ID' and toks[k].val == 'OF'):
+                findings.append(Finding(fname, 'lint', 'error', t.line,
+                                        "ROLL n must be followed by OF ^\"die\" (§8)"))
+                continue
+            k += 1
+            hsh = None
+            if k < len(toks) and toks[k].kind == 'HASH':
+                hsh = toks[k].val
+                k += 1
+            if not (k < len(toks) and toks[k].kind == 'CARET'):
+                findings.append(Finding(fname, 'lint', 'error', t.line,
+                                        "ROLL n OF needs a ^\"die\" (§8)"))
+                continue
+            refs.append(('roll die', toks[k].val, hsh, toks[k].line))
+            rolls.append((toks[k].val, toks[k].line))
+            if idx > 0 and toks[idx - 1].kind in ('CARET', 'STR') and toks[idx - 1].line == t.line:
+                step_names.add((cur_def(), toks[idx - 1].val))
+        elif w == 'NEXT':
+            # NEXT <statement>  (v0.6, DECISION-18): the statement is a step that follows the
+            # one above it. It needs one above and one after.
+            prev = toks[idx - 1] if idx > 0 else None
+            nxt = toks[idx + 1] if idx + 1 < len(toks) else None
+            if prev is None or prev.kind == 'LBRACE':
+                findings.append(Finding(fname, 'lint', 'error', t.line,
+                                        "NEXT has no statement before it in this block (§8)"))
+            if nxt is None or nxt.kind == 'RBRACE' or (nxt.kind == 'ID' and nxt.val == 'NEXT'):
+                findings.append(Finding(fname, 'lint', 'error', t.line,
+                                        "NEXT needs a statement after it (§8)"))
+        elif w == 'FACES' and idx + 1 < len(toks) and toks[idx + 1].kind == 'LBRACE':
+            # FACES { face … }  (v0.6, DECISION-18): a face is a number or a range low-high, then
+            # optionally what it shows (a string or a reference), then optionally WEIGHT n.
+            k = idx + 2
+            nfaces = 0
+            last = None           # 'face', 'shows' or 'weight': what the previous element was
+            while k < len(toks) and toks[k].kind != 'RBRACE':
+                tk = toks[k]
+                if tk.kind == 'INT':
+                    nfaces += 1
+                    last = 'face'
+                    lo = int(tk.val)
+                    # `1-8` lexes as 1 then -8
+                    if k + 1 < len(toks) and toks[k + 1].kind == 'INT' and toks[k + 1].val.startswith('-') \
+                            and toks[k + 1].line == tk.line:
+                        if -int(toks[k + 1].val) < lo:
+                            findings.append(Finding(fname, 'lint', 'error', tk.line,
+                                                    "a FACES range runs from low to high (§8)"))
+                        k += 1
+                elif tk.kind == 'CARET':
+                    fh = toks[k - 1].val if toks[k - 1].kind == 'HASH' else None
+                    refs.append(('face value', tk.val, fh, tk.line))
+                    last = 'shows'
+                elif tk.kind == 'STR':
+                    last = 'shows'
+                elif tk.kind == 'ID' and tk.val == 'WEIGHT':
+                    if last not in ('face', 'shows'):
+                        findings.append(Finding(fname, 'lint', 'error', tk.line,
+                                                "WEIGHT has no face before it (§8)"))
+                    last = 'weight'
+                    if not (k + 1 < len(toks) and toks[k + 1].kind == 'INT' and int(toks[k + 1].val) >= 1):
+                        findings.append(Finding(fname, 'lint', 'error', tk.line,
+                                                "WEIGHT is followed by a positive integer (§8)"))
+                    else:
+                        k += 1
+                elif tk.kind != 'HASH':
+                    findings.append(Finding(fname, 'lint', 'error', tk.line,
+                                            "a face is a number or a range, then optionally what it "
+                                            "shows and WEIGHT n (§8)"))
+                    break
+                k += 1
+            if nfaces == 0:
+                findings.append(Finding(fname, 'lint', 'error', t.line, "FACES lists no face (§8)"))
         elif w == 'CHOOSE':
             # CHOOSE [DISTINCT|INDISTINCT] n ( [ options ] | OF [#hash] ^"Type" [WITH { … }] )
             # (v0.6, DECISION-15; replaces CHOICE / PICK / WHERE). Entity options and the OF
@@ -1304,6 +1409,7 @@ def analyze_file(fname, text, findings):
         'waived_ranges': waived_ranges, 'waived_lines': waived_lines,
         'def_props': def_props, 'def_extends': def_extends, 'mods': mods, 'adds': adds,
         'reprints': reprints, 'aliases': aliases, 'chooses': chooses, 'ref_values': ref_values,
+        'rolls': rolls,
     }
 
 
@@ -1763,6 +1869,37 @@ def ref_pass(files_data, findings):
                                             "^\"%s\", and ^\"%s\" is not one" % (prop, entity, ty, entity)))
 
 
+def roll_pass(files_data, findings):
+    """ROLL n OF ^"X" (§8, DECISION-18): X must be a die, a DEF that EXTENDS ^"Die" directly or
+    through a chain. Checked only when ^"Die" is in the loaded set; when it is not, the dice
+    module was not passed, and the roll's die is already reported as an undefined reference."""
+    extends, known = {}, set()
+    for d in files_data:
+        if d.get('kind') != 'ttrpg':
+            continue
+        known.update(d['names'])
+        for nm, parents in d['def_extends'].items():
+            extends.setdefault(nm, []).extend(parents)
+    if 'Die' not in known:
+        return
+
+    def is_die(name, seen):
+        if name == 'Die':
+            return True
+        if name in seen:
+            return False
+        seen.add(name)
+        return any(is_die(parent, seen) for parent in extends.get(name, ()))
+
+    for d in files_data:
+        if d.get('kind') != 'ttrpg':
+            continue
+        for die, line in d.get('rolls', []):
+            if die in known and not is_die(die, set()) and not is_waived(line, d):
+                findings.append(Finding(d['file'], 'coherence', 'error', line,
+                                        "ROLL n OF ^\"%s\": ^\"%s\" is not a ^\"Die\"" % (die, die)))
+
+
 def modification_pass(files_data, findings):
     """Coherence for the §13 modification system.
 
@@ -1961,6 +2098,7 @@ def main(argv):
     coherence_pass(files_data, findings)
     choose_pass(files_data, findings)
     ref_pass(files_data, findings)
+    roll_pass(files_data, findings)
     modification_pass(files_data, findings)
     bridge_coherence(files_data, corpora, findings, notes)
 

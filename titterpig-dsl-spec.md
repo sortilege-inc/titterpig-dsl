@@ -29,6 +29,10 @@ Changes made since v0.5, listed as they are decided. **Not all are additive.**
    `TRANSFORM MANUAL "…"` for what they cannot express.
 4. **`REF`** *(new, §8, DECISION-17)* — a property type that holds a reference to one entity:
    `^"Clan" REF #hash ^"Crab"`, declared on the type as `REF OF #hash ^"Clan"`.
+5. **Dice are DEFs; `ROLL` and `NEXT`** *(new, §8, DECISION-18)* — a die is a DEF that `EXTENDS
+   ^"Die"` and lists its `FACES`. The spec ships a dice module (`modules/0.6/`) that every edition
+   includes. `ROLL n OF ^"die"` rolls dice, and `NEXT` before a statement makes it a step that
+   follows the one above.
 
 ### v0.5 — five new constructs, and one rule tightened *(current)*
 
@@ -266,8 +270,23 @@ stay valid.
   (§8): the type table had `LIST OF ^"Type"` for many entities and nothing for one, so corpora and
   this spec's own examples wrote the entity's name in a string (`^"Clan" STRING "Crab"`), which no
   gate checks. `REF` is the property type for one entity: `REF OF ^"Type"` declares it, taking the
-  type's name as the property's name, and `^"Name" REF ^"Entity"` gives its value. Both are reference sites, and the entity must be of the declared
-  type.
+  type's name as the property's name unless one is written, and `^"Name" REF ^"Entity"` gives its
+  value. Both are reference sites, and the entity must be of the declared type.
+
+- **DECISION-18 — Dice are DEFs, a roll is `ROLL n OF`, and `NEXT` orders steps** *(resolved, v0.6)*
+  (§8): 3,251 property values across 13 corpora held a dice expression in a string (`"4d8 + 8"`,
+  `"2D6+4"`, `"1d6+2 phy"`, `"50 (3D6 ×5)"`). A dice literal was considered and rejected: it covered
+  the simple shapes and left out multipliers, sums of dice, bonuses and damage types. The decision
+  is that **a die is an entity**: a DEF that `EXTENDS ^"Die"` and lists its faces in a `FACES` block,
+  each face with a weight of 1 unless it says otherwise. l5r5e already wrote its Ring Die and Skill
+  Die this way. Variant dice and uneven odds are then new DEFs and need no new grammar. The spec
+  ships a **dice module** defining `^"Die"` and d2, d3, d4, d6, d8, d10, d20 and d100; every edition
+  includes it, it is edition-neutral, and a system's BASE may `DEPENDS_ON` it. `ROLL n OF ^"die"`
+  rolls dice, and the existing `SET`, `TRANSFORM` and `REF` do the rest: the modifier, where the sum
+  is stored, the damage type. That needs order, which the DSL did not have, so **`NEXT`** before a
+  statement makes it a step that follows the statement above. `NEXT` was chosen over `THEN`, which
+  already means the consequence of a `WHEN` in rules and hooks. A chain runs forward only: this is
+  not a rules engine, and there is no branch and no loop.
 
 ## 1. Overview & Design Principles
 
@@ -399,7 +418,7 @@ Every `.ttrpg` file opens with either a `BASE` or `EXTENSION` declaration. These
 
 ### BASE — Standalone Module
 
-A BASE defines a self-contained ruleset module. It has no parent.
+A BASE defines a self-contained ruleset module. It has no parent, with one exception: it may declare `DEPENDS_ON "Titterpig_Dice"`, the dice module the spec ships (§8).
 
 ```
 BASE "FileID" {
@@ -845,8 +864,8 @@ Instances use the **same** grammar as definitions — no `=` assignments, no dot
 
 A **reference site** is any place one definition names *an entity that already exists*: `EXTENDS`,
 `APPLIES TO`, `LIST OF`, `CONCERNS`, `OVERRIDE`, `MODIFY`, the target of `ALIAS … FOR`, an entity
-option or `OF` type of a `CHOOSE` (§5b), the type and the value of a `REF` and the target of a `SET`
-or `TRANSFORM` (§8), and the `REFERENCES` / `REFERENCED BY` targets of §5c. All of them obey the same
+option or `OF` type of a `CHOOSE` (§5b), the type and the value of a `REF`, the target of a `SET`
+or `TRANSFORM` and the die of a `ROLL` (§8), and the `REFERENCES` / `REFERENCED BY` targets of §5c. All of them obey the same
 rule.
 
 **Declaration sites are not reference sites.** `ADD #hash ^"Name" DEF { … }` (§13) *asserts new
@@ -969,6 +988,7 @@ PROPERTIES {
 | LIST OF | `LIST OF ^"TypeName"` | Typed collection referencing another DEF |
 | LIST OF STRING | `LIST OF STRING [values]` | Typed collection of strings with optional defaults |
 | REF | `REF OF ^"TypeName"` · `^"Name" REF ^"Entity"` | Reference to one entity *(v0.6, see below)* |
+| ROLL | `ROLL n OF ^"Die"` | A roll of `n` dice *(v0.6, see below)* |
 | DEF (nested) | `^"Name" DEF { ... }` | Nested structured object |
 
 ### Modifiers (apply to any type)
@@ -1057,7 +1077,7 @@ follow: `REF OF ^"Type"`, which an entity may follow, and `SET` or `TRANSFORM <M
 amount may follow. One rule settles both:
 
 **A reference that is followed by a property type (`STRING`, `INTEGER`, `BOOLEAN`, `ENUM`, `LIST`,
-`REF`), `DEF`, `CHOOSE`, `SET`, `TRANSFORM` or `MODIFY` opens the next statement.** It is not the
+`REF`, `ROLL`), `DEF`, `CHOOSE`, `SET`, `TRANSFORM` or `MODIFY` opens the next statement.** It is not the
 entity or the amount of the statement before it.
 
 ```
@@ -1076,6 +1096,51 @@ REF OF #hash ^"Clan"                      # declares the property; gives no enti
 
 Coherence: the target resolves; the method is one of the four, or `MANUAL` followed by a string; the
 amount is an integer or a reference that resolves; `ROUND` is followed by `UP`, `DOWN` or `NEAREST`.
+
+### Dice and rolls — `FACES`, `ROLL` and `NEXT` *(v0.6, DECISION-18)*
+
+**A die is a DEF.** It `EXTENDS ^"Die"` and lists its faces in a `FACES` block.
+
+```
+#hash ^"d8" DEF {
+    EXTENDS #hash ^"Die"
+    FACES { 1-8 }
+}
+```
+
+- A face is a number. A range of numbers stands for one face each: `1-8` is eight faces.
+- A face may be followed by what it shows, a string or a reference, for a die whose faces are not
+  numbers: `1 "Blank"`, `2 #hash ^"Opportunity"`.
+- Each face has a weight of 1. `WEIGHT n` after a face gives it another: `3 WEIGHT 2`.
+
+**The dice module.** This repo ships `modules/0.6/titterpig-0.6-dice.ttrpg`. It defines `^"Die"` and
+`^"d2"`, `^"d3"`, `^"d4"`, `^"d6"`, `^"d8"`, `^"d10"`, `^"d20"` and `^"d100"`. Every edition includes
+it. It is edition-neutral: its hashes are the same wherever it is included (§19). A system's BASE
+declares `DEPENDS_ON "Titterpig_Dice"` (§3), and a corpus is validated with the module passed
+alongside it. A system defines any other die it needs as a DEF of its own.
+
+**A roll.** `ROLL n OF #hash ^"die"` rolls `n` of a die. Where the faces are numbers, its value is
+their sum. The die is a reference site (§5d). A `TRANSFORM` may follow a roll in the same statement
+and changes its value:
+
+```
+^"Roll" ROLL 4 OF #hash ^"d8" TRANSFORM ADD 12
+```
+
+**Steps — `NEXT`.** Statements in a block have no order. `NEXT` before a statement makes it a step
+that follows the statement above it. A step's result is named by the property it sits under, and a
+later step refers to it by that name.
+
+```
+^"Roll" ROLL 4 OF #hash ^"d8" TRANSFORM ADD 12      # roll 4 d8 and add 12
+NEXT #hash ^"Hit Points" SET ^"Roll"                 # store the sum
+^"Damage Type" REF #hash ^"Physical"                 # no NEXT: order does not matter here
+```
+
+A chain of steps runs forward only. There is no way to write a branch or a loop.
+
+Coherence: the count is 1 or more; the die resolves and is a `^"Die"`; a `WEIGHT` is a positive
+integer; a range runs from low to high; `NEXT` has a statement before it and a statement after it.
 
 ### FIAT — Intentional Exceptions *(v0.4)*
 
@@ -1535,7 +1600,9 @@ Only these keywords are reserved by the base spec:
 
 **Definition:** `DEF`, `ACTOR`, `TEMPLATE`, `CHOICES`, `PROPERTIES`, `RULES`
 
-**Types:** `STRING`, `INTEGER`, `BOOLEAN`, `ENUM`, `LIST`, `OF`, `REF`
+**Types:** `STRING`, `INTEGER`, `BOOLEAN`, `ENUM`, `LIST`, `OF`, `REF`, `ROLL`
+
+**Dice (§8):** `FACES`, `WEIGHT`, `ROLL`, `NEXT`
 
 **Changes (§8):** `SET`, `TRANSFORM`, `ADD`, `SUBTRACT`, `MULTIPLY`, `DIVIDE`, `ROUND`, `UP`, `DOWN`, `NEAREST`, `MANUAL` (`SET` and `ADD` are shared with **Modification**, `MANUAL` with **Bridge**, `MIN` / `MAX` with **Modifiers**)
 
@@ -1557,7 +1624,7 @@ Only these keywords are reserved by the base spec:
 
 **Bridge (§21):** `BRIDGE`, `ORIGIN`, `DESTINATION`, `EXTERNAL`, `DISPOSITIONS`, `DISPOSITION`, `ALIASES`, `CONVERSION`, `GUIDANCE`, `MAP`, `REMAINDER`, `PROCEDURE`, `SUBJECT`, `SCOPE`, `ASPECT`, `CONCERNS`, `TOPICS`, `EXHAUSTIVE`, `CONVERT`, `INTO`, `UNCHANGED`, `SCALE`, `OVER`, `RESTATE`, `MANUAL` (`ALIAS`/`FOR` are shared with §5b; `ENTRY` and `TEXT` with §16/§10)
 
-All other keywords — `CURRICULUM`, `SCHOOL_ABILITY`, `POWERS`, `AMALGAMS`, `TRIGGER`, `CHARACTERISTICS`, `HERITAGE_TABLE`, `FACES`, `ACTIVATION`, `OPPORTUNITIES`, `PREDATOR_TEMPLATES`, `DICE_POOL`, `COST`, `DURATION`, etc. — are **system-defined**. They belong to L5R5e, VTM5e, or whatever system uses them.
+All other keywords — `CURRICULUM`, `SCHOOL_ABILITY`, `POWERS`, `AMALGAMS`, `TRIGGER`, `CHARACTERISTICS`, `HERITAGE_TABLE`, `ACTIVATION`, `OPPORTUNITIES`, `PREDATOR_TEMPLATES`, `DICE_POOL`, `COST`, `DURATION`, etc. — are **system-defined**. They belong to L5R5e, VTM5e, or whatever system uses them.
 
 ---
 
@@ -2808,6 +2875,9 @@ same" entity in a newer edition is a *new* definition with a *new* hash (§5), n
 old one. Editions are therefore kept as **separate systems** — e.g. `arm5e` (Ars Magica 5th) vs.
 `armdef` (the Definitive edition), or a system's beta lines vs. its final rules. Within one edition,
 core + sourcebooks + errata share the namespace and compose by precedence (§13).
+
+The spec's **dice module** (§8) is the one thing shared across editions. It is edition-neutral: every
+edition includes it, and its hashes are the same in each.
 
 **Forward-porting.** A sourcebook published for an older edition does **not** automatically apply to a
 newer one — it references the old edition's hashes. To use it under a newer edition, generate a **new

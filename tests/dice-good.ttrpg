@@ -1,0 +1,66 @@
+BASE "Demo_Dice" {
+    NAME "DECISION-18 fixture — dice as DEFs, ROLL, NEXT"
+    SPEC_VERSION "0.6"
+    VERSION "1.0"
+    RELEASE_DATE "2026-11-11"
+    DEPENDS_ON "Titterpig_Dice"
+
+    # Validate with the dice module passed alongside:
+    #   ttrpg_validator.py tests/dice-good.ttrpg modules/0.6/
+
+    #DiceDemoHitPointsAAAAAAAA ^"Hit Points" DEF { INTEGER MIN 0 }
+    #DiceDemoDamageBBBBBBBBBBB ^"Damage" DEF { INTEGER MIN 0 }
+    #DiceDemoDamageTypeCCCCCCC ^"Damage Type" DEF { }
+    #DiceDemoPhysicalDDDDDDDDD ^"Physical" DEF { EXTENDS #DiceDemoDamageTypeCCCCCCC ^"Damage Type" }
+    #DiceDemoOpportunityEEEEEE ^"Opportunity" DEF { }
+
+    # --- dice a system defines for itself ------------------------------------
+    # faces that are symbols, one line per face (the l5r5e form)
+    #DiceDemoRingDieFFFFFFFFFF ^"Ring Die" DEF {
+        EXTENDS #tx5rnK3W3skTZ1JHSIzRfZwk ^"Die"
+        FACES {
+            1 "Blank"
+            2 #DiceDemoOpportunityEEEEEE ^"Opportunity"
+            3 "(su)"
+        }
+    }
+    # uneven odds
+    #DiceDemoAveragingGGGGGGGG ^"Averaging Die" DEF {
+        EXTENDS #tx5rnK3W3skTZ1JHSIzRfZwk ^"Die"
+        FACES { 2  3 WEIGHT 2  4 WEIGHT 2  5 }
+    }
+    # a die built on another
+    #DiceDemoD12HHHHHHHHHHHHHH ^"d12" DEF {
+        EXTENDS #tx5rnK3W3skTZ1JHSIzRfZwk ^"Die"
+        FACES { 1-12 }
+    }
+
+    # --- things that need a roll ---------------------------------------------
+    #DiceDemoOgreIIIIIIIIIIIII ^"Ogre" DEF {
+        PROPERTIES {
+            # "4d8 + 12", stored as Hit Points
+            ^"Roll" ROLL 4 OF #tTYf5vyovfAVlmLvvMXSQAwK ^"d8" TRANSFORM ADD 12
+            NEXT #DiceDemoHitPointsAAAAAAAA ^"Hit Points" SET ^"Roll"
+
+            ^"Club" DEF {
+                # "1d6+2 phy": the roll, where the sum goes, and the property added
+                ^"Roll" ROLL 1 OF #tr4xhMjlSWpvjY9Mapv5gbzB ^"d6" TRANSFORM ADD 2
+                NEXT #DiceDemoDamageBBBBBBBBBBB ^"Damage" SET ^"Roll"
+                ^"Damage Type" REF #DiceDemoPhysicalDDDDDDDDD ^"Physical"
+            }
+            ^"Characteristic" DEF {
+                # "3D6 x5": a later step changes an earlier step's result
+                ^"Roll" ROLL 3 OF #tr4xhMjlSWpvjY9Mapv5gbzB ^"d6"
+                NEXT ^"Roll" TRANSFORM MULTIPLY 5
+            }
+            ^"Two Dice" DEF {
+                # "1D6+1D4": two rolls, one added to the other
+                ^"First" ROLL 1 OF #tr4xhMjlSWpvjY9Mapv5gbzB ^"d6"
+                NEXT ^"Second" ROLL 1 OF #tAOghFO1Qnl47jCE32rHXZgY ^"d4"
+                NEXT ^"First" TRANSFORM ADD ^"Second"
+            }
+            ^"Check" ROLL 2 OF #DiceDemoRingDieFFFFFFFFFF ^"Ring Die"
+            ^"Percent" ROLL 1 OF #tIOrC9zpJPeb9MqJAWtXAPM0 ^"d100"
+        }
+    }
+}

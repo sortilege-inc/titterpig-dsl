@@ -42,10 +42,10 @@ The problems are in four places.
 
 ### A1. The first example of "structure over prose" loses content
 
-**Status:** applied 2026-11-11 (uncommitted), awaiting the owner's sign-off to close. `CHOOSE n`
-replaces `CHOICE` (DECISION-15); `SET` and `TRANSFORM` (DECISION-16); `REF` (DECISION-17); `BOOLEAN`
-inline value; the §1 example is three full DEFs with opaque hashes, and its structured step uses
-all of the above. Follow-ups F1 to F4 and the to-dos below remain open.
+**Status:** applied 2026-11-11 and committed on branch `0.6`; awaiting the owner's sign-off to close.
+`CHOOSE n` replaces `CHOICE` (DECISION-15); `SET` and `TRANSFORM` (DECISION-16); `REF`
+(DECISION-17); dice as DEFs, `ROLL` and `NEXT` (DECISION-18); `BOOLEAN` inline value; the §1 example
+is three full DEFs with opaque hashes. Follow-ups F1 to F6 and the to-dos below remain open.
 
 **Resolution.** The example in spec §1, `AUTHORING-GUIDELINES.md` §1 and
 `.claude/skills/titterpig-dsl/SKILL.md` (a third copy, found while fixing) now follows the l5r5e Hida
@@ -609,6 +609,21 @@ The validator warns on every `CHOICE` as of 2026-11-11: root 130, TEETH 146, arm
 them. These corpora are generated: change the generators, then rebuild. arm5e's 310 options and
 root's 304 carry no hash.
 
+### F6. Corpora: move dice out of strings
+
+**From:** A1, DECISION-18. **Status:** open, not started.
+
+3,251 short `STRING` property values in 13 corpora hold a dice expression: callofcthulhu7e 984,
+daggerheart 696, pendragon6e 522, dnd5.5e 447, dnd5e 379, pendragon5e 174, and seven smaller. Each
+becomes a `ROLL n OF ^"die"` with `TRANSFORM`, `SET` and `REF` steps (§8). Each system's BASE
+declares `DEPENDS_ON "Titterpig_Dice"` and its `gates.sh` passes `modules/0.6/`. A system whose
+book prints `D6` may `ALIAS` the module's die or define its own.
+
+l5r5e (with F1): `^"Ring Die"` and `^"Skill Die"` already hold `FACES` blocks and need only
+`EXTENDS ^"Die"`; 7 `ROLL "1d10"` / `ROLL "d100"` lines become `ROLL 1 OF`.
+
+The synthesist (F3) needs `FACES`, `ROLL` and `NEXT`.
+
 ### F5. arm5e: spell magnitudes, derived level, and Range / Duration / Target as entities
 
 **From:** A1. **Repo:** `titterpig-dsl-arm5e` (and armdef by retarget). **Status:** open, not started.
@@ -653,18 +668,13 @@ two parameter to-dos below.
 - **A spell's Magnitudes and derived Level** (arm5e, F5). §17's Pilum of Fire gives the printed
   `Level 20` and `BASE 10`. The spell type's `Magnitudes` property and the rule that derives Level
   from it are not written.
-- **Dice as DEFs and rolls as steps.** Direction set by the owner 2026-11-11. Ruled so far: the
-  spec ships a dice module that every edition includes; the printed form ("4d8 + 12") may be kept
-  beside the structure, with no convention set yet; two or three lines per value is acceptable.
-  Not settled: how a die lists its values and weights, how a roll of n dice is written, how a
-  later line names an earlier line's result, how an edition includes the module given
-  edition-scoped hashes (§19), and how order is marked. The owner raised a `THEN` or `NEXT`
-  separator between steps.
-  Precedent found 2026-11-11: l5r5e already defines dice as DEFs. `^"Ring Die"` and `^"Skill Die"`
-  in `l5r5e-0.5-core-base.ttrpg` each hold a `FACES { 1 "Blank"  2 "(op) (st)" … }` block, one line
-  per physical face, and their faces are symbols. l5r5e also writes `ROLL "1d10"` (7 uses) to name
-  the die a table is rolled on. §15 lists `FACES` as a system-defined keyword.
-  `THEN` has 31 uses in 9 corpora, every one the consequence of a `WHEN`. `NEXT` has none.
+- **What a roll of symbol dice is worth** (§8). §8 says a roll's value is the sum where the faces
+  are numbers. It does not say what the value is for a die whose faces are symbols, such as
+  l5r5e's Ring Die.
+- **The printed form of a roll** (§8). "4d8 + 12" no longer appears once it is written as steps.
+  The owner agreed it may be kept beside the structure; no convention is set.
+- **Dice forms not covered** (§8): keep-highest, drop-lowest, exploding and step dice. None appears
+  as a property value in any corpus today.
 
 ### Known gaps left by this change
 
@@ -684,6 +694,10 @@ two parameter to-dos below.
 - **arm5e's spell-level modifiers use a form the grammar lacks.** 405 `LEVEL_CALCULATION` blocks
   hold 870 lines such as `+2 "Voice"`. The grammar has no `+` on an integer, and the validator's
   tokenizer drops it without a finding, reading `2 "Voice"`. It keeps a `-`.
+- `check_references.py` does not count a `ROLL`'s die, a face's reference, a `REF`'s type or
+  entity, or a change's target as §5d sites either. The validator resolves all of them.
+- No corpus `gates.sh` passes the dice module yet. A corpus that adopts dice must validate with
+  `modules/0.6/` alongside it, or its `DEPENDS_ON "Titterpig_Dice"` is an undefined file id.
 - `check_references.py` does not yet count `CHOOSE` options or the `OF` type as §5d sites, so a
   hashless option raises no warning there. The validator resolves them. Belongs with C3.
 - The grammar change is unproven: no tool runs `ttrpg.peg` (B1).
@@ -726,6 +740,9 @@ Filled in as each finding is walked through.
 | A1 | 2026-11-11 | Voice's change to the spell's magnitudes takes the spell as an incoming parameter: `PARAMETERS { ^"spell" OF ^"Spell" }`. | Owner: "now we're starting to need them". |
 | A1 | 2026-11-11 | Deriving a spell's Level from its Magnitudes is a to-do for arm5e (F5). The rule is more complex than "multiply by 5". | Owner's call. |
 | A1 | 2026-11-11 | §17's Pilum of Fire fixed as far as the DSL allows: `BASE 10`, the invented `DAMAGE` and `RANGE_MODIFIER` lines removed, the book's description, Range / Duration / Target as `REF`, and a `^"Voice"` entity that carries the +2 magnitudes. What could not be written is in the to-do list. | Owner: "fix as much as you are able, and mark anything you can't fix in the todo". |
+| A1 | 2026-11-11 | Dice forms agreed and written into §8 as DECISION-18: a die is a DEF that `EXTENDS ^"Die"` with a `FACES` block (a range for a numeric die; weight 1 unless `WEIGHT n`); a roll is `ROLL n OF ^"die"`, its value the sum where the faces are numbers; a step's result is named by the property it sits under; `NEXT` before each later step; one module file defining `^"Die"` and d2, d3, d4, d6, d8, d10, d20, d100. | Owner agreed to all five forms. `NEXT` over `THEN`: `THEN` already means the consequence of a `WHEN` (31 uses in 9 corpora). |
+| A1 | 2026-11-11 | The dice module is edition-neutral: its hashes are the same wherever it is included (§19), and a system's BASE may declare `DEPENDS_ON "Titterpig_Dice"` (§3). A corpus that uses it is validated with the module passed alongside. | Owner agreed to the mechanism. |
+| A1 | 2026-11-11 | A face may be followed by what it shows, a string or a reference (`1 "Blank"`). An older `ROLL "1d10"` is left alone in a file below 0.6 and is an error from 0.6 on. | Agent's calls, to confirm. The first keeps l5r5e's existing `FACES` blocks valid as written; the second follows the owner's `CHOICE` ruling. |
 | A1 | 2026-11-11 | The spec ships a dice module that every edition includes. | Owner's call, over the agent's lean toward each system defining its own dice. |
 | A1 | 2026-11-11 | The printed form of a roll may be kept beside the structure; no convention is set yet. Two or three lines per dice value is acceptable. | Owner's call. |
 | A1 | 2026-11-11 | Dice are DEFs, starting with d2, d3, d4, d6, d8, d10, d20 and d100, each a list of values with a weight of 1. A thing that needs a roll declares the dice, transforms the value, stores the sum, and may add a property (a damage type). | Owner's direction, replacing the agent's proposal of a dice literal and a `DICE` type, which is withdrawn. The exact forms are not yet settled. |

@@ -18,7 +18,8 @@ A Domain Specific Language for encoding Tabletop Roleplaying Game Sourcebooks
 | `check_constructs.py` | **v0.5 gate** — `GUIDANCE` / `HOOKS` / `OPTIONAL` / `.selections` semantics |
 | `apply_references.py` | Migration tool — emits `REFERENCES` blocks, hashing a target when its name has exactly one anchor |
 | `samples/` | v0.5 conformance fixture (`.ttrpg` + `.selections`) |
-| `tests/` | Validator fixtures — `good.*` (conformant) / `bad.*` (intentional findings), `mods-*` for the §13 modification system, `good.bridge` / `bad.bridge` for §21 |
+| `tests/` | Validator fixtures — `good.*` (conformant) / `bad.*` (intentional findings), `mods-*` for the §13 modification system, `good.bridge` / `bad.bridge` for §21, `dice-good.ttrpg` for §8's dice (run it with `modules/0.6/`) |
+| `modules/` | **The dice module (§8, DECISION-18)** — `^"Die"` and d2 to d100, shipped with the spec and included by every edition. Validate a corpus that rolls dice with `modules/0.6/` passed alongside it |
 | `bridges/` | **Cross-edition conversion documents (§21)** — cross-system, not system-specific; see the note below |
 
 `titterpig-dsl-spec.md` is the single source of truth; `ttrpg.peg` and the validator are aligned to
