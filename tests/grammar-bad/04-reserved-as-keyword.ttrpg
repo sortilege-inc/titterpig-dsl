@@ -1,0 +1,7 @@
+BASE "Grammar_Bad_4" {
+    NAME "syntax fault — a reserved word used as a system keyword (§15)"
+    SPEC_VERSION "0.6"
+    #GrmBadDDDDDDDDDDDDDDDD ^"Crossing Blade" DEF {
+        PROPERTIES "Fire"
+    }
+}

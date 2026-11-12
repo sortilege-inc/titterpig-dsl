@@ -685,7 +685,8 @@ order.
 
 ### B1. No tool runs the grammar, and it rejects what the corpora write
 
-**Status:** open
+**Status:** closed 2026-11-12 by the owner. Committed and pushed on branch `0.6`. The grammar
+is run by `check_grammar.py` and gated on the repo's fixtures (DECISION-31).
 
 A search of `Titterpig/DSL` and `Titterpig/Utilities` finds no reference to `ttrpg.peg` in any
 script or program. The file uses `!{RESERVED_WORD}`, which is not PEG notation, and defines no
@@ -707,6 +708,78 @@ script or program. The file uses `!{RESERVED_WORD}`, which is not PEG notation, 
 
 The grammar also documents a bare `OVERRIDE ^"X"` statement inside a DEF body. §13 does not mention
 it.
+
+**Evidence, measured 2026-11-12.** The table above was made by reading the grammar. For this
+count the grammar was run: a small packrat interpreter for Ford's PEG notation, written in the
+scratchpad, reads `ttrpg.peg` as it stands on branch `0.6` and parses whole files from `FILE`.
+
+- **The grammar is PEG and reads cleanly, with one exception.** 195 rules. `UPPER_IDENT` ends in
+  `!{RESERVED_WORD}`, which is not PEG notation, and no `RESERVED_WORD` rule exists. The run
+  reads it the generous way: no word is refused.
+- **Six rules are reachable from nothing:** `EMBEDDED_REF`, `EMBEDDED_NAME`, `EMBEDDED_LITERAL`,
+  `STRING_CONTENT` and `Q` (added under A2) and `FROM_IMPORT` (added under A3).
+- **It accepts 13 of the repo's 37 good fixtures.** The 24 it refuses include every narrative
+  container file, both `restate-good` errata files, and `text-good`.
+- **It accepts 1,350 of the 7,055 DSL files in the 22 corpus directories (19%).** No corpus is
+  accepted whole. aegean, curseborne and troika: no file. vtm5e 1 of 328, tor2e 2 of 374,
+  arm5e 548 of 2,435. The best are invisiblesun (36 of 39), daggerheart (25 of 29), dnd5e (10 of
+  12) and dnd5.5e (11 of 14).
+- **What it refuses**, each tried alone as the one statement in a DEF body:
+
+  | Statement | Result |
+  |---|---|
+  | `DESCRIPTION "x"` | refused |
+  | `EFFECT "x"`, `SOURCE "x"`, `TRIGGER "x"` (a system keyword and a string) | refused |
+  | `APPLIES TO [#hash ^"B"]` | refused |
+  | `^"L" LIST [#hash ^"B"]` | refused |
+  | `^"L" LIST OF #hash ^"B"` | refused |
+  | `^"K" ENUM "Gift"` | refused |
+  | `^"A" STRING "x"`, `^"F" BOOLEAN true`, `PROPERTIES { … }`, `TAGS ["a", "b"]` | accepted |
+  | `EXTENDS #hash ^"B"`, `REFERENCES { … }`, `EMPHASIS { "x" }`, a `GUIDANCE` entry | accepted |
+
+  A file that opens with `SETTING`, `FRAME`, `ARC` or `CAMPAIGN` is refused at its first word
+  (131 corpus files), and so is a bare `.actor`.
+- **Rows of the first table that no longer hold:** `BOOLEAN true` is accepted since A1,
+  `CHOICE` is gone from the spec, and `SCENE ^"Name" #id {` is accepted as a label since A3,
+  though the file around it still is not.
+- **Three readers of the syntax exist and none is checked against another:** this grammar, which
+  nothing runs; the validator's token scanner; and the synthesist's hand-written parser in Go.
+- §20 says of lint: "One source of truth: the linter is derived from / checked against the
+  grammar." Neither is so.
+
+**Ruling (owner, 2026-11-12):** "Yes, make it run". Written as DECISION-31.
+
+- **The tool.** `check_grammar.py`, a packrat interpreter for the grammar's own notation with
+  no dependency. It refuses a grammar that names an undefined rule or holds an unreachable one,
+  then parses each file whole and reports the farthest point it reached and what it wanted
+  there. `--expect-refused` turns the test round for planted faults.
+- **The grammar, repaired.**
+  - `RESERVED_WORD` is a rule, and `UPPER_IDENT` refuses those words.
+  - A keyword statement (`GENERIC_BLOCK`) is a keyword and what stands on its line. The old rule
+    let an optional label take the statement's only value, which is why `DESCRIPTION "x"` was
+    refused.
+  - One body grammar serves a file, a DEF, a keyword block and a `MODIFY`.
+  - `SETTING`, `FRAME`, `ARC` and `CAMPAIGN` files are accepted (`CONTAINER_BLOCK`), and
+    `FROM_IMPORT` is reached through them.
+  - A reference in a list, after `APPLIES TO`, after `LIST OF` and in `COLUMNS` may carry its
+    hash.
+  - A DEF may give its hash after its name. A bridge unit may hold a `FIAT`. A list may be
+    empty.
+  - The embedded-reference rules are declared an entry of their own (`# @entry
+    STRING_CONTENT`): they describe the text inside a string.
+- **Proof.**
+  - As it was, the grammar does not load: `'{RESERVED_WORD}' is not PEG notation`, exit 2.
+  - Good fixtures: 35 of 35 files accepted (13 before the repairs).
+  - Planted faults: `tests/grammar-bad` holds twelve, and all twelve are refused. The twelfth
+    (a `REFERENCES` line with no arrow) was accepted on the first run. Two causes: `REFERENCES`
+    was not reserved, and `'REF'` stood before `'REFERENCES'` in an ordered choice and matched
+    its first letters. Both are fixed, and the fixture is what showed them.
+  - A broken grammar (one rule naming an undefined one) is refused with exit 2.
+  - The validator is untouched; its fixtures give the results they gave at the A8 commit.
+- **The corpora, measured and not gated.** 5,157 of 7,055 files accepted (73%), from 1,350
+  (19%). vtm5e 326 of 328, draw-steel 116 of 118, arm5e 2,112 of 2,435, l5r5e 136 of 166. The
+  1,898 refusals are counted in F19.
+- **Not done.** The corpora are not at 100% and no corpus gate runs the tool (F19).
 
 ### B2. The validator checks little of what the spec says is checked
 
@@ -1270,6 +1343,28 @@ DEF with a later one of the same name, so every built JSON still carries the mer
   with two after the rename. None holds both today.
 - Done when the validator gives no "TEXT directly in a DEF" finding there.
 
+### F19. Corpora: what the grammar still refuses
+
+**From:** B1, DECISION-31. **Status:** open, not started. No gate runs on the corpora yet:
+1,898 of 7,055 corpus files are refused. Each file is counted once, by the first thing the grammar could not
+read, so a file may hold further forms behind that one.
+
+| Files | What stands at the refusal | Where | What it needs |
+|---|---|---|---|
+| 665 | a file that opens with a bare DEF | tor2e 311, marvelmultiverse 211, aegean 50, troika 36 | F17 wraps them |
+| 580 | a string and a number as a pair: `"Hungry" +6` | arm5e 290, armdef 290 | a ruling: the spec has no such pair, and no `+` on an integer |
+| 368 | an unnamed `DEF { … }` as an item of a list | pendragon6e 194, pendragon5e 103, teeth 36, aegean 19 | a ruling: the spec has no such item |
+| 47 | `^"Level" ENUM "Chapter"`: an `ENUM` with one value and no list | invisiblesun 13, callofcthulhu7e 10, mythic-gme2 8, tor2e 6 | a ruling: §8 gives `ENUM` a bracket list only |
+| 41 | an `EMPHASIS` block inside a guidance `ENTRY` | pendragon6e 34, marvelmultiverse 7 | a ruling: §22 gives an entry `CONCERNS`, `TOPICS` and `TEXT` |
+| 32 | `BASE 3` as a system's field | arm5e 16, armdef 16 | a ruling, or a rename: `BASE` is reserved everywhere |
+| 30 | a hash before the keyword: `#hash ENTRY ^"…" {` | callofcthulhu7e | a corpus fix |
+| 29 | a name and a bare reference: `^"Attribute" ^"Attribute"` | teeth 16, daggerheart 6 | `REF` (DECISION-17) |
+| 19 | an unquoted word in a list: `[kata]` | l5r5e | a corpus fix |
+| 87 | other, each on a few files | arm5e, armdef, l5r5e, curseborne | among them `LIST OF [` with no type (11), `ALIAS "…"` with no `FOR` (4), `CHOICE` (6) |
+
+- A corpus's `gates.sh` can run `check_grammar.py` once its own count is zero.
+- The four rulings belong with C5 (in heavy use and not in the spec).
+
 ### F12. Seven corpora: scene and conflict types become entities
 
 **From:** A3, DECISION-23. **Status:** open, not started. The validator now reports these.
@@ -1404,6 +1499,25 @@ two parameter to-dos below.
   which the validator does not check; a result given as a bare value in place of a block.
 
 ### Known gaps left by this change
+
+- **The grammar's reserved list is not §15's word for word.** `RESERVED_WORD` holds 45 words.
+  It leaves out `NAME`, `VERSION` and `ORIGIN`, which have rules of their own that any body may
+  use, and the short words that only stand inside another rule (`OF`, `TO`, `MIN`, `MAX`,
+  `AND`, `OR`, `NOT`). It adds the openers of the annotation blocks (`REFERENCES`, `EMPHASIS`,
+  `LABEL`, `GUIDANCE`, `HOOKS`, `FACES`), which DECISION-29 did not name either way.
+- **The grammar accepts more than the spec means in three places.** Metadata (`NAME "x"`) may
+  stand in any block. A keyword alone on a line is a statement. The old `TABLE "name" { … }`
+  and a `HOOKS`-less `TRIGGER "…"` are read as a system's keywords. Each is a choice for a
+  looser grammar over a refusal the validator already makes or the owner has excused.
+- **The grammar and the validator are not checked against each other.** A file the grammar
+  refuses can pass the validator (the 1,898 above), and the validator's token scanner is not
+  derived from the grammar.
+- **The spec's own example blocks are not run through the grammar.**
+- **A keyword statement's arguments must begin on its line.** No corpus file was seen refused
+  for that. It is a rule the spec's prose does not state outside DECISION-31.
+- **`check_grammar.py` is slow by design** (a memo entry per rule and position). The 22 corpus
+  directories take about three minutes in all. A file that takes over 30 seconds is counted
+  as refused, and no file took that long.
 
 - **The guidelines are still titled "(v0.4)"** and have not been revised for the 0.5 or 0.6
   constructs.
@@ -1634,6 +1748,9 @@ Filled in as each finding is walked through.
 | A8 | 2026-11-12 | Agent's calls, to confirm. (4) `TEXT` directly in a DEF is a warning below 0.6 and an error from 0.6; `TEXT` in any block that is not a DEF is left alone, including a system block such as `READ_ALOUD`. (5) Items 5 and 6 are written as description, with no decision number. (6) §10's example of `TEXT` is l5r5e's errata entry. | (4) was put to the owner with item 11. (5): no language rule changes. (6): a real example. |
 | A8 | 2026-11-12 | `tests/markdown-bad.ttrpg` wrote one of its faulty strings as `TEXT` directly in a DEF, which DECISION-30 now also reports (7 errors where the fixture states 6). The field is renamed `EFFECT` so the fixture holds only its own kind of fault. | Agent's call, found on the pre-commit run and reported with the close. |
 | A8 | 2026-11-12 | A8 is closed. The branch is committed and pushed. | Owner: "Close, commit, push". The agent's calls in the A8 rows marked "to confirm" were reported to him before he closed and were not separately ruled on. |
+| B1 | 2026-11-12 | The grammar is run and gated on the repo's fixtures. `check_grammar.py` is added; `ttrpg.peg` is repaired until it accepts all 35 good fixture files and refuses twelve planted syntax faults. The corpora are measured (5,157 of 7,055 accepted) and not gated. Written as DECISION-31. | Owner: "Yes, make it run". The alternatives were to demote the grammar to a sketch or delete it. |
+| B1 | 2026-11-12 | Agent's calls, to confirm. (1) A keyword statement's arguments begin on the keyword's line. (2) `RESERVED_WORD` adds the annotation-block openers and leaves out the words listed in the gaps. (3) A list may be empty. (4) A DEF's hash may follow its name. (5) Forms the spec does not define stay refused: `ENUM "x"`, an unnamed `DEF { }` in a list, `"text" +6`, an annotation block in an `ENTRY`. (6) The interpreter is written here, with no dependency. | (1): it stops a statement from taking the next line's first token. (2): a malformed annotation block was being read as a system keyword. (3) and (4): the corpora and A3's convention. (5): a grammar that accepts what the spec lacks would hide F19. (6): the repo's tools are plain Python. |
+| B1 | 2026-11-12 | B1 is closed. The branch is committed and pushed. | Owner: "Close, commit, push". The agent's calls in the B1 row marked "to confirm" were reported to him before he closed and were not separately ruled on. |
 
 ---
 

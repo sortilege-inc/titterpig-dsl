@@ -3,8 +3,9 @@
 > **Status: v0.5 (current, canonical).** Supersedes v0.4 (which superseded v0.3); superseded
 > versions live in this repo's git history. `AUTHORING-GUIDELINES.md` holds authoring
 > best-practices for system-specific content. The
-> `ttrpg.peg` grammar is **aligned to v0.5**. Validation is split: `ttrpg_validator.py` lints spec
-> adherence, while `check_references.py` and `check_constructs.py` coherence-check the v0.5
+> `ttrpg.peg` grammar states the syntax and `check_grammar.py` runs it: every good fixture in this
+> repo is accepted and every planted syntax fault refused (§20). Validation is split:
+> `ttrpg_validator.py` lints spec adherence, while `check_references.py` and `check_constructs.py` coherence-check the v0.5
 > `REFERENCES`/`REFERENCED BY`, `HOOKS`, `OPTIONAL`/`.selections`, and `GUIDANCE` constructs.
 
 ## 0. What changed
@@ -79,6 +80,10 @@ Changes made since v0.5, listed as they are decided. **Not all are additive.**
 17. **A definition's prose is `DESCRIPTION`** *(§10, DECISION-30; not additive)* — `TEXT` is no
     longer an alias for it. `TEXT` is the prose field of an `ENTRY` and of other blocks that are
     not definitions.
+18. **The grammar runs** *(§20, DECISION-31)* — `check_grammar.py` reads `ttrpg.peg` and parses
+    files with it. The grammar is gated on this repo's fixtures. It now has rules for a keyword
+    statement, the narrative containers and hash-qualified lists, and a rule for the words
+    reserved everywhere.
 
 ### v0.5 — five new constructs, and one rule tightened *(current)*
 
@@ -490,6 +495,21 @@ stay valid.
   field. A DEF's prose is `DESCRIPTION`. `TEXT` is the prose field of an `ENTRY` and of other
   blocks that are not definitions. `TEXT` directly in a DEF is a warning in a file that declares a
   `SPEC_VERSION` below 0.6, or none, and an error from 0.6.
+
+- **DECISION-31 — The grammar is run, and gated on the fixtures** *(resolved, v0.6, 2026-11-12)*
+  (§20): no tool read `ttrpg.peg`. Its `UPPER_IDENT` rule ended in `!{RESERVED_WORD}`, which is
+  not PEG notation and named a rule that did not exist. Run for the first time, it accepted 13
+  of this repo's 35 good fixture files and 1,350 of the 7,055 DSL files in the corpora, and it
+  refused `DESCRIPTION "x"` in a DEF: the optional label of a keyword statement took the string
+  and left the statement no value. The decision is that the grammar is run.
+  `check_grammar.py` is a packrat interpreter for the grammar's notation, with no dependency.
+  It refuses a grammar that names an undefined rule or holds an unreachable one. The grammar
+  must accept every good fixture in this repo and refuse every planted syntax fault in
+  `tests/grammar-bad`. The corpora are measured and not gated: after the repairs the grammar
+  accepts 5,157 of 7,055 files. Three points of syntax are now stated by the grammar. The
+  arguments of a keyword statement begin on the keyword's line. The words reserved everywhere
+  are one rule, `RESERVED_WORD`, and include the openers of the annotation blocks. A list may
+  be empty.
 
 ## 1. Overview & Design Principles
 
@@ -3489,7 +3509,7 @@ remains future work.)
 
 Validation of `.ttrpg`/`.lore` files has two levels, both operating on the files themselves:
 
-1. **Lint — spec adherence.** Does the file conform to this grammar/spec (structure, types, reserved-word usage, canonical forms)? One source of truth: the linter is derived from / checked against the grammar.
+1. **Lint — spec adherence.** Does the file conform to this grammar/spec (structure, types, reserved-word usage, canonical forms)? `ttrpg.peg` states the syntax and `check_grammar.py` runs it *(v0.6, DECISION-31)*: every good fixture in this repo must be accepted and every planted syntax fault in `tests/grammar-bad` refused. `ttrpg_validator.py` is a second reader. It scans tokens and does not use the grammar, so the two can disagree about what is well-formed, and a disagreement is a defect in one of them.
 2. **Coherence / consilience — referential integrity.** Across **an edition's** corpus: is everything referenced actually defined? Do `^"Name"`, `#hash`, `EXTENDS`, `APPLIES TO`, `DEPENDS_ON` resolve to real, correctly-typed targets — **and unambiguously** (§5d)? No **dangling** anchors, and **no hash declared twice**: a second DEF under a hash the corpus already declares is a **duplicate anchor**, an error *(v0.6, DECISION-27; before v0.6 the spec read it as an implicit override, which the validator never accepted)*. Two restatements are not duplicates: a named block stated again under its own hash and name, and a codex `ENTITY` restated to add sources (§25). The same hash on two different names is an error in every case.
 
 **The modification system is part of coherence** *(v0.4, 2026-07-25)*. A `MODIFY` / `OVERRIDE`

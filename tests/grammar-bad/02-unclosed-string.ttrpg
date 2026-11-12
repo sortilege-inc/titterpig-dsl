@@ -1,0 +1,7 @@
+BASE "Grammar_Bad_2" {
+    NAME "syntax fault — a string is never closed"
+    SPEC_VERSION "0.6"
+    #GrmBadBBBBBBBBBBBBBBBB ^"Crossing Blade" DEF {
+        DESCRIPTION "A cross-body cut.
+    }
+}

@@ -1,0 +1,8 @@
+BASE "Grammar_Bad_6" {
+    NAME "syntax fault — EXTENDS with no target"
+    SPEC_VERSION "0.6"
+    #GrmBadFFFFFFFFFFFFFFFF ^"Crossing Blade" DEF {
+        EXTENDS
+        DESCRIPTION "A cross-body cut."
+    }
+}

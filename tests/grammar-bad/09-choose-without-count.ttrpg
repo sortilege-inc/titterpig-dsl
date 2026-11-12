@@ -1,0 +1,7 @@
+BASE "Grammar_Bad_9" {
+    NAME "syntax fault — CHOOSE with no count (§5b)"
+    SPEC_VERSION "0.6"
+    #GrmBadIIIIIIIIIIIIIIII ^"Crossing Blade" DEF {
+        ^"Ring" CHOOSE [ "Air", "Fire" ]
+    }
+}

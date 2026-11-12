@@ -1,0 +1,6 @@
+BASE "Grammar_Bad_1" {
+    NAME "syntax fault — the last brace is missing"
+    SPEC_VERSION "0.6"
+    #GrmBadAAAAAAAAAAAAAAAA ^"Crossing Blade" DEF {
+        DESCRIPTION "A cross-body cut."
+    }

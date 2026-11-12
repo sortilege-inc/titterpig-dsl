@@ -1,0 +1,10 @@
+BASE "Grammar_Bad_12" {
+    NAME "syntax fault — a REFERENCES line with no arrow (§5c)"
+    SPEC_VERSION "0.6"
+    #GrmBadLLLLLLLLLLLLLLLL ^"Crossing Blade" DEF {
+        DESCRIPTION "A cross-body cut, as in Rising Blade."
+        REFERENCES {
+            "Rising Blade" ^"Rising Blade"
+        }
+    }
+}

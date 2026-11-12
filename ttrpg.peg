@@ -1,5 +1,7 @@
 # ┌────────────────────────────────────────────────────────────────────┐
-# │ Titterpig DSL — PEG Grammar, v0.5 (aligned to titterpig-dsl-spec.md).  │
+# │ Titterpig DSL — PEG Grammar, v0.5 with the v0.6 working draft.         │
+# │ Run by check_grammar.py: it must accept this repo's good fixtures     │
+# │ and refuse tests/grammar-bad (DECISION-31).                            │
 # │ v0.4 additions: SPEC_VERSION metadata; FIAT (property-level modifier   │
 # │ and element-level cascading statement). The hash-ID >=16-char rule   │
 # │ and cross-file coherence are enforced by the validator, not here.    │
@@ -20,7 +22,10 @@
 # TABLE with AXIS, AT and COLUMNS (§5e, DECISION-21); FROM names its container's kind, and
 # a block's name and hash may stand in either order (§16, DECISION-22).
 # A SCENE's and a CONFLICT's TYPE is a reference to an entity the system defines (§16,
-# DECISION-23); the validator checks it, since the containers are not yet rules here.
+# DECISION-23); the validator checks it.
+# v0.6, DECISION-31: this grammar is run. RESERVED_WORD is a rule; a keyword statement is
+# GENERIC_BLOCK, with its arguments on the keyword's line; SETTING, FRAME, ARC and CAMPAIGN
+# files are CONTAINER_BLOCK; a reference in a list may carry its hash; a list may be empty.
 # A port's header names its source: ORIGIN "edition" <KIND> "id" (§19, DECISION-26).
 # An .actor file is an EXTENSION_BLOCK of instance DEFs (§2, DECISION-28). FILE has no bare-DEF
 # form, and the 670 older .actor files that open with a bare DEF do not match it.
@@ -45,9 +50,15 @@
 # 1. File-Level Structure
 # ═══════════════════════════════════════════════════════════
 
-FILE            <- _ (BASE_BLOCK / EXTENSION_BLOCK / BRIDGE_BLOCK / SELECTIONS_BLOCK / CODEX_BLOCK) _ EOF
+FILE            <- _ (BASE_BLOCK / EXTENSION_BLOCK / CONTAINER_BLOCK / BRIDGE_BLOCK / SELECTIONS_BLOCK / CODEX_BLOCK) _ EOF
 
-BASE_BLOCK      <- 'BASE' _ STRING _ '{' _ BODY _ '}'
+BASE_BLOCK      <- 'BASE' _ STRING _ EXTENDS_CLAUSE? _ '{' _ BODY _ '}'
+
+# §16 — a narrative container. Its body is the body of any block: metadata, FROM imports,
+# definitions, and the container's own blocks (SCENE, LOCATION, FLOW, …), which are keyword
+# statements (§18).
+CONTAINER_BLOCK <- NARRATIVE_KIND _ STRING _ EXTENDS_CLAUSE? _ '{' _ BODY _ '}'
+NARRATIVE_KIND  <- 'SETTING' / 'FRAME' / 'ARC' / 'CAMPAIGN'
 EXTENSION_BLOCK <- 'EXTENSION' _ STRING _ EXTENDS_CLAUSE? _ '{' _ BODY _ '}'
 
 EXTENDS_CLAUSE  <- 'EXTENDS' _ STRING
@@ -57,6 +68,7 @@ BODY            <- (BODY_ENTRY _)*
 BODY_ENTRY      <- METADATA
                  / ALIAS_STATEMENT
                  / REPRINT_STATEMENT         # v0.5 addendum, §5b — unchanged reprint
+                 / FROM_IMPORT               # v0.6, §16 — an import (DECISION-22)
                  / DEF_BLOCK
                  / PROPERTIES_BLOCK
                  / PARAMETERS_BLOCK
@@ -81,7 +93,13 @@ BODY_ENTRY      <- METADATA
                  / CHANGE                    # v0.6, §8 — <target> SET n / TRANSFORM …
                  / CHOOSE_KEYED              # v0.6, §5b — a CHOOSE in place of a name
                  / CHOOSE_VALUE              # v0.6, §5b — a CHOOSE alone in a block
-                 / GENERIC_BLOCK
+                 / REF_DECL                  # v0.6, §8 — REF OF ^"Type" alone in a block
+                 / PROPERTY_DECL             # ^"Honor" INTEGER 35 — a typed value (§5, §8)
+                 / OBJECTIVE_ENTRY           # §16 — REQUIRED "…" / OPTIONAL "…" in OBJECTIVES
+                 / NUMBERED_ENTRY
+                 / GENERIC_BLOCK             # a keyword statement: the system's own, or a block's (§15)
+                 / CARET_ENTRY
+                 / HASH_ENTRY
                  / INLINE_VALUE
                  / COMMENT
 
@@ -117,7 +135,7 @@ PORT_KIND       <- CONTAINER_KIND / 'CAMPAIGN'
 #   ^"Name" DEF { ... }          (no hash)
 #   "Name" DEF { ... }           (rare, no caret)
 
-DEF_BLOCK       <- HASH_ID? _ ACTOR_KW? _ DEF_NAME _ 'DEF' _ '{' _ BODY _ '}'
+DEF_BLOCK       <- (HASH_ID _)? (ACTOR_KW _)? DEF_NAME _ (HASH_ID _)? 'DEF' B _ '{' _ BODY _ '}'
 
 ACTOR_KW        <- 'ACTOR' / 'TEMPLATE'
 DEF_NAME        <- CARET_REF / STRING
@@ -134,7 +152,7 @@ PARAMETERS_BLOCK <- 'PARAMETERS' _ '{' _ (PARAM_DECL _)* '}'
 # A parameter's domain is a caret type (bound value is an entity of that type),
 # STRING (free text), or a bracket list (an enum of literal allowed values,
 # e.g. selecting a Major-or-Minor virtue's severity: ^"Size" OF ["Major","Minor"]).
-PARAM_DECL       <- CARET_REF _ 'OF' _ (CARET_REF / 'STRING' / BRACKET_LIST)
+PARAM_DECL       <- CARET_REF _ 'OF' _ (HASHED_REF / 'STRING' / BRACKET_LIST)
 
 # ALIAS declares one name a display synonym of an existing entity — same
 # entity/hash, different label, no value change (distinct from MODIFY/OVERRIDE).
@@ -299,7 +317,7 @@ INTEGER_TYPE    <- 'INTEGER' (_ INTEGER_LIT)? (_ MODIFIER)*
 BOOLEAN_TYPE    <- 'BOOLEAN' (_ BOOLEAN_LIT)? (_ MODIFIER)*
 # A modifier follows any type (§8). ENUM and the LIST forms took none before v0.6.
 ENUM_TYPE       <- 'ENUM' _ BRACKET_LIST (_ MODIFIER)*
-LIST_OF_TYPE    <- 'LIST' _ 'OF' _ (CARET_REF / 'STRING') (_ BRACKET_LIST)? (_ MODIFIER)*
+LIST_OF_TYPE    <- 'LIST' _ 'OF' _ (HASHED_REF / 'STRING') (SP BRACKET_LIST)? (_ MODIFIER)*
 LIST_LITERAL    <- 'LIST' _ BRACKET_LIST (_ MODIFIER)*
 
 # REF — a reference to one entity (v0.6, DECISION-17). `REF OF ^"Type"` declares the
@@ -361,7 +379,7 @@ COORDINATE      <- 'ANY'
                  / INTEGER_LIT ('-' INTEGER_LIT)?
                  / HASHED_REF
                  / STRING
-TABLE_COLUMNS   <- 'COLUMNS' _ '[' _ CARET_REF (_ ',' _ CARET_REF)* _ ']'
+TABLE_COLUMNS   <- 'COLUMNS' _ '[' _ HASHED_REF (_ ',' _ HASHED_REF)* _ ']'
 
 # A change to a value (v0.6, DECISION-16). The target is a reference to the thing changed,
 # or a CHOOSE, in which case the change applies to each option chosen.
@@ -408,7 +426,7 @@ EXTENDS_DECL    <- 'EXTENDS' _ HASH_ID? _ CARET_REF
 
 APPLIES_TO_CLAUSE <- 'APPLIES' _ 'TO' _ '[' _ CARET_REF_LIST _ ']'
 
-CARET_REF_LIST  <- CARET_REF (_ ',' _ CARET_REF)*
+CARET_REF_LIST  <- HASHED_REF (_ ',' _ HASHED_REF)*
 
 # FIAT: element-level intentional-exception marker; cascades over the DEF subtree.
 # The reason STRING is required. (Property-level FIAT is a MODIFIER, section 4.)
@@ -457,7 +475,9 @@ ADD_STATEMENT      <- 'ADD' _ DEF_BLOCK
 
 # PROPERTIES inside a MODIFY INTRODUCES properties the target lacks; SET may only
 # change one it already declares (spec S13, "Changing vs. introducing a property").
-MODIFY_BODY     <- (MODIFY_ENTRY _)*
+# A MODIFY body holds its own four statements, and anything a definition's body may hold
+# (§13): a PROPERTIES block that widens the target, a GUIDANCE entry, a system block.
+MODIFY_BODY     <- ((MODIFY_ENTRY / BODY_ENTRY) _)*
 MODIFY_ENTRY    <- SET_DESCRIPTION_ENTRY / SET_ENTRY / ADD_TO_ENTRY / REMOVE_FROM_ENTRY
                  / PROPERTIES_BLOCK / RULES_BLOCK / COMMENT
 
@@ -477,76 +497,66 @@ REMOVE_FROM_ENTRY <- 'REMOVE_FROM' _ CARET_REF _ VALUE
 # This catch-all rule enables system vocabulary.
 # ═══════════════════════════════════════════════════════════
 
-GENERIC_BLOCK   <- UPPER_IDENT _ GENERIC_LABEL? _ GENERIC_VALUE
-
+# A keyword statement: a keyword, then what stands on its line. This is every block and field
+# the grammar has no rule of its own for: a system's (CURRICULUM { … }, SKILL "Aesthetics",
+# RANK 1 { … }) and a narrative container's (SCENE ^"Name" #hash { … }, LOCATION #hash ^"Name",
+# TAGS ["a", "b"]). The arguments start on the keyword's line; a block or a list may then run
+# over many lines. A keyword alone is a flag.
+#
 # A named block gives its name and then its hash, by convention -- SCENE ^"Name" #hash { --
 # and hash before name is also legal (v0.6, DECISION-22). Either may stand alone.
 # The hash makes the block a target for any file; the name alone is a label inside the file
 # that declares it (§20, DECISION-24).
-GENERIC_LABEL   <- CARET_REF _ HASH_ID / HASH_ID _ CARET_REF
-                 / CARET_REF / STRING / HASH_ID / INTEGER_LIT
-
-# §16 — an import *(v0.6, DECISION-22)*. The line names the KIND of container, then its id,
-# and is itself the declaration of that dependency. Each INCLUDE item is a reference (§5d).
-#   FROM EXTENSION "L5R5e_Children_of_Five_Winds_GM" INCLUDE [ #hash ^"Miya Tetsua" ]
-#   FROM ARC "ArcID"
-# The containers themselves (SETTING, FRAME, ARC, CAMPAIGN) are not yet rules of this
-# grammar; FILE lists only BASE, EXTENSION, BRIDGE, SELECTIONS and CODEX.
-FROM_IMPORT     <- 'FROM' _ CONTAINER_KIND _ STRING (_ 'INCLUDE' _ '[' _ HASHED_REF (_ ',' _ HASHED_REF)* _ ']')?
-CONTAINER_KIND  <- 'EXTENSION' / 'FRAME' / 'ARC' / 'SETTING' / 'BASE'
-
-GENERIC_VALUE   <- '{' _ GENERIC_BODY _ '}'
+GENERIC_BLOCK   <- UPPER_IDENT (SP GENERIC_ARG)*
+GENERIC_ARG     <- '{' _ BODY _ '}'
+                 / BRACKET_LIST
+                 / HASHED_REF
+                 / HASH_ID
+                 / STRING
+                 / ROLL_RANGE
+                 / INTEGER_LIT
+                 / BOOLEAN_LIT
+GENERIC_VALUE   <- '{' _ BODY _ '}'
                  / BRACKET_LIST
                  / STRING
                  / INTEGER_LIT
                  / BOOLEAN_LIT
 
-GENERIC_BODY    <- (GENERIC_BODY_ENTRY _)*
+# §16 — an import *(v0.6, DECISION-22)*. The line names the KIND of container, then its id,
+# and is itself the declaration of that dependency. Each INCLUDE item is a reference (§5d).
+#   FROM EXTENSION "L5R5e_Children_of_Five_Winds_GM" INCLUDE [ #hash ^"Miya Tetsua" ]
+#   FROM ARC "ArcID"
+FROM_IMPORT     <- 'FROM' _ CONTAINER_KIND _ STRING (_ 'INCLUDE' _ '[' _ HASHED_REF (_ ',' _ HASHED_REF)* _ ']')?
+CONTAINER_KIND  <- 'EXTENSION' / 'FRAME' / 'ARC' / 'SETTING' / 'BASE'
 
-GENERIC_BODY_ENTRY <- DEF_BLOCK
-                    / STEP
-                    / CHANGE
-                    / CHOOSE_KEYED
-                    / CHOOSE_VALUE
-                    / PROPERTIES_BLOCK
-                    / RULES_BLOCK
-                    / GENERIC_BLOCK
-                    / NUMBERED_ENTRY
-                    / LABELED_ENTRY
-                    / CARET_ENTRY
-                    / HASH_ENTRY
-                    / INLINE_VALUE
-                    / COMMENT
+# §16 — a scene's objectives. REQUIRED and OPTIONAL are modifiers and a marker elsewhere;
+# inside OBJECTIVES each opens a line.
+OBJECTIVE_ENTRY <- ('REQUIRED' / 'OPTIONAL') B SP STRING
 
-# Entries within generic blocks:
+# Entries that open with a number, a name or a hash, in any block:
 #   1 "text"                  (numbered entry)
 #   2-3 "text"                (roll-range entry — random tables)
-#   1 ^"Name" DEF { }         (numbered nested def)
 #   2-3 #hash ^"Name" DEF { } (roll-range nested def, anchored)
-#   KEYWORD "text"            (labeled entry)
-#   ^"Name" "text"            (caret-labeled entry)
-#   ^"Name" [tag]             (caret with bracket tag)
-#   ^"Name" DEF { }           (nested def)
-#   #hash: text               (hash-labeled, already covered by HASH_ENTRY)
-
+#   ^"Name" "text"            (a name and its text)
+#   ^"Name" [tag]             (a name and a list)
+#   ^"Name" #hash ^"Entity"   (a name and the entity it holds)
+#   ^"Name" { … }             (a keyed block)
+#   #hash ^"Name"             (a reference alone on a line)
+#
 # A numbered entry may be keyed by a single roll or by a range of rolls, and
 # may carry an anchor hash before its name. Random tables in several systems
 # assign one result to a span of die results (a d10 table with six outcomes),
 # so the key is a range rather than an integer; encoding that span as prose
 # would put something a tool must read outside the structure.
-NUMBERED_ENTRY  <- ROLL_KEY _ HASH_ID? _ (STRING / CARET_REF / GENERIC_BLOCK)
-
+NUMBERED_ENTRY  <- ROLL_KEY SP (DEF_BLOCK / (HASH_ID SP)? (STRING / CARET_REF) / GENERIC_BLOCK)
 ROLL_KEY        <- ROLL_RANGE / INTEGER_LIT
-
 ROLL_RANGE      <- INTEGER_LIT '-' INTEGER_LIT
 
-LABELED_ENTRY   <- UPPER_IDENT _ (CHOOSE_VALUE / STRING / CARET_REF / INTEGER_LIT / BRACKET_LIST / GENERIC_BLOCK)
+CARET_ENTRY     <- CARET_REF (SP CARET_VALUE)*
+CARET_VALUE     <- '{' _ BODY _ '}' / BRACKET_LIST / HASHED_REF / STRING / INTEGER_LIT / BOOLEAN_LIT
 
-CARET_ENTRY     <- CARET_REF _ (STRING / BRACKET_LIST / DEF_INLINE_BLOCK / GENERIC_BLOCK)?
+HASH_ENTRY      <- HASH_ID (SP CARET_REF (SP (STRING / BRACKET_LIST))?)?
 
-HASH_ENTRY      <- HASH_ID _ (CARET_REF _ (STRING / BRACKET_LIST)?)?
-
-DEF_INLINE_BLOCK <- 'DEF' _ '{' _ BODY _ '}'
 
 # ═══════════════════════════════════════════════════════════
 # 9b. BRIDGE — cross-edition conversion (v0.4, §21)
@@ -600,6 +610,7 @@ MAP_FIELD       <- SIDE_KW _ REFERENT_SET        # slot supplies the side
                  / 'ASPECT' _ STRING
                  / DISPOSITION_FIELD
                  / TEXT_FIELD
+                 / FIAT_STATEMENT
                  / COMMENT
 
 # A bulk disposition over every member of SCOPE that no MAP names.
@@ -609,6 +620,7 @@ REMAINDER_FIELD <- 'SCOPE' _ SIDED_REF
                  / 'EXHAUSTIVE' _ BOOLEAN_LIT
                  / DISPOSITION_FIELD
                  / TEXT_FIELD
+                 / FIAT_STATEMENT
                  / COMMENT
 
 # Converts the VALUES on a character sheet (MAP corresponds ENTITIES).
@@ -618,6 +630,7 @@ PROCEDURE_FIELD <- 'SUBJECT' _ SIDED_REF
                  / CONVERT_STMT
                  / DISPOSITION_FIELD
                  / TEXT_FIELD
+                 / FIAT_STATEMENT
                  / COMMENT
 
 CONVERT_STMT    <- 'CONVERT' _ SIDED_REF _ CONVERT_OP (_ 'INTO' _ SIDED_REF)?
@@ -665,8 +678,9 @@ VALUE           <- CHOOSE_VALUE / STRING / INTEGER_LIT / BOOLEAN_LIT / CARET_REF
 
 INLINE_VALUE    <- STRING / CARET_REF
 
-BRACKET_LIST    <- '[' _ BRACKET_ITEM (_ ',' _ BRACKET_ITEM)* _ ']'
-BRACKET_ITEM    <- CHOOSE_VALUE / CARET_REF / HASH_ID / STRING / INTEGER_LIT / BOOLEAN_LIT
+# A list may be empty: ^"Options" LIST [].
+BRACKET_LIST    <- '[' _ (BRACKET_ITEM (_ ',' _ BRACKET_ITEM)* _)? ']'
+BRACKET_ITEM    <- CHOOSE_VALUE / HASHED_REF / HASH_ID / STRING / INTEGER_LIT / BOOLEAN_LIT
 
 # CHOOSE n — a number of things are picked, and from what (v0.6, DECISION-15; replaces
 # v0.4's CHOICE / PICK / WHERE). The count is always written.
@@ -718,6 +732,7 @@ HEX             <- [0-9a-fA-F]
 # In a SINGLE_QUOTED string Q is the escaped quote; in a TRIPLE_QUOTED one it is the bare
 # quote. The text of a string is its content with each EMBEDDED_REF read as its literal,
 # or as its name where it has none.
+# @entry STRING_CONTENT
 STRING_CONTENT  <- (EMBEDDED_REF / .)*
 EMBEDDED_REF    <- (HASH_ID ' '+)? '^' Q EMBEDDED_NAME Q ('/' Q EMBEDDED_LITERAL Q)?
 EMBEDDED_NAME   <- (!Q .)+
@@ -747,8 +762,28 @@ PARAM_ARG       <- (CARET_REF _ '=' _)? (CARET_REF / STRING)
 HASH_ID         <- '#' [a-zA-Z0-9] [a-zA-Z0-9_]*
 
 # Uppercase identifier (for system-defined keywords and generic blocks)
-UPPER_IDENT     <- [A-Z] [A-Z0-9_]*
-                   !{RESERVED_WORD}
+UPPER_IDENT     <- !(RESERVED_WORD B) [A-Z] [A-Z0-9_]*
+
+# The keywords reserved everywhere (§15, DECISION-29): no system may use one as a keyword
+# of its own. A keyword that belongs to a block (TABLE, HOOKS, the narrative containers, …)
+# is not here: outside its block it is an UPPER_IDENT like any other. The words that open a
+# statement with a rule of its own (REFERENCES, EMPHASIS, LABEL, GUIDANCE, HOOKS, FACES) are
+# here, so that a malformed one is refused and not read as a system's keyword.
+# Order matters in an ordered choice: where one word begins another, the longer stands first
+# (DEFAULT before DEF, REFERENCES before REF, ADD_TO before ADD).
+RESERVED_WORD   <- 'BASE' / 'EXTENSION' / 'EXTENDS' / 'DEPENDS_ON' / 'SPEC_VERSION' / 'RELEASE_DATE'
+                 / 'DEFAULT' / 'DEF' / 'ACTOR' / 'TEMPLATE' / 'PROPERTIES' / 'RULES' / 'PARAMETERS'
+                 / 'REFERENCES' / 'REFERENCED' / 'MENTIONS' / 'EMPHASIS' / 'LABEL'
+                 / 'GUIDANCE' / 'HOOKS' / 'FACES'
+                 / 'STRING' / 'INTEGER' / 'BOOLEAN' / 'ENUM' / 'LIST' / 'REF'
+                 / 'REQUIRED' / 'FIXED' / 'FIAT'
+                 / 'APPLIES' / 'ALIAS'
+                 / 'CHOOSE' / 'DISTINCT' / 'INDISTINCT' / 'WITH'
+                 / 'OVERRIDE' / 'ADD_TO' / 'ADD' / 'MODIFY' / 'SET' / 'REMOVE_FROM' / 'REPRINT'
+                 / 'TRANSFORM' / 'NEXT'
+
+# The end of a word: a keyword is not the first letters of a longer one.
+B               <- ![A-Za-z0-9_]
 
 # Note: UPPER_IDENT must not match reserved words when used as generic blocks.
 # Reserved words are handled by their own rules with higher priority.
@@ -766,6 +801,7 @@ SLASH_COMMENT   <- '//' (!EOL .)*
 # ═══════════════════════════════════════════════════════════
 
 _               <- (WHITESPACE / COMMENT)*
+SP              <- [ \t]*                 # space on the same line: an argument stays with its keyword
 WHITESPACE      <- [ \t\r\n]+
 EOL             <- '\r\n' / '\n' / '\r'
 EOF             <- !.

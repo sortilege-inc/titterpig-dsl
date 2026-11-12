@@ -1,0 +1,3 @@
+#GrmBadJJJJJJJJJJJJJJJJ ^"Crossing Blade" DEF {
+    DESCRIPTION "syntax fault — a definition outside any BASE or EXTENSION"
+}

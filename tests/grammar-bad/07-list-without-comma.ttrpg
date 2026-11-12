@@ -1,0 +1,7 @@
+BASE "Grammar_Bad_7" {
+    NAME "syntax fault — a list with no comma between its items"
+    SPEC_VERSION "0.6"
+    #GrmBadGGGGGGGGGGGGGGGG ^"Crossing Blade" DEF {
+        TAGS ["kata" "fire"]
+    }
+}

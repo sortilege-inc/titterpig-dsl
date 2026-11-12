@@ -1,0 +1,7 @@
+BASE "Grammar_Bad_8" {
+    NAME "syntax fault — a keyword in lower case"
+    SPEC_VERSION "0.6"
+    #GrmBadHHHHHHHHHHHHHHHH ^"Crossing Blade" DEF {
+        description "A cross-body cut."
+    }
+}

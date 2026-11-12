@@ -1,0 +1,7 @@
+BASE "Grammar_Bad_3" {
+    NAME "syntax fault — a DEF with a hash and no name"
+    SPEC_VERSION "0.6"
+    #GrmBadCCCCCCCCCCCCCCCC DEF {
+        DESCRIPTION "A cross-body cut."
+    }
+}

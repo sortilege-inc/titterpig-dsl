@@ -1,0 +1,9 @@
+BASE "Grammar_Bad_11" {
+    NAME "syntax fault — ENUM with no list of values (§8)"
+    SPEC_VERSION "0.6"
+    #GrmBadKKKKKKKKKKKKKKKK ^"Crossing Blade" DEF {
+        PROPERTIES {
+            ^"Ring" ENUM
+        }
+    }
+}
