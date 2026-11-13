@@ -135,8 +135,11 @@ VALUES AGAINST DECLARATIONS (spec §5, §5b, §6, §8, DECISION-32).
     of another kind than its type, or than the type it inherits; a named member of a
     LIST OF ^"Type" that does not extend the type; one property written twice in a definition.
   - a hash shorter than 16 characters, or with an underscore: the same gating, not waivable.
-  - not checked: a REQUIRED property left out (audit B4), a DEPENDS_ON VERSION pin (B5), a
-    value for a property no type declares, and the fields of a nested or unnamed DEF.
+  - REQUIRED (§8, DECISION-34), the same gating and waived by an element-level FIAT: an
+    instance that lacks a property a type up its chain declares REQUIRED. ^"Name" is answered
+    by the DEF's own name.
+  - not checked: a DEPENDS_ON VERSION pin (audit B5), a value for a property no type
+    declares, and the fields of a nested or unnamed DEF.
   - a name two definitions share is not followed up an EXTENDS chain; give the hash (§5d).
 
 PORTS (spec §19, DECISION-26). A file made from another edition's file declares it in its
@@ -893,13 +896,20 @@ def collect_definitions(fname, toks):
         if t.kind == 'ID':
             w = t.val
             if w == 'DEF' and i >= 1 and toks[i - 1].kind in ('CARET', 'STR'):
-                k = i - 2
+                k, marker = i - 2, None
                 if k >= 0 and toks[k].kind == 'ID' and toks[k].val in ('ACTOR', 'TEMPLATE'):
-                    k -= 1
+                    marker, k = toks[k].val, k - 1
                 pending = {'name': name_key(toks[i - 1].val),
                            'hash': toks[k].val if k >= 0 and toks[k].kind == 'HASH' else None,
+                           'marker': marker, 'children': set(),
                            'extends': [], 'props': {}, 'params': None, 'file': fname, 'line': t.line,
                            'nested': any(fr['kind'] in ('DEF', 'PROPS') for fr in stack)}
+                # a DEF written inside another is that one's field of the same name
+                for fr in reversed(stack):
+                    if fr['kind'] in ('DEF', 'PROPS'):
+                        if fr['def'] is not None:
+                            fr['def']['children'].add(pending['name'])
+                        break
             elif w == 'EXTENDS' and stack and stack[-1]['kind'] == 'DEF':
                 j, hsh = i + 1, None
                 if j < n and toks[j].kind == 'HASH':
@@ -958,7 +968,8 @@ def collect_definitions(fname, toks):
                              and toks[i - 1].val in ('AXIS', 'OF', 'SET', 'NEXT', 'COLUMNS')):
                 ty, j = toks[i + 1].val, i + 2
                 rec = {'type': ty, 'value': None, 'vkind': None, 'min': None, 'max': None,
-                       'enum': None, 'of': None, 'of_hash': None, 'members': None, 'line': t.line}
+                       'enum': None, 'of': None, 'of_hash': None, 'members': None, 'line': t.line,
+                       'required': False}
                 if ty == 'LIST' and j < n and toks[j].kind == 'ID' and toks[j].val == 'OF':
                     j += 1
                     if j < n and toks[j].kind == 'HASH':
@@ -999,6 +1010,8 @@ def collect_definitions(fname, toks):
                     m = toks[j].val
                     if m in ('MIN', 'MAX') and j + 1 < n and toks[j + 1].kind == 'INT':
                         rec[m.lower()] = int(toks[j + 1].val)
+                    elif m == 'REQUIRED':
+                        rec['required'] = True
                     j += 1 if m in ('REQUIRED', 'FIXED') else 2
                 stack[-1]['def']['props'].setdefault(t.val, []).append(rec)
         if t.kind == 'LBRACE':
@@ -2795,6 +2808,13 @@ def value_pass(files_data, findings):
     a value of another kind than the type declared (§5, §8), a named member of a LIST OF
     ^"Type" that is not of the type (§8), and one property written twice in a definition.
 
+    The same gating, for REQUIRED (§8, DECISION-34): an instance that lacks a property a type
+    up its chain declares REQUIRED. An instance is a DEF that extends something and is not a
+    type; a type is an ACTOR or TEMPLATE definition, a DEF another DEF extends, or a DEF that
+    declares fields and gives no value. The instance has the property when it writes it, when
+    a type above gives it a value, when it is a PARAMETERS slot, or, for ^"Name", always: the
+    DEF's own name answers.
+
     A name that two definitions share is not followed: §5d makes it ambiguous without a hash."""
     by_file = {d['file']: d for d in files_data}
     by_name, by_hash = {}, {}
@@ -2904,6 +2924,69 @@ def value_pass(files_data, findings):
                                             '^"%s": "%s" is not a value of ^"%s", which takes %s (§5b)'
                                             % (b['base'], v, prm['name'],
                                                ', '.join('"%s"' % o for o in prm['values']))))
+
+    # REQUIRED (§8, DECISION-34): every instance of the type has the property. Nested
+    # definitions count here: a book's entries are often written inside the DEF of their section.
+    every = [x for d in files_data for x in d.get('vdefs', [])]
+    all_name, all_hash = {}, {}
+    for x in every:
+        all_name.setdefault(x['name'], []).append(x)
+        if x['hash']:
+            all_hash.setdefault(x['hash'], []).append(x)
+
+    def declares(x):
+        recs = [r for rs in x['props'].values() for r in rs]
+        if any(r['required'] for r in recs):
+            return True
+        return bool(recs) and all(r['value'] is None and r['members'] is None for r in recs)
+
+    def own_type(x):
+        return x['marker'] is not None or declares(x)
+
+    def resolve_any(name, hsh):
+        if hsh and hsh in all_hash:
+            return all_hash[hsh][:1]
+        cands = all_name.get(name, [])
+        return ([y for y in cands if own_type(y)] or cands) if len(cands) > 1 else cands
+
+    def all_ancestors(x):
+        out, seen, todo = [], {id(x)}, list(x['extends'])
+        while todo:
+            nm, h, _ln = todo.pop(0)
+            for y in resolve_any(nm, h):
+                if id(y) not in seen:
+                    seen.add(id(y))
+                    out.append(y)
+                    todo.extend(y['extends'])
+        return out
+
+    extended = {id(y) for x in every for nm, h, _ln in x['extends'] for y in resolve_any(nm, h)}
+    for x in every:
+        if not x['extends'] or own_type(x) or id(x) in extended:
+            continue                                    # a type, or nothing that extends one
+        sev = gated(x, x['line'])
+        if not sev:
+            continue                                    # an element-level FIAT waives the instance
+        anc = all_ancestors(x)
+        have = set(x['props']) | x['children'] | {prm['name'] for prm in (x['params'] or [])}
+        for y in anc:
+            have |= {prm['name'] for prm in (y['params'] or [])}
+            have |= {p for p, rs in y['props'].items()
+                     if any(r['value'] is not None or r['members'] is not None for r in rs)}
+        reported = set()
+        for y in anc:
+            if not (own_type(y) or id(y) in extended):
+                continue
+            missing = [p for p, rs in y['props'].items()
+                       if any(r['required'] for r in rs) and p not in have and p != 'Name'
+                       and p not in reported]
+            if missing:
+                reported.update(missing)
+                findings.append(Finding(x['file'], 'coherence', sev, x['line'],
+                                        '^"%s" has no %s, which ^"%s" declares REQUIRED: every entry of '
+                                        'a type has what the type requires (§8). An entry the source '
+                                        'prints without it takes FIAT "reason"'
+                                        % (x['name'], ', '.join('^"%s"' % p for p in missing), y['name'])))
 
     for xs in by_name.values():
         for x in xs:

@@ -1,0 +1,66 @@
+BASE "Required_Bad_Core" {
+    NAME "DECISION-34 fixture — instances that lack what their type requires (§8)"
+    SPEC_VERSION "0.6"
+    VERSION "1.0"
+    RELEASE_DATE "2026-11-12"
+
+    #   ttrpg_validator.py tests/required-bad        3 errors, 1 warning
+
+    # every entry of this type has a roll and a text; that is what REQUIRED says
+    #ReqEntryK2vQ9wN3cL7pXdAa ^"Roll Table Entry" DEF {
+        PROPERTIES {
+            ^"Roll" STRING REQUIRED
+            ^"Text" STRING REQUIRED
+            ^"Note" STRING
+        }
+    }
+
+    #ReqSchoolB8tJ1yL4sD5fG0z ^"School" DEF {
+        PROPERTIES {
+            ^"Name" STRING REQUIRED
+            ^"Clan" STRING REQUIRED
+        }
+    }
+
+    # a type between the two gives the value for everything below it
+    #ReqCraneC4pH7zR2wE9uX1qW ^"Crane School" DEF {
+        EXTENDS #ReqSchoolB8tJ1yL4sD5fG0z ^"School"
+        PROPERTIES {
+            ^"Clan" STRING "Crane" FIXED
+        }
+    }
+
+    #ReqVirtueD4fG7hJ0kL2mNpS ^"Virtue" DEF {
+        PARAMETERS { ^"Size" OF ["Major", "Minor"] }
+        PROPERTIES {
+            ^"Size" STRING REQUIRED
+        }
+    }
+
+    # fault 1 — one of two required fields is missing                         ERROR
+    #ReqBadRowK7mQ2xW9vN4cZpL ^"Row 2" DEF {
+        EXTENDS #ReqEntryK2vQ9wN3cL7pXdAa ^"Roll Table Entry"
+        PROPERTIES {
+            ^"Roll" STRING "4-6"
+        }
+    }
+
+    # fault 2 — a school with no clan, and no FIAT                            ERROR
+    #ReqBadTradM5nO7pQ9rS1tU3 ^"Sand Road Wayfinder Tradition" DEF {
+        EXTENDS #ReqSchoolB8tJ1yL4sD5fG0z ^"School"
+        PROPERTIES {
+            ^"Rank" INTEGER 1
+        }
+    }
+
+    # fault 3 — an entry written inside another entry's DEF is checked too    ERROR
+    #ReqBadSectionP2oI5uY8tR1 ^"Random Encounters" DEF {
+        DESCRIPTION "Roll once each night."
+        #ReqBadNestedW3nB8sHdPz5F ^"Row 3" DEF {
+            EXTENDS #ReqEntryK2vQ9wN3cL7pXdAa ^"Roll Table Entry"
+            PROPERTIES {
+                ^"Text" STRING "Wolves."
+            }
+        }
+    }
+}

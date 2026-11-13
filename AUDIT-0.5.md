@@ -996,7 +996,8 @@ corpora only: callofcthulhu7e gains 4 errors and l5r5e gains 1.
 
 ### B4. `REQUIRED` means one thing in §8 and another in the only tool that checks it
 
-**Status:** open
+**Status:** closed 2026-11-13 by the owner. Committed and pushed on branch `0.6`. `REQUIRED`
+means every entry of the type has the property, and the validator checks it (DECISION-34).
 
 §8: "`REQUIRED` — must be provided". The validator does not check it. `check_structure.py` fails
 only when a `REQUIRED` property is populated on zero instances of its type. On arm5e it prints
@@ -1007,6 +1008,96 @@ Related: `check_structure.py` fails two of the three corpora today (vtm5e: 11 `P
 to 12,724 `DESCRIPTION`s, 252 empty DEFs; arm5e: the `House` error). Neither repo's `gates.sh` runs
 it. l5r5e has no `gates.sh`. vtm5e writes its properties directly in the DEF body with no
 `PROPERTIES` block (12,839 `STRING` values, 11 blocks), which §0 calls non-canonical.
+
+**Evidence, measured 2026-11-13.** Counted with `check_structure.py`'s own reading of what a
+type is, what an instance is, and what fills a property, over the 22 corpus directories.
+
+- **What the spec says.** §8: "`REQUIRED` — must be provided". §8 on `FIAT`: it waives
+  "completeness requirements (`REQUIRED` / missing fields)". §5: an instance is a DEF that
+  extends an actor type and fills in values. Nothing says who must provide, or what counts.
+- **What the tool does.** It fails a `REQUIRED` property that no instance of its type fills,
+  and prints a note for one that some instances leave out. Today: 6 errors (arm5e 1, armdef 2,
+  draw-steel 3) and 23 notes.
+- **The declarations.** 842 properties are declared `REQUIRED`, 239 of them `^"Name"`. 170 sit
+  on a type with no instance. None is also given a `DEFAULT`.
+- **The instances.** The other 672 declarations face 81,447 instance slots, and 81,086 are
+  filled (99.6%). 638 declarations are met by every instance, 28 by some, 6 by none.
+- **Read as "every instance must provide", 361 slots are empty,** in four corpora: armdef 210,
+  arm5e 71, l5r5e 50, draw-steel 30. The largest: `^"Laboratory Virtue".^"Category"` missing on
+  70 of 96 (armdef) and `^"Laboratory Flaw".^"Category"` on 64 of 93;
+  `^"Ability".^"Ability Type"` on 31 of 167 (arm5e); `^"School".^"Clan"` on 27 of 110 (l5r5e);
+  `^"Magus".^"House"` on all 13 (arm5e); `^"Hero"`'s `^"Kit"`, `^"Class"` and `^"Ancestry"` on
+  all 10 (draw-steel).
+- **`^"Name"` and the DEF's own name.** The tool counts a required `^"Name"` as filled by the
+  DEF header. 5,969 instances extend a type that requires `^"Name"`. 4,955 write
+  `^"Name" STRING "…"` as well as their header. 1,014 are named by the header alone:
+  daggerheart 348 of 348, root 331 of 331, draw-steel 157 of 157, arm5e 81 of 81, armdef 80 of
+  80, teeth 14, l5r5e 3. The spec's own instance in §5, `^"Ide Tadaji"`, is one of this kind:
+  §17's `Samurai` requires `^"Name"` and the instance does not write it.
+- **What else the tool counts as filled:** the property written on the instance, with or
+  without a value; a value given by a type up the chain; a `PARAMETERS` slot of that name. An
+  element-level `FIAT` takes the instance out of the count.
+
+**How `REQUIRED` is used today, measured 2026-11-13 at the owner's request.**
+
+- **How often.** Types declare 4,790 properties and mark 835 of them `REQUIRED` (17%). The
+  share runs from 65% (mythic-gme2) and about 42% (curseborne, pendragon5e, troika) down to 1%
+  (callofcthulhu7e, daggerheart, dnd5e, dnd5.5e).
+- **On what.** 782 of the 835 sit on a type that is not an `ACTOR` type: a kind of entry or a
+  row of a table (`^"Roll Table Entry"`: `^"Roll"`, `^"Text"`; `^"Hymn Power"`: `^"Range"`,
+  `^"Duration"`, `^"Target"`; `^"Fate Chart Cell"`; `^"Glossary Entry"`: `^"Term"`). 53 sit on an
+  `ACTOR` type (`^"Samurai"`: `^"Clan"`, `^"Family"`, `^"School"`; `^"Hero"`: `^"Ancestry"`,
+  `^"Class"`, `^"Kit"`; `^"Magus"`: `^"House"`). 239 of the 835 are `^"Name"`.
+- **Who reads it.** `check_structure.py` is the only tool that acts on it. The synthesist
+  carries it into the resolved JSON as a modifier. The dashboard's parser records it and the
+  engine strips it; neither acts on it. UNVERIFIED for the VTT instances, which were not
+  searched.
+- **Three meanings are in use under the one word.**
+  - *Every entry has this field.* The 782. A statement about the source's entries, and nearly
+    always true: this is where the 99.6% comes from.
+  - *A finished player character must have this.* The `ACTOR` declarations other than
+    `^"Name"`. A rule of character creation, written on a type that NPCs, templates and
+    subtypes also extend.
+  - *`^"Name"`.* The 239, which the DEF's own name already answers.
+- **The unmet ones, opened.**
+
+  | Declaration | Unmet on | What the instances are |
+  |---|---|---|
+  | armdef `^"Laboratory Virtue".^"Category"` | 70 of 96 | *Covenants*' laboratory virtues. They carry `^"Group"` and no `^"Category"`; the type was written from the Definitive core's entries |
+  | arm5e `^"Ability".^"Ability Type"` | 31 of 167 | abilities from *Rival Magic* and *Realms of Power: The Divine* with a `^"Source"` and a `^"Page"` and nothing else |
+  | l5r5e `^"School".^"Clan"` | 27 of 110 | *Path of Waves* traditions (`^"Ganzu Guardian Tradition"`), which belong to no clan |
+  | l5r5e `^"Samurai".^"School"` | 8 of 27 | seven pregenerated characters with a clan, a family and rings, and no school property |
+  | arm5e `^"Magus".^"House"` | 13 of 13 | the template magi, one per House, named `^"Bjornaer"`, `^"Bonisagus"`: the House is the DEF's name |
+  | draw-steel `^"Hero"`'s `^"Kit"`, `^"Class"`, `^"Ancestry"` | 10 of 10 | the ten classes (`^"Censor"`, `^"Conduit"`). Each is a kind of hero; none is a character |
+
+**Ruling (owner, 2026-11-13):** "Yes, that meaning only". Written as DECISION-34.
+
+- **The meaning.** `REQUIRED` says that every entry of the type has the property. It is a
+  statement about the source's entries. It is not used for a rule of character creation, and a
+  required `^"Name"` is answered by the DEF's own name.
+- **Spec.** §8 has a section on `REQUIRED`: who must have the property, what counts as having
+  it, `^"Name"`, why a rule of play is written as a `CHOOSE`, the `FIAT` for an entry the book
+  prints without the field, and the severity. §20's table lists the check.
+- **Validator.** An instance that lacks a property a type up its chain declares `REQUIRED` is
+  reported once, with the properties and the type named: a warning below 0.6, an error from
+  0.6, waived by an element-level `FIAT`. Entries written inside another DEF are checked too.
+- **`check_structure.py`** no longer checks `REQUIRED`. It keeps its shape check. The 280 lines
+  that read types and instances for the old check are removed.
+- **Proof.**
+  - `tests/required-good` gives 0 errors and 0 warnings: a property written on the instance;
+    one given by a type above; `^"Name"` by the DEF's name; a `PARAMETERS` slot; a `FIAT`; a
+    subtype that declares and owes nothing. `tests/required-bad` gives 3 errors in a file that
+    declares 0.6 and 1 warning in one that declares 0.5.
+  - The spec's own example, run as a file: 0 errors and 0 warnings, and the grammar accepts it.
+  - Old validator against new on the 22 corpus directories: 18 byte-identical. Four gain
+    warnings and nothing else, 302 in all: armdef 196, arm5e 55, l5r5e 41, draw-steel 10.
+  - `check_structure.py`, before and after: arm5e, armdef and draw-steel go from FAIL to PASS,
+    since each failed on `REQUIRED` alone. Seven directories still fail on shape.
+- **Against the census.** The validator's 302 findings cover 334 empty slots, where
+  `check_structure.py`'s reading gave 361. The validator counts a `TEMPLATE` as a type, so
+  arm5e's and armdef's template magi no longer owe a `^"House"` (13 and 12 slots).
+- **Not done.** The 302 are not triaged, and the `ACTOR` declarations that state a rule of
+  character creation are not rewritten (F22).
 
 ### B5. Version pins and the dependency model
 
@@ -1557,6 +1648,29 @@ today.
   space and quote style first. UNVERIFIED: whether any composition changes; the validator's
   output did not change in any corpus when it took the rule.
 
+### F22. Four corpora, and every `ACTOR` type: what `REQUIRED` now reports
+
+**From:** B4, DECISION-34. **Status:** open, not started. All are warnings today, in files that
+declare `SPEC_VERSION "0.5"`.
+
+| Corpus | Instances reported | Mostly |
+|---|---|---|
+| armdef | 196 | `^"Laboratory Virtue".^"Category"` 70 and `^"Laboratory Flaw".^"Category"` 64 (*Covenants*' entries carry `^"Group"`); `^"Ability".^"Ability Type"` 31; `^"Hermetic Form".^"Abbreviation"` 10 |
+| arm5e | 55 | `^"Ability".^"Ability Type"` 31 (sourcebook abilities with a source and a page and nothing else); `^"Virtue".^"Category"` 10 |
+| l5r5e | 41 | `^"School".^"Clan"` 27 (*Path of Waves* traditions belong to no clan); `^"Samurai"`'s `^"School"` 8, `^"Clan"` 7 and `^"Family"` 7 |
+| draw-steel | 10 | the ten classes, which extend `^"Hero"` and so owe `^"Ancestry"`, `^"Class"` and `^"Kit"` |
+
+- **Each finding is one of three things.** The conversion dropped a field the book gives: add
+  it. The type requires what not every entry has: drop `REQUIRED` from the declaration. The book
+  prints this one entry without it: an element-level `FIAT "reason"`.
+- **Review the 53 `REQUIRED` declarations on `ACTOR` types.** One that states a rule of
+  character creation (`^"Samurai"`: `^"Clan"`, `^"Family"`, `^"School"`; `^"Hero"`:
+  `^"Ancestry"`, `^"Class"`, `^"Kit"`; `^"Magus"`: `^"House"`) loses the word, and the rule is
+  written as a `CHOOSE` in the creation procedure if it is not there already.
+- **The 239 `^"Name" … REQUIRED` declarations may stay.** The DEF's name answers each.
+- arm5e's are fixed in `arm5e/0.5` and reach armdef through the retarget. armdef's own 126
+  (the laboratory categories and the abbreviations) come from the Definitive core's types.
+
 ### F12. Seven corpora: scene and conflict types become entities
 
 **From:** A3, DECISION-23. **Status:** open, not started. The validator now reports these.
@@ -1691,6 +1805,17 @@ two parameter to-dos below.
   which the validator does not check; a result given as a bare value in place of a block.
 
 ### Known gaps left by this change
+
+- **A `REQUIRED` on a property with no name of its own is not seen.** `REF OF ^"Clan" REQUIRED`
+  declares a property named for its type; the validator's collector reads property lines that
+  open with a caret. §17's worked examples use that form.
+- **A required field inside a nested DEF is not checked** (`^"Rings" DEF { ^"Air" INTEGER
+  REQUIRED }`).
+- **What is a type and what is an instance is read from the DEF,** as `check_structure.py` read
+  it. A DEF that extends a type, declares nothing and is extended by nothing counts as an
+  instance, which is why draw-steel's classes are reported.
+- **`check_structure.py` passes arm5e, armdef and draw-steel now.** Their only failure there was
+  the `REQUIRED` check, which the validator reports as warnings until those files declare 0.6.
 
 - **The name rule is written three times,** once in each of three tools, and nothing checks
   that the three copies stay the same. The fixtures would catch a copy that drifted on the
@@ -1975,6 +2100,10 @@ Filled in as each finding is walked through.
 | B3 | 2026-11-12 | Two names are the same when their characters are the same after Unicode normal form, a run of white space read as one space, and a curly quote read as a straight one; case, punctuation and accents count. Written as DECISION-33 in §14, and the validator, the reference gate and `check_constructs.py` compare names that one way. | Owner: "Yes, that rule". The alternatives were fully exact, and the gates' fold. It follows his ruling of 2026-09-29 that quote style is not content. |
 | B3 | 2026-11-12 | Agent's calls, to confirm. (1) The rule is not gated by `SPEC_VERSION`: callofcthulhu7e's and l5r5e's gates fail on five references today. (2) `apply_references.py` keeps its looser match. (3) A no-break space counts as white space. | (1): the owner was shown the five before he ruled, and a name rule that depended on the file's version would give two answers for one reference. (2): it proposes references and gates nothing. (3): it is a difference a reader cannot see. |
 | B3 | 2026-11-12 | B3 is closed. The branch is committed and pushed. | Owner: "Close, commit, push". The agent's calls in the B3 row marked "to confirm" were reported to him before he closed and were not separately ruled on. |
+| B4 | 2026-11-13 | `REQUIRED` keeps one meaning: every entry of the type has the property. It is not used for a rule of character creation, and the DEF's own name answers a required `^"Name"`. The validator checks it for every instance; `check_structure.py` drops its looser check. Written as DECISION-34. | Owner: "Yes, that meaning only", after asking how the word is used today and whether it should be used at all. 782 of 835 uses already carry this meaning. |
+| B4 | 2026-11-13 | `tests/tables-bad.ttrpg` held a helper, `^"Chain Mail"`, that extends `^"Armor"` and lacked the `^"Protection"` its type requires. The new check reported it (21 errors where the fixture states 20). The helper now has the property, so the fixture holds only its own faults. | Agent's call, found on the fixture run before the close was asked for. |
+| B4 | 2026-11-13 | Agent's calls, to confirm. (1) A `TEMPLATE` counts as a type and owes nothing. (2) An entry written inside another DEF is checked. (3) One finding per instance and declaring type, naming every missing property. (4) The 280 lines of `check_structure.py` that served the old check are removed. (5) The 239 `^"Name" … REQUIRED` declarations are left in the corpora. | (1): a template leaves fields open by design; it removes 25 findings the census counted. (2): books' entries are often nested in their section's DEF. (4): they are in the repo's history. (5): they are true and cost nothing. |
+| B4 | 2026-11-13 | B4 is closed. The branch is committed and pushed. | Owner: "Close, commit, push". The agent's calls in the B4 rows marked "to confirm" were reported to him before he closed and were not separately ruled on. |
 
 ---
 

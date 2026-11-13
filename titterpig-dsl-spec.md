@@ -91,6 +91,9 @@ Changes made since v0.5, listed as they are decided. **Not all are additive.**
 20. **When two names are the same** *(§14, DECISION-33; not additive)* — the same characters,
     once Unicode form, runs of white space and straight or curly quotes are set aside. Case,
     punctuation and accents count. Every tool in this repo compares names this one way.
+21. **`REQUIRED` has one meaning** *(§8, DECISION-34)* — every entry of the type has the
+    property. The validator checks it for every instance. A rule of character creation is not
+    written as `REQUIRED`, and a required `^"Name"` is answered by the DEF's own name.
 
 ### v0.5 — five new constructs, and one rule tightened *(current)*
 
@@ -542,6 +545,22 @@ stay valid.
   white space read as one space, and a curly quote read as a straight one. Case, punctuation
   and accents count. `Jupiter's Touch` and `Jupiter’s Touch` are one name; `Status` and
   `status` are two.
+
+- **DECISION-34 — `REQUIRED` means every entry of the type has the property** *(resolved, v0.6,
+  2026-11-13)* (§8, §5, §20): §8 said only "must be provided". One tool looked, and it failed a
+  property only when no instance of its type had it at all. Types declare 4,790 properties and
+  mark 835 `REQUIRED`, under three meanings: every entry of this kind has the field (782, on
+  types that are not `ACTOR` types); a finished player character must have it (most of the 53
+  on `ACTOR` types); and `^"Name"` (239). No consumer acts on the word. The decision keeps the
+  first meaning and no other. `REQUIRED` is a statement about the source's entries, so a miss
+  is a field the conversion dropped or a type that is the wrong shape. Every instance must
+  have the property: it writes it, a type above it gives the value, or it is a `PARAMETERS`
+  slot. A required `^"Name"` is answered by the DEF's own name. A rule of character creation
+  ("a player character chooses a school") is written where the choice is made, as a `CHOOSE`,
+  since a `REQUIRED` on the actor type would bind every NPC, template and subclass that
+  extends it. A miss is a warning in a file that declares a `SPEC_VERSION` below 0.6, or none,
+  and an error from 0.6; an element-level `FIAT` waives it. The corpora gain 302 warnings in
+  four corpora.
 
 ## 1. Overview & Design Principles
 
@@ -1509,11 +1528,53 @@ PROPERTIES {
 A modifier follows the type and its value, on any type in the table above. `MIN` and `MAX` are the
 exception: they constrain an `INTEGER` only.
 
-- `REQUIRED` — must be provided
+- `REQUIRED` — every entry of the type has this property *(v0.6, DECISION-34; see below)*
 - `FIXED` — cannot be changed after creation
 - `DEFAULT value` — default value if not provided
 - `MIN n` / `MAX n` — range constraints (INTEGER)
 - `FIAT "reason"` *(v0.4)* — waive validation for this value (intentional exception; see *FIAT* below)
+
+### `REQUIRED` — what every entry of a type has *(v0.6, DECISION-34)*
+
+`REQUIRED` on a property says that **every entry of this type in the source has it**. It is a
+statement about the book: every row of a roll table has a roll and a text.
+
+```
+#hash ^"Roll Table Entry" DEF {
+    PROPERTIES {
+        ^"Roll" STRING REQUIRED
+        ^"Text" STRING REQUIRED
+        ^"Note" STRING
+    }
+}
+
+#hash ^"Row 1" DEF {
+    EXTENDS #hash ^"Roll Table Entry"
+    PROPERTIES {
+        ^"Roll" STRING "1-3"
+        ^"Text" STRING "A stranger arrives."
+    }
+}
+```
+
+- **Who must have it.** Every **instance** of the type: a DEF that extends the type, directly or
+  through others, and is not itself a type. A type is an `ACTOR` or `TEMPLATE` definition, a DEF
+  that another DEF extends, or a DEF that declares fields and gives no value.
+- **What counts as having it.** The instance writes the property. Or a type between the two gives
+  it a value, which then holds for everything below. Or the property is a `PARAMETERS` slot, which
+  the reference supplies (§5b).
+- **`^"Name"`.** A required `^"Name"` is answered by the DEF's own name. An instance need not
+  write its name twice.
+- **Not for a rule of play.** "A player character chooses a school" is a step of character
+  creation. It is written where the choice is made, as a `CHOOSE` (§5b). Written as `REQUIRED` on
+  the actor type, it would bind every NPC, template and subclass that extends the type.
+- **An exception the source prints.** An entry the book gives without the field takes an
+  element-level `FIAT "reason"` (below): *Path of Waves* traditions are schools with no clan.
+- **Severity.** An instance without a required property is a warning in a file that declares a
+  `SPEC_VERSION` below 0.6, or none, and an error from 0.6.
+
+A miss means one of two things: the conversion dropped a field the book gives, or the type
+requires what not every entry has. Before v0.6 the spec said only "must be provided".
 
 ### Inline Value Assignment
 
@@ -3585,14 +3646,15 @@ follows each `EXTENDS` chain to the nearest declaration of a property and report
 | a value of another kind than its type keyword, or than the type it inherits (§8) | gated |
 | a named member of a `LIST OF ^"Type"` that does not extend the type (§8) | gated |
 | one property written twice in a definition (§8) | gated |
+| an instance without a property a type up its chain declares `REQUIRED` (§8, DECISION-34) | gated |
 
 "Gated" is a warning in a file that declares a `SPEC_VERSION` below 0.6, or none, and an error from
 0.6. `FIAT "reason"` waives a gated finding: a value the source prints outside its type's range is
 what `FIAT` is for (§8).
 
-Not checked, and why: a `REQUIRED` property left out and a `DEPENDS_ON` version pin, which wait on
-rulings of their own; a value for a property no type declares, which no rule forbids; the fields
-of a nested or unnamed DEF; and a misspelt keyword, which reads as a system's own (§15). A name that
+Not checked, and why: a `DEPENDS_ON` version pin, which waits on a ruling of its own; a value for
+a property no type declares, which no rule forbids; the fields of a nested or unnamed DEF; and a
+misspelt keyword, which reads as a system's own (§15). A name that
 two definitions share is not followed up a chain: the reference needs its hash (§5d).
 
 **The modification system is part of coherence** *(v0.4, 2026-07-25)*. A `MODIFY` / `OVERRIDE`

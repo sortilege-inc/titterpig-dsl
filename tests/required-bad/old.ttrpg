@@ -1,0 +1,14 @@
+EXTENSION "Required_Bad_Old" {
+    NAME "DECISION-34 fixture — the same fault in a file that declares 0.5: a warning there"
+    SPEC_VERSION "0.5"
+    VERSION "1.0"
+    RELEASE_DATE "2026-11-12"
+    DEPENDS_ON "Required_Bad_Core"
+
+    #ReqOldRowT5wZ1qE8uH3jL6p ^"Row 4" DEF {                                  # WARNING
+        EXTENDS #ReqEntryK2vQ9wN3cL7pXdAa ^"Roll Table Entry"
+        PROPERTIES {
+            ^"Roll" STRING "7-9"
+        }
+    }
+}

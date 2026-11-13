@@ -7,7 +7,7 @@ BASE "Demo_Tables_Bad" {
     #TblBadOddsAAAAAAAAAAAAAAA ^"Odds" DEF { }
     #TblBadCertainBBBBBBBBBBBB ^"Certain" DEF { EXTENDS #TblBadOddsAAAAAAAAAAAAAAA ^"Odds" }
     #TblBadArmorCCCCCCCCCCCCCC ^"Armor" DEF { PROPERTIES { ^"Protection" INTEGER REQUIRED } }
-    #TblBadChainDDDDDDDDDDDDDD ^"Chain Mail" DEF { EXTENDS #TblBadArmorCCCCCCCCCCCCCC ^"Armor" }
+    #TblBadChainDDDDDDDDDDDDDD ^"Chain Mail" DEF { EXTENDS #TblBadArmorCCCCCCCCCCCCCC ^"Armor"  PROPERTIES { ^"Protection" INTEGER 5 } }
 
     ^"T01 no axis" DEF { TABLE { AT [ 1 ] { ^"R" STRING "x" } } }
     ^"T02 old grid" DEF { TABLE { COLUMNS ["Roll", "Result"] ROW ["1", "x"] } }
