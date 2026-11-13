@@ -1,0 +1,7 @@
+EXTENSION "Pins_Bad_Unknown" {
+    NAME "fault 3 — the parent declares no VERSION, so the pin cannot be checked"
+    SPEC_VERSION "0.6"
+    VERSION "1.0"
+    RELEASE_DATE "2026-11-13"
+    DEPENDS_ON "Pins_Bad_NoVersion" VERSION "1.0"         # WARNING
+}

@@ -3,6 +3,7 @@ EXTENSION "Actors_Bad_3" {
     SPEC_VERSION "0.6"
     VERSION "1.0"
     RELEASE_DATE "2026-11-12"
+    DEPENDS_ON "Actors_Bad_Core"
     #ActBad3BeastQ9wE2rT6yU4i ACTOR "Beast" DEF {                   # ERROR
         PROPERTIES {
             ^"Name" STRING

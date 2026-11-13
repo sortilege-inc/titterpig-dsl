@@ -138,8 +138,23 @@ VALUES AGAINST DECLARATIONS (spec §5, §5b, §6, §8, DECISION-32).
   - REQUIRED (§8, DECISION-34), the same gating and waived by an element-level FIAT: an
     instance that lacks a property a type up its chain declares REQUIRED. ^"Name" is answered
     by the DEF's own name.
-  - not checked: a DEPENDS_ON VERSION pin (audit B5), a value for a property no type
-    declares, and the fields of a nested or unnamed DEF.
+  - not checked: a value for a property no type declares, and the fields of a nested or
+    unnamed DEF.
+
+VERSION PINS (spec §3, DECISION-35). DEPENDS_ON "Parent" VERSION "x" means the parent is at
+version x or later. Versions are compared part by part, numbers as numbers; a pin with fewer
+parts is met by any version that begins with it. A loaded parent that is older is an ERROR; a
+parent that declares no VERSION is a WARNING.
+
+DEPENDENCIES (spec §3, DECISION-36). A file depends on every id it names with DEPENDS_ON and
+on the id its header EXTENDS.
+
+  - errors at every version: a DEPENDS_ON that names no loaded file; two files that depend on
+    each other, through any chain.
+  - WARNING in a file that declares SPEC_VERSION below 0.6, ERROR from 0.6: a header EXTENDS
+    that names no loaded file; an id a second file declares; an EXTENSION that names no
+    parent; a BASE that depends on a file other than the dice module.
+  - not checked: the order files are loaded in. The validator is given no order.
   - a name two definitions share is not followed up an EXTENDS chain; give the hash (§5d).
 
 PORTS (spec §19, DECISION-26). A file made from another edition's file declares it in its
@@ -1028,6 +1043,62 @@ def collect_definitions(fname, toks):
         elif t.kind == 'RBRACE' and stack:
             stack.pop()
     return defs, bound
+
+
+HEADER_KINDS = ('BASE', 'EXTENSION', 'SETTING', 'FRAME', 'ARC', 'CAMPAIGN', 'CODEX')
+
+
+def collect_header(toks, HEADER=None):
+    """A file's own VERSION and its version pins (§3, DECISION-35).
+    -> (version or None, [(parent id, pinned version, line)]). Both stand in the header: one
+    brace deep. `FOR "x" VERSION "y"` (a .selections or .codex line) and a bridge side's VERSION
+    are neither.
+
+    HEADER, when given, is filled with the file's own declaration: its kind and id, the id its
+    header EXTENDS, and every DEPENDS_ON (§3, DECISION-36)."""
+    HEADER = {} if HEADER is None else HEADER
+    version, pins, depth = None, [], 0
+    for i, t in enumerate(toks):
+        if t.kind == 'LBRACE':
+            depth += 1
+        elif t.kind == 'RBRACE':
+            depth -= 1
+        elif depth == 0 and t.kind == 'ID' and t.val in HEADER_KINDS and 'kind' not in HEADER \
+                and i + 1 < len(toks) and toks[i + 1].kind == 'STR':
+            # the file's own declaration: KIND "id" [EXTENDS "parent"] {
+            HEADER.update(kind=t.val, id=toks[i + 1].val, line=t.line, extends=None, depends=[])
+            if i + 3 < len(toks) and toks[i + 2].kind == 'ID' and toks[i + 2].val == 'EXTENDS' \
+                    and toks[i + 3].kind == 'STR':
+                HEADER['extends'] = (toks[i + 3].val, t.line)
+        elif depth == 1 and t.kind == 'ID' and t.val == 'DEPENDS_ON' and 'kind' in HEADER \
+                and i + 1 < len(toks) and toks[i + 1].kind == 'STR':
+            HEADER['depends'].append((toks[i + 1].val, t.line))
+        elif depth == 1 and t.kind == 'ID' and t.val == 'VERSION' \
+                and i + 1 < len(toks) and toks[i + 1].kind == 'STR':
+            lead = toks[i - 2].val if i >= 2 and toks[i - 1].kind == 'STR' \
+                and toks[i - 2].kind == 'ID' and toks[i - 1].line == t.line else None
+            if lead == 'DEPENDS_ON':
+                pins.append((toks[i - 1].val, toks[i + 1].val, t.line))
+            elif lead not in ('FOR', 'ORIGIN', 'DESTINATION', 'EDITION') and version is None:
+                version = toks[i + 1].val
+    return version, pins
+
+
+def version_at_least(have, want):
+    """Is the version `have` the version `want` or a later one (§3, DECISION-35)? Versions are
+    compared part by part, split at each dot or hyphen, numbers as numbers. A pin with fewer
+    parts is met by any version that begins with it: "0.5" is met by "0.5.0" and by "0.5.9"."""
+    def parts(v):
+        return [int(x) if x.isdigit() else x for x in re.split(r'[.\-]', v.strip())]
+    h, w = parts(have), parts(want)
+    for k, wp in enumerate(w):
+        hp = h[k] if k < len(h) else 0
+        if hp == wp:
+            continue
+        if isinstance(hp, int) != isinstance(wp, int):
+            hp, wp = str(hp), str(wp)
+        return hp > wp
+    return True
 
 
 def check_actor_file(fname, toks, spec_version, findings):
@@ -2184,6 +2255,8 @@ def analyze_file(fname, text, findings):
                                     % tk.val))
     bare_actor = fname.endswith('.actor') and check_actor_file(fname, toks, spec_version, findings)
     vdefs, bound = collect_definitions(fname, toks)
+    header = {}
+    file_version, pins = collect_header(toks, header)
     if not has_spec_version and not bare_actor:
         # a bare .actor has its own warning (§2), which says it declares no SPEC_VERSION
         findings.append(Finding(fname, 'lint', 'warning', 1, "no SPEC_VERSION declared"))
@@ -2198,6 +2271,7 @@ def analyze_file(fname, text, findings):
         'block_types': block_types, 'block_names': block_names, 'block_anchors': block_anchors,
         'block_anchor_lines': block_anchor_lines, 'anchor_names': anchor_names, 'origins': origins,
         'vdefs': vdefs, 'bound': bound, 'spec_version': spec_version,
+        'file_version': file_version, 'pins': pins, 'header': header,
         'hash_refs': hash_refs,
     }
 
@@ -2391,6 +2465,8 @@ def analyze_codex(fname, text, findings):
         'waived_ranges': [], 'waived_lines': set(),
         'def_props': {}, 'def_extends': {}, 'mods': [], 'adds': [],
         'entity_anchors': entity_anchors,
+        'file_version': collect_header(toks)[0], 'pins': collect_header(toks)[1],
+        'header': (lambda h: (collect_header(toks, h), h)[1])({}), 'spec_version': (0, 0),
         'relations': relations, 'edges': edges, 'dr_refs': dr_refs, 'sources': sources,
     }
 
@@ -3056,6 +3132,90 @@ def value_pass(files_data, findings):
                                             % (prop, r['type'], owner['name'], dr['type'])))
 
 
+def pin_pass(files_data, findings):
+    """DEPENDS_ON "Parent" VERSION "x" (§3, DECISION-35): the parent in the loaded set is at
+    version x or later. A parent that declares no VERSION cannot be compared and is reported
+    as a warning. A parent that is not loaded is the coherence pass's finding, not this one."""
+    version_of = {}
+    for d in files_data:
+        ids = list(d.get('file_ids', [])) + list(d.get('containers', {}))
+        for fid in ids:
+            version_of.setdefault(fid, d.get('file_version'))
+    for d in files_data:
+        for parent, want, line in d.get('pins', []):
+            if parent not in version_of or is_waived(line, d):
+                continue
+            have = version_of[parent]
+            if have is None:
+                findings.append(Finding(d['file'], 'coherence', 'warning', line,
+                                        'DEPENDS_ON "%s" VERSION "%s": that file declares no VERSION, '
+                                        'so the pin cannot be checked (§3)' % (parent, want)))
+            elif not version_at_least(have, want):
+                findings.append(Finding(d['file'], 'coherence', 'error', line,
+                                        'DEPENDS_ON "%s" VERSION "%s": the loaded "%s" is at VERSION '
+                                        '"%s", which is older. A pin means "at least" (§3)'
+                                        % (parent, want, parent, have)))
+
+
+DICE_MODULE = 'Titterpig_Dice'
+
+
+def dependency_pass(files_data, findings):
+    """What a file depends on (§3, DECISION-36): every DEPENDS_ON, and the id its header EXTENDS.
+
+    Errors at every version: two files that depend on each other, through any chain. (A
+    DEPENDS_ON that names no loaded file is the coherence pass's error.)
+
+    A warning in a file that declares SPEC_VERSION below 0.6, an error from 0.6: a header
+    EXTENDS that names no loaded file; an id a second file declares; an EXTENSION that names
+    no parent; a BASE that names one other than the dice module."""
+    heads = [(d, d['header']) for d in files_data if d.get('header', {}).get('kind')]
+
+    def sev(d):
+        return 'error' if d.get('spec_version', (0, 0)) >= (0, 6) else 'warning'
+
+    declared = {}
+    for d, h in heads:
+        declared.setdefault(h['id'], []).append((d, h))
+    for fid, owners in declared.items():
+        for d, h in owners[1:]:
+            first = owners[0][1]
+            findings.append(Finding(d['file'], 'coherence', sev(d), h['line'],
+                                    '%s "%s": that id is already declared, by the %s in %s; a file id '
+                                    'is declared once in a corpus (§3)'
+                                    % (h['kind'], fid, first['kind'], os.path.basename(owners[0][0]['file']))))
+    graph = {}
+    for d, h in heads:
+        deps = [t for t, _ln in h['depends']] + ([h['extends'][0]] if h['extends'] else [])
+        graph.setdefault(h['id'], set()).update(deps)
+        if h['extends'] and h['extends'][0] not in declared and not is_waived(h['line'], d):
+            findings.append(Finding(d['file'], 'coherence', sev(d), h['line'],
+                                    '%s "%s" EXTENDS "%s", and no loaded file declares that id (§3)'
+                                    % (h['kind'], h['id'], h['extends'][0])))
+        if h['kind'] == 'EXTENSION' and not deps:
+            findings.append(Finding(d['file'], 'coherence', sev(d), h['line'],
+                                    'EXTENSION "%s" names no parent: an extension says what it '
+                                    'depends on, with EXTENDS in its header or a DEPENDS_ON (§3)' % h['id']))
+        if h['kind'] == 'BASE' and [t for t in deps if t != DICE_MODULE]:
+            findings.append(Finding(d['file'], 'coherence', sev(d), h['line'],
+                                    'BASE "%s" depends on "%s": a BASE stands alone, but for the dice '
+                                    'module. A file that needs another is an EXTENSION (§3)'
+                                    % (h['id'], sorted(t for t in deps if t != DICE_MODULE)[0])))
+    for d, h in heads:
+        path, seen, todo = {}, set(), [(t, [h['id'], t]) for t in graph.get(h['id'], ())]
+        while todo:
+            cur, trail = todo.pop()
+            if cur == h['id']:
+                findings.append(Finding(d['file'], 'coherence', 'error', h['line'],
+                                        'dependency cycle: %s. No two files depend on each other (§3)'
+                                        % ' → '.join('"%s"' % x for x in trail)))
+                break
+            if cur in seen:
+                continue
+            seen.add(cur)
+            todo.extend((t, trail + [t]) for t in graph.get(cur, ()))
+
+
 def block_type_pass(files_data, findings):
     """TYPE of a SCENE or a CONFLICT (§16, DECISION-23). Where the loaded set defines ^"Scene Type"
     (or ^"Conflict Type"), the entity named must be one: it, or something that EXTENDS it. Where
@@ -3332,6 +3492,8 @@ def main(argv):
     from_pass(files_data, findings)
     block_type_pass(files_data, findings)
     port_pass(files_data, corpus_index, findings)
+    pin_pass(files_data, findings)
+    dependency_pass(files_data, findings)
     value_pass(files_data, findings)
     modification_pass(files_data, findings)
     bridge_coherence(files_data, corpora, findings, notes)

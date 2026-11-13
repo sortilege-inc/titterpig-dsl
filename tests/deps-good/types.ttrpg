@@ -1,0 +1,6 @@
+EXTENSION "Deps_Types" EXTENDS "Deps_Core" {
+    NAME "the header form: one parent, named in the opening line"
+    SPEC_VERSION "0.6"
+    VERSION "1.0"
+    RELEASE_DATE "2026-11-13"
+}

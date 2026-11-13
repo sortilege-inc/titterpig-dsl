@@ -1,0 +1,7 @@
+EXTENSION "Pins_Older" {
+    NAME "the parent has moved on since the pin: 0.5.9 is met by 0.5.10"
+    SPEC_VERSION "0.6"
+    VERSION "1.0"
+    RELEASE_DATE "2026-11-13"
+    DEPENDS_ON "Pins_Core" VERSION "0.5.9"
+}

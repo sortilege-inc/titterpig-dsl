@@ -1,0 +1,6 @@
+EXTENSION "Pins_Bad_NoVersion" {
+    NAME "a parent with no VERSION of its own"
+    SPEC_VERSION "0.6"
+    RELEASE_DATE "2026-11-13"
+    DEPENDS_ON "Pins_Bad_Core"
+}

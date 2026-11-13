@@ -1101,7 +1101,9 @@ type is, what an instance is, and what fills a property, over the 22 corpus dire
 
 ### B5. Version pins and the dependency model
 
-**Status:** open
+**Status:** closed 2026-11-13 by the owner. Committed and pushed on branch `0.6`. A pin means
+"at least" (DECISION-35), a file's dependencies are defined and checked (DECISION-36), and a
+dependency loads first (DECISION-37).
 
 - `DEPENDS_ON "Parent" VERSION "x"`: the spec does not say whether the match is exact, minimum or a
   range. No tool checks it. All 68 pins in l5r5e name `0.5.9`; the parent declares `0.5.10`. The
@@ -1112,6 +1114,89 @@ type is, what an instance is, and what fills a property, over the 22 corpus dire
   not say what a file with both means.
 - §13: load order is precedence. No DSL construct states a load order. `DEPENDS_ON` gives a partial
   order; the rest is the consumer's manifest, which the spec does not define.
+
+**Evidence, recounted 2026-11-13** over the 7,055 DSL files in the 22 corpus directories, with
+the validator's tokenizer.
+
+*Version pins.* 459 `DEPENDS_ON … VERSION` lines, in four corpora.
+
+| Corpus | Pins | The pin | The parent's `VERSION` |
+|---|---|---|---|
+| pendragon6e | 243 | `"0.5"` | `"0.5"`: equal |
+| draw-steel | 117 | `"0.5"` | `"0.5.0"`: the pin is its first two parts |
+| l5r5e (68 `.codex` files) | 68 | `"0.5.9"` | `"0.5.10"`: the parent has moved on |
+| pendragon5e | 31 | `"0.5"` | `"0.5"`: equal |
+
+No tool reads a pin. The other 5,114 `DEPENDS_ON` lines carry none.
+
+*How a file names what it needs.* Of the 6,259 `EXTENSION`, `ARC`, `FRAME`, `SETTING` and
+`CAMPAIGN` files:
+
+| Form | Files | Where |
+|---|---|---|
+| `DEPENDS_ON` only | 5,012 | arm5e, armdef, draw-steel and others |
+| `EXTENSION "X" EXTENDS "Y"` only | 923 | vtm5e 326, teeth 90, pendragon5e 87, root 76, and 14 more |
+| both | 276 | pendragon6e 243 and pendragon5e 31 (the header names the base, `DEPENDS_ON` names a types file), l5r5e 2 |
+| neither | 48 | 36 `SETTING` files, and 12 `EXTENSION` files (arm5e 5, armdef 5, l5r5e 2) |
+
+- 49 files carry more than one `DEPENDS_ON`, all in arm5e and armdef. `arm5e-0.5-errata.ttrpg`
+  has 20, one for each book it corrects.
+- Three armdef files are declared `BASE` and carry a `DEPENDS_ON` on another `BASE`
+  (`armdef-0.5-core-character-creation.ttrpg`). §3: a `BASE` has no parent.
+- 25 header `EXTENDS` name an id no file declares: l5r5e 14 (`EXTENDS "l5r5e"`), teeth 11. Every
+  `DEPENDS_ON` target is a file id.
+- Four ids in root are each declared by two files, an `.arc` and a `.frame`
+  (`"PellenickyGlade"`).
+- No two files depend on each other, through any chain.
+- 670 bare `.actor` files have no id and name nothing (F17).
+
+*What the validator checks,* tried on seven small sets. It reports a `DEPENDS_ON` whose target is
+no file id. It is silent on a header `EXTENDS` whose target is no file id, on a pin of `"9.9"`
+against a parent at `"1.2.0"`, on two files that depend on each other, on an `EXTENSION` that
+names no parent, and on two files with one id.
+
+*Load order.* Eleven synthesist manifests list their files in load order. Of the 5,338
+dependencies their files declare, the target loads before the file that needs it in 5,319. It
+loads after in 19: 18 in `armdef-0.5-full` and 1 in `arm5e-0.5-full`
+(`arm5e-covenants-0.5-example-laboratories.ttrpg` is listed before
+`arm5e-covenants-0.5-laboratory.ttrpg`, which it depends on).
+
+**Ruling on Part 1 (owner, 2026-11-13):** "Yes, at least". Written as DECISION-35.
+
+- **Spec.** §3 says what a pin means and how two versions are compared; §19 and §20 agree.
+- **Validator.** It reads each file's own `VERSION` and each pin, in ordinary and codex files,
+  and reports a loaded parent that is older than the pin as an error. A parent with no
+  `VERSION` is a warning.
+- **Proof.** `tests/pins-good` (an equal pin, a pin the parent has moved past, a pin of two
+  parts) gives 0 errors and 0 warnings. `tests/pins-bad` gives 2 errors and 1 warning: a pin
+  newer than the parent, `"0.10"` against `"0.5.9"`, and a parent with no `VERSION`. Old
+  validator against new on the 22 corpus directories: byte-identical output in all 22. The new
+  check reads all 459 pins there, knows the parent's version for each, and reports none.
+
+**Ruling on Parts 2 and 3 (owner, 2026-11-13):** "Yes, both". Written as DECISION-36 and
+DECISION-37.
+
+- **Part 2, the spec.** §3 says a file depends on every `DEPENDS_ON` it writes and on the id
+  its header `EXTENDS`, any number of them, with two real examples. Each names a loaded file;
+  no two files depend on each other; a file id is declared once; an `EXTENSION` names a parent
+  and a `BASE` does not.
+- **Part 2, the validator.** A cycle is an error at every version. A header `EXTENDS` that
+  names nothing, an id declared twice, an `EXTENSION` with no parent and a `BASE` with one are
+  warnings below 0.6 and errors from 0.6.
+- **Part 3.** §13 states the one rule: a file loads after everything it depends on. Any order
+  beyond that is the consumer's, and the spec defines no manifest. No tool here is given an
+  order, so nothing here checks it.
+- **Proof.**
+  - `tests/deps-good` (the header form, `DEPENDS_ON`, both, and three `DEPENDS_ON` in one file)
+    gives 0 errors and 0 warnings. `tests/deps-bad` holds seven faults and gives 7 errors and 1
+    warning.
+  - Every earlier fixture gives what it states, after one correction: 14 helper files in
+    `tests/ports-bad` and `tests/actors-bad` were extensions that named no parent, and each now
+    has a `DEPENDS_ON`.
+  - Old validator against new on the 22 corpus directories: 17 byte-identical. Five gain
+    warnings and nothing else, 44 in all (F23).
+- **Not done.** The 44 are not corrected, and the 19 manifest lines that load a file before
+  its dependency are not reordered (F23).
 
 ---
 
@@ -1671,6 +1756,26 @@ declare `SPEC_VERSION "0.5"`.
 - arm5e's are fixed in `arm5e/0.5` and reach armdef through the retarget. armdef's own 126
   (the laboratory categories and the abbreviations) come from the Definitive core's types.
 
+### F23. Five corpora and two manifests: what the dependency rules report
+
+**From:** B5, DECISION-36 and DECISION-37. **Status:** open, not started. The corpus findings
+are warnings today, in files that declare `SPEC_VERSION "0.5"`.
+
+| Where | Findings | What |
+|---|---|---|
+| l5r5e | 16 | 14 arcs and frames open `… EXTENDS "l5r5e"`, and no file declares that id (F1 has this too); 2 cast files are extensions with no parent |
+| teeth | 11 | header `EXTENDS` that name an id no file declares |
+| armdef | 8 | 5 errata files with no parent; 3 files declared `BASE` that depend on `ARMDef_Core_Base` (`armdef-0.5-core-character-creation.ttrpg`, `armdef-0.5-core-concepts.ttrpg`, `armdef-0.5-sourcebook-compat.ttrpg`) |
+| arm5e | 5 | errata files with no parent (`arm5e-errata-0.5-apprentices.ttrpg`) |
+| root | 4 | an id declared by an `.arc` and a `.frame` (`"PellenickyGlade"`, `"HacksawDell"`) |
+
+- **synthesist manifests.** `armdef-0.5-full` lists 18 files before a file they depend on, and
+  `arm5e-0.5-full` lists 1 (`arm5e-covenants-0.5-example-laboratories.ttrpg` before
+  `arm5e-covenants-0.5-laboratory.ttrpg`). Reorder them. The synthesist can check the rule
+  itself when it loads a manifest: it has the order and the files.
+- UNVERIFIED: whether any of the 19 changes a built JSON. Order decides something only where
+  two files change the same thing.
+
 ### F12. Seven corpora: scene and conflict types become entities
 
 **From:** A3, DECISION-23. **Status:** open, not started. The validator now reports these.
@@ -1805,6 +1910,15 @@ two parameter to-dos below.
   which the validator does not check; a result given as a bare value in place of a block.
 
 ### Known gaps left by this change
+
+- **A narrative container's `FROM` and `USES_*` lines are not counted as dependencies.** §16
+  makes a `FROM` line the declaration of what an arc draws on. The cycle check and the
+  load-order rule read `DEPENDS_ON` and the header `EXTENDS` only.
+- **§16's own dependency rules are not checked:** that a `FRAME`, an `ARC` and a `CAMPAIGN`
+  each depend on exactly one `BASE`.
+- **Load order is checked by nothing here.** The validator is given a directory and no order.
+- **A file validated alone reports its parents as missing,** as it always has for
+  `DEPENDS_ON`. A corpus is validated as a directory.
 
 - **A `REQUIRED` on a property with no name of its own is not seen.** `REF OF ^"Clan" REQUIRED`
   declares a property named for its type; the validator's collector reads property lines that
@@ -2104,6 +2218,11 @@ Filled in as each finding is walked through.
 | B4 | 2026-11-13 | `tests/tables-bad.ttrpg` held a helper, `^"Chain Mail"`, that extends `^"Armor"` and lacked the `^"Protection"` its type requires. The new check reported it (21 errors where the fixture states 20). The helper now has the property, so the fixture holds only its own faults. | Agent's call, found on the fixture run before the close was asked for. |
 | B4 | 2026-11-13 | Agent's calls, to confirm. (1) A `TEMPLATE` counts as a type and owes nothing. (2) An entry written inside another DEF is checked. (3) One finding per instance and declaring type, naming every missing property. (4) The 280 lines of `check_structure.py` that served the old check are removed. (5) The 239 `^"Name" … REQUIRED` declarations are left in the corpora. | (1): a template leaves fields open by design; it removes 25 findings the census counted. (2): books' entries are often nested in their section's DEF. (4): they are in the repo's history. (5): they are true and cost nothing. |
 | B4 | 2026-11-13 | B4 is closed. The branch is committed and pushed. | Owner: "Close, commit, push". The agent's calls in the B4 rows marked "to confirm" were reported to him before he closed and were not separately ruled on. |
+| B5 | 2026-11-13 | Part 1: a version pin means "at least". The loaded parent must be at the pinned version or a later one; a pin with fewer parts is met by any version that begins with it. Written as DECISION-35, and the validator checks it. | Owner: "Yes, at least". All 459 pins pass, and the rule to bump `VERSION` on every edit cannot break one. |
+| B5 | 2026-11-13 | Agent's calls, to confirm. (1) An older parent is an error at every version, with no gating. (2) A parent with no `VERSION` is a warning. (3) Versions split at dots and hyphens, and a part that is not a number compares as text. | (1): no corpus has one. (2): the pin cannot be checked. (3): §19 allows date-based versions. |
+| B5 | 2026-11-13 | Part 2: a file depends on every `DEPENDS_ON` it writes and on the id its header `EXTENDS`, any number of them; each names a loaded file, no two files depend on each other, a file id is declared once, an `EXTENSION` names a parent and a `BASE` does not. Part 3: a dependency loads before the file that names it; any further order is the consumer's, and the spec defines no manifest. Written as DECISION-36 and DECISION-37. | Owner: "Yes, both". Both forms are kept because migrating either would touch 923 or 5,012 files for no gain. |
+| B5 | 2026-11-13 | Agent's calls, to confirm. (4) The `EXTENSION`-needs-a-parent rule is not applied to `SETTING`, `FRAME`, `ARC` or `CAMPAIGN` files, which §16 governs. (5) 14 helper files in two older fixtures were given a `DEPENDS_ON`. (6) `FROM` and `USES_*` are not counted as dependencies. | (4): 36 settings name no parent by design. (5): they were extensions with no parent, which the new rule reports. (6): not ruled on. |
+| B5 | 2026-11-13 | B5 is closed. The branch is committed and pushed. | Owner: "Close, commit, push". The agent's calls in the B5 rows marked "to confirm" were reported to him before he closed and were not separately ruled on. |
 
 ---
 

@@ -94,6 +94,13 @@ Changes made since v0.5, listed as they are decided. **Not all are additive.**
 21. **`REQUIRED` has one meaning** *(§8, DECISION-34)* — every entry of the type has the
     property. The validator checks it for every instance. A rule of character creation is not
     written as `REQUIRED`, and a required `^"Name"` is answered by the DEF's own name.
+22. **A version pin means "at least"** *(§3, §19, DECISION-35)* — `DEPENDS_ON "Parent" VERSION
+    "x"` says the parent is at version x or later. The validator checks it.
+23. **What a file depends on** *(§3, DECISION-36)* — every `DEPENDS_ON` it writes and the id its
+    header `EXTENDS`, any number of them. Each names a loaded file, no two files depend on each
+    other, and a file id is declared once. An `EXTENSION` names at least one parent.
+24. **A dependency loads first** *(§13, DECISION-37)* — the one rule of load order the spec
+    states. Any order beyond it is the consumer's, and the spec defines no manifest.
 
 ### v0.5 — five new constructs, and one rule tightened *(current)*
 
@@ -562,6 +569,38 @@ stay valid.
   and an error from 0.6; an element-level `FIAT` waives it. The corpora gain 302 warnings in
   four corpora.
 
+- **DECISION-35 — A version pin means "at least"** *(resolved, v0.6, 2026-11-13)* (§3, §19,
+  §20): `DEPENDS_ON "Parent" VERSION "x"` was in the spec with no meaning given, and no tool
+  read it. The corpora hold 459 pins. 274 name the parent's own version, 117 name its first two
+  parts (`"0.5"` against `"0.5.0"`), and 68 name a version the parent has since left (`"0.5.9"`
+  against `"0.5.10"`). A file's `VERSION` is bumped on every edit, so a pin read as exact goes
+  stale the first time its parent is touched. The decision is that a pin says the file needs
+  something the parent gained at that version: the loaded parent must be at that version or a
+  later one. Versions are compared part by part, numbers as numbers, and a pin with fewer parts
+  is met by any version that begins with it. A parent that is older is an error. All 459 pins
+  are met today.
+
+- **DECISION-36 — What a file depends on** *(resolved, v0.6, 2026-11-13)* (§3, §20): §3 said an
+  extension declares "a parent", in one of two forms. Of 6,259 files that could name one, 5,012
+  write `DEPENDS_ON`, 923 write `EXTENSION "X" EXTENDS "Y"`, 276 write both (Pendragon's header
+  names the base and its `DEPENDS_ON` a types file), and 49 write several `DEPENDS_ON` (arm5e's
+  errata file names 20 books). The validator checked one thing, that a `DEPENDS_ON` names a
+  file. The decision keeps both forms and says what they mean. A file depends on every id it
+  names with `DEPENDS_ON` and on the id its header `EXTENDS`; any number is legal. Each names a
+  file in the loaded set. No two files depend on each other. A file id is declared once in a
+  corpus. An `EXTENSION` names at least one parent, and a `BASE` names none but the dice
+  module. A cycle is an error at every version, and so is a `DEPENDS_ON` that names nothing, as
+  before; the rest is a warning in a file that declares a `SPEC_VERSION` below 0.6, or none,
+  and an error from 0.6. The corpora gain 44 warnings.
+
+- **DECISION-37 — A dependency loads first** *(resolved, v0.6, 2026-11-13)* (§13): §13 makes
+  load order precedence, and no construct states an order. The order lives in each consumer's
+  manifest, which the spec does not define. Eleven manifests were compared with what their
+  files declare: of 5,338 dependencies, the target loads before the file that names it in
+  5,319. The decision states the one rule the spec can own: a file loads after everything it
+  depends on. Among files that rule leaves unordered, the order is the consumer's. The spec
+  defines no manifest format.
+
 ## 1. Overview & Design Principles
 
 Titterpig is a domain-specific language (DSL) for defining tabletop role-playing game (TTRPG) systems, content, and narrative structures. The base specification defines a **system-agnostic syntax toolkit** — it owns the grammar, while each game system owns its vocabulary.
@@ -771,7 +810,45 @@ EXTENSION "FileID" {
 }
 ```
 
-Both forms declare a parent. `EXTENDS` is concise; `DEPENDS_ON` allows specifying a required parent version.
+**What a file depends on** *(v0.6, DECISION-36)*. A file depends on every id it names with
+`DEPENDS_ON` and on the id its header `EXTENDS`. The two forms mean the same thing, and a file may
+use either, both, or several `DEPENDS_ON` lines:
+
+```
+EXTENSION "pendragon5e-bokl-appendices" EXTENDS "pendragon5e" {    # the base, in the header
+    DEPENDS_ON "pendragon5e-bokl-types" VERSION "0.5"              # and a file of types
+}
+
+EXTENSION "ArM5_Core_Errata" {
+    DEPENDS_ON "ArM5_Abilities"                                    # one line for each file
+    DEPENDS_ON "ArM5_Core_Base"                                    # the errata corrects:
+    DEPENDS_ON "ArM5_Core_Systems"                                 # twenty in all
+}
+```
+
+- **Each names a file in the loaded set.** An id that no loaded file declares is an error.
+- **No two files depend on each other**, directly or through others.
+- **A file id is declared once in a corpus**, whatever kind of file declares it. An arc and a frame
+  do not share an id.
+- **An `EXTENSION` names at least one parent.** A `BASE` names none, the dice module aside.
+- A dependency loads before the file that names it (§13).
+
+A cycle, and a `DEPENDS_ON` that names nothing, are errors at every version. A header `EXTENDS`
+that names nothing, an id declared twice, an `EXTENSION` with no parent and a `BASE` with one are
+warnings in a file that declares a `SPEC_VERSION` below 0.6, or none, and errors from 0.6.
+
+**A version pin means "at least"** *(v0.6, DECISION-35)*. `DEPENDS_ON "Parent" VERSION "0.5.9"` says
+this file needs something the parent gained at 0.5.9: the parent that is loaded must be at that
+version or a later one.
+
+- Versions are compared part by part, split at each dot or hyphen, numbers as numbers: 0.5.10 is
+  later than 0.5.9, and 0.10 is later than 0.9.
+- A pin with fewer parts is met by any version that begins with it: `"0.5"` is met by `"0.5.0"`
+  and by `"0.5.9"`.
+- A loaded parent that is older than the pin is an **error**. A parent that declares no `VERSION`
+  cannot be compared, and the validator **warns**.
+- A pin is never exact. A file's `VERSION` rises with every edit to it, so an exact pin would
+  break each time a parent was corrected.
 
 **Fields:**
 - `FileID`: Unique identifier (e.g., `"L5R5e_Core_Core"`, `"VTM5e_Companion_Errata"`)
@@ -2159,6 +2236,11 @@ reach the consumer, and a consumer must not merge two DEFs because their names m
 reference to that name is an error until it carries a hash (§5d). A book that means the entity
 another file defines names it: `REPRINT` where the text is the same, `ALIAS` where only the name
 differs, `MODIFY` where its wording should take effect, `OVERRIDE` to replace it (§5b, above).
+
+**A dependency loads first** *(v0.6, DECISION-37)*. A file loads after every file it depends on
+(§3). That is the one rule of order this spec states. Among files it leaves unordered, the order is
+the consumer's to choose and to record; the spec defines no manifest. Order decides something only
+where two files change the same thing.
 
 A set holds **one** definition of a given entity. Overlapping printings (a spell reprinted in two
 sourcebooks, a beta and a final ruleset) are generally not co-loaded, and a book that prints an entity
@@ -3556,7 +3638,7 @@ Three distinct version axes, kept separate:
 - **File content `VERSION`** — the version of a file's game content (semantic or date-based), independent of the spec version.
 - **Directory organization** — a system keeps its files under a content-version directory (`0.5/`), and each filename carries that version too (`l5r5e-0.5-core-base.ttrpg`), so a file names its version wherever it is copied. That number is the corpus's content version. It is neither the file's own `VERSION` nor its `SPEC_VERSION`.
 
-`DEPENDS_ON "Parent" VERSION "x"` pins a required parent *content* version. Tooling treats `SPEC_VERSION` as the conformance target.
+`DEPENDS_ON "Parent" VERSION "x"` says the parent's *content* version is x or later (§3, DECISION-35). Tooling treats `SPEC_VERSION` as the conformance target.
 
 ### Editions & version namespaces *(v0.4)*
 
@@ -3652,9 +3734,15 @@ follows each `EXTENDS` chain to the nearest declaration of a property and report
 0.6. `FIAT "reason"` waives a gated finding: a value the source prints outside its type's range is
 what `FIAT` is for (§8).
 
-Not checked, and why: a `DEPENDS_ON` version pin, which waits on a ruling of its own; a value for
-a property no type declares, which no rule forbids; the fields of a nested or unnamed DEF; and a
-misspelt keyword, which reads as a system's own (§15). A name that
+A version pin is checked too: the loaded parent is at the pinned version or a later one (§3,
+DECISION-35), and an older parent is an error.
+
+So are a file's dependencies (§3, DECISION-36): each names a loaded file, no two files depend on
+each other, a file id is declared once, an `EXTENSION` names a parent and a `BASE` does not. The
+order files are loaded in is not checked. The validator is given no order.
+
+Not checked, and why: a value for a property no type declares, which no rule forbids; the fields
+of a nested or unnamed DEF; and a misspelt keyword, which reads as a system's own (§15). A name that
 two definitions share is not followed up a chain: the reference needs its hash (§5d).
 
 **The modification system is part of coherence** *(v0.4, 2026-07-25)*. A `MODIFY` / `OVERRIDE`

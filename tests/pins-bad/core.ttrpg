@@ -1,0 +1,10 @@
+BASE "Pins_Bad_Core" {
+    NAME "DECISION-35 fixture — pins the loaded parent does not meet (§3)"
+    SPEC_VERSION "0.6"
+    VERSION "0.5.9"
+    RELEASE_DATE "2026-11-13"
+
+    #   ttrpg_validator.py tests/pins-bad            2 errors, 1 warning
+
+    #PinBadThingK2vQ9wN3cL7pX ^"Thing" DEF { }
+}

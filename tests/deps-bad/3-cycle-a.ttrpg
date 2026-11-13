@@ -1,0 +1,7 @@
+EXTENSION "Deps_Bad_3A" EXTENDS "Deps_Bad_Core" {               # ERROR
+    NAME "fault 3 — two files that depend on each other (this one and 3-cycle-b)"
+    SPEC_VERSION "0.6"
+    VERSION "1.0"
+    RELEASE_DATE "2026-11-13"
+    DEPENDS_ON "Deps_Bad_3B"
+}

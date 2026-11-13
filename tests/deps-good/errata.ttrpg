@@ -1,0 +1,9 @@
+EXTENSION "Deps_Errata" {
+    NAME "several parents: an errata file names each book it corrects"
+    SPEC_VERSION "0.6"
+    VERSION "1.0"
+    RELEASE_DATE "2026-11-13"
+    DEPENDS_ON "Deps_Core"
+    DEPENDS_ON "Deps_Book"
+    DEPENDS_ON "Deps_Both"
+}

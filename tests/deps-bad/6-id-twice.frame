@@ -1,0 +1,7 @@
+FRAME "Deps_Bad_Glade" {                                       # ERROR
+    NAME "fault 6 — the second declaration of the id"
+    SPEC_VERSION "0.6"
+    VERSION "1.0"
+    RELEASE_DATE "2026-11-13"
+    DEPENDS_ON "Deps_Bad_Core"
+}

@@ -1,0 +1,7 @@
+EXTENSION "Deps_Both" EXTENDS "Deps_Core" {
+    NAME "both forms: the header names the base, DEPENDS_ON names a types file"
+    SPEC_VERSION "0.6"
+    VERSION "1.0"
+    RELEASE_DATE "2026-11-13"
+    DEPENDS_ON "Deps_Types" VERSION "1.0"
+}

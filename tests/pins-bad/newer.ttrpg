@@ -1,0 +1,7 @@
+EXTENSION "Pins_Bad_Newer" {
+    NAME "fault 1 — the pin is newer than the loaded parent"
+    SPEC_VERSION "0.6"
+    VERSION "1.0"
+    RELEASE_DATE "2026-11-13"
+    DEPENDS_ON "Pins_Bad_Core" VERSION "0.5.10"            # ERROR
+}

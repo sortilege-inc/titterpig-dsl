@@ -1,0 +1,10 @@
+BASE "Deps_Core" {
+    NAME "DECISION-36 fixture — how a file names what it depends on (§3)"
+    SPEC_VERSION "0.6"
+    VERSION "1.0"
+    RELEASE_DATE "2026-11-13"
+
+    #   ttrpg_validator.py tests/deps-good           0 errors, 0 warnings
+
+    #DepThingAaK2vQ9wN3cL7pXd ^"Thing" DEF { }
+}

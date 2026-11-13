@@ -2,6 +2,7 @@ EXTENSION "Actors_Bad_7" {
     NAME "fault 7 — wrapped, and no SPEC_VERSION"
     VERSION "1.0"
     RELEASE_DATE "2026-11-12"
+    DEPENDS_ON "Actors_Bad_Core"
     #ActBad7StagP2oI5uY8tR1eW ^"Stag" DEF {                         # WARNING on line 1
         EXTENDS #ActBadAdversaryN2xK8mQ4w ^"Adversary"
     }

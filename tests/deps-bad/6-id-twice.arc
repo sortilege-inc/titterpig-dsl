@@ -1,0 +1,7 @@
+ARC "Deps_Bad_Glade" {
+    NAME "fault 6 — one id, declared by an arc and by a frame (this file is the first)"
+    SPEC_VERSION "0.6"
+    VERSION "1.0"
+    RELEASE_DATE "2026-11-13"
+    DEPENDS_ON "Deps_Bad_Core"
+}

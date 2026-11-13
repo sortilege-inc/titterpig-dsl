@@ -3,6 +3,7 @@ EXTENSION "Actors_Bad_6" {
     SPEC_VERSION "0.5"
     VERSION "1.0"
     RELEASE_DATE "2026-11-12"
+    DEPENDS_ON "Actors_Bad_Core"
     #ActBad6OverlayD4fG7hJ0kL ^"Overlay" DEF {                      # WARNING
         PROPERTIES {
             ^"Name" STRING

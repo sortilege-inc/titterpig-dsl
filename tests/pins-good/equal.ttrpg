@@ -1,0 +1,7 @@
+EXTENSION "Pins_Equal" {
+    NAME "the pin is the parent's version"
+    SPEC_VERSION "0.6"
+    VERSION "1.0"
+    RELEASE_DATE "2026-11-13"
+    DEPENDS_ON "Pins_Core" VERSION "0.5.10"
+}
