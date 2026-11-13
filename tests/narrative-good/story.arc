@@ -18,9 +18,9 @@ ARC "Demo_Narrative_Arc" {
         #NarDemoAuthorEEEEEEEEEEEE ^"The Author" DEF {
             EXTENDS #NarDemoNpcTypeAAAAAAAAAAA ^"NPC"
             PROPERTIES {
-                ^"Role" STRING "The missing author"
-                ^"Rings" DEF { ^"Air" INTEGER 3  ^"Fire" INTEGER 5 }
-                ^"Skills" DEF { ^"Artisan" INTEGER 1  ^"Martial" INTEGER 2  ^"Social" INTEGER 1 }
+                ^"Role" "The missing author"
+                ^"Rings" DEF { ^"Air" 3  ^"Fire" 5 }
+                ^"Skills" DEF { ^"Artisan" 1  ^"Martial" 2  ^"Social" 1 }
             }
         }
     }

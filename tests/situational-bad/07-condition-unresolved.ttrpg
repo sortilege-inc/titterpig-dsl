@@ -1,0 +1,15 @@
+EXTENSION "Situational_Bad_07" {
+    NAME "fault 07 — a condition that names no entity"
+    SPEC_VERSION "0.6"
+    VERSION "1.0"
+    RELEASE_DATE "2026-11-13"
+    DEPENDS_ON "Situational_Bad_Core"
+
+    #SibBad07XxK2vQ9wN3cL7pA ^"Sword 07" DEF {
+        EXTENDS #SibWeaponK2vQ9wN3cL7pA5 ^"Weapon"
+        ^"Injury" 16
+        SITUATIONAL #SibNoSuchStateQ7wN3cL9 ^"No Such State" {      # ERROR
+            ^"Injury" SET 18
+        }
+    }
+}

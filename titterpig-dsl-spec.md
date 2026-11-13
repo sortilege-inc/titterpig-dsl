@@ -22,7 +22,7 @@ Changes made since v0.5, listed as they are decided. **Not all are additive.**
    with the count always written: `CHOOSE 1 [ … ]`, `CHOOSE 3 OF ^"Type" WITH { … }`. `CHOICE`,
    `PICK` and `WHERE` are removed. `DISTINCT` (the default) and `INDISTINCT` say whether one option
    may be picked more than once.
-2. **`BOOLEAN` takes an inline value** *(§8)* — `^"Starting" BOOLEAN true`, as `STRING` and `INTEGER`
+2. **`BOOLEAN` takes an inline value** *(§8; superseded by item 26)* — `^"Starting" BOOLEAN true`, as `STRING` and `INTEGER`
    already did.
 3. **`SET` and `TRANSFORM`** *(new, §8, DECISION-16)* — a change to a value says which kind it is:
    `#hash ^"Glory" SET 44` (becomes 44), `#hash ^"Command" TRANSFORM ADD 1` (goes up by 1). The
@@ -101,6 +101,20 @@ Changes made since v0.5, listed as they are decided. **Not all are additive.**
     other, and a file id is declared once. An `EXTENSION` names at least one parent.
 24. **A dependency loads first** *(§13, DECISION-37)* — the one rule of load order the spec
     states. Any order beyond it is the consumer's, and the spec defines no manifest.
+25. **`SITUATIONAL`** *(new, §8, DECISION-38)* — changes that hold in a situation:
+    `SITUATIONAL "2h" { ^"Injury" SET 18 }`. The condition is the source's words, or a reference
+    to an entity. The block holds `SET` and `TRANSFORM` statements and nothing else.
+26. **No type keywords** *(§8, §9, DECISION-39; not additive)* — a value is written alone:
+    `^"Honor" 35`, `^"Name" "Hida"`, `^"Starting" true`, `^"Roles" ["Bushi"]`. A declaration is
+    the name and its constraints (`^"Honor" MIN 0 MAX 100`), or the name alone. `STRING`,
+    `INTEGER` and `BOOLEAN`, `LIST` before a list and `ENUM` before a single value are errors
+    from 0.6; a file below 0.6 keeps them. `ENUM [ … ]`, `LIST`, `LIST OF ^"Type"` and
+    `REF OF ^"Type"` stay.
+27. **A signed number is a `SET` or a `TRANSFORM`** *(§8, DECISION-40)* — a number the source
+    prints with a sign, and a name paired with a number, get no form of their own. Which of the
+    two a number is, is decided when the source is converted. Until then it stays in a string.
+28. **The entries of a list need not be named** *(§8, DECISION-41)* — an item of a list may be a
+    `DEF { … }` with no name. The list is named by the property that holds it.
 
 ### v0.5 — five new constructs, and one rule tightened *(current)*
 
@@ -180,7 +194,7 @@ v0.4 is a consistency/clarity pass over v0.3's grammar — not a redesign. Key c
   `EXTENDS` expresses type / `is-a` inheritance; categorization uses a distinct tag.
 - **DECISION-2 — Definitions vs. instances** *(resolved)* (§5, §16): characters/NPCs are
   **instances** — a `DEF` that `EXTENDS` its actor type and fills in values via canonical
-  `PROPERTIES` with inline typed values (`^"Air" INTEGER 4`). The old
+  `PROPERTIES` with inline values (`^"Air" 4`; `^"Air" INTEGER 4` before 0.6). The old
   `DEF ^"Name" #id { TYPE "npc" … STATS { rings.air = 4 } }` form (reversed order, `=` assignment,
   dotted paths, `TYPE`-as-tag) is **deprecated**; no new grammar is added.
 - **DECISION-3 — Intentional exceptions** *(resolved)* (§8): `FIAT "reason"` waives validation —
@@ -541,6 +555,8 @@ stay valid.
   error from 0.6; `FIAT` waives each. A hash shorter than 16 characters, or with an underscore,
   takes the same gating and no waiver. The corpora gain 815 warnings and no error. A
   `REQUIRED` property left out and a `DEPENDS_ON` version pin are left to their own findings.
+  DECISION-39 withdraws one of these checks: a value's kind is no longer compared with the
+  type it inherits.
 
 - **DECISION-33 — When two names are the same** *(resolved, v0.6, 2026-11-12)* (§14, §5d): the
   spec did not say, and the tools disagreed. The validator and the synthesist compared names
@@ -601,6 +617,46 @@ stay valid.
   depends on. Among files that rule leaves unordered, the order is the consumer's. The spec
   defines no manifest format.
 
+- **DECISION-38 — `SITUATIONAL`: changes that hold in a situation** *(resolved, v0.6,
+  2026-11-13)* (§8): a value that differs by situation had no form and went into a string.
+  tor2e's Long Sword has `^"Injury" STRING "16 (1h)/18 (2h)"`. `SITUATIONAL <condition>
+  { <changes> }` holds the changes that apply in a situation. The condition is a string in the
+  source's words, or a reference to an entity where the system defines the situation as one.
+  The changes are the `SET` and `TRANSFORM` statements of DECISION-16, one or more, and the
+  block holds nothing else. A target with no hash that names a property of the enclosing
+  definition is that property. The value written outside the block holds when the situation
+  does not. The DSL does not say when the situation holds. No corpus uses the form yet.
+
+- **DECISION-39 — No type keywords: a value is written alone** *(resolved, v0.6, 2026-11-13)*
+  (§8, §9, §5b, §5e, §20): `STRING`, `INTEGER` and `BOOLEAN` stood before a literal that
+  already showed what it was, in 371,111 lines of the 22 corpus directories. The kind they
+  declared could not be relied on: of 329 properties that are a number at least four times in
+  five, 75 hold a non-number somewhere (arm5e has a Soak of `"+4 (armor and Stamina)"`, l5r5e a
+  Composure of `"Infinity"`), and 35 are written both `INTEGER n` and `STRING "n"`. From 0.6 a
+  value is written alone, and a declaration is the name and its constraints, or the name
+  alone. `LIST` before a list and `ENUM` before a single value go with the three keywords.
+  `ENUM [ … ]`, `LIST`, `LIST OF ^"Type"` and `REF OF ^"Type"` stay: each says something the
+  literal does not. A parameter with no domain replaces `OF STRING`, and a table axis with no
+  points given replaces `AXIS … INTEGER`. A value stands on its statement's line. The
+  validator no longer compares a value's kind with the type it inherits, and `MIN` / `MAX`
+  bind a value only when it is a number. A file that declares a `SPEC_VERSION` below 0.6, or
+  none, keeps the keywords with no finding; from 0.6 each is an error. No corpus is migrated.
+
+- **DECISION-40 — A signed number is a `SET` or a `TRANSFORM`** *(resolved, v0.6, 2026-11-13)*
+  (§8): the corpora hold 5,865 values that are a number with a sign, kept in strings
+  (`^"Initiative" STRING "+5"`), and 2,581 lines that pair a name with one (`"Convivial" +3`
+  in arm5e, which the grammar refuses). The DSL gains no form for either. A number the source
+  prints with a sign gives a value or alters one: it is a `SET` or a `TRANSFORM` (DECISION-16),
+  and so is a name paired with a number. Which of the two it is cannot be read from the number.
+  It is decided when the source is converted. Until then the number stays in a string, as
+  printed. The DSL has no number written with a `+`.
+
+- **DECISION-41 — The entries of a list need not be named** *(resolved, v0.6, 2026-11-13)* (§8):
+  24,133 records in 5,417 lists of the corpora are written `DEF { … }` with no name, and the
+  spec had no such item. An item of a list may be a `DEF` with no name and no hash. The list is
+  named, by the property that holds it. Nothing refers to an unnamed entry and no `MODIFY`
+  reaches one. A `DEF` anywhere else has a name.
+
 ## 1. Overview & Design Principles
 
 Titterpig is a domain-specific language (DSL) for defining tabletop role-playing game (TTRPG) systems, content, and narrative structures. The base specification defines a **system-agnostic syntax toolkit** — it owns the grammar, while each game system owns its vocabulary.
@@ -649,10 +705,10 @@ The base spec is permissive: the grammar accepts almost any well-formed block. T
 #h9k7mQ2vX7wZ9tB4cD1a ^"Hida" DEF {
     EXTENDS #p4Tz8LwQ1nRv6YbK3xGs ^"Family"
     PROPERTIES {
-        ^"Ring Increase"   STRING "+1 Earth or +1 Fire"
-        ^"Skill Increases" STRING "+1 Command, +1 Tactics"
-        ^"Glory"           INTEGER 44
-        ^"Wealth"          STRING "4 koku"
+        ^"Ring Increase"   "+1 Earth or +1 Fire"
+        ^"Skill Increases" "+1 Command, +1 Tactics"
+        ^"Glory"           44
+        ^"Wealth"          "4 koku"
     }
 }
 
@@ -662,7 +718,7 @@ The base spec is permissive: the grammar accepts almost any well-formed block. T
     APPLIES TO [#c2Hn7VdM9sXq5JrW8eLf ^"Samurai"]
 
     PROPERTIES {
-        ^"Family Name" STRING "Hida" FIXED
+        ^"Family Name" "Hida" FIXED
         ^"Clan"        REF #w6Jc1ZpR4mXe9LtV3bKn ^"Crab"
         ^"Ring Increase" DEF {
             CHOOSE 1 [#k3nP8mQ2vX7wZ9tB4cD1 ^"Earth", #r7Yt2LmW9qKc4VbN6xHs ^"Fire"] TRANSFORM ADD 1
@@ -672,7 +728,7 @@ The base spec is permissive: the grammar accepts almost any well-formed block. T
             #f1Bn6WxE3zHj9RdL5sUo ^"Tactics" TRANSFORM ADD 1
         }
         #m2Vq7KcY4tGf8NwJ6pXa ^"Glory" SET 44
-        ^"Wealth" DEF { ^"Count" INTEGER 4  ^"Type" STRING "koku"  ^"Starting" BOOLEAN true }
+        ^"Wealth" DEF { ^"Count" 4  ^"Type" "koku"  ^"Starting" true }
     }
 }
 ```
@@ -712,7 +768,7 @@ EXTENSION "tor2e-core-ash" EXTENDS "tor2e" {
     #tzjEoZpJbPbQBT05csRIVx5 ^"Ash" DEF {
         EXTENDS #TOR0020000000000 ^"Adversary"
         PROPERTIES {
-            ^"Name" STRING "Ash"
+            ^"Name" "Ash"
         }
     }
 }
@@ -959,24 +1015,24 @@ Weapon`, `Great Stamina`, `Affinity with Ignem`, `Area Lore` → `Normandy Lore`
 #hash ^"Puissant" DEF {
     EXTENDS ^"Virtue"
     PARAMETERS { ^"subject" OF ^"Ability" }     # one slot, ranges over Ability entities
-    PROPERTIES { ^"Size" STRING "Minor" FIXED }
+    PROPERTIES { ^"Size" "Minor" FIXED }
     DESCRIPTION "Add 2 to rolls using the chosen Ability."
 }
 
 #hash ^"Area Lore" DEF {
     EXTENDS ^"Ability"
-    PARAMETERS { ^"area" OF STRING }             # free-text slot (no Land entities exist)
+    PARAMETERS { ^"area" }             # free-text slot (no Land entities exist)
 }
 ```
 
 - A parameter's **domain** is a caret type (`OF ^"Ability"` — the bound value must resolve to an
-  entity of that type), `OF STRING` (any free text), or `OF ["A", "B", …]` (an **enum** of literal
-  allowed values). The enum form selects among fixed alternatives — e.g. a virtue the book lets you
+  entity of that type), `OF ["A", "B", …]` (an **enum** of literal allowed values), or nothing: a
+  parameter with no domain takes any free text *(v0.6, DECISION-39; `OF STRING` before 0.6)*. The enum form selects among fixed alternatives — e.g. a virtue the book lets you
   take at either severity declares `PARAMETERS { ^"Size" OF ["Major", "Minor"] }`, and a reference
   binds the choice: `^"Wrathful"("Major")`. Naming the parameter after the property it fills
   (`^"Size"`) tells consumers to apply the bound value there; the `OF [...]` bounds the legal values
   so an invalid binding (`^"Wrathful"("Huge")`) is a coherence error. A DEF may declare several
-  parameters (a Story flaw might take `^"Size" OF ["Major","Minor"]` and `^"goal" OF STRING`).
+  parameters (a Story flaw might take `^"Size" OF ["Major","Minor"]` and `^"goal"`).
 - A **bound reference** appends a parenthesized argument list to a caret ref, wherever a caret ref
   is legal (list items, values, `EXTENDS` targets):
 
@@ -986,7 +1042,7 @@ Weapon`, `Great Stamina`, `Affinity with Ignem`, `Area Lore` → `Normandy Lore`
 
   Arguments bind **positionally**, or by name for clarity (`^"Puissant"(^"subject" = ^"Single
   Weapon")`). A caret argument must resolve to an entity of the declared type; a string argument
-  fills a `STRING` slot.
+  fills a parameter with no domain.
 - **Rendering is the consumer's job.** The DSL stores the structured (base, bindings) form; the
   derived display name (`Puissant Single Weapon`) is produced by downstream applications, not
   encoded in the file. A bound reference whose base declares no `PARAMETERS`, or whose argument
@@ -1212,7 +1268,7 @@ alias, still accepted so 0.4 corpora keep validating). Four additions:
    that the source prints them:
 
    ```
-   ^"Marks" STRING "Weapons marked *thus* need two hands." FIAT "printed asterisks"
+   ^"Marks" "Weapons marked *thus* need two hands." FIAT "printed asterisks"
    ```
 
 **v0.6 changes (DECISION-20): embedded references.** A reference may also be written inside the
@@ -1253,7 +1309,7 @@ names are made machine-resolvable by a **stand-off `MENTIONS` block**, not by ed
 ```
 #hashID ^"Close the Flesh" DEF {
     EXTENDS ^"Rune Spell"
-    PROPERTIES { ^"Rune" STRING "Berkanan" FIXED  ^"Level" INTEGER 20 … }
+    PROPERTIES { ^"Rune" "Berkanan" FIXED  ^"Level" 20 … }
     DESCRIPTION "This spell is usually carved onto an amulet … The target heals a Light
       Wound, and as long as the runes last … the character must make an immediate recovery roll
       for that injury. If this equals or exceeds the Improvement Ease Factor, then the wound
@@ -1324,7 +1380,7 @@ Hash IDs are optional cross-reference anchors on any DEF or rule. When present:
 ### DEF Body Contents
 
 A DEF body can contain any combination of:
-- `PROPERTIES { }` — typed fields
+- `PROPERTIES { }` — fields
 - `RULES { }` — behavioral rules
 - `EXTENDS` — inheritance declaration
 - `APPLIES TO` — scope constraint
@@ -1338,7 +1394,7 @@ A DEF body can contain any combination of:
 
 A `DEF` serves two roles, distinguished by whether it `EXTENDS` an **actor type**:
 
-- **Definition (schema):** declares a type and its fields *with* type/constraint information — e.g. `ACTOR "Samurai" DEF { PROPERTIES { ^"Air" INTEGER MIN 1 MAX 5 DEFAULT 1 } }`.
+- **Definition (schema):** declares a type and its fields *with* type/constraint information — e.g. `ACTOR "Samurai" DEF { PROPERTIES { ^"Air" MIN 1 MAX 5 DEFAULT 1 } }`.
 - **Instance (a specific character — PC or NPC):** a `DEF` that `EXTENDS` an actor type and fills in concrete values via canonical `PROPERTIES`, using the inline-value form (§8). Types and constraints are **inherited** from the extended actor, not restated.
 
 ```
@@ -1346,11 +1402,11 @@ A `DEF` serves two roles, distinguished by whether it `EXTENDS` an **actor type*
     EXTENDS ^"Samurai"
     PROPERTIES {
         ^"Rings" DEF {
-            ^"Air"   INTEGER 4
-            ^"Water" INTEGER 3
+            ^"Air"   4
+            ^"Water" 3
         }
-        ^"Honor" INTEGER 35
-        ^"Role"  STRING "Unicorn Trade Governor"
+        ^"Honor" 35
+        ^"Role"  "Unicorn Trade Governor"
     }
 }
 ```
@@ -1365,7 +1421,8 @@ Instances use the **same** grammar as definitions — no `=` assignments, no dot
 A **reference site** is any place one definition names *an entity that already exists*: `EXTENDS`,
 `APPLIES TO`, `LIST OF`, `CONCERNS`, `OVERRIDE`, `MODIFY`, the target of `ALIAS … FOR`, an entity
 option or `OF` type of a `CHOOSE` (§5b), the type and the value of a `REF`, the target of a `SET`
-or `TRANSFORM` and the die of a `ROLL` (§8), the type of an `AXIS … OF`, an entity listed as an
+or `TRANSFORM`, the condition of a `SITUATIONAL` where it is a reference, and the die of a
+`ROLL` (§8), the type of an `AXIS … OF`, an entity listed as an
 axis point and an entity given as a coordinate of an `AT` (§5e), the `REFERENCES` /
 `REFERENCED BY` targets and embedded references of §5c, and the references between narrative
 blocks of §16: `SCENE_REF`, `LEADS_TO`, `COMPLETED_SCENES`, `OPPONENTS`, a scene's `LOCATION`, and
@@ -1419,9 +1476,9 @@ primitive of the language, as `PROPERTIES` is: there is no table type to extend.
         AXIS ^"Odds" OF #hash ^"Odds"
         AXIS ^"Chaos Factor" 1-9
 
-        AT [ #hash ^"Certain", 1 ]        { ^"Exceptional Yes" INTEGER 10  ^"Yes" INTEGER 50  ^"Exceptional No" INTEGER 91 }
-        AT [ #hash ^"Certain", 2 ]        { ^"Exceptional Yes" INTEGER 13  ^"Yes" INTEGER 65  ^"Exceptional No" INTEGER 94 }
-        AT [ #hash ^"Nearly Certain", 1 ] { ^"Exceptional Yes" INTEGER 7   ^"Yes" INTEGER 35  ^"Exceptional No" INTEGER 88 }
+        AT [ #hash ^"Certain", 1 ]        { ^"Exceptional Yes" 10  ^"Yes" 50  ^"Exceptional No" 91 }
+        AT [ #hash ^"Certain", 2 ]        { ^"Exceptional Yes" 13  ^"Yes" 65  ^"Exceptional No" 94 }
+        AT [ #hash ^"Nearly Certain", 1 ] { ^"Exceptional Yes" 7   ^"Yes" 35  ^"Exceptional No" 88 }
         …
     }
 }
@@ -1433,7 +1490,7 @@ primitive of the language, as `PROPERTIES` is: there is no table type to extend.
 |---|---|
 | `OF #hash ^"Type"` | the entities of that type |
 | `1-9` | the whole numbers in the range |
-| `INTEGER` | any whole number |
+| nothing | any whole number *(v0.6, DECISION-39; `INTEGER` before 0.6)* |
 | `ROLL n OF #hash ^"die"` | the totals of that roll (§8) |
 | `[ "Light", "Medium", "Heavy" ]` | the strings or entities listed |
 
@@ -1460,13 +1517,13 @@ a named DEF, or another `TABLE`.
     TABLE {
         AXIS ^"Roll" ROLL 2 OF #hash ^"d10"
 
-        AT [ 2 ]   { ^"Punishment" STRING "Forgiven"
-                     ^"Effect" STRING "The character is forgiven or forgotten by the gods. Reduce their Hubris by 1."
+        AT [ 2 ]   { ^"Punishment" "Forgiven"
+                     ^"Effect" "The character is forgiven or forgotten by the gods. Reduce their Hubris by 1."
                      #hash ^"Hubris" TRANSFORM SUBTRACT 1 }
-        AT [ 3-7 ] { ^"Punishment" STRING "No effect"
-                     ^"Effect" STRING "The character remains unpunished." }
-        AT [ 8 ]   { ^"Punishment" STRING "Incompetent"
-                     ^"Effect" STRING "One randomly determined skill is always rolled at a -2D penalty." }
+        AT [ 3-7 ] { ^"Punishment" "No effect"
+                     ^"Effect" "The character remains unpunished." }
+        AT [ 8 ]   { ^"Punishment" "Incompetent"
+                     ^"Effect" "One randomly determined skill is always rolled at a -2D penalty." }
         …
     }
 }
@@ -1493,7 +1550,8 @@ not one.
 
 - A `TABLE` declares at least one `AXIS`, and holds `AT` cells or `COLUMNS`, not both.
 - Each `AT` gives as many coordinates as the table has axes.
-- A coordinate is of a kind its axis takes: a number on a range, `INTEGER` or roll axis; an entity
+- A coordinate is of a kind its axis takes: a number on a range axis, a roll axis or an axis with
+  no points given; an entity
   of the type on an `OF` axis; one of the listed points on a list axis. A number lies inside a
   range axis, and a range runs from low to high.
 - No two cells cover the same coordinates.
@@ -1567,48 +1625,88 @@ The bracket list contains caret references to ACTOR DEFs. A definition with `APP
 
 ## 8. Properties Block
 
-The `PROPERTIES` block defines the typed fields of a DEF.
+The `PROPERTIES` block holds the fields of a DEF. On a type it declares the properties its
+entries have. On an entry it gives their values.
 
 ```
 PROPERTIES {
-    ^"Name" STRING REQUIRED
-    ^"Description" STRING
-    ^"Honor" INTEGER MIN 0 MAX 100 DEFAULT 50
-    ^"Active" BOOLEAN DEFAULT true
+    ^"Name" REQUIRED
+    ^"Description"
+    ^"Honor" MIN 0 MAX 100 DEFAULT 50
+    ^"Active" DEFAULT true
     ^"Category" ENUM ["Kata", "Shuji", "Ritual"]
     ^"Techniques" LIST OF ^"Technique"
-    ^"Roles" LIST ["Bushi", "Courtier"]
+    ^"Roles" LIST
     ^"Rings" DEF {
-        ^"Air" INTEGER MIN 1 MAX 5 DEFAULT 1
-        ^"Earth" INTEGER MIN 1 MAX 5 DEFAULT 1
+        ^"Air" MIN 1 MAX 5 DEFAULT 1
+        ^"Earth" MIN 1 MAX 5 DEFAULT 1
     }
 }
 ```
 
-### Property Types
+### Values and declarations *(v0.6, DECISION-39)*
 
-| Type | Syntax | Description |
-|------|--------|-------------|
-| STRING | `STRING [value]` | Text value |
-| INTEGER | `INTEGER [value]` | Numeric value |
-| BOOLEAN | `BOOLEAN [true\|false]` | True/false |
-| ENUM | `ENUM ["val1", "val2", ...]` | Constrained choice |
-| LIST | `LIST ["val1", "val2"]` | Literal list of values |
-| LIST OF | `LIST OF ^"TypeName"` | Typed collection referencing another DEF |
-| LIST OF STRING | `LIST OF STRING [values]` | Typed collection of strings with optional defaults |
-| REF | `REF OF ^"TypeName"` · `^"Name" REF ^"Entity"` | Reference to one entity *(v0.6, see below)* |
-| ROLL | `ROLL n OF ^"Die"` | A roll of `n` dice *(v0.6, see below)* |
-| DEF (nested) | `^"Name" DEF { ... }` | Nested structured object |
+**A value is written alone.** The literal shows what it is: quotes hold text, digits are a whole
+number, `true` and `false` are themselves, and brackets hold a list.
 
-### Modifiers (apply to any type)
+```
+^"School Name" "Hida Defender"
+^"Combat Conflict Rank" 2
+^"Starting" true
+^"In-Clan Disciplines" ["Celerity", "Potence", "Presence"]
+```
 
-A modifier follows the type and its value, on any type in the table above. `MIN` and `MAX` are the
-exception: they constrain an `INTEGER` only.
+**A declaration is the name and what constrains it.** A type declares a property by naming it.
+Constraints follow the name. A property with none is its name alone, in a `PROPERTIES` block
+or a property `DEF`.
+
+```
+PROPERTIES {
+    ^"Notes"
+    ^"Honor" MIN 0 MAX 100 DEFAULT 50
+    ^"Category" ENUM ["Kata", "Shuji", "Ritual"]
+}
+```
+
+No word says that a value is text or a number. A value that is usually a number has
+exceptions: arm5e has a Soak of `"+4 (armor and Stamina)"`, and l5r5e a Composure of
+`"Infinity"`. A declaration says what a property holds only where the value cannot show it:
+
+| Written | The property holds |
+|---|---|
+| `ENUM ["a", "b", …]` | one of the values listed |
+| `LIST` | a list |
+| `LIST OF ^"Type"` | a list of entities of the type; the items may follow in brackets |
+| `REF OF ^"Type"` · `^"Name" REF ^"Entity"` | one entity *(see below)* |
+| `ROLL n OF ^"Die"` | a roll of `n` dice *(see below)* |
+| `^"Name" DEF { … }` | a nested block of properties |
+
+**An entry of a list need not be named** *(DECISION-41)*. An item of a list may be a `DEF { … }`
+with no name and no hash: a record that belongs to the list. The list has a name, the property
+that holds it. Nothing refers to an unnamed entry, and no `MODIFY` reaches one.
+
+```
+^"Key" LIST OF #hash ^"Map Key Entry" [
+    DEF { ^"Marker" "1."  ^"Place" "Lower Elevator" },
+    DEF { ^"Marker" "2."  ^"Place" "Displays and Meeting Area" }
+]
+```
+
+**Before 0.6** a value and a declaration carried a type keyword: `^"Honor" INTEGER 35`,
+`^"Notes" STRING`, `^"Starting" BOOLEAN true`, `^"Roles" LIST ["Bushi"]`,
+`^"Tags" LIST OF STRING ["a"]`. A file that declares a `SPEC_VERSION` below 0.6, or none, keeps
+them. From 0.6, `STRING`, `INTEGER` and `BOOLEAN`, `LIST` before a list and `ENUM` before a
+single value are errors.
+
+### Modifiers
+
+A modifier follows the name, or the value where one is written.
 
 - `REQUIRED` — every entry of the type has this property *(v0.6, DECISION-34; see below)*
 - `FIXED` — cannot be changed after creation
 - `DEFAULT value` — default value if not provided
-- `MIN n` / `MAX n` — range constraints (INTEGER)
+- `MIN n` / `MAX n` — the range of a value that is a number. A value that is text is not
+  checked against it.
 - `FIAT "reason"` *(v0.4)* — waive validation for this value (intentional exception; see *FIAT* below)
 
 ### `REQUIRED` — what every entry of a type has *(v0.6, DECISION-34)*
@@ -1619,17 +1717,17 @@ statement about the book: every row of a roll table has a roll and a text.
 ```
 #hash ^"Roll Table Entry" DEF {
     PROPERTIES {
-        ^"Roll" STRING REQUIRED
-        ^"Text" STRING REQUIRED
-        ^"Note" STRING
+        ^"Roll" REQUIRED
+        ^"Text" REQUIRED
+        ^"Note"
     }
 }
 
 #hash ^"Row 1" DEF {
     EXTENDS #hash ^"Roll Table Entry"
     PROPERTIES {
-        ^"Roll" STRING "1-3"
-        ^"Text" STRING "A stranger arrives."
+        ^"Roll" "1-3"
+        ^"Text" "A stranger arrives."
     }
 }
 ```
@@ -1653,21 +1751,18 @@ statement about the book: every row of a roll table has a roll and a text.
 A miss means one of two things: the conversion dropped a field the book gives, or the type
 requires what not every entry has. Before v0.6 the spec said only "must be provided".
 
-### Inline Value Assignment
+### A value with its constraints
 
-A property can include its value inline at declaration time:
+A value may be followed by constraints on the same line:
 
 ```
-^"School Name" STRING "Hida Defender" FIXED
-^"Clan" REF #hash ^"Crab"
-^"Combat Conflict Rank" INTEGER 2
-^"Starting" BOOLEAN true
-^"In-Clan Disciplines" LIST OF STRING ["Celerity", "Potence", "Presence"]
+^"School Name" "Hida Defender" FIXED
+^"Air" 7 FIAT "Oni Lord: supernatural Air, beyond the mortal 1–5 range"
 ```
 
 ### One entity — `REF` *(v0.6, DECISION-17)*
 
-A property that names one entity holds a reference to it. A name in a `STRING` is not checked; a
+A property that names one entity holds a reference to it. A name in a string is not checked; a
 `REF` is.
 
 ```
@@ -1722,24 +1817,82 @@ CHOOSE 1 [ #hash ^"Earth", #hash ^"Fire" ] TRANSFORM ADD 1
 
 A change may stand wherever a property may: in a `PROPERTIES` block, in a nested property `DEF`, or
 in a system block. When a change applies, and to whom, is not part of the change. That stays with the
-entity that carries it, with `APPLIES TO`, and with the text.
+entity that carries it, with `APPLIES TO`, and with the text. A change that applies only in a
+situation goes in a `SITUATIONAL` block, below.
+
+### A number printed with a sign *(v0.6, DECISION-40)*
+
+A source prints `+5` for two things: a value that is 5, and a value that goes up by 5. The first
+is a `SET` and the second a `TRANSFORM ADD`. A name the source pairs with a number is one or the
+other too: a skill with its rank, a trait with its score.
+
+```
+#hash ^"Artisan" SET 0                    # the skill's rank is 0
+#hash ^"Command" TRANSFORM ADD 1          # the skill goes up by 1
+```
+
+The number does not say which it is. That is decided when the source is converted, entry by
+entry. Until it is decided, the number stays in a string as the source prints it:
+`^"Initiative" "+5"`. The DSL has no number written with a `+`.
+
+### Changes that hold in a situation — `SITUATIONAL` *(v0.6, DECISION-38)*
+
+Some values differ by situation. *The One Ring* prints a Long Sword's Injury as "16 (1h)/18 (2h)":
+16, and 18 when the sword is held in two hands. A `SITUATIONAL` block holds the changes that apply
+in a situation.
+
+```
+^"Long Sword" DEF {
+    ^"Damage" 5
+    ^"Injury" 16
+    ^"Load" 3
+    SITUATIONAL "2h" {
+        ^"Injury" SET 18
+    }
+}
+```
+
+- **Condition.** A string, in the source's words. Where the system defines the situation as an
+  entity (a stance, a condition), the condition may be a reference to it:
+  `SITUATIONAL #hash ^"Enraged" { … }`. That reference is a reference site (§5d).
+- **Changes.** One or more `SET` or `TRANSFORM` statements, written as above. The block holds
+  nothing else, and a `SITUATIONAL` does not hold another.
+- **Target.** As in any change. A target with no hash that names a property of the enclosing
+  definition is that property: one the definition writes, or one a type it extends declares.
+- **Meaning.** The value written outside the block holds when the situation does not. The DSL
+  does not say when the situation holds. A consumer shows the changed value and its condition
+  beside the value, and a person decides.
+
+A `SITUATIONAL` may stand wherever a change may, and a definition may hold several.
+
+A `HOOK` (§23) names the mechanic a narrative situation involves and changes no value. A
+`SITUATIONAL` gives the value.
+
+Coherence: a condition follows the keyword and is not empty; a condition that is a reference
+resolves; the block holds at least one change and holds only changes; each change is checked as
+any change is.
 
 ### Where a statement ends *(v0.6)*
 
-The DSL has no statement terminator. Two statements end at a place where a reference may or may not
-follow: `REF OF ^"Type"`, which an entity may follow, and `SET` or `TRANSFORM <METHOD>`, which an
-amount may follow. One rule settles both:
+The DSL has no statement terminator. A name may be followed by a value, by constraints or by
+nothing, and a `REF`, a `SET` and a `TRANSFORM <METHOD>` may be followed by a reference. Two
+rules say where a statement ends.
 
-**A reference that is followed by a property type (`STRING`, `INTEGER`, `BOOLEAN`, `ENUM`, `LIST`,
-`REF`, `ROLL`), `DEF`, `CHOOSE`, `SET`, `TRANSFORM` or `MODIFY` opens the next statement.** It is not the
-entity or the amount of the statement before it.
+**A value stands on its statement's line** *(DECISION-39)*. The value of a property, the entity
+of a `REF` and the amount of a `SET` or `TRANSFORM` are written on the line of the name or
+keyword they follow. A reference on a later line opens the next statement. A list or a block,
+once opened, may run over lines.
+
+**On one line, a reference that is followed by a value, `ENUM`, `LIST`, `REF`, `ROLL`, `DEF`,
+`CHOOSE`, `SET`, `TRANSFORM` or `MODIFY` opens the next statement.** It is not the entity or the
+amount of the statement before it.
 
 ```
 REF OF #hash ^"Clan"                      # declares the property; gives no entity
-^"Glory" INTEGER MIN 0 MAX 100            # ^"Glory" is followed by INTEGER: a new statement
+^"Glory" MIN 0 MAX 100                    # a later line: a new statement
 
 #hash ^"Command" TRANSFORM ADD            # an error: no amount
-#hash ^"Tactics" TRANSFORM ADD 1          # ^"Tactics" is followed by TRANSFORM: a new statement
+#hash ^"Tactics" TRANSFORM ADD 1          # a later line: a new statement
 ```
 
 > **For review — two uses of `SET`.** `SET` is also a directive inside a `MODIFY` block (§13), written
@@ -1803,7 +1956,7 @@ integer; a range runs from low to high; `NEXT` has a statement before it and a s
 **Property level** — a trailing modifier; waives findings for that one value:
 
 ```
-^"Air" INTEGER 7 FIAT "Oni Lord: supernatural Air, beyond the mortal 1–5 range"
+^"Air" 7 FIAT "Oni Lord: supernatural Air, beyond the mortal 1–5 range"
 ```
 
 **Element level** — a statement in a DEF body; **cascades**, waiving findings for that DEF and its *entire subtree* (every descendant property and sub-DEF):
@@ -1813,7 +1966,7 @@ integer; a range runs from low to high; `NEXT` has a statement before it and a s
     EXTENDS ^"Adversary"
     FIAT "One-off published horror: intentionally omits standard adversary stats and exceeds normal limits"
     PROPERTIES {
-        ^"Fear" INTEGER 12
+        ^"Fear" 12
         # fields normally required of an Adversary are intentionally absent here
     }
 }
@@ -1827,14 +1980,14 @@ integer; a range runs from low to high; `NEXT` has a statement before it and a s
 
 ---
 
-## 9. Bare Type Constraints
+## 9. Bare Constraints
 
-A DEF may declare a bare type constraint directly in its body (outside PROPERTIES) when the definition itself represents a typed value:
+A DEF may state constraints directly in its body, outside `PROPERTIES`, when the definition is itself a value:
 
 ```
 ^"Strength" DEF {
     APPLIES TO [^"Kindred", ^"Mortal"]
-    INTEGER MIN 1 MAX 5
+    MIN 1 MAX 5
 }
 
 ^"Approach" DEF {
@@ -1842,15 +1995,17 @@ A DEF may declare a bare type constraint directly in its body (outside PROPERTIE
 }
 
 ^"Chronicle" DEF {
-    STRING REQUIRED
+    REQUIRED
 }
 
 ^"GM Role" DEF {
-    BOOLEAN DEFAULT false
+    DEFAULT false
 }
 ```
 
-This means "Strength IS an integer 1–5" rather than "Strength HAS an integer property." The parser treats it as an implicit `^"Value"` property of the declared type.
+This means "Strength is a number from 1 to 5" rather than "Strength has a property." The parser treats it as an implicit `^"Value"` property.
+
+*(v0.6, DECISION-39)* Before 0.6 the line opened with a type keyword: `INTEGER MIN 1 MAX 5`, `STRING REQUIRED`, `BOOLEAN DEFAULT false`.
 
 ---
 
@@ -2168,7 +2323,7 @@ MODIFY ^"Covenant Boon" {
     SET ^"Magnitude" ENUM ["Minor", "Major", "Free"]   # widens a field the target has
     PROPERTIES {
         ^"Category" ENUM ["Site", "Buildings", "Resources"]   # a field it never had
-        ^"Requires" STRING
+        ^"Requires"
     }
 }
 ```
@@ -2339,11 +2494,11 @@ keywords are reserved everywhere.
 
 **Definition:** `DEF`, `ACTOR`, `TEMPLATE`, `CHOICES`, `PROPERTIES`, `RULES`
 
-**Types:** `STRING`, `INTEGER`, `BOOLEAN`, `ENUM`, `LIST`, `OF`, `REF`, `ROLL`, and the `BOOLEAN` values `true` and `false`
+**Types:** `ENUM`, `LIST`, `OF`, `REF`, `ROLL`, and the values `true` and `false`. `STRING`, `INTEGER` and `BOOLEAN` stay reserved and are not written from 0.6 (§8, DECISION-39)
 
 **Dice (§8):** `FACES`, `WEIGHT`, `ROLL`, `NEXT`
 
-**Changes (§8):** `SET`, `TRANSFORM`, `ADD`, `SUBTRACT`, `MULTIPLY`, `DIVIDE`, `ROUND`, `UP`, `DOWN`, `NEAREST`, `MANUAL` (`SET` and `ADD` are shared with **Modification**, `MANUAL` with **Bridge**, `MIN` / `MAX` with **Modifiers**)
+**Changes (§8):** `SET`, `TRANSFORM`, `SITUATIONAL`, `ADD`, `SUBTRACT`, `MULTIPLY`, `DIVIDE`, `ROUND`, `UP`, `DOWN`, `NEAREST`, `MANUAL` (`SET` and `ADD` are shared with **Modification**, `MANUAL` with **Bridge**, `MIN` / `MAX` with **Modifiers**)
 
 **Modifiers:** `REQUIRED`, `FIXED`, `DEFAULT`, `MIN`, `MAX`, `FIAT`
 
@@ -2363,7 +2518,7 @@ keywords are reserved everywhere.
 
 **Text:** `DESCRIPTION`, `TEXT`
 
-**Tables (§5e):** `TABLE`, `AXIS`, `AT`, `COLUMNS`, `ANY` (`OF`, `INTEGER` and `ROLL` are shared with **Types**, `MIN` / `MAX` with **Modifiers**, `AT` with **Codex**)
+**Tables (§5e):** `TABLE`, `AXIS`, `AT`, `COLUMNS`, `ANY` (`OF` and `ROLL` are shared with **Types**, `MIN` / `MAX` with **Modifiers**, `AT` with **Codex**)
 
 **Annotation beside text (§5c):** `REFERENCES`, `MENTIONS`, `REFERENCED`, `BY`, `EMPHASIS`, `BOLD`, `ITALIC`, `LABEL`
 
@@ -2484,7 +2639,7 @@ SETTING "RichFrog" {
 
 A FRAME provides a starting point for GMs: a setting combined with enough mechanical scaffolding to begin play, without defining complete scenes or arcs. It requires a BASE system and optionally references a SETTING.
 
-> **DECISION-2 (resolved, v0.4):** NPCs are **instances** — write them with the canonical instance form (§5, *Definitions vs. Instances*): a `#hash ^"Name" DEF` that `EXTENDS` its actor type with a `PROPERTIES` block of inline typed values. The looser `DEF ^"Name" #id { TYPE "npc" … STATS { rings.air = 4 } }` form — reversed order, `=` assignment, dotted paths, `TYPE`-as-tag — is **deprecated**. No new grammar is added.
+> **DECISION-2 (resolved, v0.4):** NPCs are **instances** — write them with the canonical instance form (§5, *Definitions vs. Instances*): a `#hash ^"Name" DEF` that `EXTENDS` its actor type with a `PROPERTIES` block of inline values. The looser `DEF ^"Name" #id { TYPE "npc" … STATS { rings.air = 4 } }` form — reversed order, `=` assignment, dotted paths, `TYPE`-as-tag — is **deprecated**. No new grammar is added.
 
 ```
 FRAME "FrameID" {
@@ -2503,7 +2658,7 @@ FRAME "FrameID" {
         MODIFICATIONS {
             # Character creation adjustments for this frame
             #hash ^"Property" SET value                     # a starting value (§8)
-            ^"Property" INTEGER MIN new_min MAX new_max      # a range (§8)
+            ^"Property" MIN new_min MAX new_max      # a range (§8)
         }
     }
 
@@ -2511,9 +2666,9 @@ FRAME "FrameID" {
     #hash ^"NPC Name" DEF {
         EXTENDS ^"Adversary"
         PROPERTIES {
-            ^"Role" STRING "Role in the frame"
-            ^"Description" STRING "Brief description"
-            # stats as typed fields, e.g. ^"Rings" DEF { ^"Air" INTEGER 3 }
+            ^"Role" "Role in the frame"
+            ^"Description" "Brief description"
+            # stats as fields, e.g. ^"Rings" DEF { ^"Air" 3 }
         }
     }
 
@@ -2560,25 +2715,25 @@ FRAME "RichFrogFrame" {
     STARTING_CONDITIONS {
         DESCRIPTION "PCs are newly assigned samurai sent to represent their clan's interests in the City of the Rich Frog"
         MODIFICATIONS {
-            ^"Status" INTEGER MIN 20 MAX 35
-            ^"Glory"  INTEGER MIN 10 MAX 25
+            ^"Status" MIN 20 MAX 35
+            ^"Glory"  MIN 10 MAX 25
         }
     }
 
     #k8Rw3NqT6yLm1XcV9bJp4ZsD ^"Ide Tadaji" DEF {
         EXTENDS ^"Adversary"
         PROPERTIES {
-            ^"Role" STRING "Unicorn Trade Governor"
-            ^"Description" STRING "Affable merchant-diplomat who controls the city's official commerce"
+            ^"Role" "Unicorn Trade Governor"
+            ^"Description" "Affable merchant-diplomat who controls the city's official commerce"
             ^"Rings" DEF {
-                ^"Air"   INTEGER 4
-                ^"Water" INTEGER 3
+                ^"Air"   4
+                ^"Water" 3
             }
             ^"Skills" DEF {
-                ^"Social" INTEGER 4
-                ^"Trade"  INTEGER 5
+                ^"Social" 4
+                ^"Trade"  5
             }
-            ^"Honor" INTEGER 35
+            ^"Honor" 35
         }
     }
 
@@ -2621,8 +2776,8 @@ ARC "ArcID" {
         #hash ^"New NPC" DEF {
             EXTENDS ^"Adversary"
             PROPERTIES {
-                ^"Role" STRING "Role in this arc"
-                ^"Description" STRING "Brief description"
+                ^"Role" "Role in this arc"
+                ^"Description" "Brief description"
                 # stats as typed fields
             }
         }
@@ -2734,27 +2889,27 @@ ARC "L5R5e_LostWriter" {
         #q7Lm2XvR9tKc4WbN8sHdPz3F ^"Shinjo Higuchi" DEF {
             EXTENDS #t4540de6f35155c46f41f0 ^"NPC"
             PROPERTIES {
-                ^"Role"        STRING "The missing author, possessed by an ifrit"
-                ^"Description" STRING "A popular—if a bit controversial—author of stories and poems, Hana-no-Ame (real name: Shinjo Higuchi) has reportedly gone missing while visiting the City of the Rich Frog."
-                ^"Combat Conflict Rank"   INTEGER 4
-                ^"Intrigue Conflict Rank" INTEGER 1
+                ^"Role"        "The missing author, possessed by an ifrit"
+                ^"Description" "A popular—if a bit controversial—author of stories and poems, Hana-no-Ame (real name: Shinjo Higuchi) has reportedly gone missing while visiting the City of the Rich Frog."
+                ^"Combat Conflict Rank"   4
+                ^"Intrigue Conflict Rank" 1
                 ^"Rings" DEF {
-                    ^"Air"   INTEGER 3
-                    ^"Earth" INTEGER 2
-                    ^"Fire"  INTEGER 5
-                    ^"Water" INTEGER 1
-                    ^"Void"  INTEGER 3
+                    ^"Air"   3
+                    ^"Earth" 2
+                    ^"Fire"  5
+                    ^"Water" 1
+                    ^"Void"  3
                 }
                 ^"Skills" DEF {
-                    ^"Artisan" INTEGER 1
-                    ^"Martial" INTEGER 2
-                    ^"Scholar" INTEGER 1
-                    ^"Social"  INTEGER 1
-                    ^"Trade"   INTEGER 0
+                    ^"Artisan" 1
+                    ^"Martial" 2
+                    ^"Scholar" 1
+                    ^"Social"  1
+                    ^"Trade"   0
                 }
-                ^"Honor"  INTEGER 60
-                ^"Glory"  INTEGER 50
-                ^"Status" INTEGER 39
+                ^"Honor"  60
+                ^"Glory"  50
+                ^"Status" 39
             }
         }
     }
@@ -3291,7 +3446,7 @@ BASE "L5R5e_Core" {
 
     #L5R001aB2cD ACTOR "Entity" DEF {
         PROPERTIES {
-            ^"Name" STRING REQUIRED
+            ^"Name" REQUIRED
         }
     }
 
@@ -3300,20 +3455,20 @@ BASE "L5R5e_Core" {
         PROPERTIES {
             REF OF ^"Clan" REQUIRED
             REF OF ^"School"
-            ^"School Rank" INTEGER MIN 1 MAX 6 DEFAULT 1
-            ^"Honor" INTEGER MIN 0 MAX 100
-            ^"Glory" INTEGER MIN 0 MAX 100
-            ^"Status" INTEGER MIN 0 MAX 100
+            ^"School Rank" MIN 1 MAX 6 DEFAULT 1
+            ^"Honor" MIN 0 MAX 100
+            ^"Glory" MIN 0 MAX 100
+            ^"Status" MIN 0 MAX 100
             ^"Rings" DEF {
-                ^"Air" INTEGER MIN 1 MAX 5 DEFAULT 1
-                ^"Earth" INTEGER MIN 1 MAX 5 DEFAULT 1
-                ^"Fire" INTEGER MIN 1 MAX 5 DEFAULT 1
-                ^"Water" INTEGER MIN 1 MAX 5 DEFAULT 1
-                ^"Void" INTEGER MIN 1 MAX 5 DEFAULT 1
+                ^"Air" MIN 1 MAX 5 DEFAULT 1
+                ^"Earth" MIN 1 MAX 5 DEFAULT 1
+                ^"Fire" MIN 1 MAX 5 DEFAULT 1
+                ^"Water" MIN 1 MAX 5 DEFAULT 1
+                ^"Void" MIN 1 MAX 5 DEFAULT 1
             }
             ^"Skills" DEF {
-                ^"Command" INTEGER MIN 0 DEFAULT 0
-                ^"Tactics" INTEGER MIN 0 DEFAULT 0
+                ^"Command" MIN 0 DEFAULT 0
+                ^"Tactics" MIN 0 DEFAULT 0
                 # … one property for each skill
             }
             ^"Techniques" LIST OF ^"Technique"
@@ -3328,12 +3483,12 @@ BASE "L5R5e_Core" {
 
     ^"Skill" DEF {
         APPLIES TO [^"Samurai", ^"Adversary"]
-        INTEGER MIN 0 MAX 5
+        MIN 0 MAX 5
     }
 
     ^"Air" DEF {
         APPLIES TO [^"Samurai", ^"Adversary"]
-        INTEGER MIN 1 MAX 5
+        MIN 1 MAX 5
     }
 
     # ============= Schools =============
@@ -3343,8 +3498,8 @@ BASE "L5R5e_Core" {
         APPLIES TO [^"Samurai"]
         PROPERTIES {
             ^"Clan" REF ^"Crab" FIXED
-            ^"Roles" LIST ["Bushi", "Guardian"]
-            ^"Starting Honor" INTEGER DEFAULT 40
+            ^"Roles" ["Bushi", "Guardian"]
+            ^"Starting Honor" DEFAULT 40
             ^"Starting Skills" LIST OF ^"Skill"
         }
 
@@ -3386,8 +3541,8 @@ BASE "L5R5e_Core" {
     ^"Crimson Leaves Strike" DEF {
         EXTENDS ^"Technique"
         PROPERTIES {
-            ^"Type" STRING "Kata"
-            ^"Rank" INTEGER 3
+            ^"Type" "Kata"
+            ^"Rank" 3
         }
         ACTIVATION "As an Attack action, make a TN 4 Martial Arts (Earth) check..."
         EFFECTS {
@@ -3412,7 +3567,7 @@ BASE "VTM5e_Core" {
 
     #VnK8MrPxWb ACTOR "Entity" DEF {
         PROPERTIES {
-            ^"Name" STRING REQUIRED
+            ^"Name" REQUIRED
         }
     }
 
@@ -3420,19 +3575,19 @@ BASE "VTM5e_Core" {
         EXTENDS #VnK8MrPxWb ^"Entity"
         PROPERTIES {
             REF OF ^"Clan" REQUIRED
-            ^"Generation" INTEGER MIN 4 MAX 16
-            ^"Hunger" INTEGER MIN 0 MAX 5 DEFAULT 1
-            ^"Humanity" INTEGER MIN 0 MAX 10 DEFAULT 7
+            ^"Generation" MIN 4 MAX 16
+            ^"Hunger" MIN 0 MAX 5 DEFAULT 1
+            ^"Humanity" MIN 0 MAX 10 DEFAULT 7
             ^"Attributes" DEF {
-                ^"Strength" INTEGER MIN 1 MAX 5 DEFAULT 1
-                ^"Dexterity" INTEGER MIN 1 MAX 5 DEFAULT 1
-                ^"Stamina" INTEGER MIN 1 MAX 5 DEFAULT 1
-                ^"Charisma" INTEGER MIN 1 MAX 5 DEFAULT 1
-                ^"Manipulation" INTEGER MIN 1 MAX 5 DEFAULT 1
-                ^"Composure" INTEGER MIN 1 MAX 5 DEFAULT 1
-                ^"Intelligence" INTEGER MIN 1 MAX 5 DEFAULT 1
-                ^"Wits" INTEGER MIN 1 MAX 5 DEFAULT 1
-                ^"Resolve" INTEGER MIN 1 MAX 5 DEFAULT 1
+                ^"Strength" MIN 1 MAX 5 DEFAULT 1
+                ^"Dexterity" MIN 1 MAX 5 DEFAULT 1
+                ^"Stamina" MIN 1 MAX 5 DEFAULT 1
+                ^"Charisma" MIN 1 MAX 5 DEFAULT 1
+                ^"Manipulation" MIN 1 MAX 5 DEFAULT 1
+                ^"Composure" MIN 1 MAX 5 DEFAULT 1
+                ^"Intelligence" MIN 1 MAX 5 DEFAULT 1
+                ^"Wits" MIN 1 MAX 5 DEFAULT 1
+                ^"Resolve" MIN 1 MAX 5 DEFAULT 1
             }
             ^"Disciplines" LIST OF ^"Discipline"
         }
@@ -3446,7 +3601,7 @@ BASE "VTM5e_Core" {
 
     ^"Blood Potency" DEF {
         APPLIES TO [^"Kindred"]
-        INTEGER MIN 0 MAX 10
+        MIN 0 MAX 10
         RULES {
             #vtm010xyz: blood_potency_determines_surge_bonus
             #vtm011abc: blood_potency_restricts_feeding
@@ -3479,7 +3634,7 @@ BASE "VTM5e_Core" {
     ^"Cloud Memory" DEF {
         EXTENDS ^"Discipline Power"
         PROPERTIES {
-            ^"Level" INTEGER 1
+            ^"Level" 1
             ^"Parent" REF ^"Dominate"
         }
         COST "Free"
@@ -3493,7 +3648,7 @@ BASE "VTM5e_Core" {
     ^"Brujah" DEF {
         EXTENDS ^"Clan"
         PROPERTIES {
-            ^"Clan Name" STRING "Brujah" FIXED
+            ^"Clan Name" "Brujah" FIXED
             ^"In-Clan Disciplines" LIST OF ^"Discipline" [^"Celerity", ^"Potence", ^"Presence"]
         }
         TRIGGER ^"Bestial Failure"
@@ -3519,27 +3674,27 @@ BASE "ArM5e_Core" {
     #ARM001 ACTOR "Magus" DEF {
         EXTENDS ^"Character"
         PROPERTIES {
-            ^"Name" STRING REQUIRED
+            ^"Name" REQUIRED
             REF OF ^"House" REQUIRED
-            ^"Age" INTEGER MIN 25
+            ^"Age" MIN 25
             ^"Techniques" DEF {
-                ^"Creo" INTEGER MIN 0 DEFAULT 0
-                ^"Intellego" INTEGER MIN 0 DEFAULT 0
-                ^"Muto" INTEGER MIN 0 DEFAULT 0
-                ^"Perdo" INTEGER MIN 0 DEFAULT 0
-                ^"Rego" INTEGER MIN 0 DEFAULT 0
+                ^"Creo" MIN 0 DEFAULT 0
+                ^"Intellego" MIN 0 DEFAULT 0
+                ^"Muto" MIN 0 DEFAULT 0
+                ^"Perdo" MIN 0 DEFAULT 0
+                ^"Rego" MIN 0 DEFAULT 0
             }
             ^"Forms" DEF {
-                ^"Animal" INTEGER MIN 0 DEFAULT 0
-                ^"Aquam" INTEGER MIN 0 DEFAULT 0
-                ^"Auram" INTEGER MIN 0 DEFAULT 0
-                ^"Corpus" INTEGER MIN 0 DEFAULT 0
-                ^"Herbam" INTEGER MIN 0 DEFAULT 0
-                ^"Ignem" INTEGER MIN 0 DEFAULT 0
-                ^"Imaginem" INTEGER MIN 0 DEFAULT 0
-                ^"Mentem" INTEGER MIN 0 DEFAULT 0
-                ^"Terram" INTEGER MIN 0 DEFAULT 0
-                ^"Vim" INTEGER MIN 0 DEFAULT 0
+                ^"Animal" MIN 0 DEFAULT 0
+                ^"Aquam" MIN 0 DEFAULT 0
+                ^"Auram" MIN 0 DEFAULT 0
+                ^"Corpus" MIN 0 DEFAULT 0
+                ^"Herbam" MIN 0 DEFAULT 0
+                ^"Ignem" MIN 0 DEFAULT 0
+                ^"Imaginem" MIN 0 DEFAULT 0
+                ^"Mentem" MIN 0 DEFAULT 0
+                ^"Terram" MIN 0 DEFAULT 0
+                ^"Vim" MIN 0 DEFAULT 0
             }
             ^"Virtues" LIST OF ^"Virtue"
             ^"Flaws" LIST OF ^"Flaw"
@@ -3552,8 +3707,8 @@ BASE "ArM5e_Core" {
     ^"Gentle Gift" DEF {
         EXTENDS ^"Virtue"
         PROPERTIES {
-            ^"Type" STRING "Hermetic" FIXED
-            ^"Cost" STRING "Major" FIXED
+            ^"Type" "Hermetic" FIXED
+            ^"Cost" "Major" FIXED
         }
         DESCRIPTION "Your Gift does not cause the usual penalties to social interactions."
     }
@@ -3561,8 +3716,8 @@ BASE "ArM5e_Core" {
     ^"Blatant Gift" DEF {
         EXTENDS ^"Flaw"
         PROPERTIES {
-            ^"Type" STRING "Hermetic" FIXED
-            ^"Cost" STRING "Major" FIXED
+            ^"Type" "Hermetic" FIXED
+            ^"Cost" "Major" FIXED
         }
         DESCRIPTION "Your Gift is especially disturbing to mundanes."
     }
@@ -3582,7 +3737,7 @@ BASE "ArM5e_Core" {
         PROPERTIES {
             ^"Technique" REF ^"Creo" FIXED
             ^"Form" REF ^"Ignem" FIXED
-            ^"Level" INTEGER 20
+            ^"Level" 20
             ^"Range" REF ^"Voice"
             ^"Duration" REF ^"Momentary"
             ^"Target" REF ^"Individual"
@@ -3723,16 +3878,18 @@ follows each `EXTENDS` chain to the nearest declaration of a property and report
 |---|---|
 | a cycle of `EXTENDS` (§6) or of `ALIAS` (§5b) | error |
 | a bound reference with more arguments than its base's `PARAMETERS`, with arguments where the base declares none, or with a string outside a parameter's list (§5b) | error |
-| an `INTEGER` outside the `MIN` / `MAX` it inherits (§5, §8) | gated |
+| a number outside the `MIN` / `MAX` it inherits (§5, §8) | gated |
 | a value outside the `ENUM` it inherits (§8) | gated |
-| a value of another kind than its type keyword, or than the type it inherits (§8) | gated |
+| in a file below 0.6, a type keyword given a value of another kind: `INTEGER "heavy"` (§8) | warning |
+| `STRING`, `INTEGER` or `BOOLEAN`, `LIST` before a list, or `ENUM` before a single value, in a file that declares 0.6 or later (§8, DECISION-39) | error, no waiver |
 | a named member of a `LIST OF ^"Type"` that does not extend the type (§8) | gated |
 | one property written twice in a definition (§8) | gated |
 | an instance without a property a type up its chain declares `REQUIRED` (§8, DECISION-34) | gated |
 
 "Gated" is a warning in a file that declares a `SPEC_VERSION` below 0.6, or none, and an error from
 0.6. `FIAT "reason"` waives a gated finding: a value the source prints outside its type's range is
-what `FIAT` is for (§8).
+what `FIAT` is for (§8). A text value where a type gives a range, or where its other entries
+hold numbers, is not a finding (DECISION-39).
 
 A version pin is checked too: the loaded parent is at the pinned version or a later one (§3,
 DECISION-35), and an older parent is an error.
@@ -3914,7 +4071,7 @@ an error, not a typo that survives.
 ```
 DISPOSITIONS {
     ^"New Name" DEF {
-        ^"Description" STRING "New Name. This tag is applied to a rule that has a new name. Unless stated otherwise, the rule hasn't changed apart from its name."
+        ^"Description" "New Name. This tag is applied to a rule that has a new name. Unless stated otherwise, the rule hasn't changed apart from its name."
     }
     ^"Revised Rule" DEF { … }
 }
@@ -4012,7 +4169,7 @@ from **"unmentioned means not covered"** — the same job `dispositionRules` do 
 A `REMAINDER` applies its disposition to every member of `SCOPE` on that side that no `MAP` in this
 bridge names.
 
-`EXHAUSTIVE BOOLEAN` (default `true`) records whether the source claims the disposition for *all*
+`EXHAUSTIVE true` or `EXHAUSTIVE false` (default `true`) records whether the source claims the disposition for *all*
 unlisted members or hedges. `"All monsters not listed above …"` is exhaustive; `"Most magic items not
 listed above …"` is not, and a consumer must treat the latter as a presumption requiring a per-entity
 check rather than a fact.
@@ -4362,5 +4519,5 @@ ENTITY #hash ^"Name" {
 ---
 
 **Spec Version:** 0.5
-**Last Updated:** 2026-11-12
+**Last Updated:** 2026-11-13
 **Status:** Canonical (supersedes v0.4)

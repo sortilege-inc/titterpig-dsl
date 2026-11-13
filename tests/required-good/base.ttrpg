@@ -9,16 +9,16 @@ BASE "Required_Core" {
     # every entry of this type has a roll and a text; that is what REQUIRED says
     #ReqEntryK2vQ9wN3cL7pXdAa ^"Roll Table Entry" DEF {
         PROPERTIES {
-            ^"Roll" STRING REQUIRED
-            ^"Text" STRING REQUIRED
-            ^"Note" STRING
+            ^"Roll" REQUIRED
+            ^"Text" REQUIRED
+            ^"Note"
         }
     }
 
     #ReqSchoolB8tJ1yL4sD5fG0z ^"School" DEF {
         PROPERTIES {
-            ^"Name" STRING REQUIRED
-            ^"Clan" STRING REQUIRED
+            ^"Name" REQUIRED
+            ^"Clan" REQUIRED
         }
     }
 
@@ -26,14 +26,14 @@ BASE "Required_Core" {
     #ReqCraneC4pH7zR2wE9uX1qW ^"Crane School" DEF {
         EXTENDS #ReqSchoolB8tJ1yL4sD5fG0z ^"School"
         PROPERTIES {
-            ^"Clan" STRING "Crane" FIXED
+            ^"Clan" "Crane" FIXED
         }
     }
 
     #ReqVirtueD4fG7hJ0kL2mNpS ^"Virtue" DEF {
         PARAMETERS { ^"Size" OF ["Major", "Minor"] }
         PROPERTIES {
-            ^"Size" STRING REQUIRED
+            ^"Size" REQUIRED
         }
     }
 
@@ -41,8 +41,8 @@ BASE "Required_Core" {
     #ReqRowOneE1vP5xJ9cL2sQ7w ^"Row 1" DEF {
         EXTENDS #ReqEntryK2vQ9wN3cL7pXdAa ^"Roll Table Entry"
         PROPERTIES {
-            ^"Roll" STRING "1-3"
-            ^"Text" STRING "A stranger arrives."
+            ^"Roll" "1-3"
+            ^"Text" "A stranger arrives."
         }
     }
 
@@ -50,7 +50,7 @@ BASE "Required_Core" {
     #ReqKakitaF6gP2tR8mX4cJ1q ^"Kakita Duelist" DEF {
         EXTENDS #ReqCraneC4pH7zR2wE9uX1qW ^"Crane School"
         PROPERTIES {
-            ^"Rank" INTEGER 1
+            ^"Rank" 1
         }
     }
 
@@ -59,7 +59,7 @@ BASE "Required_Core" {
         EXTENDS #ReqSchoolB8tJ1yL4sD5fG0z ^"School"
         FIAT "Path of Waves traditions belong to no clan."
         PROPERTIES {
-            ^"Rank" INTEGER 1
+            ^"Rank" 1
         }
     }
 
@@ -67,7 +67,7 @@ BASE "Required_Core" {
     #ReqWrathfulH2nV6kQ9wX3mC ^"Wrathful" DEF {
         EXTENDS #ReqVirtueD4fG7hJ0kL2mNpS ^"Virtue"
         PROPERTIES {
-            ^"Cost" INTEGER 3
+            ^"Cost" 3
         }
     }
 
@@ -75,7 +75,7 @@ BASE "Required_Core" {
     #ReqTraditionJ7mQ2xW9vN4c ^"Tradition" DEF {
         EXTENDS #ReqSchoolB8tJ1yL4sD5fG0z ^"School"
         PROPERTIES {
-            ^"Region" STRING
+            ^"Region"
         }
     }
 }

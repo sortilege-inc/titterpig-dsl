@@ -15,16 +15,16 @@ BASE "Demo_Narrative_Base" {
 
     #NarDemoNpcTypeAAAAAAAAAAA ^"NPC" DEF {
         PROPERTIES {
-            ^"Role" STRING
+            ^"Role"
             ^"Rings" DEF {
-                ^"Air" INTEGER MIN 1 MAX 5 DEFAULT 1
-                ^"Fire" INTEGER MIN 1 MAX 5 DEFAULT 1
+                ^"Air" MIN 1 MAX 5 DEFAULT 1
+                ^"Fire" MIN 1 MAX 5 DEFAULT 1
             }
             # a skill group is a property of a character
             ^"Skills" DEF {
-                ^"Artisan" INTEGER MIN 0 DEFAULT 0
-                ^"Martial" INTEGER MIN 0 DEFAULT 0
-                ^"Social" INTEGER MIN 0 DEFAULT 0
+                ^"Artisan" MIN 0 DEFAULT 0
+                ^"Martial" MIN 0 DEFAULT 0
+                ^"Social" MIN 0 DEFAULT 0
             }
         }
     }

@@ -1,0 +1,78 @@
+BASE "Situational_Core" {
+    NAME "DECISION-38 fixture — SITUATIONAL, changes that hold in a situation (§8)"
+    SPEC_VERSION "0.6"
+    VERSION "1.0"
+    RELEASE_DATE "2026-11-13"
+
+    #   ttrpg_validator.py tests/situational-good        0 errors, 0 warnings
+    #   check_grammar.py   tests/situational-good        accepted
+
+    #SitWeaponK2vQ9wN3cL7pA5 ^"Weapon" DEF {
+        PROPERTIES {
+            ^"Damage"
+            ^"Injury"
+            ^"Load"
+        }
+    }
+    #SitStrengthH4mK8wQ2xN6v ^"Strength" DEF {
+        DESCRIPTION "How strong a character is."
+    }
+    #SitSpeedR5tJ1yL8sD4fG0z ^"Speed" DEF {
+        DESCRIPTION "How far a character moves."
+    }
+    #SitWitsB9pK3xN7vM2cQ6hW ^"Wits" DEF {
+        DESCRIPTION "How quick a character is."
+    }
+    #SitEnragedP7cJ3yT9hL5sD ^"Enraged" DEF {
+        DESCRIPTION "A state a character may be in."
+    }
+
+    # the condition in the source's words; the target is a property the definition writes
+    #SitLongSwordM3cT7yB1nK9 ^"Long Sword" DEF {
+        EXTENDS #SitWeaponK2vQ9wN3cL7pA5 ^"Weapon"
+        ^"Damage" 5
+        ^"Injury" 16
+        ^"Load" 3
+        SITUATIONAL "2h" {
+            ^"Injury" SET 18
+        }
+    }
+
+    # a property the type declares and the definition does not write; two situations in one DEF
+    #SitGreatSpearX8wQ2vN6kL ^"Great Spear" DEF {
+        EXTENDS #SitWeaponK2vQ9wN3cL7pA5 ^"Weapon"
+        ^"Damage" 9
+        ^"Injury" 16
+        SITUATIONAL "on horseback" {
+            ^"Load" TRANSFORM ADD 1
+        }
+        SITUATIONAL "thrown" {
+            ^"Damage" TRANSFORM SUBTRACT 2 MIN 1
+            ^"Injury" TRANSFORM MANUAL "as a Short Spear"
+        }
+    }
+
+    # the condition is an entity; the targets are entities; several changes; inside PROPERTIES
+    #SitBerserkerD6fG0zX4hJ2 ^"Berserker" DEF {
+        PROPERTIES {
+            SITUATIONAL #SitEnragedP7cJ3yT9hL5sD ^"Enraged" {
+                #SitStrengthH4mK8wQ2xN6v ^"Strength" TRANSFORM ADD 2
+                #SitSpeedR5tJ1yL8sD4fG0z ^"Speed" TRANSFORM DIVIDE 2 ROUND DOWN MIN 1
+                CHOOSE 1 [
+                    #SitStrengthH4mK8wQ2xN6v ^"Strength",
+                    #SitWitsB9pK3xN7vM2cQ6hW ^"Wits"
+                ] TRANSFORM ADD 1
+            }
+        }
+    }
+
+    # in a nested property DEF: the target is that DEF's own property
+    #SitShieldsV1nK9mC3tY7bQ ^"Shields" DEF {
+        ^"Buckler" DEF {
+            ^"Parry" 1
+            SITUATIONAL "against a ranged attack" {
+                ^"Parry" SET 0
+            }
+        }
+    }
+}

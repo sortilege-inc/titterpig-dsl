@@ -8,8 +8,8 @@ EXTENSION "Values_Bad_13" {
     #ValBad13XxK2vQ9wN3cL7pA ^"Tadaji 13" DEF {
         EXTENDS #ValActorH2nV6kQ9wX3mC7pL ^"Samurai"
         PROPERTIES {
-            ^"Name" STRING "Tadaji"
-            ^"Air" INTEGER 2
+            ^"Name" "Tadaji"
+            ^"Air" 2
         }
         HOOKS {
             HOOK #ValBadHookxK2vQ9wN3cL7pA {

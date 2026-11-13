@@ -1,0 +1,10 @@
+BASE "Grammar_Bad_14" {
+    NAME "syntax fault — a value in a SITUATIONAL block, which holds changes only (§8)"
+    SPEC_VERSION "0.6"
+    #GrmBadNNNNNNNNNNNNNNNN ^"Long Sword" DEF {
+        ^"Injury" 16
+        SITUATIONAL "2h" {
+            ^"Injury" 18
+        }
+    }
+}

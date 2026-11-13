@@ -1,0 +1,10 @@
+BASE "Grammar_Bad_13" {
+    NAME "syntax fault — SITUATIONAL with no condition (§8)"
+    SPEC_VERSION "0.6"
+    #GrmBadMMMMMMMMMMMMMMMM ^"Long Sword" DEF {
+        ^"Injury" 16
+        SITUATIONAL {
+            ^"Injury" SET 18
+        }
+    }
+}

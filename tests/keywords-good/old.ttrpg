@@ -1,0 +1,25 @@
+EXTENSION "Keywords_Old" {
+    NAME "DECISION-39 fixture — a file that declares 0.5 keeps the type keywords, with no finding"
+    SPEC_VERSION "0.5"
+    VERSION "1.0"
+    RELEASE_DATE "2026-11-13"
+    DEPENDS_ON "Keywords_Core"
+
+    #KwdOldArmorK2vQ9wN3cL7p ^"Old Armor" DEF {
+        PROPERTIES {
+            ^"Name" STRING REQUIRED
+            ^"Protection" INTEGER MIN 0 MAX 10
+            ^"Worn" BOOLEAN DEFAULT false
+            ^"Tags" LIST OF STRING
+        }
+    }
+    #KwdOldMailH4mK8wQ2xN6vB ^"Old Mail" DEF {
+        EXTENDS #KwdOldArmorK2vQ9wN3cL7p ^"Old Armor"
+        PROPERTIES {
+            ^"Name" STRING "Mail"
+            ^"Protection" STRING "5 (7 against arrows)"
+            ^"Worn" BOOLEAN true
+            ^"Tags" LIST ["metal", "heavy"]
+        }
+    }
+}

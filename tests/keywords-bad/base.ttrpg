@@ -1,0 +1,44 @@
+BASE "Keywords_Bad_Core" {
+    NAME "DECISION-39 fixture — twelve faults: the type keywords in a file that declares 0.6 (§8, §9)"
+    SPEC_VERSION "0.6"
+    VERSION "1.0"
+    RELEASE_DATE "2026-11-13"
+
+    #   ttrpg_validator.py tests/keywords-bad        12 errors, 0 warnings
+
+    #KwbGloryD6fG0zX4hJ2wQ8v ^"Glory" DEF { MIN 0 MAX 100 }
+    #KwbChronT5wZ1qE8uH3jL6p ^"Chronicle" DEF { REQUIRED }
+
+    #KwbSamuraiP7cJ3yT9hL5sD ^"Samurai" DEF {
+        PROPERTIES {
+            ^"Notes" STRING                                     # ERROR  1: a declaration
+            ^"Air" MIN 1 MAX 5
+        }
+    }
+    #KwbTadajiM3cT7yB1nK9xQ2 ^"Tadaji" DEF {
+        EXTENDS #KwbSamuraiP7cJ3yT9hL5sD ^"Samurai"
+        PROPERTIES {
+            ^"Family Name" STRING "Ide"                         # ERROR  2
+            ^"Honor" INTEGER 44                                 # ERROR  3
+            ^"Active" BOOLEAN true                              # ERROR  4
+            ^"Roles" LIST ["Envoy"]                             # ERROR  5: LIST before a list
+            ^"Category" ENUM "Courtier"                         # ERROR  6: ENUM before one value
+            ^"Tags" LIST OF STRING ["a"]                        # ERROR  7
+        }
+    }
+    #KwbLoreC7pA5xZ2vQ9wN3cL ^"Area Lore" DEF { PARAMETERS { ^"area" OF STRING } }    # ERROR  8
+    #KwbTableQ9wN3cL7pA5xZ2v ^"Successes" DEF {
+        TABLE {
+            AXIS ^"Successes" INTEGER                           # ERROR  9
+            AT [ 0 ] { ^"Result" "Failure" }
+        }
+    }
+    #KwbSkillR5tJ1yL8sD4fG0z ^"Skill" DEF { INTEGER MIN 0 MAX 5 }                      # ERROR 10
+    #KwbScholarN3cL7pA5xZ2vQ ^"Scholar" DEF {
+        ^"Increase" DEF { CHOOSE 1 [ #KwbGloryD6fG0zX4hJ2wQ8v ^"Glory", #KwbChronT5wZ1qE8uH3jL6p ^"Chronicle" ] INTEGER 1 }    # ERROR 11
+    }
+    # a number outside the range written beside it
+    #KwbOniX8wQ2vN6kL4mJ7cT3 ^"Oni" DEF {
+        ^"Air" 7 MIN 1 MAX 5                                    # ERROR 12
+    }
+}

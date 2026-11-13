@@ -7,9 +7,9 @@ EXTENSION "Demo_NarBad_NPCs" EXTENDS "Demo_NarBad_Base" {
     #NarBadXGovernorBBBBBBBBBB ^"The Governor" DEF {
         EXTENDS #NarBadXNpcTypeAAAAAAAAAAA ^"NPC"
         PROPERTIES {
-            ^"Role" STRING "Governor of the city"
-            ^"Rings" DEF { ^"Air" INTEGER 4  ^"Fire" INTEGER 4 }
-            ^"Skills" DEF { ^"Artisan" INTEGER 3  ^"Martial" INTEGER 2  ^"Social" INTEGER 4 }
+            ^"Role" "Governor of the city"
+            ^"Rings" DEF { ^"Air" 4  ^"Fire" 4 }
+            ^"Skills" DEF { ^"Artisan" 3  ^"Martial" 2  ^"Social" 4 }
         }
     }
     #NarBadXSpiritCCCCCCCCCCCC ^"The Spirit" DEF {

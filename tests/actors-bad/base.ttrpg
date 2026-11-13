@@ -8,7 +8,7 @@ BASE "Actors_Bad_Core" {
 
     #ActBadAdversaryN2xK8mQ4w ACTOR "Adversary" DEF {
         PROPERTIES {
-            ^"Name" STRING
+            ^"Name"
         }
     }
 }

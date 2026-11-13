@@ -1,0 +1,9 @@
+BASE "Grammar_Bad_15" {
+    NAME "syntax fault — a declaration whose MIN has no number (§8)"
+    SPEC_VERSION "0.6"
+    #GrmBadPPPPPPPPPPPPPPPP ^"Samurai" DEF {
+        PROPERTIES {
+            ^"Honor" MIN
+        }
+    }
+}

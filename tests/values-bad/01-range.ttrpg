@@ -8,8 +8,8 @@ EXTENSION "Values_Bad_01" {
     #ValBad01XxK2vQ9wN3cL7pA ^"Tadaji 01" DEF {
         EXTENDS #ValActorH2nV6kQ9wX3mC7pL ^"Samurai"
         PROPERTIES {
-            ^"Name" STRING "Tadaji"
-            ^"Air" INTEGER 7                                    # ERROR
+            ^"Name" "Tadaji"
+            ^"Air" 7                                    # ERROR
         }
     }
 }

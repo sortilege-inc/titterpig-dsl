@@ -9,15 +9,15 @@ EXTENSION "Actors_Gwidion" {
     #ActGwidionA2mK6vQ9xN3cW7 ^"Gwidion at Gauntlet" DEF {
         EXTENDS #ActMagusP3tH8yL5sD1fG6b ^"Magus"
         PROPERTIES {
-            ^"Name" STRING "Gwidion"
-            ^"Age" INTEGER 25
+            ^"Name" "Gwidion"
+            ^"Age" 25
         }
     }
 
     #ActGwidionB8tJ1yL4sD5fG0 ^"Gwidion +15 Years" DEF {
         EXTENDS #ActGwidionA2mK6vQ9xN3cW7 ^"Gwidion at Gauntlet"
         PROPERTIES {
-            ^"Age" INTEGER 40
+            ^"Age" 40
         }
     }
 
@@ -25,7 +25,7 @@ EXTENSION "Actors_Gwidion" {
     #ActSemitaC4pH7zR2wE9uX1 ^"Semita Errabunda" DEF {
         EXTENDS #ActCovenantR9cJ4nB7xV2kM ^"Covenant"
         PROPERTIES {
-            ^"Aura" INTEGER 3
+            ^"Aura" 3
         }
     }
 }

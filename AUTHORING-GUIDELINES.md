@@ -25,10 +25,10 @@ a comment. The grammar is permissive; do not use that permissiveness to bury dat
 #h9k7mQ2vX7wZ9tB4cD1a ^"Hida" DEF {
     EXTENDS #p4Tz8LwQ1nRv6YbK3xGs ^"Family"
     PROPERTIES {
-        ^"Ring Increase"   STRING "+1 Earth or +1 Fire"
-        ^"Skill Increases" STRING "+1 Command, +1 Tactics"
-        ^"Glory"           INTEGER 44
-        ^"Wealth"          STRING "4 koku"
+        ^"Ring Increase"   "+1 Earth or +1 Fire"
+        ^"Skill Increases" "+1 Command, +1 Tactics"
+        ^"Glory"           44
+        ^"Wealth"          "4 koku"
     }
 }
 
@@ -38,7 +38,7 @@ a comment. The grammar is permissive; do not use that permissiveness to bury dat
     APPLIES TO [#c2Hn7VdM9sXq5JrW8eLf ^"Samurai"]
 
     PROPERTIES {
-        ^"Family Name" STRING "Hida" FIXED
+        ^"Family Name" "Hida" FIXED
         ^"Clan"        REF #w6Jc1ZpR4mXe9LtV3bKn ^"Crab"
         ^"Ring Increase" DEF {
             CHOOSE 1 [#k3nP8mQ2vX7wZ9tB4cD1 ^"Earth", #r7Yt2LmW9qKc4VbN6xHs ^"Fire"] TRANSFORM ADD 1
@@ -48,7 +48,7 @@ a comment. The grammar is permissive; do not use that permissiveness to bury dat
             #f1Bn6WxE3zHj9RdL5sUo ^"Tactics" TRANSFORM ADD 1
         }
         #m2Vq7KcY4tGf8NwJ6pXa ^"Glory" SET 44
-        ^"Wealth" DEF { ^"Count" INTEGER 4  ^"Type" STRING "koku"  ^"Starting" BOOLEAN true }
+        ^"Wealth" DEF { ^"Count" 4  ^"Type" "koku"  ^"Starting" true }
     }
 }
 ```
@@ -132,7 +132,7 @@ for these instead of burying the meaning in a verbatim string (spec §5b):
 - **Parameterize, don't enumerate.** A virtue like `Puissant Single Weapon` is `^"Puissant"` (a DEF
   that declares `PARAMETERS { ^"subject" OF ^"Ability" }`) bound at use: `^"Puissant"(^"Single
   Weapon")`. Don't mint 40 separate `Puissant X` DEFs, and don't leave it a dead string. The slot's
-  domain is a caret type (must resolve) or `STRING` (free text like a place — `^"Area Lore"("Normandy")`).
+  domain is a caret type (must resolve) or nothing (free text like a place — `^"Area Lore"("Normandy")`).
   Don't parameterize what isn't actually variable.
 - **Alias for setting renames, not for variants.** `ALIAS ^"Ride" FOR ^"Drive"` when a setting
   re-labels the *same* mechanic. It changes only the name — no value, no slot. If the value differs,
@@ -142,11 +142,20 @@ for these instead of burying the meaning in a verbatim string (spec §5b):
   or a number of entities of a type, `CHOOSE 3 OF ^"Virtue" WITH { ^"Size" ["Minor"] }`. The count is
   always written. A verbatim-string option is the escape hatch when nothing structured fits —
   completeness still beats shape.
-- **`REF` when a property names one entity.** `^"Clan" REF #hash ^"Crab"`. A name in a `STRING` is
+- **`REF` when a property names one entity.** `^"Clan" REF #hash ^"Crab"`. A name in a string is
   not checked; a `REF` is. For several entities, `LIST OF ^"Type" [ … ]`.
 - **`SET` and `TRANSFORM` for a change to a value.** `#hash ^"Glory" SET 44` when the value becomes
   the amount, `#hash ^"Command" TRANSFORM ADD 1` when it goes up by it. A signed number in a string
-  (`"+1"`) and a bare `INTEGER 1` both hide which one is meant.
+  (`"+1"`) and a bare `1` both hide which one is meant. Which one a printed number is, is decided
+  when the source is converted. Until it is decided, keep the string as printed.
+- **List entries need not be named.** `^"Key" LIST OF ^"Map Key Entry" [ DEF { … }, DEF { … } ]`.
+  The list is named by its property.
+- **No type keywords.** A value is written alone (`^"Honor" 35`, `^"Name" "Hida"`), and a type
+  declares a property by its name and its constraints (`^"Honor" MIN 0 MAX 100`). A value that is
+  usually a number may be text where the source prints text. Do not force it into a number.
+- **`SITUATIONAL` for a value that differs by situation.** A cell that prints "16 (1h)/18 (2h)" is
+  `^"Injury" 16` and `SITUATIONAL "2h" { ^"Injury" SET 18 }`. The condition is the
+  source's words.
 - **Rendering is the consumer's job.** Store the structured `(base, bindings)`; the display string
   (`Puissant Single Weapon`) is produced downstream, not written into the file.
 
@@ -179,7 +188,7 @@ Sometimes a value or an entity is *deliberately* out of bounds or incomplete —
 supernatural Ring 7, a one-off published NPC that omits standard stats. Mark it with `FIAT` so the
 validator accepts it **and** the intent is on the record:
 
-- **Reason required.** `^"Air" INTEGER 7 FIAT "Oni Lord: supernatural Air"` — never a bare `FIAT`.
+- **Reason required.** `^"Air" 7 FIAT "Oni Lord: supernatural Air"` — never a bare `FIAT`.
   The reason is what turns a silenced error into an auditable decision.
 - **Narrowest scope.** Property-level for a single odd value; element-level only when the whole
   definition is exceptional (it cascades over the entire subtree and will also hide real mistakes

@@ -10,8 +10,8 @@ BASE "Demo_Markdown_Bad" {
         NOTE "A ***sweet old lady*** in a blue shawl enters."
         KEY "**Prot:** The bonus the armor grants.\n**Load:** The amount the armor adds."
         PROPERTIES {
-            ^"Damage" STRING "take **1d8+3** physical damage"
-            ^"Quote" STRING "*You become an actual shadow.*"
+            ^"Damage" "take **1d8+3** physical damage"
+            ^"Quote" "*You become an actual shadow.*"
         }
     }
 }

@@ -9,14 +9,14 @@ BASE "Values_Bad_Core" {
 
     #ValActorH2nV6kQ9wX3mC7pL ACTOR "Samurai" DEF {
         PROPERTIES {
-            ^"Name" STRING
-            ^"Air" INTEGER MIN 1 MAX 5 DEFAULT 1
+            ^"Name"
+            ^"Air" MIN 1 MAX 5 DEFAULT 1
             ^"Kind" ENUM ["Gift", "Burden"]
             ^"Skills" LIST OF #ValSkillR5tJ1yL8sD4fG0zX ^"Skill"
-            ^"Weight" INTEGER
+            ^"Weight"
         }
     }
-    #ValSkillR5tJ1yL8sD4fG0zX ^"Skill" DEF { INTEGER MIN 0 MAX 5 }
+    #ValSkillR5tJ1yL8sD4fG0zX ^"Skill" DEF { MIN 0 MAX 5 }
     #ValKenjutsuB9pK3xN7vM2cQ ^"Kenjutsu" DEF { EXTENDS #ValSkillR5tJ1yL8sD4fG0zX ^"Skill" }
     #ValVirtueT5wZ1qE8uH3jL6p ^"Virtue" DEF { }
     #ValWrathfulC4pH7zR2wE9uX ^"Wrathful" DEF {

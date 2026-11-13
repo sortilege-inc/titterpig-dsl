@@ -1,0 +1,7 @@
+BASE "Grammar_Bad_16" {
+    NAME "syntax fault — a DEF with no name that is not an entry of a list (§8)"
+    SPEC_VERSION "0.6"
+    #GrmBadQQQQQQQQQQQQQQQQ ^"Base" DEF {
+        DEF { ^"Marker" "1." }
+    }
+}

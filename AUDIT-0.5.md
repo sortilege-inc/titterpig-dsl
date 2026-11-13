@@ -1204,10 +1204,13 @@ DECISION-37.
 
 ### C1. The type system sends references and numbers into strings
 
-**Status:** open. Partly addressed 2026-11-11 under A1: `REF` (DECISION-17) gives a property one
-entity reference, and `SET` / `TRANSFORM` (DECISION-16) give a change to a value a form. No corpus
-uses either yet. The list of entities each with a value, decimals, signed values, dice and units
-are untouched.
+**Status:** closed 2026-11-13 by the owner. Committed and pushed on branch `0.6`. No value
+types are added. A change that holds in a situation is a `SITUATIONAL` block (DECISION-38).
+The type keywords are dropped: a value is written alone (DECISION-39). A signed number is a
+`SET` or a `TRANSFORM`, decided in conversion (DECISION-40). The entries of a list need not be
+named (DECISION-41). `REF` (DECISION-17) and `SET` / `TRANSFORM` (DECISION-16) came under A1.
+No corpus uses any of these yet: F24, F25 and F26. Units, ranges, decimals and dice stay in
+strings. The rulings and their proof are at the end of this section.
 
 What §8 lacks:
 
@@ -1238,6 +1241,291 @@ One instance: `arm5e-lands-of-the-nile-0.5-pagan-monuments-sethos.actor` holds t
 Virtues and Flaws as `STRING "Magic Human; Daimon; Transformed Spirit, Wealthy, Inspirational, …"`.
 `PARAMETERS` and bound references (§5b) exist for this case. `PARAMETERS` is declared 176 times
 across all corpora and a bound reference is written twice.
+
+**Evidence, recounted 2026-11-13** over the 22 corpus directories, with the validator's
+tokenizer. Each `^"Property" STRING "value"` line and each string in a list was sorted by what
+the string holds.
+
+| What the string holds | `STRING` values (328,228) | Items of string lists (93,012) | Most in |
+|---|---|---|---|
+| a short label | 147,400 | 55,277 | |
+| exactly the name of a defined entity | 88,215 | 21,433 | invisiblesun, marvelmultiverse, armdef, arm5e |
+| prose | 52,071 | 7,312 | |
+| a whole number | 21,449 | 4,290 | marvelmultiverse 5,967, pendragon6e 3,845 |
+| a number and a unit (`"30 feet"`, `"1 week"`, `"10%"`) | 7,850 | 930 | draw-steel 1,682, armdef 1,225, dnd5e 954 |
+| a signed number (`"+3"`, `"–10"`) | 5,865 | 251 | armdef 2,025, arm5e 1,941, marvelmultiverse 1,512 |
+| a range (`"30–70"`) | 1,728 | 1,503 | pendragon6e, pendragon5e |
+| dice (F6) | 1,489 | 322 | dnd5.5e, pendragon6e, dnd5e |
+| an entity's name and a number (`"Artisan 3"`) | 1,116 | 723 | pendragon6e 383, marvelmultiverse 351; l5r5e 637 list items |
+| a pair of numbers (`"5/2"`) | 744 | 119 | vtm5e 521 |
+| a decimal | 75 | 26 | troika 51 |
+
+The entity-name row is an upper bound. It counts a DEF that writes its own name as
+`^"Name" STRING "…"`, and a category word that happens to be a DEF.
+
+Shapes in use that §8 gives no form:
+
+| Shape | Count | Where |
+|---|---|---|
+| `^"Level" ENUM "subsection"`: an `ENUM` with one value and no list | 10,601 lines | invisiblesun 7,497, root 1,654, mythic-gme2 548, daggerheart 471, callofcthulhu7e 396 |
+| an unnamed `DEF { … }` as an item of a list | 24,133 records in 5,417 lists | marvelmultiverse 10,713, pendragon6e 6,054, pendragon5e 3,782, aegean 1,490, tor2e 996 |
+| a string and a number on a line: `"Hungry" +6` | 2,581 lines | armdef 1,340, arm5e 1,241, inside `PERSONALITY_TRAITS { … }` and like blocks |
+| a signed number and a string: `+2 "Voice"` | 1,754 lines | armdef 884, arm5e 870 (F5) |
+
+No file writes `INTEGER +3`: a signed number is always a string today. The grammar's integer
+takes a `-` and no `+`, and the validator's tokenizer drops a `+`.
+
+**The owner's reason for not adding types (2026-11-13):** "in many, many, many games, even
+some something starts as a straightforward integer there are inevitably exceptions that are not
+integers, etc."
+
+Measured against that, over 21 corpus directories (armdef left out as arm5e's mirror): 329
+properties hold a number at least four times in five, 97,365 values between them.
+
+- 254 are a number every time.
+- 75, nearly one in four, hold something else at least once: 1,026 values, about 1 in 100.
+- What the exceptions look like: arm5e `^"Soak"` `"+4 (armor and Stamina)"` (186 of 1,039);
+  arm5e `^"Initiative"` `"constant"`; l5r5e `^"Composure"` `"Infinity"`; aegean `^"Rank"`
+  `"Minion"`, `"Champion"`, `"Legend"` beside 402 numbers; aegean `^"Cost"` `"1 per Populace"`;
+  arm5e `^"Divine Might"` `"No less than 25"`; tor2e `^"Injury"` `"16 (1h)/18 (2h)"`;
+  pendragon6e `^"Value"` `"—"`.
+- 35 of the 329 are written both ways in one corpus: `INTEGER 3` in one place and `STRING "3"`
+  in another.
+
+This bears on DECISION-32. One of its checks reports a value written `STRING` where the type
+declares `INTEGER`: a warning below 0.6 and an error from 0.6 unless the value carries a
+`FIAT`. Those findings are the exceptions the owner describes. (This paragraph first gave their
+number as 222. The corpus run for DECISION-39 counted 432 on the 22 directories: arm5e 205,
+armdef 205, draw-steel 22.)
+
+**Two directions from the owner (2026-11-13).** Both are ruled, at the end of this section.
+
+- "we should introduce something like SITUATIONAL as a primitive for things like this, where
+  the value is one thing but modified to another under specific situations. The modification of
+  a value would be a TRANSFORM as normal generally, but with a condition (which is usually going
+  to be narratively-defined)."
+- "we should get rid of references to "STRING" and "INTEGER", etc. you may present a case to the
+  contrary if you wish."
+
+*How the type keywords are used,* counted on the 22 corpus directories:
+
+| Line | Count |
+|---|---|
+| `STRING` followed by a value | 275,749 |
+| `INTEGER` followed by a value | 92,493 |
+| `BOOLEAN` followed by a value | 2,869 |
+| `LIST OF ^"Type"` with items | 24,915 |
+| `ENUM` with one value | 10,601 |
+| `LIST` with items | 9,393 |
+| `STRING`, `INTEGER` or `BOOLEAN` alone: a declaration with nothing else to say | 2,204 (2,161 inside `PROPERTIES`, 43 directly in a DEF) |
+| `STRING`, `INTEGER` or `BOOLEAN` with modifiers and no value | 1,923 |
+| `LIST OF ^"Type"` alone | 840 |
+| `ENUM` with a list: a declaration | 346 |
+| a name and a value with no keyword (a list 1,106, a reference 649, a string 262) | 2,017, of which l5r5e 1,225 |
+
+In 371,111 lines the keyword stands before a literal that already shows what it is.
+
+*What reads the keywords.* The validator, the grammar (73 lines) and the spec (153 lines). The
+synthesist (23 files), and its resolved JSON gives every property a `"type"` (`"STRING"`,
+`"INTEGER"`, `"LIST OF STRING"`). The dashboard (5 files), the engine (14) and mastra (118). 504
+conversion scripts under `Titterpig/Temp` write them. UNVERIFIED: which consumers act on the
+JSON's `"type"`.
+
+*Strings that give a number and then qualify it:* 9,709 (arm5e and armdef 7,280, vtm5e 838,
+callofcthulhu7e 504). They are of several kinds: a value that differs by situation (tor2e
+`^"Injury"` `"16 (1h)/18 (2h)"`), a change with a limit (l5r5e `^"Status Award"`
+`"+5 (to a minimum of 20)"`), an alternative (draw-steel `^"Size"` `"2 or 3"`), a number and a
+unit, and a list of thresholds (arm5e `^"Wound Penalties"`).
+
+**`SITUATIONAL`: ruled and applied, 2026-11-13 (DECISION-38).**
+
+The owner was shown this form and answered "Yes, as written":
+
+```
+^"Injury" INTEGER 16
+SITUATIONAL "2h" {
+    ^"Injury" SET 18
+}
+```
+
+- `SITUATIONAL <condition> { <changes> }`, wherever a `SET` or `TRANSFORM` may stand.
+- The condition is a string in the source's words, or a reference to an entity where the system
+  defines the situation as one.
+- The changes are ordinary §8 statements, one or more.
+- The value outside the block holds otherwise. A consumer shows the changed value beside it and
+  applies nothing itself.
+- A `HOOK` names the mechanic a situation involves; `SITUATIONAL` gives the value.
+
+*Applied.* The spec: §0 item 25, DECISION-38, a new §8 section after "Changes to a value", the
+§5d list of reference sites, the §15 keyword list. `ttrpg.peg`: `SITUATIONAL_BLOCK`, in a body, a
+`PROPERTIES` block and a property `DEF`, and the word in `RESERVED_WORD`. `ttrpg_validator.py`:
+the checks below. `AUTHORING-GUIDELINES.md` and `README.md`: one line each.
+
+*What the validator checks,* each an error at every version:
+
+| Fault | Message |
+|---|---|
+| no condition | `SITUATIONAL needs a condition` |
+| an empty string as the condition | `SITUATIONAL has an empty condition` |
+| no block after the condition | `SITUATIONAL needs a block of changes` |
+| a block with no change | `holds at least one change` |
+| a value or any other statement in the block | `holds changes only` |
+| a `SITUATIONAL` inside another | `does not hold another SITUATIONAL` |
+| a condition that is a reference and does not resolve | the reference check's finding |
+| a target that is no property of the definition and no entity | the reference check's finding |
+
+A fault in a change inside the block (a `TRANSFORM` with no method) is reported as it is outside
+one.
+
+*Proof,* all run on 2026-11-13:
+
+| Check | Result |
+|---|---|
+| `ttrpg_validator.py tests/situational-good` | 0 errors, 0 warnings |
+| the validator as it was before the change, on the same file | 5 errors: it reads each hashless target as a reference to an entity |
+| `ttrpg_validator.py tests/situational-bad` | 10 errors, 0 warnings: nine planted faults, and the unresolved condition reports its name and its hash |
+| the §8 example, wrapped in a `BASE` and run as a file | validator 0 errors, 0 warnings; grammar accepted |
+| the 17 older good sets | 0 errors, 0 warnings each |
+| the 15 older bad sets | the same counts as at the B5 commit |
+| `check_grammar.py tests/*good* tests/decision6.ttrpg tests/ports-origin modules/0.6` | 49 of 49 accepted |
+| `check_grammar.py tests/grammar-bad --expect-refused` | 14 of 14 refused (two new: no condition; a value in the block) |
+| old validator against new, on the 22 corpus directories with `modules/0.6` | output identical for all 22; 7,077 files, 39 errors, 20,496 warnings both times |
+| `grep -w SITUATIONAL` over the 22 corpus directories | no file holds the word |
+
+*Not done.*
+
+- The grammar was not re-run over the corpora. No corpus file holds the word, and the grammar's
+  only changes are a rule that begins with it and its place among the reserved words.
+- No corpus is changed. Which of the 9,709 qualified strings are situational values is F24.
+- The synthesist and every other consumer do not read the block (F3).
+- `check_references.py` does not count a change's target or a `SITUATIONAL` condition among its
+  reference sites, as it does not for `SET` and `TRANSFORM` today. The validator checks both.
+- The printed cell (`"16 (1h)/18 (2h)"`) is not kept by the form. A corpus that wants it keeps
+  it in a property of its own.
+
+**The type keywords: ruled and applied, 2026-11-13 (DECISION-39).**
+
+The owner was asked "Drop STRING, INTEGER, BOOLEAN and instance-side LIST and ENUM, keeping the
+declaration constraints?" and answered "Yes, that scope". Asked "Keep the old keywords silent in
+files below 0.6, with an error only from 0.6?", he answered "Yes, silent below".
+
+| Before 0.6 | From 0.6 |
+|---|---|
+| `^"Honor" INTEGER 35` · `^"Name" STRING "Hida"` · `^"Starting" BOOLEAN true` | `^"Honor" 35` · `^"Name" "Hida"` · `^"Starting" true` |
+| `^"Roles" LIST ["Bushi"]` · `^"Tags" LIST OF STRING ["a"]` | `^"Roles" ["Bushi"]` · `^"Tags" ["a"]` |
+| `^"Level" ENUM "Chapter"` (never in the spec; 10,601 corpus lines) | `^"Level" "Chapter"` |
+| `^"Honor" INTEGER MIN 0 MAX 100 DEFAULT 50` | `^"Honor" MIN 0 MAX 100 DEFAULT 50` |
+| `^"Notes" STRING` | `^"Notes"`, alone on its line, in a `PROPERTIES` block or a property `DEF` |
+| `^"Tags" LIST OF STRING` | `^"Tags" LIST` |
+| `INTEGER MIN 1 MAX 5` in a DEF's body (§9) | `MIN 1 MAX 5` |
+| `PARAMETERS { ^"area" OF STRING }` | `PARAMETERS { ^"area" }` |
+| `AXIS ^"Successes" INTEGER` | `AXIS ^"Successes"` |
+
+Unchanged: `ENUM [ … ]`, `LIST OF ^"Type"` with or without items, `REF OF ^"Type"`, `REF`,
+`ROLL`, `DEF`, and every modifier.
+
+*Applied.*
+
+- **Spec:** §0 item 26; DECISION-39; §8 rewritten ("Values and declarations", "Modifiers",
+  "A value with its constraints", "Where a statement ends"); §9 renamed "Bare Constraints";
+  §5b parameters; §5e axis points; §15 keyword lists; §20's table of value checks; a note on
+  DECISION-32. 138 lines of code examples were rewritten by script and read. The records of
+  earlier decisions keep the keywords they describe.
+- **`ttrpg.peg`:** a value with no keyword, with constraints after it; a declaration that is a
+  name and its constraints, or a name alone on its line; `LIST` alone; the constraints alone
+  in a DEF's body; a parameter with no domain; an axis with no points; a keyed `CHOOSE` with a
+  bare value. The grammar still reads the keywords, for files below 0.6.
+- **`ttrpg_validator.py`:** reads the forms above as properties and declarations; reports
+  `STRING`, `INTEGER`, `BOOLEAN`, `LIST` before a list and `ENUM` before a single value as
+  errors in a file that declares 0.6 or later; no longer compares a value's kind with the
+  type it inherits; applies `MIN` / `MAX` to a value only when it is a number.
+- **`check_structure.py`:** counts `^"Description" "…"` as it counted `^"Description" STRING`.
+- **Fixtures:** every fixture that declares 0.6 and the dice module were rewritten by the same
+  script (176 lines). New: `tests/keywords-good` (a 0.6 file with every form, and a 0.5 file
+  that keeps the keywords), `tests/keywords-bad` (12 planted faults),
+  `tests/grammar-bad/15-min-without-a-number.ttrpg`.
+- **`AUTHORING-GUIDELINES.md`, `README.md`.**
+
+*Proof,* all run on 2026-11-13:
+
+| Check | Result |
+|---|---|
+| `tests/values-good` before it was rewritten, new validator | 12 errors: the gate fails on the keywords |
+| the same set after the rewrite | 0 errors, 0 warnings |
+| `ttrpg_validator.py tests/keywords-good` | 0 errors, 0 warnings, the 0.5 file's keywords included |
+| the old validator on `tests/keywords-good` | 1 warning of the withdrawn kind (`"5 (7 against arrows)"` where the type declares `INTEGER`) |
+| `ttrpg_validator.py tests/keywords-bad` | 12 errors, one for each planted fault |
+| the 19 other good sets | 0 errors, 0 warnings each |
+| the 16 other bad sets | as before, except `values-bad`: 13 errors and 5 warnings (was 15 and 4; see the calls below) |
+| the §8 and §9 examples assembled into one file | validator 0 errors, 0 warnings; grammar accepted |
+| the 23 whole-file examples in the spec | 17 accepted and 6 refused, before and after; no type keyword left in them |
+| `check_grammar.py tests/*good* tests/decision6.ttrpg tests/ports-origin modules/0.6` | 51 of 51 accepted |
+| `check_grammar.py tests/grammar-bad --expect-refused` | 15 of 15 refused |
+| old validator against new, 22 corpus directories with `modules/0.6` | 19 identical. arm5e and armdef lose 205 warnings each and draw-steel 22: the 432 "written `STRING`; declares it `INTEGER`" findings, now withdrawn. Errors 39 before and after; warnings 20,496 to 20,064 |
+| old grammar against new, 22 corpus directories | no file that was accepted is refused. 3 more are accepted (the Lion and the Lily `core-ext` file in arm5e and in armdef, and draw-steel's `monsters-base`): 5,160 of 7,055, from 5,157 |
+
+*What the corpus run caught.* A first version let several declared names share a line
+(`PROPERTIES { ^"Size" ^"Category" }`). Eight corpora write two names on a line for a
+property and the type it holds (`^"Class" ^"Class"`, daggerheart), and the run reported 53
+false "written twice" warnings. The form was withdrawn: a declared name stands alone on its
+line.
+
+*Not done.*
+
+- No corpus is migrated, and none declares 0.6. Follow-up F25.
+- The synthesist, the engine, the dashboard, mastra and the 504 conversion scripts still read
+  and write the keywords (F25).
+- `.bridge` and `.codex` files are not checked for the keywords: the validator reads them by
+  other code. The two real bridges declare 0.5.
+- `check_structure.py` still counts `LIST OF` as its sign of a list.
+- `LIST OF INTEGER` (56 corpus lines) is in no version of the grammar.
+
+**The last three forms: ruled and applied, 2026-11-13 (DECISION-40, DECISION-41).**
+
+The owner was shown three forms with a recommendation for each and answered:
+
+1. Signed numbers (recommended: a number may carry the `+` the source prints). "Signed numbers
+   should either be set or be transforms. This will likely be an adjudication process as part
+   of the conversion. They will be left as strings mechanically, since we're not doing
+   integers, etc."
+2. A name with a value in a block, `"Convivial" +3` (recommended: read it as that name with
+   that value). "Again, these are SET or TRANSFORMS".
+3. Unnamed records in a list (recommended: legal). "List entries need not be named, just the
+   list itself."
+
+*Applied.*
+
+- **DECISION-40** (rulings 1 and 2): the DSL gains no form. §8 has a new section, "A number
+  printed with a sign": such a number, and a name paired with a number, is a `SET` or a
+  `TRANSFORM`; which one is decided in conversion; until then it stays in a string as printed.
+  No tool changes. The grammar still has no `+` on a number.
+- **DECISION-41** (ruling 3): §8 says an item of a list may be a `DEF { … }` with no name and
+  no hash. `ttrpg.peg` has `LIST_RECORD`, an item of a bracket list with a DEF's body. The
+  validator already read the form and is not changed.
+- `AUTHORING-GUIDELINES.md` and `README.md`: a line each.
+
+*Proof,* run on 2026-11-13:
+
+| Check | Result |
+|---|---|
+| `ttrpg_validator.py tests/records-good` | 0 errors, 0 warnings |
+| `check_grammar.py tests/records-good` | accepted; the grammar as it was before refuses it |
+| `tests/grammar-bad/16-unnamed-def-outside-a-list.ttrpg` | refused, with `03-def-without-name` |
+| `check_grammar.py tests/*good* tests/decision6.ttrpg tests/ports-origin modules/0.6` | 52 of 52 accepted |
+| `check_grammar.py tests/grammar-bad --expect-refused` | 16 of 16 refused |
+| the two new §8 examples, with `^"Initiative" "+5"`, run as a file | validator 0 errors, 0 warnings; grammar accepted |
+| the grammar before DECISION-41 against the grammar after, 22 corpus directories | no file that was accepted is refused. 351 more are accepted (pendragon6e 182, pendragon5e 99, teeth 36, aegean 19, marvelmultiverse 9, tor2e 4, coyotecrow 1, troika 1): 5,511 of 7,055, from 5,160 |
+
+*Not done.*
+
+- No corpus is changed. Deciding each signed number and each name with a number is F26.
+- The fields of an unnamed entry are not checked against the type its list names. §20 already
+  lists "the fields of a nested or unnamed DEF" as not checked.
+- A named DEF written inside a list (`[ ^"Bite" DEF { … } ]`) is not in the grammar and was not
+  ruled on.
+
+**What C1 leaves in strings, by decision:** units, ranges, decimals, dice (the to-do under
+A1 stands) and pairs of numbers. The owner adds no value types.
 
 ### C2. `EXTENDS` means both "is a kind of" and "is an instance of"
 
@@ -1695,6 +1983,13 @@ read, so a file may hold further forms behind that one.
 
 - A corpus's `gates.sh` can run `check_grammar.py` once its own count is zero.
 - The four rulings belong with C5 (in heavy use and not in the spec).
+- 2026-11-13, DECISION-40: the `"Hungry" +6` row is ruled. It is a `SET` or a `TRANSFORM`,
+  decided in conversion (F26). DECISION-41: the unnamed `DEF { … }` row is ruled legal, and
+  the grammar accepts it: 351 of that row's 368 files are now accepted, and 1,544 of 7,055
+  are refused in all. The other 17 stop at a further form.
+- 2026-11-13, DECISION-39: the `ENUM "Chapter"` row is ruled. From 0.6 the value is written
+  alone, `^"Level" "Chapter"`. The counts above are from B1 and were not retaken. With
+  DECISION-39's grammar 1,895 files are refused, three fewer.
 
 ### F20. Seven corpora: what the value checks now report
 
@@ -1713,6 +2008,8 @@ declare `SPEC_VERSION "0.5"`. Each becomes an error when its file declares 0.6.
 
 - For each: fix the value, widen the type's declaration, or mark it `FIAT "reason"` where the
   book prints it so. Which of the three is a call on the source, entry by entry.
+- 2026-11-13, DECISION-39: the type mismatches are no longer findings. That removes 432 of
+  the warnings above: arm5e 205, armdef 205, draw-steel 22.
 - arm5e's are fixed in `arm5e/0.5` and reach armdef through the retarget.
 
 ### F21. callofcthulhu7e, l5r5e and the synthesist: follow the one name rule
@@ -1775,6 +2072,75 @@ are warnings today, in files that declare `SPEC_VERSION "0.5"`.
   itself when it loads a manifest: it has the order and the files.
 - UNVERIFIED: whether any of the 19 changes a built JSON. Order decides something only where
   two files change the same thing.
+
+### F24. The corpora: values that differ by situation, still in strings
+
+**From:** C1, DECISION-38. **Status:** open, not started.
+
+9,709 string values give a number and then qualify it (arm5e and armdef 7,280, vtm5e 838,
+callofcthulhu7e 504). They have not been sorted by kind. Sort them first:
+
+| Kind | Example | Form |
+|---|---|---|
+| a value that differs by situation | tor2e `^"Injury"` `"16 (1h)/18 (2h)"` | a value and a `SITUATIONAL` block |
+| a change with a limit | l5r5e `^"Status Award"` `"+5 (to a minimum of 20)"` | `TRANSFORM ADD 5 MIN 20` |
+| an alternative | draw-steel `^"Size"` `"2 or 3"` | none ruled |
+| a number and a unit; a list of thresholds | arm5e `^"Wound Penalties"` | none ruled |
+
+- coyotecrow's stat lines print a changed value with no condition (`^"Physical Defense"`
+  `"6(8)"`). `SITUATIONAL` needs a condition, so the converter finds it in the book or the
+  value stays a string.
+- UNVERIFIED: how many of the 9,709 are of the first kind.
+- The generators under `Titterpig/Temp` write these strings; the change belongs there for a
+  generated corpus.
+
+### F26. The corpora: signed numbers and names with numbers become `SET` or `TRANSFORM`
+
+**From:** C1, DECISION-40. **Status:** open, not started. Owner, 2026-11-13: "This will likely
+be an adjudication process as part of the conversion."
+
+| What | Count | Where |
+|---|---|---|
+| a signed number in a string (`^"Initiative" STRING "+5"`) | 5,865 values, 251 list items | armdef 2,025, arm5e 1,941, marvelmultiverse 1,512 |
+| a string and a signed number on a line (`"Convivial" +3`) | 2,581 lines | armdef 1,340, arm5e 1,241; 580 files refused by the grammar |
+| a signed number and a string (`+2 "Voice"`) | 1,754 lines | armdef 884, arm5e 870 (F5) |
+| an entity's name and a number in one string (`"Artisan 0"`) | 1,116 values, 723 list items | pendragon6e 383, marvelmultiverse 351; l5r5e 637 list items |
+
+- Each is a `SET` (the value is the number) or a `TRANSFORM` (a value changes by it). The call
+  is on the source, entry by entry.
+- A change's target is a reference or a `CHOOSE` (§8). `"Convivial"` is a string and no entity
+  of that name exists in arm5e. Whether such a trait becomes an entity or stays as written is
+  part of the adjudication, and is not ruled.
+- Until an entry is decided it stays a string as printed. The 2,581 and 1,754 bare lines are
+  not strings today and are refused by the grammar as they stand.
+
+### F25. Every corpus, its generators and its consumers: the type keywords
+
+**From:** C1, DECISION-39. **Status:** open, not started. Nothing fails today: every corpus
+declares `SPEC_VERSION` below 0.6, where the keywords stay legal and unreported. A file that
+moves to 0.6 must drop them.
+
+| What | Size |
+|---|---|
+| corpus lines where `STRING`, `INTEGER` or `BOOLEAN` stands before a value | 371,111 |
+| `ENUM` before a single value | 10,601 (invisiblesun 7,497, root 1,654) |
+| `LIST` before a list | 9,393 |
+| `LIST OF STRING` with items | 21,228 |
+| declarations: a keyword alone 2,204; with modifiers 1,923; `LIST OF STRING` alone 339 | 4,466 |
+| `OF STRING` in `PARAMETERS` | 94 (arm5e 43, armdef 42, callofcthulhu7e 9) |
+| bare constraints in a DEF's body (`INTEGER MIN 1`) | 58 |
+| conversion scripts under `Titterpig/Temp` that write the keywords | 504 |
+
+- The rewrite is mechanical: delete the word. The script used on this repo's fixtures and on
+  the spec's examples is not in any repo. It reads a file's `SPEC_VERSION` and rewrites code
+  only, never a string or a comment.
+- A generated corpus is changed in its generator, and armdef through the retarget.
+- teeth has 88 entries that give a value as `ENUM ["Wealthy Estates"]`, a declaration with one
+  allowed value. Each is a value and should be written as one.
+- Eight corpora write `^"Class" ^"Class"` in a `PROPERTIES` block for a property and its type.
+  The form is `REF OF ^"Class"` (DECISION-17; F19 has 29 files refused on it).
+- **The synthesist's resolved JSON** gives each property a `"type"`. With no keyword it can
+  take the type from the literal. UNVERIFIED: which consumers act on that field.
 
 ### F12. Seven corpora: scene and conflict types become entities
 
@@ -1910,6 +2276,20 @@ two parameter to-dos below.
   which the validator does not check; a result given as a bare value in place of a block.
 
 ### Known gaps left by this change
+
+- **The type keywords are not reported in a `.bridge` or a `.codex`.** Each has its own reader
+  in the validator.
+- **A declared name with nothing after it is read only in a `PROPERTIES` block or a property
+  `DEF`.** Directly in a definition's body it is left alone, as a reference might be.
+- **A value on the line after its name is not read as that property's value** (DECISION-39's
+  line rule). No corpus line was found that writes one.
+
+- **Nothing checks that a `SITUATIONAL` block's own-property target has a value outside the
+  block.** `SITUATIONAL "2h" { ^"Load" SET 4 }` passes where a type declares `^"Load"` and the
+  definition gives it no value.
+- **Two `SITUATIONAL` blocks with the same condition in one definition are not reported.**
+- **`check_references.py` does not count a `SITUATIONAL` condition or a change's target as a
+  reference site.** The validator resolves both.
 
 - **A narrative container's `FROM` and `USES_*` lines are not counted as dependencies.** §16
   makes a `FROM` line the declaration of what an arc draws on. The cycle check and the
@@ -2223,6 +2603,17 @@ Filled in as each finding is walked through.
 | B5 | 2026-11-13 | Part 2: a file depends on every `DEPENDS_ON` it writes and on the id its header `EXTENDS`, any number of them; each names a loaded file, no two files depend on each other, a file id is declared once, an `EXTENSION` names a parent and a `BASE` does not. Part 3: a dependency loads before the file that names it; any further order is the consumer's, and the spec defines no manifest. Written as DECISION-36 and DECISION-37. | Owner: "Yes, both". Both forms are kept because migrating either would touch 923 or 5,012 files for no gain. |
 | B5 | 2026-11-13 | Agent's calls, to confirm. (4) The `EXTENSION`-needs-a-parent rule is not applied to `SETTING`, `FRAME`, `ARC` or `CAMPAIGN` files, which §16 governs. (5) 14 helper files in two older fixtures were given a `DEPENDS_ON`. (6) `FROM` and `USES_*` are not counted as dependencies. | (4): 36 settings name no parent by design. (5): they were extensions with no parent, which the new rule reports. (6): not ruled on. |
 | B5 | 2026-11-13 | B5 is closed. The branch is committed and pushed. | Owner: "Close, commit, push". The agent's calls in the B5 rows marked "to confirm" were reported to him before he closed and were not separately ruled on. |
+| C1 | 2026-11-13 | No value types are added. Directions: introduce `SITUATIONAL`, a value changed under a stated situation by an ordinary `TRANSFORM` with a condition; remove the `STRING` and `INTEGER` keywords "etc." | Owner: "in many, many, many games, even some something starts as a straightforward integer there are inevitably exceptions that are not integers". Measured: 75 of 329 mostly-numeric properties hold a non-number somewhere. The keyword removal is not yet ruled into a scope. |
+| C1 | 2026-11-13 | `SITUATIONAL <condition> { <changes> }`: the condition is a string in the source's words or a reference to an entity; the changes are ordinary `SET` and `TRANSFORM` statements, one or more; it stands wherever a change may; the value outside the block holds otherwise; a consumer applies nothing itself. Written as DECISION-38, and the grammar and the validator check it. | Owner: "Yes, as written", to the form shown with tor2e's Long Sword (`"16 (1h)/18 (2h)"`). The reference condition was put to him as the agent's addition, "yours to strike", and he did not strike it. The inline form (`^"Injury" INTEGER 16 SITUATIONAL "2h" SET 18`) was offered and not taken. |
+| C1 | 2026-11-13 | The type keywords go: `STRING`, `INTEGER`, `BOOLEAN`, `LIST` before a list and `ENUM` before a single value. `ENUM [ … ]`, `LIST OF ^"Type"` and `REF OF ^"Type"` stay as declarations. Written as DECISION-39; the grammar reads both forms and the validator refuses the old ones from 0.6. | Owner: "Yes, that scope", to "Drop STRING, INTEGER, BOOLEAN and instance-side LIST and ENUM, keeping the declaration constraints?". He had been shown the census (371,111 redundant lines; 75 of 329 mostly-numeric properties with a non-number) and a table of what each open form would become. |
+| C1 | 2026-11-13 | Signed numbers and names paired with numbers get no form. Each is a `SET` or a `TRANSFORM`, decided when the source is converted; until then it stays a string as printed. Written as DECISION-40. | Owner: "Signed numbers should either be set or be transforms. This will likely be an adjudication process as part of the conversion. They will be left as strings mechanically, since we're not doing integers, etc." and, of a name with a value in a block, "Again, these are SET or TRANSFORMS". The agent had recommended a `+` on a number and a name-and-value form; neither is adopted. |
+| C1 | 2026-11-13 | The entries of a list need not be named; the list is. An item of a list may be a `DEF { … }` with no name. Written as DECISION-41, and the grammar accepts it. | Owner: "List entries need not be named, just the list itself." 24,133 corpus records are written so. This replaces the agent's call (5) under B1, which kept the form refused. |
+| C1 | 2026-11-13 | Agent's calls, to confirm. (1) An unnamed entry takes what a DEF's body takes. (2) It has no hash. (3) It is allowed in any bracket list, with or without `LIST OF`. (4) Its fields are still not checked against the list's type. (5) The `-` on a number stays. | (1): the corpus records hold nested properties and prose. (2) and (3): the corpora write them so. (4): not asked for. (5): `SET -1` needs it. |
+| C1 | 2026-11-13 | Gating: the type keywords are legal and unreported in a file that declares a `SPEC_VERSION` below 0.6, and an error from 0.6. | Owner: "Yes, silent below". The usual warning would add about 371,000 lines to the corpus reports. It had been applied as the agent's call (1) in the next row before he ruled. |
+| C1 | 2026-11-13 | Agent's calls, to confirm. (1) Gating, since ruled (row above); that the error takes no `FIAT` is still the agent's call. (2) A declaration is the name and its constraints anywhere, and the name alone only in a `PROPERTIES` block or a property `DEF`, on a line of its own. (3) `LIST` alone stays as a declaration; `LIST OF STRING` with items becomes the list. (4) `LIST OF ^"Type"` with items stays legal on an entry. (5) A parameter with no domain replaces `OF STRING`. (6) An axis with no points replaces `AXIS … INTEGER`. (7) §9's constraints stand alone. | (1): a keyword is not content. (2) was in the table he was shown; two names on a line already mean a property and its type in eight corpora. (3) to (7): what is left when the word is deleted. (6) makes an axis with no points legal, where it was an error. |
+| C1 | 2026-11-13 | Agent's calls, to confirm. (8) A value stands on its statement's line: a property's value, a `REF`'s entity, the amount of a `SET` or `TRANSFORM`. §8's statement rule is rewritten around it. (9) The check of a value's kind against the type it inherits is removed at every version; `INTEGER "heavy"` is still reported below 0.6. (10) `MIN` / `MAX` bind a value only when it is a number. (11) A keyed `CHOOSE` takes a bare value. (12) Fixtures: `values-bad/03` now declares 0.5 and `04` is deleted; `tables-bad` T13 plants a different fault; `decision6.ttrpg` puts two declared names on two lines. (13) The records of earlier decisions keep the keywords they describe. | (8): with no keyword, a name alone after `REF OF ^"Type"` could be read as its entity. (9): the owner's reason for the ruling. (10): follows (9). (12): the checks those fixtures planted no longer exist at 0.6. |
+| C1 | 2026-11-13 | Agent's calls, to confirm. (1) A target with no hash that names a property of the enclosing definition, written there or declared by a type it extends, is that property; any other target is a reference as before. (2) The block holds changes only, at least one, and no `SITUATIONAL` inside another. (3) Every fault is an error at every version. (4) The word is reserved everywhere in the grammar. (5) Follow-up F24 is added for the corpus strings. | (1): the approved example writes `^"Injury" SET 18`, and a property is not an entity, so the old reference check failed it. (2): the owner's form shows changes only. (3): no corpus uses the word. (4): as `TRANSFORM` and `NEXT` are. |
+| C1 | 2026-11-13 | C1 is closed. The branch is committed and pushed. | Owner: "Close, commit, push". The agent's calls in the C1 rows marked "to confirm" were reported to him before he closed and were not separately ruled on. The row order below is not the order of the day: `SITUATIONAL` was ruled first, then the keywords' scope, then their gating, then the last three forms. |
 
 ---
 

@@ -6,7 +6,7 @@ EXTENSION "Actors_Bad_4" {
     DEPENDS_ON "Actors_Bad_Core"
     MODIFY #ActBadAdversaryN2xK8mQ4w ^"Adversary" {                 # ERROR
         PROPERTIES {
-            ^"Might" INTEGER
+            ^"Might"
         }
     }
     REPRINT #ActBadAdversaryN2xK8mQ4w ^"Adversary"                  # ERROR

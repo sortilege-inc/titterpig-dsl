@@ -8,9 +8,9 @@ EXTENSION "Values_Bad_06" {
     #ValBad06XxK2vQ9wN3cL7pA ^"Tadaji 06" DEF {
         EXTENDS #ValActorH2nV6kQ9wX3mC7pL ^"Samurai"
         PROPERTIES {
-            ^"Name" STRING "Tadaji"
-            ^"Air" INTEGER 2
+            ^"Name" "Tadaji"
+            ^"Air" 2
         }
-        ^"Flaws" LIST [ ^"Wrathful"("Huge") ]                    # ERROR
+        ^"Flaws" [ ^"Wrathful"("Huge") ]                    # ERROR
     }
 }

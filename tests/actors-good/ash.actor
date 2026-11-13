@@ -8,8 +8,8 @@ EXTENSION "Actors_Ash" EXTENDS "Actors_Core" {
     #ActAshT5wZ1qE8uH3jL6pX0 ^"Ash" DEF {
         EXTENDS #ActAdversaryK7mQ2xW9vN4c ^"Adversary"
         PROPERTIES {
-            ^"Name" STRING "Ash"
-            ^"Attribute Level" INTEGER 6
+            ^"Name" "Ash"
+            ^"Attribute Level" 6
         }
     }
 }

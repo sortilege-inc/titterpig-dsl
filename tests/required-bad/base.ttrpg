@@ -9,16 +9,16 @@ BASE "Required_Bad_Core" {
     # every entry of this type has a roll and a text; that is what REQUIRED says
     #ReqEntryK2vQ9wN3cL7pXdAa ^"Roll Table Entry" DEF {
         PROPERTIES {
-            ^"Roll" STRING REQUIRED
-            ^"Text" STRING REQUIRED
-            ^"Note" STRING
+            ^"Roll" REQUIRED
+            ^"Text" REQUIRED
+            ^"Note"
         }
     }
 
     #ReqSchoolB8tJ1yL4sD5fG0z ^"School" DEF {
         PROPERTIES {
-            ^"Name" STRING REQUIRED
-            ^"Clan" STRING REQUIRED
+            ^"Name" REQUIRED
+            ^"Clan" REQUIRED
         }
     }
 
@@ -26,14 +26,14 @@ BASE "Required_Bad_Core" {
     #ReqCraneC4pH7zR2wE9uX1qW ^"Crane School" DEF {
         EXTENDS #ReqSchoolB8tJ1yL4sD5fG0z ^"School"
         PROPERTIES {
-            ^"Clan" STRING "Crane" FIXED
+            ^"Clan" "Crane" FIXED
         }
     }
 
     #ReqVirtueD4fG7hJ0kL2mNpS ^"Virtue" DEF {
         PARAMETERS { ^"Size" OF ["Major", "Minor"] }
         PROPERTIES {
-            ^"Size" STRING REQUIRED
+            ^"Size" REQUIRED
         }
     }
 
@@ -41,7 +41,7 @@ BASE "Required_Bad_Core" {
     #ReqBadRowK7mQ2xW9vN4cZpL ^"Row 2" DEF {
         EXTENDS #ReqEntryK2vQ9wN3cL7pXdAa ^"Roll Table Entry"
         PROPERTIES {
-            ^"Roll" STRING "4-6"
+            ^"Roll" "4-6"
         }
     }
 
@@ -49,7 +49,7 @@ BASE "Required_Bad_Core" {
     #ReqBadTradM5nO7pQ9rS1tU3 ^"Sand Road Wayfinder Tradition" DEF {
         EXTENDS #ReqSchoolB8tJ1yL4sD5fG0z ^"School"
         PROPERTIES {
-            ^"Rank" INTEGER 1
+            ^"Rank" 1
         }
     }
 
@@ -59,7 +59,7 @@ BASE "Required_Bad_Core" {
         #ReqBadNestedW3nB8sHdPz5F ^"Row 3" DEF {
             EXTENDS #ReqEntryK2vQ9wN3cL7pXdAa ^"Roll Table Entry"
             PROPERTIES {
-                ^"Text" STRING "Wolves."
+                ^"Text" "Wolves."
             }
         }
     }

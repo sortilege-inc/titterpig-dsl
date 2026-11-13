@@ -1,0 +1,15 @@
+EXTENSION "Situational_Bad_08" {
+    NAME "fault 08 — a target that is no property of the definition and no entity"
+    SPEC_VERSION "0.6"
+    VERSION "1.0"
+    RELEASE_DATE "2026-11-13"
+    DEPENDS_ON "Situational_Bad_Core"
+
+    #SibBad08XxK2vQ9wN3cL7pA ^"Sword 08" DEF {
+        EXTENDS #SibWeaponK2vQ9wN3cL7pA5 ^"Weapon"
+        ^"Injury" 16
+        SITUATIONAL "2h" {
+            ^"Reach" SET 2                                      # ERROR
+        }
+    }
+}

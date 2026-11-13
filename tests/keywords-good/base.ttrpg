@@ -1,0 +1,88 @@
+BASE "Keywords_Core" {
+    NAME "DECISION-39 fixture — values and declarations with no type keyword (§8, §9)"
+    SPEC_VERSION "0.6"
+    VERSION "1.0"
+    RELEASE_DATE "2026-11-13"
+
+    #   ttrpg_validator.py tests/keywords-good       0 errors, 0 warnings
+    #   check_grammar.py   tests/keywords-good       accepted
+
+    #KwdClanK2vQ9wN3cL7pA5xZ ^"Clan" DEF { }
+    #KwdCrabH4mK8wQ2xN6vB1tR ^"Crab" DEF { EXTENDS #KwdClanK2vQ9wN3cL7pA5xZ ^"Clan" }
+    #KwdTechR5tJ1yL8sD4fG0zX ^"Technique" DEF { }
+    #KwdStrikeB9pK3xN7vM2cQ6 ^"Iron Strike" DEF { EXTENDS #KwdTechR5tJ1yL8sD4fG0zX ^"Technique" }
+
+    # a type: every property is declared by its name, with its constraints if it has any
+    #KwdSamuraiP7cJ3yT9hL5sD ^"Samurai" DEF {
+        PROPERTIES {
+            ^"Family Name" REQUIRED
+            ^"Notes"
+            ^"Honor" MIN 0 MAX 100 DEFAULT 50
+            ^"Active" DEFAULT true
+            ^"Category" ENUM ["Bushi", "Courtier"]
+            ^"Roles" LIST
+            ^"Techniques" LIST OF #KwdTechR5tJ1yL8sD4fG0zX ^"Technique"
+            REF OF #KwdClanK2vQ9wN3cL7pA5xZ ^"Clan"
+            ^"Size"
+            ^"Weight"
+            ^"Rings" DEF {
+                ^"Air" MIN 1 MAX 5 DEFAULT 1
+                ^"Earth" MIN 1 MAX 5 DEFAULT 1
+                ^"Void"
+            }
+        }
+    }
+
+    # an instance: every value is written alone
+    #KwdTadajiM3cT7yB1nK9xQ2 ^"Ide Tadaji" DEF {
+        EXTENDS #KwdSamuraiP7cJ3yT9hL5sD ^"Samurai"
+        PROPERTIES {
+            ^"Family Name" "Ide" FIXED
+            ^"Honor" 44
+            ^"Active" true
+            ^"Category" "Courtier"
+            ^"Roles" ["Envoy", "Merchant"]
+            ^"Techniques" LIST OF #KwdTechR5tJ1yL8sD4fG0zX ^"Technique" [ #KwdStrikeB9pK3xN7vM2cQ6 ^"Iron Strike" ]
+            ^"Clan" REF #KwdCrabH4mK8wQ2xN6vB1tR ^"Crab"
+            ^"Size" 2
+            ^"Weight" "light (for a rider)"
+            ^"Rings" DEF { ^"Air" 3  ^"Earth" 2 }
+        }
+    }
+
+    # text where the type gives a range: a value that is usually a number has exceptions
+    #KwdOniX8wQ2vN6kL4mJ7cT3 ^"Oni Lord" DEF {
+        EXTENDS #KwdSamuraiP7cJ3yT9hL5sD ^"Samurai"
+        PROPERTIES {
+            ^"Family Name" "none"
+            ^"Honor" "Infinity"
+        }
+    }
+
+    # §9: a definition that is itself a value states its constraints alone
+    #KwdGloryD6fG0zX4hJ2wQ8v ^"Glory" DEF { MIN 0 MAX 100 }
+    #KwdGMRoleV1nK9mC3tY7bQ5 ^"GM Role" DEF { DEFAULT false }
+    #KwdChronT5wZ1qE8uH3jL6p ^"Chronicle" DEF { REQUIRED }
+    #KwdApproachL6pA5xZ2vQ9w ^"Approach" DEF { ENUM ["Air", "Earth", "Fire", "Water", "Void"] }
+
+    # a parameter with no domain takes free text
+    #KwdLoreC7pA5xZ2vQ9wN3cL ^"Area Lore" DEF { PARAMETERS { ^"area" } }
+    #KwdScholarN3cL7pA5xZ2vQ ^"Scholar" DEF {
+        ^"Abilities" [ ^"Area Lore"("Normandy") ]
+        ^"Increase" DEF { CHOOSE 1 [ #KwdGloryD6fG0zX4hJ2wQ8v ^"Glory", #KwdChronT5wZ1qE8uH3jL6p ^"Chronicle" ] 1 }
+    }
+
+    # an axis with no points given is an axis of whole numbers
+    #KwdTableQ9wN3cL7pA5xZ2v ^"Successes" DEF {
+        TABLE {
+            AXIS ^"Successes"
+            AT [ 0 ] { ^"Result" "Failure" }
+            AT [ MIN 1 ] { ^"Result" "Success" }
+        }
+    }
+
+    # §13: SET restates a value or adjusts a constraint
+    MODIFY #KwdSamuraiP7cJ3yT9hL5sD ^"Samurai" {
+        SET ^"Honor" DEFAULT 45
+    }
+}

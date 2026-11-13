@@ -39,7 +39,7 @@ def main():
 
     n_prop = len(re.findall(r'^\s*PROPERTIES\s*\{', blob, re.M))
     n_desc = len(re.findall(r'^\s*DESCRIPTION\s', blob, re.M)) \
-        + len(re.findall(r'^\s*\^"Description"\s+STRING\s', blob, re.M))
+        + len(re.findall(r'^\s*\^"Description"\s+(?:STRING\s|")', blob, re.M))
     n_def = len(re.findall(r'DEF\s*\{', blob))
     n_table = len(re.findall(r'\bTABLE\s*\{', blob))
     n_list = len(re.findall(r'\bLIST OF\b', blob))

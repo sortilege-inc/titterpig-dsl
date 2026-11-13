@@ -6,7 +6,7 @@ EXTENSION "Actors_Bad_2" {
     DEPENDS_ON "Actors_Bad_Core"
     #ActBad2PersonaC7vB3nM1xK5 ^"Historical Persona" DEF {          # ERROR
         PROPERTIES {
-            ^"Name" STRING
+            ^"Name"
         }
     }
 }

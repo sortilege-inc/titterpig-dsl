@@ -1,0 +1,36 @@
+BASE "Records_Core" {
+    NAME "DECISION-41 fixture — the entries of a list need not be named (§8)"
+    SPEC_VERSION "0.6"
+    VERSION "1.0"
+    RELEASE_DATE "2026-11-13"
+
+    #   ttrpg_validator.py tests/records-good        0 errors, 0 warnings
+    #   check_grammar.py   tests/records-good        accepted
+
+    #RecEntryK2vQ9wN3cL7pA5x ^"Map Key Entry" DEF {
+        PROPERTIES {
+            ^"Marker" REQUIRED
+            ^"Place"
+        }
+    }
+    #RecOutcomeH4mK8wQ2xN6vB ^"Outcome" DEF { }
+
+    #RecBaseR5tJ1yL8sD4fG0zX ^"X-Force Base" DEF {
+        # a list of a type: each entry is a record of that type, with no name of its own
+        ^"Key" LIST OF #RecEntryK2vQ9wN3cL7pA5x ^"Map Key Entry" [
+            DEF { ^"Marker" "1."  ^"Place" "Lower Elevator" },
+            DEF { ^"Marker" "2."  ^"Place" "Displays and Meeting Area" },
+            DEF { ^"Marker" "3."  ^"Place" "Mainframe and Operations" }
+        ]
+        # a list with no type; a record may hold what a DEF holds
+        ^"Outcomes" [
+            DEF {
+                ^"Result" "Critical"
+                DESCRIPTION "The character is moved by the Trait."
+            },
+            DEF { ^"Result" "Fumble" }
+        ]
+        # records beside other items, and an empty record
+        ^"Mixed" [ "a string", DEF { ^"Result" "Success" }, DEF { } ]
+    }
+}

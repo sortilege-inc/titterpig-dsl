@@ -9,7 +9,7 @@ FRAME "Demo_Narrative_Frame" {
         MODIFICATIONS {
             # a starting value is a SET; a range is an ordinary property declaration (§8)
             #NarDemoStandingKKKKKKKKKK ^"Standing" SET 1
-            ^"Status" INTEGER MIN 20 MAX 35
+            ^"Status" MIN 20 MAX 35
         }
     }
 
@@ -17,7 +17,7 @@ FRAME "Demo_Narrative_Frame" {
         #NarDemoRuleLLLLLLLLLLLLLL: starting_standing "At the start of this story, all characters set their Standing to 1."
     }
 
-    #NarDemoStandingKKKKKKKKKK ^"Standing" DEF { INTEGER MIN 0 }
+    #NarDemoStandingKKKKKKKKKK ^"Standing" DEF { MIN 0 }
 
     #NarDemoPublisherDDDDDDDDD ^"The Publisher" DEF {
         EXTENDS #NarDemoNpcTypeAAAAAAAAAAA ^"NPC"

@@ -1,0 +1,15 @@
+BASE "Situational_Bad_Core" {
+    NAME "DECISION-38 fixture — nine faults in SITUATIONAL, ten errors (§8)"
+    SPEC_VERSION "0.6"
+    VERSION "1.0"
+    RELEASE_DATE "2026-11-13"
+
+    #   ttrpg_validator.py tests/situational-bad         10 errors, 0 warnings (fault 7 reports its name and its hash)
+
+    #SibWeaponK2vQ9wN3cL7pA5 ^"Weapon" DEF {
+        PROPERTIES {
+            ^"Damage"
+            ^"Injury"
+        }
+    }
+}

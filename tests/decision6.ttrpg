@@ -6,13 +6,16 @@ BASE "Demo_Decision6" {
 
     # --- base types --------------------------------------------------------
     #Decision6Ability0aaaaaaaaaa ACTOR "Ability" DEF {
-        PROPERTIES { ^"Name" STRING REQUIRED }
+        PROPERTIES { ^"Name" REQUIRED }
     }
     #Decision6Charac00bbbbbbbbbb ^"Characteristic" DEF {
-        PROPERTIES { ^"Name" STRING REQUIRED }
+        PROPERTIES { ^"Name" REQUIRED }
     }
     #Decision6Virtue00cccccccccc ^"Virtue" DEF {
-        PROPERTIES { ^"Size" STRING  ^"Category" STRING }
+        PROPERTIES {
+            ^"Size"
+            ^"Category"
+        }
     }
 
     # --- concrete entities the bindings/choices reference ------------------
@@ -26,7 +29,7 @@ BASE "Demo_Decision6" {
     #Decision6Puissant00iiiiiiiii ^"Puissant" DEF {
         EXTENDS ^"Virtue"
         PARAMETERS { ^"subject" OF ^"Ability" }
-        PROPERTIES { ^"Size" STRING "Minor" FIXED }
+        PROPERTIES { ^"Size" "Minor" FIXED }
     }
     #Decision6Great0000jjjjjjjjjj ^"Great" DEF {
         EXTENDS ^"Virtue"
@@ -34,7 +37,7 @@ BASE "Demo_Decision6" {
     }
     #Decision6AreaLore00kkkkkkkkk ^"Area Lore" DEF {
         EXTENDS ^"Ability"
-        PARAMETERS { ^"area" OF STRING }
+        PARAMETERS { ^"area" }
     }
 
     # --- alias (DECISION-6): Ride is a synonym of Drive --------------------
@@ -44,8 +47,8 @@ BASE "Demo_Decision6" {
     #Decision6Template00lllllllll TEMPLATE "Sample Warrior" DEF {
         EXTENDS ^"Ability"
         PROPERTIES {
-            ^"Virtues" LIST [ ^"Puissant"(^"Single Weapon"), ^"Great"(^"Stamina") ]
-            ^"Abilities" LIST [ ^"Area Lore"("Normandy"), ^"Ride" ]
+            ^"Virtues" [ ^"Puissant"(^"Single Weapon"), ^"Great"(^"Stamina") ]
+            ^"Abilities" [ ^"Area Lore"("Normandy"), ^"Ride" ]
             ^"Required" CHOOSE 1 [ #Decision6DemonMight0ffffffff ^"Demonic Might", #Decision6DemonPower0gggggggg ^"Demonic Powers" ]
             ^"Allotment" CHOOSE 1 [
                 CHOOSE 1 OF #Decision6Virtue00cccccccccc ^"Virtue" WITH { ^"Size" ["Major"] AND ^"Category" ["Supernatural"] },
@@ -58,27 +61,27 @@ BASE "Demo_Decision6" {
             ^"Any Two" CHOOSE INDISTINCT 2 [ #Decision6DemonMight0ffffffff ^"Demonic Might" ]
             ^"Either Kind" CHOOSE 1 OF #Decision6Virtue00cccccccccc ^"Virtue" WITH { ^"Category" ["Hermetic"] OR ^"Category" ["Supernatural"] }
             ^"Sized" CHOOSE 1 OF #Decision6Virtue00cccccccccc ^"Virtue" WITH { ^"Size" ["Major"] AND NOT ^"Category" ["Social Status"] }
-            ^"Mixed" LIST [ #Decision6Drive00000hhhhhhhhh ^"Drive", CHOOSE 1 [ #Decision6SingleWeap0dddddddd ^"Single Weapon", #Decision6Stamina000eeeeeeeee ^"Stamina" ] ]
-            ^"Increase" DEF { CHOOSE 1 [ #Decision6SingleWeap0dddddddd ^"Single Weapon", #Decision6Drive00000hhhhhhhhh ^"Drive" ] INTEGER 1 }
+            ^"Mixed" [ #Decision6Drive00000hhhhhhhhh ^"Drive", CHOOSE 1 [ #Decision6SingleWeap0dddddddd ^"Single Weapon", #Decision6Stamina000eeeeeeeee ^"Stamina" ] ]
+            ^"Increase" DEF { CHOOSE 1 [ #Decision6SingleWeap0dddddddd ^"Single Weapon", #Decision6Drive00000hhhhhhhhh ^"Drive" ] 1 }
         }
     }
 
     # --- v0.6: REF (DECISION-17) and changes to a value (DECISION-16) -------
     #Decision6Clan0000mmmmmmmmmm ^"Clan" DEF { }
     #Decision6Crab0000nnnnnnnnnn ^"Crab" DEF { EXTENDS #Decision6Clan0000mmmmmmmmmm ^"Clan" }
-    #Decision6Glory000oooooooooo ^"Glory" DEF { INTEGER MIN 0 MAX 100 }
+    #Decision6Glory000oooooooooo ^"Glory" DEF { MIN 0 MAX 100 }
     #Decision6Family00pppppppppp ^"Family" DEF {
         PROPERTIES {
             REF OF #Decision6Clan0000mmmmmmmmmm ^"Clan" REQUIRED
             ^"Patron" REF OF #Decision6Virtue00cccccccccc ^"Virtue"
             ^"Glory" REF OF #Decision6Glory000oooooooooo ^"Glory"
-            ^"Family Name" STRING REQUIRED
+            ^"Family Name" REQUIRED
         }
     }
     #Decision6Hida0000qqqqqqqqqq ^"Hida" DEF {
         EXTENDS #Decision6Family00pppppppppp ^"Family"
         PROPERTIES {
-            ^"Family Name" STRING "Hida" FIXED
+            ^"Family Name" "Hida" FIXED
             ^"Clan" REF #Decision6Crab0000nnnnnnnnnn ^"Crab"
             ^"Patron" REF OF #Decision6Virtue00cccccccccc ^"Virtue" #Decision6DemonMight0ffffffff ^"Demonic Might"
             ^"Ring Increase" DEF {

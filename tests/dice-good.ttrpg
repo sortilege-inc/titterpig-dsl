@@ -8,8 +8,8 @@ BASE "Demo_Dice" {
     # Validate with the dice module passed alongside:
     #   ttrpg_validator.py tests/dice-good.ttrpg modules/0.6/
 
-    #DiceDemoHitPointsAAAAAAAA ^"Hit Points" DEF { INTEGER MIN 0 }
-    #DiceDemoDamageBBBBBBBBBBB ^"Damage" DEF { INTEGER MIN 0 }
+    #DiceDemoHitPointsAAAAAAAA ^"Hit Points" DEF { MIN 0 }
+    #DiceDemoDamageBBBBBBBBBBB ^"Damage" DEF { MIN 0 }
     #DiceDemoDamageTypeCCCCCCC ^"Damage Type" DEF { }
     #DiceDemoPhysicalDDDDDDDDD ^"Physical" DEF { EXTENDS #DiceDemoDamageTypeCCCCCCC ^"Damage Type" }
     #DiceDemoOpportunityEEEEEE ^"Opportunity" DEF { }

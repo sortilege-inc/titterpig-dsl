@@ -8,22 +8,22 @@ BASE "Actors_Core" {
 
     #ActAdversaryK7mQ2xW9vN4c ACTOR "Adversary" DEF {
         PROPERTIES {
-            ^"Name" STRING
-            ^"Attribute Level" INTEGER MIN 1
+            ^"Name"
+            ^"Attribute Level" MIN 1
         }
     }
 
     #ActMagusP3tH8yL5sD1fG6b ACTOR "Magus" DEF {
         PROPERTIES {
-            ^"Name" STRING
-            ^"Age" INTEGER MIN 0
+            ^"Name"
+            ^"Age" MIN 0
         }
     }
 
     # a type that is not an ACTOR type; its instances may still stand in an .actor file
     #ActCovenantR9cJ4nB7xV2kM ^"Covenant" DEF {
         PROPERTIES {
-            ^"Aura" INTEGER MIN 0
+            ^"Aura" MIN 0
         }
     }
 }

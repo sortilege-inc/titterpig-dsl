@@ -27,6 +27,12 @@
 # GENERIC_BLOCK, with its arguments on the keyword's line; SETTING, FRAME, ARC and CAMPAIGN
 # files are CONTAINER_BLOCK; a reference in a list may carry its hash; a list may be empty.
 # A port's header names its source: ORIGIN "edition" <KIND> "id" (§19, DECISION-26).
+# SITUATIONAL <condition> { <changes> } holds the changes that apply in a situation (§8,
+# DECISION-38).
+# An item of a list may be an unnamed DEF { … } (§8, DECISION-41).
+# A value is written with no type keyword, and a declaration is the name and its constraints
+# (§8, DECISION-39). The grammar still reads STRING, INTEGER, BOOLEAN, LIST [ … ] and
+# ENUM "x" for files below 0.6; the validator refuses them from 0.6.
 # An .actor file is an EXTENSION_BLOCK of instance DEFs (§2, DECISION-28). FILE has no bare-DEF
 # form, and the 670 older .actor files that open with a bare DEF do not match it.
 #
@@ -90,11 +96,12 @@ BODY_ENTRY      <- METADATA
                  / ADD_STATEMENT
                  / FACES_BLOCK               # v0.6, §8 — a die's faces
                  / STEP                      # v0.6, §8 — NEXT <statement>
+                 / SITUATIONAL_BLOCK         # v0.6, §8 — changes that hold in a situation (DECISION-38)
                  / CHANGE                    # v0.6, §8 — <target> SET n / TRANSFORM …
                  / CHOOSE_KEYED              # v0.6, §5b — a CHOOSE in place of a name
                  / CHOOSE_VALUE              # v0.6, §5b — a CHOOSE alone in a block
                  / REF_DECL                  # v0.6, §8 — REF OF ^"Type" alone in a block
-                 / PROPERTY_DECL             # ^"Honor" INTEGER 35 — a typed value (§5, §8)
+                 / PROPERTY_DECL             # ^"Honor" 35 — a value, or a declaration (§5, §8)
                  / OBJECTIVE_ENTRY           # §16 — REQUIRED "…" / OPTIONAL "…" in OBJECTIVES
                  / NUMBERED_ENTRY
                  / GENERIC_BLOCK             # a keyword statement: the system's own, or a block's (§15)
@@ -152,7 +159,8 @@ PARAMETERS_BLOCK <- 'PARAMETERS' _ '{' _ (PARAM_DECL _)* '}'
 # A parameter's domain is a caret type (bound value is an entity of that type),
 # STRING (free text), or a bracket list (an enum of literal allowed values,
 # e.g. selecting a Major-or-Minor virtue's severity: ^"Size" OF ["Major","Minor"]).
-PARAM_DECL       <- CARET_REF _ 'OF' _ (HASHED_REF / 'STRING' / BRACKET_LIST)
+# A parameter with no domain takes free text (v0.6, DECISION-39; the older form wrote OF STRING).
+PARAM_DECL       <- CARET_REF (_ 'OF' _ (HASHED_REF / 'STRING' / BRACKET_LIST))?
 
 # ALIAS declares one name a display synonym of an existing entity — same
 # entity/hash, different label, no value change (distinct from MODIFY/OVERRIDE).
@@ -295,9 +303,23 @@ ARROW            <- '->'
 # 4. Properties Block
 # ═══════════════════════════════════════════════════════════
 
-PROPERTIES_BLOCK <- 'PROPERTIES' _ '{' _ ((STEP / CHANGE / REF_DECL / PROPERTY_DECL) _)* '}'
+PROPERTIES_BLOCK <- 'PROPERTIES' _ '{' _ ((STEP / SITUATIONAL_BLOCK / CHANGE / REF_DECL / PROPERTY_NAME / PROPERTY_DECL) _)* '}'
 
+# A property (§8). From v0.6 (DECISION-39) a value is written with no type keyword: the
+# literal shows what it is. A declaration is the name and its constraints, and a name alone
+# on its line where it has none. STRING, INTEGER and BOOLEAN, LIST before a bracket and
+# ENUM before one value are the older forms; the validator refuses them from 0.6.
+#   ^"Honor" 35                      ^"School Name" "Hida Defender" FIXED
+#   ^"Honor" MIN 0 MAX 100 DEFAULT 50
+#   ^"Notes"                         (in a PROPERTIES block or a property DEF)
 PROPERTY_DECL   <- (CARET_REF / STRING) _ PROPERTY_TYPE
+                 / CARET_REF SP PLAIN_VALUE (SP MODIFIER)*
+                 / CARET_REF (SP MODIFIER)+
+PLAIN_VALUE     <- STRING / INTEGER_LIT / BOOLEAN_LIT B / BRACKET_LIST
+# A name alone on its line. Two names on one line are not two declarations: files below 0.6
+# write ^"Class" ^"Class" for a property and the type it holds.
+PROPERTY_NAME   <- CARET_REF END_OF_LINE
+END_OF_LINE     <- SP (&EOL / &'}' / &COMMENT / EOF)
 
 PROPERTY_TYPE   <- DEF_INLINE
                  / CHOOSE_VALUE              # v0.6, §5b — ^"Background" CHOOSE 1 [ … ]
@@ -305,12 +327,13 @@ PROPERTY_TYPE   <- DEF_INLINE
                  / ROLL_TYPE                 # v0.6, §8 — ^"Roll" ROLL 4 OF #hash ^"d8"
                  / LIST_OF_TYPE
                  / LIST_LITERAL
+                 / LIST_DECL                 # v0.6 — ^"Roles" LIST: the property holds a list
                  / ENUM_TYPE
                  / STRING_TYPE
                  / INTEGER_TYPE
                  / BOOLEAN_TYPE
 
-DEF_INLINE      <- 'DEF' _ '{' _ ((STEP / CHANGE / CHOOSE_KEYED / REF_DECL / PROPERTY_DECL) _)* '}'
+DEF_INLINE      <- 'DEF' _ '{' _ ((STEP / SITUATIONAL_BLOCK / CHANGE / CHOOSE_KEYED / REF_DECL / PROPERTY_NAME / PROPERTY_DECL) _)* '}'
 
 STRING_TYPE     <- 'STRING' (_ STRING)? (_ MODIFIER)*
 INTEGER_TYPE    <- 'INTEGER' (_ INTEGER_LIT)? (_ MODIFIER)*
@@ -319,6 +342,7 @@ BOOLEAN_TYPE    <- 'BOOLEAN' (_ BOOLEAN_LIT)? (_ MODIFIER)*
 ENUM_TYPE       <- 'ENUM' _ BRACKET_LIST (_ MODIFIER)*
 LIST_OF_TYPE    <- 'LIST' _ 'OF' _ (HASHED_REF / 'STRING') (SP BRACKET_LIST)? (_ MODIFIER)*
 LIST_LITERAL    <- 'LIST' _ BRACKET_LIST (_ MODIFIER)*
+LIST_DECL       <- 'LIST' B (SP MODIFIER)*
 
 # REF — a reference to one entity (v0.6, DECISION-17). `REF OF ^"Type"` declares the
 # property; `REF ^"Entity"` gives its value; both may be written. A reference that is
@@ -328,10 +352,12 @@ LIST_LITERAL    <- 'LIST' _ BRACKET_LIST (_ MODIFIER)*
 #   ^"Patron" REF OF #hash ^"Virtue"               on the type, with a name of its own (a name
 #                                                  may always be written, even the type's)
 #   ^"Clan" REF #hash ^"Crab"                      on an instance
-REF_TYPE        <- 'REF' (_ 'OF' _ HASHED_REF)? (_ REF_TARGET)? (_ MODIFIER)*
+REF_TYPE        <- 'REF' (_ 'OF' _ HASHED_REF)? (SP REF_TARGET)? (_ MODIFIER)*
 # The declaration with no name of its own: the property takes the type's name.
-REF_DECL        <- 'REF' _ 'OF' _ HASHED_REF (_ REF_TARGET)? (_ MODIFIER)*
-REF_TARGET      <- HASHED_REF !(_ NEXT_STATEMENT_KW)
+REF_DECL        <- 'REF' _ 'OF' _ HASHED_REF (SP REF_TARGET)? (_ MODIFIER)*
+# The entity stands on the REF's line (v0.6, DECISION-39): a reference on a later line opens
+# the next statement, and so does one that a value or a keyword below follows.
+REF_TARGET      <- HASHED_REF !(SP (NEXT_STATEMENT_KW / PLAIN_VALUE))
 NEXT_STATEMENT_KW <- 'STRING' / 'INTEGER' / 'BOOLEAN' / 'ENUM' / 'LIST' / 'REF' / 'ROLL' / 'DEF'
                    / 'CHOOSE' / 'SET' / 'TRANSFORM' / 'MODIFY'
 
@@ -365,7 +391,9 @@ STEP            <- 'NEXT' _ (CHANGE / CHOOSE_KEYED / PROPERTY_DECL)
 # That each AT gives one coordinate per axis, of a kind the axis takes, and that no two
 # cells cover the same coordinates, is the validator's to check, not this grammar's.
 TABLE_BLOCK     <- 'TABLE' _ '{' _ (AXIS_DECL _)+ ((AT_CELL _)+ / TABLE_COLUMNS _) '}'
-AXIS_DECL       <- 'AXIS' _ (CARET_REF / STRING) _ AXIS_POINTS
+# An axis with no points given is an axis of whole numbers (v0.6, DECISION-39; the older
+# form wrote INTEGER).
+AXIS_DECL       <- 'AXIS' _ (CARET_REF / STRING) (_ AXIS_POINTS)?
 AXIS_POINTS     <- 'OF' _ HASHED_REF
                  / INTEGER_LIT '-' INTEGER_LIT
                  / 'INTEGER'
@@ -393,13 +421,20 @@ TABLE_COLUMNS   <- 'COLUMNS' _ '[' _ HASHED_REF (_ ',' _ HASHED_REF)* _ ']'
 # target (SET_ENTRY, section 8). Here it FOLLOWS its target. Position tells them apart.
 CHANGE          <- CHANGE_TARGET _ (SET_CHANGE / TRANSFORM_CHANGE)
 CHANGE_TARGET   <- CHOOSE_VALUE / HASHED_REF
-SET_CHANGE      <- 'SET' _ AMOUNT
-TRANSFORM_CHANGE <- 'TRANSFORM' _ ('MANUAL' _ STRING / METHOD _ AMOUNT (_ CHANGE_SUFFIX)*)
+SET_CHANGE      <- 'SET' SP AMOUNT
+TRANSFORM_CHANGE <- 'TRANSFORM' _ ('MANUAL' _ STRING / METHOD SP AMOUNT (_ CHANGE_SUFFIX)*)
 METHOD          <- 'ADD' / 'SUBTRACT' / 'MULTIPLY' / 'DIVIDE'
 AMOUNT          <- INTEGER_LIT / REF_TARGET      # a reference that opens the next statement is not an amount
 CHANGE_SUFFIX   <- 'ROUND' _ ('UP' / 'DOWN' / 'NEAREST')
                  / 'MIN' _ INTEGER_LIT
                  / 'MAX' _ INTEGER_LIT
+
+# Changes that hold in a situation (v0.6, DECISION-38). The condition is the source's words,
+# or a reference to an entity. The block holds one or more changes and nothing else. A target
+# with no hash may name a property of the enclosing definition.
+#   SITUATIONAL "2h" { ^"Injury" SET 18 }
+#   SITUATIONAL #hash ^"Enraged" { #hash ^"Strength" TRANSFORM ADD 2 }
+SITUATIONAL_BLOCK <- 'SITUATIONAL' _ (STRING / HASHED_REF) _ '{' _ (CHANGE _)+ '}'
 
 MODIFIER        <- 'REQUIRED' / 'FIXED'
                  / 'DEFAULT' _ VALUE
@@ -411,7 +446,10 @@ MODIFIER        <- 'REQUIRED' / 'FIXED'
 # 5. Bare Type Constraints (in DEF body, outside PROPERTIES)
 # ═══════════════════════════════════════════════════════════
 
-BARE_TYPE_CONSTRAINT <- BARE_ENUM / BARE_INTEGER / BARE_STRING / BARE_BOOLEAN
+# From v0.6 (DECISION-39) the constraints stand alone: MIN 1 MAX 5, DEFAULT false, REQUIRED.
+BARE_TYPE_CONSTRAINT <- BARE_ENUM / BARE_INTEGER / BARE_STRING / BARE_BOOLEAN / BARE_MODIFIERS
+BARE_MODIFIERS  <- BARE_MODIFIER (SP MODIFIER)* END_OF_LINE
+BARE_MODIFIER   <- ('MIN' / 'MAX') B SP INTEGER_LIT / 'DEFAULT' B SP VALUE / ('REQUIRED' / 'FIXED') B
 
 BARE_ENUM       <- 'ENUM' _ BRACKET_LIST
 BARE_INTEGER    <- 'INTEGER' (_ INTEGER_LIT)? (_ MODIFIER)*
@@ -680,7 +718,11 @@ INLINE_VALUE    <- STRING / CARET_REF
 
 # A list may be empty: ^"Options" LIST [].
 BRACKET_LIST    <- '[' _ (BRACKET_ITEM (_ ',' _ BRACKET_ITEM)* _)? ']'
-BRACKET_ITEM    <- CHOOSE_VALUE / HASHED_REF / HASH_ID / STRING / INTEGER_LIT / BOOLEAN_LIT
+BRACKET_ITEM    <- LIST_RECORD / CHOOSE_VALUE / HASHED_REF / HASH_ID / STRING / INTEGER_LIT / BOOLEAN_LIT
+# An entry of a list need not be named (v0.6, DECISION-41): a DEF with no name and no hash,
+# reached through the list that holds it. Nowhere else may a DEF go unnamed.
+#   ^"Key" LIST OF #hash ^"Map Key Entry" [ DEF { ^"Marker" "1." }, DEF { ^"Marker" "2." } ]
+LIST_RECORD     <- 'DEF' B _ '{' _ BODY _ '}'
 
 # CHOOSE n — a number of things are picked, and from what (v0.6, DECISION-15; replaces
 # v0.4's CHOICE / PICK / WHERE). The count is always written.
@@ -709,8 +751,10 @@ WITH_TERM       <- ('NOT' _)? CARET_REF _ '[' _ WITH_VALUE _ ']'
 WITH_VALUE      <- HASHED_REF / STRING / INTEGER_LIT / BOOLEAN_LIT
 
 # In place of a name: the value that follows applies to each option chosen.
-#   ^"Ring Increase" DEF { CHOOSE 1 [ #hash ^"Earth", #hash ^"Fire" ] INTEGER 1 }
+#   ^"Ring Increase" DEF { CHOOSE 1 [ #hash ^"Earth", #hash ^"Fire" ] 1 }
+# (the older form wrote a type keyword before the value)
 CHOOSE_KEYED    <- CHOOSE_VALUE _ PROPERTY_TYPE
+                 / CHOOSE_VALUE SP PLAIN_VALUE (SP MODIFIER)*
 
 # ═══════════════════════════════════════════════════════════
 # 11. Terminals
@@ -780,7 +824,7 @@ RESERVED_WORD   <- 'BASE' / 'EXTENSION' / 'EXTENDS' / 'DEPENDS_ON' / 'SPEC_VERSI
                  / 'APPLIES' / 'ALIAS'
                  / 'CHOOSE' / 'DISTINCT' / 'INDISTINCT' / 'WITH'
                  / 'OVERRIDE' / 'ADD_TO' / 'ADD' / 'MODIFY' / 'SET' / 'REMOVE_FROM' / 'REPRINT'
-                 / 'TRANSFORM' / 'NEXT'
+                 / 'TRANSFORM' / 'NEXT' / 'SITUATIONAL'
 
 # The end of a word: a keyword is not the first letters of a longer one.
 B               <- ![A-Za-z0-9_]
@@ -817,10 +861,12 @@ EOF             <- !.
 #                RELEASE_DATE, DEPENDS_ON, ORIGIN (v0.6, DECISION-26: a port's source;
 #                shared with Bridge)
 # Definition:    DEF, ACTOR, TEMPLATE, PROPERTIES, RULES
-# Types:         STRING, INTEGER, BOOLEAN, ENUM, LIST, OF, REF            (REF: v0.6, DECISION-17)
+# Types:         ENUM, LIST, OF, REF                                      (REF: v0.6, DECISION-17)
+#                STRING, INTEGER, BOOLEAN: read for files below 0.6      (v0.6, DECISION-39)
 # Dice:          FACES, WEIGHT, ROLL, NEXT                               (v0.6, DECISION-18)
 # Changes:       SET, TRANSFORM, ADD, SUBTRACT, MULTIPLY, DIVIDE, ROUND, UP, DOWN,
 #                NEAREST, MANUAL, MIN, MAX                               (v0.6, DECISION-16)
+#                SITUATIONAL                                             (v0.6, DECISION-38)
 # Modifiers:     REQUIRED, FIXED, DEFAULT, MIN, MAX, FIAT
 # Scope:         APPLIES, TO
 # Rule:          WHEN, THEN

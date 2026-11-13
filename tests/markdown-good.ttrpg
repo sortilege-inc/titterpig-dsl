@@ -8,18 +8,18 @@ BASE "Demo_Markdown_Good" {
     #MdGoodFootnotesAAAAAAAAAA ^"Sympathetic Connections" DEF {
         DESCRIPTION "* Baptismal names cannot be used in sympathetic magic.\n** Caster must know the target's current location.\n*** Casting such a horoscope takes an hour."
         PROPERTIES {
-            ^"Skills" STRING "Awareness 20 (+1), Chirurgery 20*, Clerk 20* (Gift of Tongues, all languages)"
-            ^"Key" STRING "* indicates a Weapon that requires at least two hands to use."
-            ^"Area" STRING "5*3*2 paces, or 2 * 3 * 4 for a large room"
-            ^"Stars" STRING "Rated ** by the guild and *** by the crown."
+            ^"Skills" "Awareness 20 (+1), Chirurgery 20*, Clerk 20* (Gift of Tongues, all languages)"
+            ^"Key" "* indicates a Weapon that requires at least two hands to use."
+            ^"Area" "5*3*2 paces, or 2 * 3 * 4 for a large room"
+            ^"Stars" "Rated ** by the guild and *** by the crown."
         }
     }
 
     # a pair of printed asterisks reads as a span; FIAT records that the source prints them
     #MdGoodExcusedBBBBBBBBBBBB ^"Weapons Key" DEF {
         PROPERTIES {
-            ^"Marks" STRING "Weapons marked *thus* need two hands." FIAT "printed asterisks: the book marks two-handed weapons this way"
-            ^"Note" STRING "see *Rock and *Sling* above" FIAT "printed asterisks"
+            ^"Marks" "Weapons marked *thus* need two hands." FIAT "printed asterisks: the book marks two-handed weapons this way"
+            ^"Note" "see *Rock and *Sling* above" FIAT "printed asterisks"
         }
     }
     #MdGoodElementCCCCCCCCCCCC ^"Errata Note" DEF {

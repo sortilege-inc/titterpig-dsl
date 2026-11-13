@@ -11,7 +11,7 @@ BASE "Demo_Tables" {
     #TblDemoOddsAAAAAAAAAAAAAA ^"Odds" DEF { }
     #TblDemoCertainBBBBBBBBBBB ^"Certain" DEF { EXTENDS #TblDemoOddsAAAAAAAAAAAAAA ^"Odds" }
     #TblDemoLikelyCCCCCCCCCCCC ^"Likely" DEF { EXTENDS #TblDemoOddsAAAAAAAAAAAAAA ^"Odds" }
-    #TblDemoHubrisDDDDDDDDDDDD ^"Hubris" DEF { INTEGER MIN 0 }
+    #TblDemoHubrisDDDDDDDDDDDD ^"Hubris" DEF { MIN 0 }
     #TblDemoForgivenEEEEEEEEEE ^"Forgiven" DEF { }
 
     # two axes, one of entities and one a range; each cell holds several values
@@ -19,9 +19,9 @@ BASE "Demo_Tables" {
         TABLE {
             AXIS ^"Odds" OF #TblDemoOddsAAAAAAAAAAAAAA ^"Odds"
             AXIS ^"Chaos Factor" 1-9
-            AT [ #TblDemoCertainBBBBBBBBBBB ^"Certain", 1 ]   { ^"Exceptional Yes" INTEGER 10  ^"Yes" INTEGER 50  ^"Exceptional No" INTEGER 91 }
-            AT [ #TblDemoCertainBBBBBBBBBBB ^"Certain", 2-9 ] { ^"Exceptional Yes" INTEGER 13  ^"Yes" INTEGER 65  ^"Exceptional No" INTEGER 94 }
-            AT [ #TblDemoLikelyCCCCCCCCCCCC ^"Likely", ANY ]  { ^"Exceptional Yes" INTEGER 5   ^"Yes" INTEGER 25  ^"Exceptional No" INTEGER 86 }
+            AT [ #TblDemoCertainBBBBBBBBBBB ^"Certain", 1 ]   { ^"Exceptional Yes" 10  ^"Yes" 50  ^"Exceptional No" 91 }
+            AT [ #TblDemoCertainBBBBBBBBBBB ^"Certain", 2-9 ] { ^"Exceptional Yes" 13  ^"Yes" 65  ^"Exceptional No" 94 }
+            AT [ #TblDemoLikelyCCCCCCCCCCCC ^"Likely", ANY ]  { ^"Exceptional Yes" 5   ^"Yes" 25  ^"Exceptional No" 86 }
         }
     }
 
@@ -30,14 +30,14 @@ BASE "Demo_Tables" {
         TABLE {
             AXIS ^"Roll" ROLL 2 OF #tbgOQaN6xUuzn8GiibKkGw62 ^"d10"
             AT [ 2 ]      { ^"Punishment" REF #TblDemoForgivenEEEEEEEEEE ^"Forgiven"  #TblDemoHubrisDDDDDDDDDDDD ^"Hubris" TRANSFORM SUBTRACT 1 }
-            AT [ 3-7 ]    { ^"Punishment" STRING "No effect" }
-            AT [ 8-15 ]   { ^"Punishment" STRING "Cursed"
+            AT [ 3-7 ]    { ^"Punishment" "No effect" }
+            AT [ 8-15 ]   { ^"Punishment" "Cursed"
                             TABLE {
                                 AXIS ^"Curse" ROLL 1 OF #tbgOQaN6xUuzn8GiibKkGw62 ^"d10"
-                                AT [ MAX 5 ] { ^"Curse" STRING "Blindness" }
-                                AT [ MIN 6 ] { ^"Curse" STRING "Madness" }
+                                AT [ MAX 5 ] { ^"Curse" "Blindness" }
+                                AT [ MIN 6 ] { ^"Curse" "Madness" }
                             } }
-            AT [ MIN 16 ] { ^"Punishment" STRING "Struck down" }
+            AT [ MIN 16 ] { ^"Punishment" "Struck down" }
         }
     }
 
@@ -45,25 +45,25 @@ BASE "Demo_Tables" {
     #TblDemoFatigueHHHHHHHHHHH ^"Wound to Fatigue" DEF {
         TABLE {
             AXIS ^"Wound" [ "Light", "Medium", "Heavy" ]
-            AXIS ^"Rounds" INTEGER
-            AT [ "Light", MAX 3 ]  { ^"Fatigue Levels" INTEGER 1 }
-            AT [ "Light", MIN 4 ]  { ^"Fatigue Levels" INTEGER 2 }
-            AT [ "Medium", ANY ]   { ^"Fatigue Levels" INTEGER 2 }
-            AT [ "Heavy", ANY ]    { ^"Fatigue Levels" INTEGER 3 }
+            AXIS ^"Rounds"
+            AT [ "Light", MAX 3 ]  { ^"Fatigue Levels" 1 }
+            AT [ "Light", MIN 4 ]  { ^"Fatigue Levels" 2 }
+            AT [ "Medium", ANY ]   { ^"Fatigue Levels" 2 }
+            AT [ "Heavy", ANY ]    { ^"Fatigue Levels" 3 }
         }
     }
 
     # a table of records: the rows are the entities of a type, the columns its properties
     #TblDemoArmorIIIIIIIIIIIII ^"Armor" DEF {
         PROPERTIES {
-            ^"Protection" INTEGER REQUIRED
-            ^"Load" INTEGER REQUIRED
-            ^"Cost" STRING
+            ^"Protection" REQUIRED
+            ^"Load" REQUIRED
+            ^"Cost"
         }
     }
     #TblDemoChainMailJJJJJJJJJ ^"Chain Mail" DEF {
         EXTENDS #TblDemoArmorIIIIIIIIIIIII ^"Armor"
-        PROPERTIES { ^"Protection" INTEGER 9  ^"Load" INTEGER 6  ^"Cost" STRING "Exp." }
+        PROPERTIES { ^"Protection" 9  ^"Load" 6  ^"Cost" "Exp." }
     }
     #TblDemoArmorTableKKKKKKKK ^"Armor Table" DEF {
         TABLE {

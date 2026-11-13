@@ -51,6 +51,9 @@ Two levels of validation over one or more .ttrpg files (or directories):
     - Dice (v0.6, DECISION-18): FACES lists at least one face, a range runs low to high,
       a WEIGHT is a positive integer; ROLL n OF ^"die" has a count of 1 or more and a die
       that resolves and EXTENDS ^"Die"; NEXT has a statement before and after it.
+    - SITUATIONAL (v0.6, DECISION-38): a condition follows it, a string or a reference that
+      resolves; its block holds one or more changes and nothing else; a target with no hash
+      that names a property of the enclosing definition is that property.
     - SET / TRANSFORM (v0.6, DECISION-16): a target precedes it on the line and resolves;
       the method is ADD, SUBTRACT, MULTIPLY, DIVIDE or MANUAL "…"; the amount is an
       integer or a reference that resolves. A SET directly inside a MODIFY body is the
@@ -130,16 +133,26 @@ VALUES AGAINST DECLARATIONS (spec §5, §5b, §6, §8, DECISION-32).
   - errors at every version: an EXTENDS cycle; an ALIAS cycle; a bound reference with more
     arguments than its base declares PARAMETERS, with arguments where the base declares none,
     or with a string outside a parameter's list.
-  - WARNING in a file that declares SPEC_VERSION below 0.6, ERROR from 0.6, waived by FIAT: an
-    INTEGER outside the MIN / MAX it inherits; a value outside the ENUM it inherits; a value
-    of another kind than its type, or than the type it inherits; a named member of a
-    LIST OF ^"Type" that does not extend the type; one property written twice in a definition.
+  - WARNING in a file that declares SPEC_VERSION below 0.6, ERROR from 0.6, waived by FIAT: a
+    number outside the MIN / MAX it inherits; a value outside the ENUM it inherits; a named
+    member of a LIST OF ^"Type" that does not extend the type; one property written twice in a
+    definition. In a file below 0.6, a type keyword given a value of another kind.
   - a hash shorter than 16 characters, or with an underscore: the same gating, not waivable.
   - REQUIRED (§8, DECISION-34), the same gating and waived by an element-level FIAT: an
     instance that lacks a property a type up its chain declares REQUIRED. ^"Name" is answered
     by the DEF's own name.
   - not checked: a value for a property no type declares, and the fields of a nested or
     unnamed DEF.
+
+TYPE KEYWORDS (spec §8, §9, DECISION-39).
+
+  - a value is read with no type keyword (^"Honor" 35), and so is a declaration: the name and
+    its constraints, or the name alone in a PROPERTIES block or a property DEF.
+  - ERROR in a file that declares SPEC_VERSION 0.6 or later, not waivable: STRING, INTEGER or
+    BOOLEAN; LIST before a list; ENUM before a single value. A file below 0.6 keeps them
+    with no finding.
+  - a value's kind is not compared with the type it inherits: a text value where the type
+    declares a number is no finding.
 
 VERSION PINS (spec §3, DECISION-35). DEPENDS_ON "Parent" VERSION "x" means the parent is at
 version x or later. Versions are compared part by part, numbers as numbers; a pin with fewer
@@ -187,13 +200,19 @@ PROP_TYPE_KW = ('STRING', 'INTEGER', 'BOOLEAN', 'ENUM', 'LIST', 'DEF', 'TEXT', '
 # What may open the statement AFTER a `REF [OF ^"Type"]`: a reference followed by one of
 # these belongs to that next statement and is not the REF's value (§8, DECISION-17).
 NEXT_STATEMENT_KW = PROP_TYPE_KW + ('CHOOSE', 'SET', 'TRANSFORM', 'MODIFY')
+# A value written with no type keyword (v0.6, DECISION-39): the literal shows what it is.
+PLAIN_VALUE_KINDS = {'STR': 'STRING', 'INT': 'INTEGER', 'BOOL': 'BOOLEAN'}
+MODIFIER_KW = ('REQUIRED', 'FIXED', 'DEFAULT', 'MIN', 'MAX', 'FIAT')
+# The type keywords a file at 0.6 or later does not write (DECISION-39).
+DROPPED_TYPE_KW = ('STRING', 'INTEGER', 'BOOLEAN')
 CHANGE_METHODS = ('ADD', 'SUBTRACT', 'MULTIPLY', 'DIVIDE')
 EMPHASIS_KINDS = ('BOLD', 'ITALIC')      # v0.6, DECISION-19 (§5c)
 CONTAINER_KINDS = ('BASE', 'EXTENSION', 'SETTING', 'FRAME', 'ARC', 'CAMPAIGN')    # §3, §16
 # Keywords whose `#hash ^"Name" {` names something that exists already, and so declare no block.
 NOT_A_BLOCK = ('DEF', 'MODIFY', 'OVERRIDE', 'ADD', 'EXTENDS', 'ALIAS', 'FOR', 'OF', 'REF', 'FROM',
                'INCLUDE', 'TO', 'REPRINT', 'SELECT', 'CONCERNS', 'ENTITY', 'AXIS', 'AT', 'ROLL',
-               'CHOOSE', 'WITH', 'TYPE', 'SCENE_REF', 'LEADS_TO', 'OPPONENTS', 'COMPLETED_SCENES')
+               'CHOOSE', 'WITH', 'TYPE', 'SCENE_REF', 'LEADS_TO', 'OPPONENTS', 'COMPLETED_SCENES',
+               'SITUATIONAL')
 # References between narrative blocks (§16, §5d): keyword -> what the finding calls it.
 BLOCK_REF_ONE = {'SCENE_REF': 'scene ref'}
 BLOCK_REF_LIST = {'LEADS_TO': 'leads-to', 'COMPLETED_SCENES': 'completed scene', 'OPPONENTS': 'opponent'}
@@ -222,11 +241,16 @@ def parse_ref(toks, j):
             ty, tl = toks[j].val, toks[j].line; j += 1
     k = j
     h = None
+    # The entity stands on the line the REF is written on (v0.6, DECISION-39): a reference on a
+    # later line opens the next statement, and so does one a value or a keyword follows.
+    line = toks[j - 1].line if j >= 1 else None
     if k < len(toks) and toks[k].kind == 'HASH':
         h = toks[k].val; k += 1
-    if k < len(toks) and toks[k].kind == 'CARET':
+    if k < len(toks) and toks[k].kind == 'CARET' and toks[k].line == line:
         nxt = toks[k + 1] if k + 1 < len(toks) else None
-        if not (nxt is not None and nxt.kind == 'ID' and nxt.val in NEXT_STATEMENT_KW):
+        same = nxt is not None and nxt.line == toks[k].line
+        if not (nxt is not None and nxt.kind == 'ID' and nxt.val in NEXT_STATEMENT_KW) \
+                and not (same and nxt.kind in ('STR', 'INT', 'BOOL', 'LBRACK')):
             val, vh, vl = toks[k].val, h, toks[k].line
             j = k + 1
     return ty, th, tl, val, vh, vl, j
@@ -750,17 +774,40 @@ def _bracket_strings(toks, k):
     return vals, k
 
 
-def parse_prop_decl(toks, k):
+def parse_prop_decl(toks, k, bare_ok=False, after_set=False):
     """toks[k] is the CARET naming a property. Returns (record, next index), or
     (None, k+1) when this caret does not open a property declaration.
 
     The record captures what the §13 checks need: the declared type, an ENUM's
     permitted values, whether it is a list (and its literal members, if any), and
     an inline value — an *instance* restates a parent's ENUM field as a concrete
-    `^"Size" STRING "Minor"`, which is what an enum-narrowing check must look at."""
+    `^"Size" "Minor"`, which is what an enum-narrowing check must look at.
+
+    `bare_ok`: the caret is at a PROPERTIES block's own level, where a name with constraints
+    or a name alone on its line declares a property. `after_set`: the caret follows a §13
+    SET, which may restate a value."""
     name = toks[k].val
     j = k + 1
     if j >= len(toks) or toks[j].kind != 'ID' or toks[j].val not in PROP_TYPE_KW:
+        # No type keyword (v0.6, DECISION-39). A value: the name, then a string, a number,
+        # true / false or a list on its line. A declaration: the name first on its line, with
+        # its constraints after it or nothing at all.
+        prev = toks[k - 1] if k else None
+        first = prev is None or prev.line != toks[k].line or prev.kind == 'LBRACE'
+        after_value = first or after_set or prev.kind in ('LBRACE', 'RBRACE', 'STR', 'INT', 'BOOL', 'RBRACK')
+        same = j < len(toks) and toks[j].line == toks[k].line
+        rec = {'name': name, 'type': None, 'enum': None, 'is_list': False,
+               'members': None, 'value': None, 'line': toks[k].line}
+        if same and after_value and toks[j].kind in PLAIN_VALUE_KINDS:
+            rec['type'], rec['value'] = PLAIN_VALUE_KINDS[toks[j].kind], toks[j].val
+            return rec, j + 1
+        if same and after_value and toks[j].kind == 'LBRACK':
+            rec['type'], rec['is_list'] = 'LIST', True
+            rec['members'], j = _bracket_strings(toks, j)
+            return rec, j
+        if first and bare_ok and (not same or toks[j].kind == 'RBRACE'
+                                  or (toks[j].kind == 'ID' and toks[j].val in MODIFIER_KW)):
+            return rec, j
         return None, k + 1
     ty = toks[j].val
     rec = {'name': name, 'type': ty, 'enum': None, 'is_list': False,
@@ -817,7 +864,7 @@ def parse_properties_block(toks, k):
     out = {}
     if k + 1 >= len(toks) or toks[k + 1].kind != 'LBRACE':
         return out
-    depth, j = 0, k + 1
+    depth, brackets, j = 0, 0, k + 1
     while j < len(toks):
         t = toks[j]
         if t.kind == 'LBRACE':
@@ -826,8 +873,12 @@ def parse_properties_block(toks, k):
             depth -= 1
             if depth == 0:
                 break
-        elif t.kind == 'CARET' and depth == 1:
-            rec, j = parse_prop_decl(toks, j)
+        elif t.kind == 'LBRACK':
+            brackets += 1
+        elif t.kind == 'RBRACK':
+            brackets -= 1
+        elif t.kind == 'CARET' and depth == 1 and brackets == 0:
+            rec, j = parse_prop_decl(toks, j, bare_ok=True)
             if rec is not None:
                 out[rec['name']] = rec
             continue
@@ -873,7 +924,7 @@ def scan_modify_body(toks, lb):
             if t.val == 'SET':
                 # `SET ^"P" ENUM [...]` parses as a declaration; `SET ^"P" DEFAULT 45`
                 # does not, and simply carries no type information.
-                rec, j = parse_prop_decl(toks, j + 1)
+                rec, j = parse_prop_decl(toks, j + 1, after_set=True)
                 ops.append({'op': 'SET', 'prop': prop, 'rec': rec, 'line': t.line})
                 continue
             val = None
@@ -903,11 +954,16 @@ def collect_definitions(fname, toks):
     by position and by name."""
     n = len(toks)
     defs, bound, stack, pending = [], [], [], None
+    brackets = 0                 # a name inside a list is a member, never a property
 
     def same_line(j, line):
         return j < n and toks[j].line == line
 
     for i, t in enumerate(toks):
+        if t.kind == 'LBRACK':
+            brackets += 1
+        elif t.kind == 'RBRACK':
+            brackets = max(0, brackets - 1)
         if t.kind == 'ID':
             w = t.val
             if w == 'DEF' and i >= 1 and toks[i - 1].kind in ('CARET', 'STR'):
@@ -939,6 +995,12 @@ def collect_definitions(fname, toks):
                         depth += 1
                     elif toks[j].kind == 'RBRACE':
                         depth -= 1
+                    elif toks[j].kind == 'CARET' and depth == 1 \
+                            and (toks[j - 1].kind in ('LBRACE', 'CARET', 'RBRACK')
+                                 or (toks[j - 1].kind == 'ID' and toks[j - 1].val == 'STRING')) \
+                            and not (j + 1 < n and toks[j + 1].kind == 'ID' and toks[j + 1].val == 'OF'):
+                        # a parameter with no domain takes free text (v0.6, DECISION-39)
+                        params.append({'name': toks[j].val, 'values': None})
                     elif toks[j].kind == 'CARET' and j + 1 < n and toks[j + 1].kind == 'ID' \
                             and toks[j + 1].val == 'OF':
                         values = None
@@ -977,11 +1039,32 @@ def collect_definitions(fname, toks):
                 bound.append({'base': t.val, 'nargs': nargs + 1 if (seen or nargs) else 0,
                               'pos': pos, 'named': named, 'line': t.line})
             # a property line: ^"Name" TYPE [value] [modifiers]
-            if stack and stack[-1]['kind'] in ('DEF', 'PROPS') and stack[-1]['def'] is not None \
-                    and i + 1 < n and toks[i + 1].kind == 'ID' and toks[i + 1].val in VALUE_TYPES \
-                    and not (i >= 1 and toks[i - 1].kind == 'ID'
-                             and toks[i - 1].val in ('AXIS', 'OF', 'SET', 'NEXT', 'COLUMNS')):
-                ty, j = toks[i + 1].val, i + 2
+            in_props = bool(stack) and stack[-1]['kind'] in ('DEF', 'PROPS') and stack[-1]['def'] is not None
+            prev = toks[i - 1] if i else None
+            nxt = toks[i + 1] if i + 1 < n else None
+            first = prev is None or prev.line != t.line or prev.kind == 'LBRACE'
+            keyword = in_props and nxt is not None and nxt.kind == 'ID' and nxt.val in VALUE_TYPES \
+                and not (prev is not None and prev.kind == 'ID'
+                         and prev.val in ('AXIS', 'OF', 'SET', 'NEXT', 'COLUMNS'))
+            # No type keyword (v0.6, DECISION-39): a value on the name's line, or a declaration,
+            # which is the name first on its line with its constraints or, in a PROPERTIES
+            # block or a property DEF, with nothing after it.
+            plain = declares = False
+            if in_props and not keyword and brackets == 0:
+                same = nxt is not None and nxt.line == t.line
+                plain = same and nxt.kind in ('STR', 'INT', 'BOOL', 'LBRACK') \
+                    and (first or prev.kind in ('LBRACE', 'RBRACE', 'STR', 'INT', 'BOOL', 'RBRACK'))
+                declares = first and not plain and (
+                    (same and nxt.kind == 'ID' and nxt.val in MODIFIER_KW)
+                    or ((not same or nxt.kind == 'RBRACE')
+                        and (stack[-1]['kind'] == 'PROPS' or stack[-1]['def']['nested'])))
+            if keyword or plain or declares:
+                if keyword:
+                    ty, j = toks[i + 1].val, i + 2
+                elif plain:
+                    ty, j = ('LIST' if nxt.kind == 'LBRACK' else PLAIN_VALUE_KINDS[nxt.kind]), i + 1
+                else:
+                    ty, j = None, i + 1
                 rec = {'type': ty, 'value': None, 'vkind': None, 'min': None, 'max': None,
                        'enum': None, 'of': None, 'of_hash': None, 'members': None, 'line': t.line,
                        'required': False}
@@ -1199,6 +1282,8 @@ def analyze_file(fname, text, findings):
     containers = {}                      # container id -> kind (BASE, EXTENSION, SETTING, …)  (§16)
     origins = []                         # (edition, kind, container id, line): a port's source (§19)
     froms = []                           # FROM [KIND] "id" imports: (kind or None, id, line)  (§16)
+    sit_targets = []                     # (enclosing DEF, name, line): a hashless target of a change
+                                         # in a SITUATIONAL block  (§8, DECISION-38)
 
     # Embedded references (§5c, DECISION-20): every ^\"Name\" inside a string is a reference
     # site and resolves like any other. Before v0.6 no tool read inside a string.
@@ -1257,16 +1342,18 @@ def analyze_file(fname, text, findings):
     def change_amount(k, line):
         """An amount at toks[k]: an integer, or a reference to another value. Returns the next
         index, or None when there is no amount."""
-        if k < len(toks) and toks[k].kind == 'INT':
+        if k < len(toks) and toks[k].kind == 'INT' and toks[k].line == line:
             return k + 1
         h = None
         if k < len(toks) and toks[k].kind == 'HASH':
             h = toks[k].val
             k += 1
-        if k < len(toks) and toks[k].kind == 'CARET':
+        if k < len(toks) and toks[k].kind == 'CARET' and toks[k].line == line:
             nxt = toks[k + 1] if k + 1 < len(toks) else None
             if nxt is not None and nxt.kind == 'ID' and nxt.val in NEXT_STATEMENT_KW:
                 return None       # that reference opens the next statement; no amount here
+            if nxt is not None and nxt.line == line and nxt.kind in ('STR', 'INT', 'BOOL', 'LBRACK'):
+                return None       # a name and its value: the next statement (DECISION-39)
             if h is None and (cur_def(), toks[k].val) in step_names:
                 return k + 1      # the result of an earlier step, named by its property (§8)
             refs.append(('change amount', toks[k].val, h, toks[k].line))
@@ -1280,6 +1367,44 @@ def analyze_file(fname, text, findings):
             if _m:
                 spec_version = (int(_m.group(1)), int(_m.group(2)))
             break
+
+    # Type keywords (v0.6, DECISION-39). STRING, INTEGER and BOOLEAN are not written from 0.6:
+    # a value shows what it is, and a declaration is the name and its constraints. LIST before
+    # a list and ENUM before one value go with them. A file below 0.6 keeps them, unreported.
+    if spec_version >= (0, 6):
+        for _i, _t in enumerate(toks):
+            if _t.kind != 'ID':
+                continue
+            _n = toks[_i + 1] if _i + 1 < len(toks) and toks[_i + 1].line == _t.line else None
+            if _t.val in DROPPED_TYPE_KW:
+                findings.append(Finding(fname, 'lint', 'error', _t.line,
+                                        "%s is not written from 0.6: a value is written alone, and "
+                                        "a declaration is the name and its constraints (§8)" % _t.val))
+            elif _t.val == 'LIST' and _n is not None and _n.kind == 'LBRACK':
+                findings.append(Finding(fname, 'lint', 'error', _t.line,
+                                        "LIST is not written before a list from 0.6: write the "
+                                        "list alone (§8)"))
+            elif _t.val == 'ENUM' and _n is not None and _n.kind == 'STR':
+                findings.append(Finding(fname, 'lint', 'error', _t.line,
+                                        "ENUM is followed by the list of values allowed; a value "
+                                        "is written alone (§8)"))
+    # A number written with its own range on one line: ^"Air" 7 MIN 1 MAX 5 (the older form
+    # wrote INTEGER and is checked where that keyword is read).
+    for _i, _t in enumerate(toks):
+        if _t.kind == 'CARET' and (_i == 0 or toks[_i - 1].line != _t.line) \
+                and _i + 2 < len(toks) and toks[_i + 1].kind == 'INT' and toks[_i + 1].line == _t.line:
+            _v, _mn, _mx, _k = int(toks[_i + 1].val), None, None, _i + 2
+            while _k + 1 < len(toks) and toks[_k].line == _t.line:
+                if toks[_k].kind == 'ID' and toks[_k].val in ('MIN', 'MAX') and toks[_k + 1].kind == 'INT':
+                    if toks[_k].val == 'MIN':
+                        _mn = int(toks[_k + 1].val)
+                    else:
+                        _mx = int(toks[_k + 1].val)
+                    _k += 2
+                    continue
+                _k += 1
+            if (_mn is not None and _v < _mn) or (_mx is not None and _v > _mx):
+                refs.append(('__range__', "%d outside [%s,%s]" % (_v, _mn, _mx), None, _t.line))
 
     def cur_def():
         for fr in reversed(frames):
@@ -1548,6 +1673,65 @@ def analyze_file(fname, text, findings):
             if rval is not None:
                 refs.append(('ref value', rval, rvh, rvl))
                 ref_values.append((cur_def(), toks[idx - 1].val if named else rty, rval, rvl))
+        elif w == 'SITUATIONAL':
+            # A change that holds in a situation (v0.6, DECISION-38):
+            #   SITUATIONAL "condition" { <changes> }   SITUATIONAL #hash ^"Entity" { <changes> }
+            k, cond = idx + 1, False
+            if k < len(toks) and toks[k].kind == 'STR':
+                cond = True
+                if not toks[k].val.strip():
+                    findings.append(Finding(fname, 'lint', 'error', t.line,
+                                            "SITUATIONAL has an empty condition (§8)"))
+                k += 1
+            else:
+                h = None
+                if k < len(toks) and toks[k].kind == 'HASH':
+                    h, k = toks[k].val, k + 1
+                if k < len(toks) and toks[k].kind == 'CARET':
+                    cond = True
+                    refs.append(('situational condition', toks[k].val, h, toks[k].line))
+                    k += 1
+            if not cond:
+                findings.append(Finding(fname, 'lint', 'error', t.line,
+                                        "SITUATIONAL needs a condition: the source's words as a "
+                                        "string, or a reference to an entity (§8)"))
+                continue
+            if not (k < len(toks) and toks[k].kind == 'LBRACE'):
+                findings.append(Finding(fname, 'lint', 'error', t.line,
+                                        "SITUATIONAL needs a block of changes after its condition: "
+                                        "{ <target> SET … } (§8)"))
+                continue
+            # the block's statements: a statement ends where a line ends outside any bracket
+            stmts, cur_st, depth, prev_line, j = [], [], 0, None, k + 1
+            while j < len(toks):
+                tk = toks[j]
+                if tk.kind == 'RBRACE' and depth == 0:
+                    break
+                if depth == 0 and cur_st and tk.line != prev_line:
+                    stmts.append(cur_st)
+                    cur_st = []
+                cur_st.append((tk, depth))
+                if tk.kind in ('LBRACE', 'LBRACK', 'LPAREN'):
+                    depth += 1
+                elif tk.kind in ('RBRACE', 'RBRACK', 'RPAREN'):
+                    depth -= 1
+                prev_line = tk.line
+                j += 1
+            if cur_st:
+                stmts.append(cur_st)
+            if not stmts:
+                findings.append(Finding(fname, 'lint', 'error', t.line,
+                                        "a SITUATIONAL block holds at least one change (§8)"))
+            for st in stmts:
+                first = st[0][0]
+                if first.kind == 'ID' and first.val == 'SITUATIONAL':
+                    findings.append(Finding(fname, 'lint', 'error', first.line,
+                                            "a SITUATIONAL does not hold another SITUATIONAL (§8)"))
+                elif not any(tk.kind == 'ID' and tk.val in ('SET', 'TRANSFORM') and dp == 0
+                             for tk, dp in st):
+                    findings.append(Finding(fname, 'lint', 'error', first.line,
+                                            "a SITUATIONAL block holds changes only: <target> SET … "
+                                            "or <target> TRANSFORM … (§8)"))
         elif w in ('SET', 'TRANSFORM') and not (w == 'SET' and frames and frames[-1].get('is_modify')):
             # A change to a value (v0.6, DECISION-16): <target> SET n | <target> TRANSFORM METHOD n.
             # FOR REVIEW: SET is also the §13 directive, written BEFORE its target directly
@@ -1559,7 +1743,12 @@ def analyze_file(fname, text, findings):
                                             "TRANSFORM needs a target before it on the line: a "
                                             "reference, or a CHOOSE (§8)"))
                 continue          # a SET with no target on its line is not a change
-            if isinstance(tgt, tuple) and not (tgt[1] is None and (cur_def(), tgt[0]) in step_names):
+            if isinstance(tgt, tuple) and tgt[1] is None and cur_def() and frames \
+                    and frames[-1].get('kw') == 'SITUATIONAL':
+                # with no hash it may name a property of the enclosing definition; which it
+                # is needs the whole set, so situational_pass decides (DECISION-38)
+                sit_targets.append((cur_def(), tgt[0], tgt[2]))
+            elif isinstance(tgt, tuple) and not (tgt[1] is None and (cur_def(), tgt[0]) in step_names):
                 refs.append(('change target', tgt[0], tgt[1], tgt[2]))
             k = idx + 1
             if w == 'SET':
@@ -1736,8 +1925,9 @@ def analyze_file(fname, text, findings):
                         if not ax['points']:
                             terr(tk.line, 'AXIS ^"%s" lists no point' % ax['name'])
                     else:
-                        terr(tk.line, 'AXIS ^"%s" needs its points: OF ^"Type", a range lo-hi, '
-                                      'INTEGER, ROLL n OF ^"die", or a list [ … ]' % ax['name'])
+                        # no points given: an axis of whole numbers (v0.6, DECISION-39; the
+                        # older form wrote INTEGER)
+                        ax['kind'] = 'number'
                 elif tk.kind == 'ID' and tk.val == 'AT':
                     if not (k + 1 < end and toks[k + 1].kind == 'LBRACK'):
                         terr(tk.line, 'AT is followed by its coordinates: AT [ … ] { … }')
@@ -2272,7 +2462,7 @@ def analyze_file(fname, text, findings):
         'block_anchor_lines': block_anchor_lines, 'anchor_names': anchor_names, 'origins': origins,
         'vdefs': vdefs, 'bound': bound, 'spec_version': spec_version,
         'file_version': file_version, 'pins': pins, 'header': header,
-        'hash_refs': hash_refs,
+        'hash_refs': hash_refs, 'sit_targets': sit_targets,
     }
 
 
@@ -2714,6 +2904,46 @@ def choose_pass(files_data, findings):
                                             "(its own properties or inherited)" % (pname, c['type'])))
 
 
+def situational_pass(files_data):
+    """A target with no hash, in a SITUATIONAL block (§8, DECISION-38). Where it names a
+    property of the enclosing definition, one the definition writes or one a type up its
+    EXTENDS chain declares, it is that property. Any other is a reference like every change
+    target, and is handed to the reference check."""
+    by_name, by_hash = {}, {}
+    for d in files_data:
+        for x in d.get('vdefs', []):
+            by_name.setdefault(x['name'], []).append(x)
+            if x['hash']:
+                by_hash.setdefault(x['hash'], []).append(x)
+
+    def parents(x):
+        out = []
+        for nm, hsh, _ln in x['extends']:
+            if hsh and len(by_hash.get(hsh, [])) == 1:
+                out.append(by_hash[hsh][0])
+            elif len(by_name.get(name_key(nm), [])) == 1:
+                out.append(by_name[name_key(nm)][0])
+        return out
+
+    def has_property(x, prop):
+        seen, todo = set(), [x]
+        while todo:
+            y = todo.pop()
+            if id(y) in seen:
+                continue
+            seen.add(id(y))
+            if prop in y['props'] or prop in y['children']:
+                return True
+            todo.extend(parents(y))
+        return False
+
+    for d in files_data:
+        for owner, name, line in d.get('sit_targets', []):
+            own = [x for x in d.get('vdefs', []) if x['name'] == owner]
+            if not any(has_property(x, name) for x in own):
+                d['refs'].append(('change target', name, None, line))
+
+
 def ref_pass(files_data, findings):
     """^"P" REF ^"Entity" (§8, DECISION-17): where a type up the owner's EXTENDS chain declares
     ^"P" REF OF ^"Type", the entity must be of that type: Type itself, or something that
@@ -2881,7 +3111,7 @@ def value_pass(files_data, findings):
 
     A warning in a file that declares SPEC_VERSION below 0.6, an error from 0.6, and waived by
     FIAT: an INTEGER outside the MIN / MAX it inherits, a value outside the ENUM it inherits,
-    a value of another kind than the type declared (§5, §8), a named member of a LIST OF
+    in a file below 0.6 a type keyword given a value of another kind (§8), a named member of a LIST OF
     ^"Type" that is not of the type (§8), and one property written twice in a definition.
 
     The same gating, for REQUIRED (§8, DECISION-34): an instance that lacks a property a type
@@ -3110,7 +3340,8 @@ def value_pass(files_data, findings):
                 if decl is None:
                     continue
                 owner, dr = decl
-                if dr['type'] == 'INTEGER' and r['vkind'] == 'INT':
+                if r['vkind'] == 'INT' and (dr['min'] is not None or dr['max'] is not None) \
+                        and dr['type'] in ('INTEGER', None):
                     v = int(r['value'])
                     if (dr['min'] is not None and v < dr['min']) or (dr['max'] is not None and v > dr['max']):
                         lim = ' and '.join(b for b in ('MIN %d' % dr['min'] if dr['min'] is not None else '',
@@ -3125,11 +3356,8 @@ def value_pass(files_data, findings):
                                             % (prop, r['value'], owner['name'],
                                                ', '.join('"%s"' % o for o in dr['enum'][:8])
                                                + (', …' if len(dr['enum']) > 8 else ''))))
-                elif VALUE_FAMILY.get(dr['type']) and VALUE_FAMILY.get(r['type']) \
-                        and VALUE_FAMILY[dr['type']] != VALUE_FAMILY[r['type']]:
-                    findings.append(Finding(x['file'], 'coherence', sev, r['line'],
-                                            '^"%s" is written %s; ^"%s" declares it %s (§8)'
-                                            % (prop, r['type'], owner['name'], dr['type'])))
+                # A text value where the type declares a number is not a finding (DECISION-39):
+                # a value that is usually a number has exceptions.
 
 
 def pin_pass(files_data, findings):
@@ -3373,7 +3601,7 @@ def modification_pass(files_data, findings):
                     findings.append(Finding(
                         d['file'], 'coherence', 'error', op['line'],
                         "%s ^\"%s\": ^\"%s\" declares it %s, not a LIST"
-                        % (op['op'], op['prop'], tgt, rec['type'])))
+                        % (op['op'], op['prop'], tgt, rec['type'] or 'with no list')))
                 elif op['op'] == 'REMOVE_FROM' and rec.get('members') is not None \
                         and op['value'] is not None and op['value'] not in rec['members']:
                     # A warning, not an error: an earlier layer's ADD_TO may legitimately
@@ -3484,6 +3712,7 @@ def main(argv):
             print("cannot read %s: %s" % (path, exc), file=sys.stderr)
             return 2
         files_data.append(analyze_file(path, text, findings))
+    situational_pass(files_data)
     coherence_pass(files_data, findings)
     choose_pass(files_data, findings)
     ref_pass(files_data, findings)
