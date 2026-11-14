@@ -125,6 +125,9 @@ Changes made since v0.5, listed as they are decided. **Not all are additive.**
     reference wherever it stands, and a name that is an item of a list is a reference with or
     without its hash; the validator now checks both. In a system block a name with no hash is
     the system's own and is not a reference.
+32. **The page is the property `^"Page"`** *(§4, §8, DECISION-45)* — the page a thing is printed
+    on is written `^"Page" 243`, or as the source prints it, `^"Page" "139-160"`. A page in a
+    comment is a note that no tool reads. The DSL has no field for the book.
 
 ### v0.5 — five new constructs, and one rule tightened *(current)*
 
@@ -702,6 +705,17 @@ stay valid.
   names in armdef, 15 broken hashes in teeth, 6 names in root that name nothing, and 2 root
   DEFs whose names hold an unescaped quote.
 
+- **DECISION-45 — The page is the property `^"Page"`; no construct for provenance**
+  *(resolved, v0.6, 2026-11-13)* (§4, §8): §4 said comments were for page references and that
+  comments carry no data a tool needs. The corpora write the page in 40,672 comment lines
+  (`# source: chapter opening (page 243)`) and in 25,890 properties under three names:
+  `^"Page"` 23,932 times, `^"Pages"` 1,916 and `^"Source Page"` 42. One tool reads a page, from
+  `^"Source Page"`. No construct is added. The page is the property `^"Page"`: a number, or
+  what the source prints, as text. A page in a comment stays legal and is a note that no tool
+  reads. The DSL gets no field for the book: 31,619 entities repeat it in a `^"Source"` or a
+  `^"Book"` property, and the file's `NAME` and the register a corpus keeps beside its files
+  already say which book a file comes from. No corpus is changed.
+
 ## 1. Overview & Design Principles
 
 Titterpig is a domain-specific language (DSL) for defining tabletop role-playing game (TTRPG) systems, content, and narrative structures. The base specification defines a **system-agnostic syntax toolkit** — it owns the grammar, while each game system owns its vocabulary.
@@ -979,7 +993,9 @@ version or a later one.
 #L5R001abc   ← this is a hash ID
 ```
 
-Comments are for human annotation only — mechanical notes, page references, source attributions, and TODO markers.
+Comments are for human annotation only — mechanical notes and TODO markers. A comment may mention a page or a source, as a note. No tool reads it.
+
+**Where a thing is printed** *(v0.6, DECISION-45)*. A page that a tool should know is written as the `^"Page"` property (§8), not in a comment.
 
 **Rule (v0.4): comments MUST NOT carry data a tool needs.** Anything a parser or downstream tool must read — corrections, values, stats, cross-references — belongs in structured DSL, not a comment. Corrections in particular go in machine-readable errata files (§13), never as `# … should read …` notes. A comment must be safe to strip without losing meaning.
 
@@ -1835,6 +1851,20 @@ A value may be followed by constraints on the same line:
 ^"School Name" "Hida Defender" FIXED
 ^"Air" 7 FIAT "Oni Lord: supernatural Air, beyond the mortal 1–5 range"
 ```
+
+### The page — `^"Page"` *(v0.6, DECISION-45)*
+
+The page a definition or a block is printed on is its `^"Page"` property: a number, or what the
+source prints, as text.
+
+```
+^"Page" 243
+^"Page" "139-160"
+```
+
+The base spec names this one property so that every tool looks in the same place. It adds no
+keyword and no check. The DSL has no field for the book: the file's `NAME` and the register a
+corpus keeps beside its files say which book a file comes from.
 
 ### One entity — `REF` *(v0.6, DECISION-17)*
 

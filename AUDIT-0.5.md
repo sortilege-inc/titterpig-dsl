@@ -1790,7 +1790,9 @@ member that is an `ALIAS` and one under a `FIAT`.
 
 ### C4. Provenance has no construct
 
-**Status:** open
+**Status:** closed 2026-11-13 by the owner. Committed and pushed on branch `0.6`. No construct
+is added: the page is the property `^"Page"`, the book gets no field, and a page in a comment
+is a note that no tool reads (DECISION-45). The corpus work is F28.
 
 §4: comments are for "page references, source attributions", and comments must not carry data a
 tool needs. §5c: strip page citations from `DESCRIPTION`. A page number is data to any tool that
@@ -1798,6 +1800,66 @@ cites, verifies or shows source beside structure. The corpora have each found a 
 in comments (`# source: page 244`; about 8,380 comment lines carry a page), arm5e in an invented
 `^"Page"` property (6,912 uses), l5r5e in both. `REPRINT` says a consumer notes "this book among
 its printings", and no header field names the book. `sources.json` does that job outside the spec.
+
+**Evidence, counted 2026-11-13** over the 22 corpus directories (6,986 files, 135,466 DEFs).
+
+*The page.*
+
+| Where it is written | Count | Corpora |
+|---|---|---|
+| a comment (`# source: chapter opening (page 243)`) | 40,672 of 59,579 comment lines | vtm5e 12,202, invisiblesun 4,704, pendragon6e 4,410, tor2e 3,146, callofcthulhu7e 2,605, and 13 more |
+| `^"Page"` | 23,932, a number in 23,779 | invisiblesun 7,734, arm5e 6,912, armdef 6,810, root 1,655, pendragon5e 420 |
+| `^"Pages"` | 1,916, a number or a range in a string | pendragon6e 827, pendragon5e 764, coyotecrow 176, marvelmultiverse 149 |
+| `^"Source Page"` | 42 | l5r5e |
+
+*The book.*
+
+| Where it is written | Count | Corpora |
+|---|---|---|
+| `^"Source"` on each entity (`"Core Rules"`, `"Rival Magic"`) | 22,230 | armdef 11,372, arm5e 10,858 |
+| `^"Book"` on each entity | 9,389 | invisiblesun 7,734, root 1,655 |
+| the file's `NAME` (`"The One Ring 2e - Chapter 3: Adventurers"`) | every file | free text: book and part together |
+| `SOURCE "…"` as a line of an `.arc` | 15 | l5r5e 14, armdef 1 |
+| `sources.json` beside the corpus | each repo | the book's title, its PDF and its files; outside the spec |
+
+`^"Source"` and `^"Book"` also name things in play in a few places (draw-steel's 222
+`^"Source"`, arm5e's 28 `^"Book"` for books a covenant owns); those are not counted above.
+
+*Who reads it.* Five consumer repos were searched. `titterpig-doublecheck/scripts/errata_gen.py`
+and the dashboard's l5r5e errata overlay read `^"Source Page"`. mastra's arm5e renderers write
+`^"Page"`. The doublecheck's invention check adds a DEF's comments to the text it compares.
+No tool was found that takes a page number out of a comment. UNVERIFIED beyond that search.
+
+*Proposed 2026-11-13.* The owner was asked "Take the three C4 parts as recommended?" and
+answered "Yes, all three".
+
+1. The page is the property `^"Page"`: a number, or what the source prints as text
+   (`"139-160"`), with no new construct.
+2. No field for the book. One source per file is the corpora's rule; the file's `NAME` and
+   the repo's `sources.json` say which.
+3. §4 keeps its rule. A page in a comment is a note that no tool reads.
+
+**Applied as DECISION-45.**
+
+- **Spec:** §0 item 32; DECISION-45; §4 no longer lists page references and source
+  attributions as what comments are for, and points to the property; §8 has a new part, "The
+  page".
+- **`AUTHORING-GUIDELINES.md`, `README.md`:** a line each.
+- **No tool changes.** The grammar and the validator already read the form.
+
+| Check | Result |
+|---|---|
+| `ttrpg_validator.py tests/page-good`: `^"Page"` as a number and as text, on a DEF, in `PROPERTIES`, on a nested entry and on a `SCENE` | 0 errors, 0 warnings |
+| `check_grammar.py tests/page-good` | 2 of 2 accepted |
+| `check_references.py` and `check_constructs.py` on the same set | 0 errors |
+| every other fixture set and both grammar gates | unchanged |
+
+*Not done.*
+
+- No corpus is changed (F28).
+- Nothing checks that a page is written as `^"Page"` and not under another name, or that
+  its value is a page.
+- The spec does not state that a file holds one source. That rule is the corpora's.
 
 ### C5. In heavy use and not in the spec
 
@@ -2326,6 +2388,24 @@ callofcthulhu7e 504). They have not been sorted by kind. Sort them first:
 - UNVERIFIED: how many of the 9,709 are of the first kind.
 - The generators under `Titterpig/Temp` write these strings; the change belongs there for a
   generated corpus.
+
+### F28. The corpora and their generators: the page as `^"Page"`
+
+**From:** C4, DECISION-45. **Status:** open, not started. Nothing fails: no tool checks it.
+
+| What | Count | Where |
+|---|---|---|
+| a page in a comment (`# source: chapter opening (page 243)`) | 40,672 lines | vtm5e 12,202, invisiblesun 4,704, pendragon6e 4,410, tor2e 3,146, callofcthulhu7e 2,605, pendragon5e 2,085, marvelmultiverse 1,959, root 1,655, daggerheart 1,592, dnd5.5e 1,429, teeth 1,334 |
+| `^"Pages"` to rename | 1,916 | pendragon6e 827, pendragon5e 764, coyotecrow 176, marvelmultiverse 149 |
+| `^"Source Page"` to rename | 42 | l5r5e; `titterpig-doublecheck/scripts/errata_gen.py` and the dashboard's l5r5e errata overlay read this name |
+| the book repeated on each entity (`^"Source"`, `^"Book"`) | 31,619 | arm5e, armdef, invisiblesun, root |
+
+- The comments are written by the conversion generators. The change is made there: the
+  generator writes `^"Page"` on the DEF and may keep the comment as a note.
+- A `# source:` comment also says what kind of unit it came from ("adversary stat block",
+  "chapter opening"). That part has no property and stays a comment.
+- Whether the per-entity book properties go is each corpus's call. Nothing in the spec asks
+  for them or forbids them.
 
 ### F27. Five corpora: what the new reference checks report
 
@@ -2883,6 +2963,9 @@ Filled in as each finding is walked through.
 | C3 | 2026-11-13 | Four rules for references that no keyword marks. (1) A `#hash ^"Name"` pair that declares nothing is a reference wherever it stands. (2) A name that is an item of a list is a reference, with or without its hash. (3) Elsewhere in a system block a name with no hash is the system's own and is not resolved. (4) §5d's list names the places the tools already checked. A miss is a warning below 0.6 and an error from 0.6. Written as DECISION-44. | Owner: "Yes, all four". 10,290 of 730,196 corpus carets stood where no tool looked; 15 hashes in teeth were broken; of 2,249 hashless names in system blocks, 771 name nothing, so checking them all would mix broken references with labels. |
 | C3 | 2026-11-13 | Agent's calls, to confirm. (1) The validator applies §5d's rules to the new places, and `check_references.py` is left as it is. (2) A list member with no hash that names one entity is a warning at every version. (3) A member that is an `ALIAS` draws no hash warning. (4) `FIAT` waives each finding. (5) A name inside an unnamed record of a list is the record's property. (6) `tests/decision6.ttrpg` is unchanged; the alias rule (3) came from it. | (1): the validator has the bracket context, the file's version and the waivers. (2): §5d rule 2 says a hashless reference warns. (3): an alias has no hash to carry. (4): as for every gated finding. (5): DECISION-41. |
 | C3 | 2026-11-13 | C3 is closed. The branch is committed and pushed. | Owner: "Close, commit, push". The agent's calls in the C3 row marked "to confirm" were reported to him before he closed and were not separately ruled on. |
+| C4 | 2026-11-13 | No construct for provenance. (1) The page is the property `^"Page"`: a number, or what the source prints as text. (2) No field for the book. (3) §4 keeps its rule: a page in a comment is a note that no tool reads. Written as DECISION-45. | Owner: "Yes, all three". The corpora already write `^"Page"` 23,932 times; one tool reads a page; the file's `NAME` and `sources.json` name the book. |
+| C4 | 2026-11-13 | Agent's calls, to confirm. (1) No check is added for the page. (2) §4 drops "page references, source attributions" from what comments are for, and says a comment may still mention them. (3) The spec says a corpus's register names the book and does not state that a file holds one source. (4) Renaming `^"Pages"` and `^"Source Page"` is corpus work (F28). | (1): not asked for; a value is not typed. (2): the ruling's part 3. (3): one source per file is the corpora's rule and is not in the spec. |
+| C4 | 2026-11-13 | C4 is closed. The branch is committed and pushed. | Owner: "Close, commit, push". The agent's calls in the C4 row marked "to confirm" were reported to him before he closed and were not separately ruled on. |
 
 ---
 

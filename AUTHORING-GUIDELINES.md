@@ -148,6 +148,8 @@ for these instead of burying the meaning in a verbatim string (spec §5b):
   the amount, `#hash ^"Command" TRANSFORM ADD 1` when it goes up by it. A signed number in a string
   (`"+1"`) and a bare `1` both hide which one is meant. Which one a printed number is, is decided
   when the source is converted. Until it is decided, keep the string as printed.
+- **The page is `^"Page"`.** `^"Page" 243`, or `^"Page" "139-160"` as the source prints it. A page
+  in a comment is a note that no tool reads.
 - **List entries need not be named.** `^"Key" LIST OF ^"Map Key Entry" [ DEF { … }, DEF { … } ]`.
   The list is named by its property.
 - **No type keywords.** A value is written alone (`^"Honor" 35`, `^"Name" "Hida"`), and a type

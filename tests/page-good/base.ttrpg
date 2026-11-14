@@ -1,0 +1,31 @@
+BASE "Page_Core" {
+    NAME "DECISION-45 fixture — the page a thing is printed on (§8)"
+    SPEC_VERSION "0.6"
+    VERSION "1.0"
+    RELEASE_DATE "2026-11-13"
+
+    #   ttrpg_validator.py tests/page-good           0 errors, 0 warnings
+    #   check_grammar.py   tests/page-good           accepted
+
+    # a number
+    #PagDisciplinesK2vQ9wN3c ^"Disciplines" DEF {
+        ^"Page" 243
+        DESCRIPTION "As soon as a mortal receives the Embrace, they receive access to the powers colloquially known as Disciplines."
+    }
+    # what the source prints, as text
+    #PagAnarchH4mK8wQ2xN6vB1 ^"The Anarch Movement" DEF {
+        ^"Page" "139-160"
+    }
+    # in a PROPERTIES block, and in a nested entry
+    #PagChapterR5tJ1yL8sD4fG ^"Chapter Two" DEF {
+        PROPERTIES {
+            ^"Page" 15
+        }
+        ^"Rolling Dice" DEF {
+            ^"Page" 16
+        }
+    }
+    # a page in a comment is a note that no tool reads
+    # source: chapter opening (page 243)
+    #PagNoteB9pK3xN7vM2cQ6hW ^"A Note" DEF { }
+}
