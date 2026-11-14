@@ -692,6 +692,7 @@ GUIDANCE_FIELD  <- 'CONCERNS' _ '[' _ GUIDANCE_REF (_ ',' _ GUIDANCE_REF)* _ ']'
                  / 'TOPICS' _ BRACKET_LIST
                  / DISPOSITION_FIELD
                  / TEXT_FIELD
+                 / EMPHASIS_BLOCK            # v0.6, DECISION-51 — the spans the source marks in TEXT
                  / COMMENT
 GUIDANCE_REF    <- SIDED_REF / (HASH_ID? _ CARET_REF)
 
@@ -764,7 +765,9 @@ CHOOSE_KEYED    <- CHOOSE_VALUE _ PROPERTY_TYPE
 STRING          <- TRIPLE_QUOTED / SINGLE_QUOTED
 TRIPLE_QUOTED   <- '"""' (!'"""' .)* '"""'
 SINGLE_QUOTED   <- '"' STRING_CHAR* '"'
-STRING_CHAR     <- '\\' ESCAPE_CHAR / !'"' .
+# A backslash opens one of the escapes below and nothing else (v0.6, DECISION-46). A
+# triple-quoted string reads no escapes: a backslash there is a backslash.
+STRING_CHAR     <- '\\' ESCAPE_CHAR / ![\\"] .
 ESCAPE_CHAR     <- ["\\/nrt] / 'u' HEX HEX HEX HEX
 HEX             <- [0-9a-fA-F]
 

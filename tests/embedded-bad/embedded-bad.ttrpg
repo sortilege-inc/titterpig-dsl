@@ -17,8 +17,6 @@ BASE "Demo_Embedded_Bad" {
         OPPORTUNITY "They may perform a ^\"Strike\" action."
         BURST "They become ^\"Enraged\"/\"\" at once."
         EMPHASIS { "a ^\"Enraged\"" }
-        NOTE """
-            A ^"Nobody" arrives.
-        """
+        NOTE "A ^\"Nobody\" arrives."
     }
 }

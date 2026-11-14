@@ -128,6 +128,25 @@ Changes made since v0.5, listed as they are decided. **Not all are additive.**
 32. **The page is the property `^"Page"`** *(§4, §8, DECISION-45)* — the page a thing is printed
     on is written `^"Page" 243`, or as the source prints it, `^"Page" "139-160"`. A page in a
     comment is a note that no tool reads. The DSL has no field for the book.
+33. **The escapes of a string** *(§10, DECISION-46)* — a single-quoted string and a caret name
+    take seven: `\"`, `\\`, `\/`, `\n`, `\r`, `\t` and `\uXXXX`. A backslash before anything else
+    is an error from 0.6. A triple-quoted string reads no escapes.
+34. **What verbatim allows** *(§5c, DECISION-47)* — a string is verbatim when it matches the
+    source after five allowances and no others: Unicode form, white space, quote style, the
+    repair of page layout, and decoded HTML entities. §5c had named a "standard
+    normalisation" that nothing defined.
+35. **Text of several paragraphs is one string** *(§10, DECISION-48; not additive)* — with
+    `\n\n` between the paragraphs. A triple-quoted block and a string that runs over a line break
+    are older forms: errors from 0.6, read below it. Bare strings in a row are separate entries
+    of their block.
+36. **Where order matters** *(§5, DECISION-49)* — the order of statements in a block carries
+    meaning in three places only: a `NEXT` chain, the items of a list, and bare strings in a
+    row. A file keeps its source's order for display.
+37. **A hash is stable within a major version** *(§5, §19, DECISION-50)* — every state of a
+    system's `0.5` corpus gives an entity the same hash, through a rename, a move or a rebuild.
+    A new major version may mint new ones.
+38. **`EMPHASIS` in a guidance `ENTRY`** *(§22, DECISION-51)* — an entry may hold the spans the
+    source marks in its `TEXT`, as a DEF does for its `DESCRIPTION`.
 
 ### v0.5 — five new constructs, and one rule tightened *(current)*
 
@@ -716,6 +735,67 @@ stay valid.
   `^"Book"` property, and the file's `NAME` and the register a corpus keeps beside its files
   already say which book a file comes from. No corpus is changed.
 
+- **DECISION-46 — The escapes of a string** *(resolved, v0.6, 2026-11-13)* (§10, §14): the
+  spec named `\n\n` in §10 and `\"` in §14 and listed no escapes. The grammar took the JSON
+  set and read a backslash before any other character as a plain backslash, so `"\q"` passed
+  both tools. Of 1,417,638 single-quoted strings in the 22 corpus directories, the escapes in
+  use are `\n` (231,956 times), `\"` (8,332), `\\` (7) and `\uXXXX` (3). The decision lists the
+  grammar's seven in §10. A backslash before anything else, in a single-quoted string or a
+  caret name, is a warning in a file that declares a `SPEC_VERSION` below 0.6, or none, and an
+  error from 0.6. A triple-quoted string reads no escapes: a backslash there is a backslash.
+
+- **DECISION-47 — What verbatim allows** *(resolved, v0.6, 2026-11-13)* (§5c): §5c let a
+  `DESCRIPTION` differ from its source by "the standard whitespace/HTML-escape normalisation",
+  which no section defined and no tool applied. The decision lists what a string may differ
+  by, and nothing else may: Unicode form (NFC); white space (a run is one space, the page's
+  line breaks are not kept, a paragraph break is, a no-break space is a space); quote style
+  (curly and straight are the same); the repair of page layout (a word hyphenated at a line
+  end is rejoined, a soft hyphen is dropped, a ligature glyph is written as its letters); and
+  HTML entities decoded. The first three are the name rule of DECISION-33. Wording,
+  punctuation, the kind of a dash, capitals and emphasis are content. The corpora hold 47,650
+  strings with a curly apostrophe, 33 with a no-break space, 15 with a soft hyphen and 2 with
+  an fi ligature. No tool here checks the rule: it needs the source.
+
+- **DECISION-48 — Text of several paragraphs is one string** *(resolved, v0.6, 2026-11-13)*
+  (§10): §10 showed three ways to write longer text and named none as the normal one: strings
+  in a row, one string with `\n\n`, and a triple-quoted block. The corpora write one string with
+  `\n\n` 33,488 times, a triple-quoted block 1,897 times (draw-steel 1,889) and a single-quoted
+  string over a raw line break 94 times. The decision keeps the first and no other. A
+  triple-quoted block and a string that runs over a line break are a warning in a file that
+  declares a `SPEC_VERSION` below 0.6, or none, and an error from 0.6; the corpora are to be
+  converted. Bare strings in a row are separate entries of their block and were never one
+  text in the corpora: of 1,833 such runs, the `EMPHASIS` blocks of pendragon6e and
+  marvelmultiverse hold 918 and l5r5e's `EFFECT` and `OPPORTUNITIES` blocks most of the rest.
+
+- **DECISION-49 — Where order matters** *(resolved, v0.6, 2026-11-13)* (§5, §8): the spec's one
+  statement on order sat in the dice section, "Statements in a block have no order", and a
+  list and a run of strings plainly have one. The order of statements in a block carries
+  meaning in three places: a `NEXT` chain (§8), the items of a list, and bare strings in a row
+  (§10). Elsewhere it carries none. A file keeps the order of its source and a consumer shows
+  definitions in that order, but no rule and no reference depends on it. Order between files
+  is load order (§13). A book's headings get no form of their own: a heading is the name of
+  the definition made for its section.
+
+- **DECISION-50 — A hash is stable within a major version** *(resolved, v0.6, 2026-11-13)* (§5,
+  §19): §5 said a hash is unique and gave its format, and nothing said it lasts. A
+  `.selections` file, a bridge, an errata overlay and a saved game each point at a hash. The
+  owner's rule: "Hashes are considered stable within same major versions (ie, all 0.5
+  instances should be hash-stable)." A major version is the number of a corpus's
+  content-version directory (§19). Within it an entity keeps its hash through a rename, a
+  move to another file and a rebuild from the source; a new major version may mint new
+  hashes. Measured on ten corpora against earlier commits of the same directory: most hold
+  (tor2e 1 change in 505 names, arm5e 11 in 3,017), and one re-conversion inside vtm5e's `0.5`
+  replaced 1,025 of 1,026. No tool checks the rule: it takes two states of a corpus.
+
+- **DECISION-51 — `EMPHASIS` in a guidance `ENTRY`** *(resolved, v0.6, 2026-11-13)* (§22, §5c):
+  §22 gave an entry `CONCERNS`, `TOPICS` and `TEXT`. Two corpora write an `EMPHASIS` block in
+  an entry 194 times, in 52 files, and the grammar refused each file. An entry's `TEXT` is
+  verbatim, and emphasis is recorded beside verbatim text (DECISION-19), so the entry was the
+  one place printed emphasis had nowhere to go. An entry may hold an `EMPHASIS` block; each
+  span is in that entry's `TEXT`. `check_references.py` already read the block and tested the
+  spans against the entry's own text. The same finding left `BASE` as it was: a file-level
+  keyword, reserved everywhere (DECISION-29), which arm5e's 749 `BASE n` lines must rename.
+
 ## 1. Overview & Design Principles
 
 Titterpig is a domain-specific language (DSL) for defining tabletop role-playing game (TTRPG) systems, content, and narrative structures. The base specification defines a **system-agnostic syntax toolkit** — it owns the grammar, while each game system owns its vocabulary.
@@ -752,12 +832,7 @@ The base spec is permissive: the grammar accepts almost any well-formed block. T
 # Avoid — everything in one string:
 #h9k7mQ2vX7wZ9tB4cD1a ^"Hida" DEF {
     EXTENDS #p4Tz8LwQ1nRv6YbK3xGs ^"Family"
-    DESCRIPTION """
-        Ring Increase: +1 Earth or +1 Fire
-        Skill Increases: +1 Command, +1 Tactics
-        Glory: 44
-        Starting Wealth: 4 koku
-    """
+    DESCRIPTION "Ring Increase: +1 Earth or +1 Fire\nSkill Increases: +1 Command, +1 Tactics\nGlory: 44\nStarting Wealth: 4 koku"
 }
 
 # Avoid — the fields named, the values still packed in strings:
@@ -1349,7 +1424,8 @@ EFFECT "… they also become #hash ^\"Enraged\" …"
 
 - **The literal.** A slash and a second quoted string directly after the name give the words the
   text keeps. It is not empty. Without it the text is the name.
-- **In a triple-quoted string** (§10) the quotes carry no backslash: `^"Enraged"/"state of rage"`.
+- **In a triple-quoted block,** an older form (§10), the quotes carry no backslash:
+  `^"Enraged"/"state of rage"`.
 - **Each one is a reference site (§5d).** It resolves by its hash when it carries one; a hashless
   one WARNs, and a hashless one whose name is more than one entity is an ERROR. It counts as a
   reference from the entity around the string, so a `REFERENCED BY` may mirror it.
@@ -1387,8 +1463,8 @@ names are made machine-resolvable by a **stand-off `MENTIONS` block**, not by ed
 
 Rules:
 
-- **`DESCRIPTION` stays byte-for-byte verbatim.** The only transforms allowed are the standard
-  whitespace/HTML-escape normalisation **and** stripping a cross-rulebook page citation
+- **`DESCRIPTION` stays verbatim.** It is the source's text, with the five allowances below
+  **and** the stripping of a cross-rulebook page citation
   (`(ArM5, page 179)`, `(see ArM5 p. 42)`) — the `MENTIONS`/`EXTENDS` reference supersedes the
   citation, which would otherwise be a dead pointer once the entity has a DEF. Nothing else is
   added, removed, or reworded. No inline markup is ever inserted into the text. From v0.6 an
@@ -1405,6 +1481,20 @@ Rules:
   of the *same* surface string must point to *different* targets, which is rare.
 - **Optional and additive.** A DEF with no external references simply omits `MENTIONS`. Existing
   files are unaffected until re-treated.
+
+**What verbatim allows** *(v0.6, DECISION-47)*. A string is verbatim when it matches the source's
+text after these five allowances, and no others.
+
+1. **Unicode form.** The text is composed (NFC), as a name is (§14).
+2. **White space.** A run of white space is one space. The line breaks of the page's layout are
+   not kept. A paragraph break is kept. A no-break space is a space.
+3. **Quote style.** Curly and straight quotes are the same.
+4. **Page layout.** A word the page hyphenates at the end of a line is rejoined. A soft hyphen
+   is dropped. A ligature glyph is written as its letters.
+5. **HTML entities.** Text taken from an HTML source has its entities decoded.
+
+Anything else is a change to the text: its wording, its punctuation, the kind of a dash, its
+capitals. Emphasis is recorded beside the text (above).
 
 Rationale and the rejected alternative are in DECISION-7. In short: inline `[[…]]` markup was
 rejected because it mutates the verbatim rules text (breaking the hard verbatim rule and the
@@ -1431,12 +1521,17 @@ Hash IDs are optional cross-reference anchors on any DEF or rule. When present:
   or one with an underscore, is a warning in a file that declares a `SPEC_VERSION` below 0.6, or
   none, and an **error** from 0.6 *(DECISION-32)*.
 - A short, non-semantic readability prefix is *tolerated* (e.g. `#L5R…`) but must not be depended on.
+- **Stable within a major version** *(v0.6, DECISION-50)*. A hash stays with its entity for as
+  long as the corpus stays in one major version, the number of its content-version directory
+  (`0.5`, §19). Every state of that corpus gives the entity the same hash: when it is renamed,
+  when it moves to another file, and when the corpus is rebuilt from its source. A new major
+  version may mint new hashes.
 
 ```
 #L5Rk3nP8mQ2vX7wZ9tB4cD1    ← opaque, ≥16 chars, unique per entity within its edition
 ```
 
-> Note: many inline examples in §§6–17 use short illustrative IDs that predate this rule; they show *structure*, not conformant IDs, and are regenerated during re-conversion.
+> Note: many inline examples in §§6–17 use short illustrative IDs that predate this rule; they show *structure*, not conformant IDs.
 
 ### DEF Body Contents
 
@@ -1486,6 +1581,21 @@ Instances use the **same** grammar as definitions — no `=` assignments, no dot
 
 ---
 
+
+### Order *(v0.6, DECISION-49)*
+
+The order of statements in a block carries meaning in three places:
+
+- a chain of `NEXT` steps (§8);
+- the items of a list;
+- bare strings in a row, which are their block's entries in order (§10).
+
+Elsewhere it carries none: two properties of a definition may be written either way round. A
+file keeps the order of its source, and a consumer shows definitions in that order. No rule and
+no reference depends on it. Order between files is load order (§13).
+
+A book's headings have no form of their own. A heading is the name of the definition made for
+its section.
 
 ### §5d — Reference resolution: one rule for every construct *(v0.5, DECISION-13)*
 
@@ -2040,7 +2150,7 @@ and changes its value:
 ^"Roll" ROLL 4 OF #hash ^"d8" TRANSFORM ADD 12
 ```
 
-**Steps — `NEXT`.** Statements in a block have no order. `NEXT` before a statement makes it a step
+**Steps — `NEXT`.** Statements in a block have no order (§5, *Order*). `NEXT` before a statement makes it a step
 that follows the statement above it. A step's result is named by the property it sits under, and a
 later step refers to it by that name.
 
@@ -2127,40 +2237,49 @@ Single-line text uses quoted strings, either as values of keywords or bare withi
 }
 ```
 
-### Multi-line String Content
+### Text of several paragraphs *(v0.6, DECISION-48)*
 
-For multi-line descriptive content, use sequential quoted strings within a block:
-
-```
-SCHOOL_ABILITY "Way of the Crab" {
-    "Ignore the Cumbersome quality of armor you wear."
-    "Once per round, before making a check to resist a critical strike,"
-    "you may reduce the severity of that critical strike by your school rank."
-}
-```
-
-### Long String Content
-
-For paragraph-length mechanical text, use a single string with `\n\n` for paragraph breaks:
+Text of several paragraphs is one string, with `\n\n` between the paragraphs. A line break inside
+a paragraph is `\n`.
 
 ```
 SYSTEM "The user takes one turn and pays the cost, summoning shadow extensions.\n\nThey can also use the shadows to perform simple actions but nothing as advanced as typing."
 ```
 
-### Triple-Quoted Text Blocks
+This is the one way to write longer text. Two older forms are read in a file that declares a
+`SPEC_VERSION` below 0.6, or none, and are errors from 0.6:
 
-For multi-line descriptive content where preserving line breaks matters, use triple-quoted text blocks:
+- **a triple-quoted block,** `"""…"""`. It reads no escapes, and an embedded reference in it
+  carries no backslash before its quotes (§5c).
+- **a single-quoted string that runs over a line break.**
+
+**Strings in a row are separate entries.** Bare strings one after another in a block are that
+block's entries, in order: the spans of an `EMPHASIS` block, the lines of a system's list. They
+are not one text.
 
 ```
-^"Way of the Crab" DEF {
-    DESCRIPTION """
-        Ignore the Cumbersome quality of armor you wear.
-        Once per round, before making a check to resist a
-        critical strike, you may spend 1 Void point to add
-        your school rank to the TN of that check.
-    """
+EMPHASIS ITALIC {
+    "Pendragon"
+    "The Book of Knights & Ladies"
 }
 ```
+
+### Escapes *(v0.6, DECISION-46)*
+
+In a single-quoted string, and in a caret name (§14), a backslash opens one of seven escapes:
+
+| Written | Stands for |
+|---|---|
+| `\"` | a double quote |
+| `\\` | a backslash |
+| `\/` | a slash |
+| `\n` | a line break |
+| `\r` | a carriage return |
+| `\t` | a tab |
+| `\uXXXX` | the character with that code, four hexadecimal digits |
+
+A backslash before anything else is an error. A triple-quoted block, an older form (above),
+reads no escapes.
 
 **A definition's prose is `DESCRIPTION`** *(v0.6, DECISION-30)*, as in the examples above. `TEXT` is
 the prose field of a block that is not a definition: a guidance `ENTRY` (§22), the units of a bridge
@@ -3904,7 +4023,8 @@ Three distinct version axes, kept separate:
 ### Editions & version namespaces *(v0.4)*
 
 An **edition** (or a major/beta version line) is an **identity namespace**. Hash identity is **stable
-within** it, and nothing resolves across it: an edition change is a **breaking change**, so "the
+within** it (§5: an entity keeps its hash through every state of one major version), and nothing
+resolves across it: an edition change is a **breaking change**, so "the
 same" entity in a newer edition is a *new* definition (§5), not an overlay on the old one. Editions
 are therefore kept as **separate systems** — e.g. `arm5e` (Ars Magica 5th) vs. `armdef` (the
 Definitive edition), or a system's beta lines vs. its final rules. Within one edition, core +
@@ -4321,9 +4441,7 @@ GUIDANCE {
     ENTRY ^"Character Generation" {
         TOPICS   [ "Character Generation" ]
         CONCERNS [ ORIGIN ^"Virtue", ORIGIN ^"Flaw", DESTINATION ^"Virtue", DESTINATION ^"Flaw" ]
-        TEXT """
-        First, Virtues and Flaws no longer have point values; they are split into Major and Minor. …
-        """
+        TEXT "First, Virtues and Flaws no longer have point values; they are split into Major and Minor. …"
     }
 }
 ```
@@ -4382,6 +4500,7 @@ GUIDANCE {
         CONCERNS [ ^"Entity", … ]      # what it guides; optional inside a DEF (⇒ the enclosing DEF)
         TOPICS   [ "topic", … ]         # optional free-text tags
         TEXT     "verbatim guidance prose"
+        EMPHASIS BOLD { "span" }        # optional: the spans the source marks in TEXT (v0.6)
     }
 }
 ```
@@ -4390,6 +4509,8 @@ GUIDANCE {
 - `CONCERNS` refs resolve like any caret ref (hash-qualified allowed). A consumer detects "guidance
   available for X" by X appearing in some `CONCERNS`. `TEXT` is verbatim.
 - Distinct from `.lore` (no tool assumes structure in it) and from `DESCRIPTION` (the entry's own rules).
+- **`EMPHASIS`** *(v0.6, DECISION-51)*. An entry may hold an `EMPHASIS` block (§5c) for the spans
+  the source marks in its `TEXT`. Each span is in that entry's `TEXT`.
 
 ## 23. Conditional emit hooks *(v0.5, DECISION-9)* — the `HOOKS` block + `FORMALITY`
 

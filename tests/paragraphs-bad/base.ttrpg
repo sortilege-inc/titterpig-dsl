@@ -1,0 +1,22 @@
+BASE "Paragraphs_Bad_Core" {
+    NAME "DECISION-48 fixture — two faults: the older ways to write longer text (§10)"
+    SPEC_VERSION "0.6"
+    VERSION "1.0"
+    RELEASE_DATE "2026-11-13"
+
+    #   ttrpg_validator.py tests/paragraphs-bad      2 errors, 2 warnings
+
+    # fault 1 — a triple-quoted string                                         ERROR
+    #PabCrabK2vQ9wN3cL7pA5xZ ^"Way of the Crab" DEF {
+        DESCRIPTION """
+            Ignore the Cumbersome quality of armor you wear.
+            Once per round you may spend 1 Void point.
+        """
+    }
+    # fault 2 — a string that runs over a line break                           ERROR
+    #PabGripH4mK8wQ2xN6vB1tR ^"Iron Grip" DEF {
+        DESCRIPTION "The first paragraph.
+
+The second paragraph."
+    }
+}

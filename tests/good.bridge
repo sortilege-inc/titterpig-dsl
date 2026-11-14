@@ -147,11 +147,7 @@ BRIDGE "Test_Good_Bridge" {
             # default side and none is inferred.
             TOPICS   [ "Character Generation", "Advancement" ]
             CONCERNS [ ORIGIN ^"Virtue", ORIGIN ^"Flaw", DESTINATION ^"Virtue", DESTINATION ^"Flaw" ]
-            TEXT """
-            Virtues and Flaws no longer have point values; they are split into Major
-            and Minor. If converting a character leaves it unbalanced, discuss
-            suitable modifications with your group.
-            """
+            TEXT "Virtues and Flaws no longer have point values; they are split into Major and Minor. If converting a character leaves it unbalanced, discuss suitable modifications with your group."
         }
     }
 }

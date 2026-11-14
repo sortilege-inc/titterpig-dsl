@@ -1,0 +1,26 @@
+BASE "Paragraphs_Core" {
+    NAME "DECISION-48 fixture — text of several paragraphs is one string (§10)"
+    SPEC_VERSION "0.6"
+    VERSION "1.0"
+    RELEASE_DATE "2026-11-13"
+
+    #   ttrpg_validator.py tests/paragraphs-good     0 errors, 0 warnings
+    #   check_grammar.py   tests/paragraphs-good     accepted
+
+    # two paragraphs: \n\n between them
+    #ParShadowK2vQ9wN3cL7pA5 ^"Shadow Cast" DEF {
+        DESCRIPTION "The user takes one turn and pays the cost, summoning shadow extensions.\n\nThey can also use the shadows to perform simple actions but nothing as advanced as typing."
+    }
+    # a line break inside a paragraph: \n
+    #ParListH4mK8wQ2xN6vB1tR ^"What You Need" DEF {
+        DESCRIPTION "This book for reference\n4–6 people, one of whom will be the GM\n5–10 ten-sided dice"
+    }
+    # strings in a row are separate entries of their block, here two spans
+    #ParSpansR5tJ1yL8sD4fG0z ^"Titles" DEF {
+        DESCRIPTION "Pendragon and The Book of Knights & Ladies are two books."
+        EMPHASIS ITALIC {
+            "Pendragon"
+            "The Book of Knights & Ladies"
+        }
+    }
+}

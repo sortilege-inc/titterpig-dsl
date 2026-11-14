@@ -1,0 +1,31 @@
+BASE "Guidance_Core" {
+    NAME "DECISION-51 fixture — EMPHASIS in a guidance ENTRY (§22)"
+    SPEC_VERSION "0.6"
+    VERSION "1.0"
+    RELEASE_DATE "2026-11-13"
+
+    #   ttrpg_validator.py   tests/guidance-good     0 errors, 0 warnings
+    #   check_grammar.py     tests/guidance-good     accepted
+    #   check_references.py  tests/guidance-good     0 errors
+    #   check_constructs.py  tests/guidance-good     0 errors
+
+    #GuiReputationK2vQ9wN3cL ^"Mutant Reputation Effects" DEF {
+        DESCRIPTION "A mutant's reputation changes how strangers react."
+        GUIDANCE {
+            # the spans the source marks in the entry's TEXT stand beside it
+            ENTRY ^"example-1" #GuiEntryOneH4mK8wQ2xN6 {
+                CONCERNS [ #GuiReputationK2vQ9wN3cL ^"Mutant Reputation Effects" ]
+                TOPICS [ "Example" ]
+                TEXT "Example: Wolverine is sneaking through a back alley, and a woman hanging her laundry above spots him."
+                EMPHASIS BOLD {
+                    "Example:"
+                }
+            }
+            # an entry with no emphasis is as before
+            ENTRY ^"note-1" #GuiEntryTwoR5tJ1yL8sD4 {
+                TOPICS [ "Note" ]
+                TEXT "Reputation is tracked per community."
+            }
+        }
+    }
+}

@@ -1,0 +1,14 @@
+BASE "Escapes_Bad_Core" {
+    NAME "DECISION-46 fixture — three faults: a backslash that opens no escape (§10)"
+    SPEC_VERSION "0.6"
+    VERSION "1.0"
+    RELEASE_DATE "2026-11-13"
+
+    #   ttrpg_validator.py tests/escapes-bad         3 errors, 1 warning
+
+    #EsbFaultsK2vQ9wN3cL7pA5 ^"Faults" DEF {
+        ^"Unknown" "an unknown escape \q here"                  # ERROR 1
+        ^"Short" "four hex digits follow a \u00e"               # ERROR 2
+    }
+    #EsbNameH4mK8wQ2xN6vB1tR ^"A \Name" DEF { }                 # ERROR 3: in a name
+}

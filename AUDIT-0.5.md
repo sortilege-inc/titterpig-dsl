@@ -1863,7 +1863,12 @@ answered "Yes, all three".
 
 ### C5. In heavy use and not in the spec
 
-**Status:** open
+**Status:** closed 2026-11-13 by the owner. Committed and pushed on branch `0.6`. Its seven
+parts were ruled one at a time: tables need nothing more; the escapes of a string
+(DECISION-46); what verbatim allows (DECISION-47); longer text as one string (DECISION-48);
+where order matters (DECISION-49); hashes stable within a major version (DECISION-50);
+`EMPHASIS` in a guidance `ENTRY`, and `BASE` still reserved (DECISION-51). A validator crash
+on bridge files, in the tree since B2, was found and fixed. The corpus work is F29 and F30.
 
 - `TABLE`: 849 uses in the three corpora. `check_structure.py` counts it. The spec has only the
   L5R-specific `HERITAGE_TABLE` and `SUB_TABLE`. Roll keys (`2-3`) exist in the grammar; open-ended
@@ -1880,6 +1885,232 @@ answered "Yes, all three".
 - How a hash is minted and kept stable across rebuilds. §5's note says example IDs "are regenerated
   during re-conversion". A regenerated hash breaks every `.selections`, `.bridge` and consumer save
   that points at it.
+
+**Since this was written:** `TABLE` has a form (DECISION-21, §5e), with `MIN n` for an
+open-ended key. F19 sent four forms here; three are ruled (DECISION-39, 40, 41), and two
+remain: an `EMPHASIS` block inside a guidance `ENTRY`, and `BASE n` as a system's field.
+
+**Evidence, counted 2026-11-13** over the 22 corpus directories.
+
+| What | Count | Where |
+|---|---|---|
+| single-quoted strings | 1,417,638 | |
+| escapes used in them | `\n` 231,956; `\"` 8,332; `\\` 7; `\uXXXX` 3; no other | the grammar also takes `\t`, `\r` and `\/` |
+| a paragraph break written `\n\n` in one string | 33,488 strings | armdef 6,722, vtm5e 6,614, arm5e 6,436 |
+| a single `\n` in a string | 956 strings | callofcthulhu7e 534, pendragon6e 158 |
+| a raw line break inside a single-quoted string | 94 strings | arm5e 46, armdef 46, draw-steel 2 |
+| triple-quoted strings | 1,897 | draw-steel 1,889 |
+| of those, every line indented | 580 | the indent is part of the text unless a rule strips it |
+| of those, a line at column 0 | 1,283 | draw-steel writes the text at the margin to keep indent out |
+| runs of two or more lines that are each one bare string | 1,833 | pendragon6e 780, l5r5e 413, pendragon5e 157 |
+| strings with a curly apostrophe; a curly double quote | 47,650; 11,531 | |
+| strings with a soft hyphen; a no-break space; an fi ligature; an HTML entity | 15; 33; 2; 0 | arm5e, armdef, pendragon6e |
+| `TABLE {` blocks | 2,307, with 12,394 `ROW` lines and 958 `COLUMNS` or `HEADERS` lines | no corpus writes `AXIS`; F9 has the migration |
+| lines keyed by one number; by `lo-hi` | 147; 17 | l5r5e |
+| `BASE n` as a system's field | 749 lines | arm5e 372, armdef 377 |
+
+- **The verbatim rule's "standard normalisation" is used by no tool.** `check_references.py`
+  tests a surface form against its prose as an exact substring. What a converter may change
+  between the page and the string is written down nowhere.
+- **A hash can change on a rebuild.** tor2e's generator mints each hash as the SHA-1 of the
+  entity's path (`scripts/dsl/common.py`), so the hash is stable while the path is, and a
+  renamed or moved entity gets a new one.
+
+*Proposed 2026-11-13,* and ruled one part at a time, below. Parts 4, 6 and 7 were ruled otherwise than first proposed.
+
+1. Tables: nothing more to rule.
+2. §10 lists the escapes: `\"`, `\\`, `\n`, `\t`, `\r`, `\/`, `\uXXXX`.
+3. §5c says what verbatim allows: the name rule of DECISION-33 (Unicode NFC, white space,
+   quote style), and the repair of layout (a word hyphenated at a line end, a soft hyphen, a
+   ligature glyph, an HTML entity). Nothing else.
+4. Text of several paragraphs is one string with `\n\n` between them. A single-quoted string
+   does not run over a line break. A triple-quoted string loses the indent its lines share.
+   Bare strings one after another are separate entries of their block.
+5. Order: the language depends on the order of statements only for `NEXT`, for the items of a
+   list and for a run of bare strings. A file keeps the source's order for display.
+6. A hash stays with its entity once a corpus is published. The note that example IDs are
+   regenerated goes.
+7. `EMPHASIS` stays out of a guidance `ENTRY`, and `BASE` stays reserved. Both are corpus fixes.
+
+The owner asked to take them one at a time.
+
+**Part 1, tables: ruled 2026-11-13. Nothing more to rule.** Owner: "Agreed". An open-ended key
+is `AT [ MIN 16 ]` (§5e). A d66 is a die a system defines, with 36 faces; it is not added to
+the shared dice module. The corpora hold 14 rows keyed `"N+"` and 773 keyed by a range in a
+string, all in the older `ROW` grids, and only troika uses d66 (F9). No file changes.
+
+**Part 2, string escapes: ruled 2026-11-13 and applied as DECISION-46.** The
+owner was asked "Part 2: list the grammar's seven escapes and make any other an error?" and
+answered "Yes, seven".
+
+- **Spec:** §0 item 33; DECISION-46; §10 has a new part, "Escapes", with the seven and what
+  each stands for.
+- **`ttrpg.peg`:** a backslash in a single-quoted string or a caret name must open one of the
+  seven. It had been read as a plain character when it did not.
+- **`ttrpg_validator.py`:** the same test, a warning below 0.6 and an error from 0.6.
+
+| Check | Result |
+|---|---|
+| probe before the change: `"an unknown escape \q here"` | accepted by the grammar and by the validator |
+| `ttrpg_validator.py tests/escapes-good`: each of the seven, a name with `\"`, a triple-quoted string with a backslash and a quote | 0 errors, 0 warnings; grammar accepted |
+| `ttrpg_validator.py tests/escapes-bad` | 3 errors, 1 warning; the validator before reports nothing |
+| `check_grammar.py tests/grammar-bad --expect-refused` | 17 of 17 refused, with the new `17-unknown-escape` |
+| every other fixture set; the good sets in the grammar | unchanged; 56 of 56 accepted |
+| validator before against after, 22 corpus directories | identical for all 22; 39 errors, 20,528 warnings |
+| grammar before against after, 22 corpus directories | the same files accepted and refused: 5,511 of 7,055 |
+
+No corpus has a backslash that opens no escape.
+
+*Agent's calls, to confirm:* the finding takes no `FIAT`; a caret name follows the same rule
+as a string; `\u` must be followed by four hexadecimal digits.
+
+**Part 3, what verbatim allows: ruled 2026-11-13 and applied as DECISION-47.**
+The owner was asked "Part 3: define "verbatim" in §5c with these five allowances and nothing
+else?" and answered "Yes, those five".
+
+1. Unicode form: composed (NFC).
+2. White space: a run is one space; the page's line breaks are not kept; a paragraph break
+   is; a no-break space is a space.
+3. Quote style: curly and straight are the same.
+4. Page layout: a word hyphenated at a line end is rejoined; a soft hyphen is dropped; a
+   ligature glyph is written as its letters.
+5. HTML entities from an HTML source are decoded.
+
+Wording, punctuation, the kind of a dash, capitals and emphasis are content. The allowance to
+strip a cross-rulebook page citation is unchanged.
+
+- **Spec:** §0 item 34; DECISION-47; §5c's `DESCRIPTION` rule points to a new paragraph, "What
+  verbatim allows", in place of "the standard whitespace/HTML-escape normalisation".
+- **No tool changes, and no tool here checks the rule.** It needs the source. It is the
+  standard for a converter and for the verification tools outside this repo.
+- The agent told the owner it was unsure of dash kinds: his matching tools fold hyphens and
+  dashes, which is a looser test than this rule. He took the list as written.
+
+**Part 4, text of several paragraphs: ruled 2026-11-13 and applied as DECISION-48.** Four rules were proposed. The owner: "let's just use the Paragraphs method; we
+should ultimately convert the other approaches over."
+
+- **The one method:** text of several paragraphs is one string with `\n\n` between them.
+- **The other approaches are older forms,** to be converted: a triple-quoted block, and a
+  single-quoted string that runs over a line break. Each is a warning in a file below 0.6
+  and an error from 0.6. The grammar still reads both.
+- **Strings in a row** are separate entries of their block. That is how every corpus uses
+  them, so nothing is reported.
+
+*Applied.* The spec: §0 item 35; DECISION-48; §10 has one part, "Text of several paragraphs",
+where it had three; the triple-quoted examples in §5, §21 and the guidelines are rewritten.
+The validator reports the two older forms. Fixtures: `tests/paragraphs-good`,
+`tests/paragraphs-bad`; three 0.6 fixtures and `tests/good.bridge` no longer use a
+triple-quoted block.
+
+| Check | Result |
+|---|---|
+| `ttrpg_validator.py tests/paragraphs-good` | 0 errors, 0 warnings; grammar accepted |
+| `ttrpg_validator.py tests/paragraphs-bad` | 2 errors, 2 warnings; the validator before reports nothing |
+| `embedded-good`, `embedded-bad`, `escapes-good`, rewritten without triple quotes | the same counts as before: 0 and 0, 5 errors, 0 and 0 |
+| every other fixture set; both grammar gates | unchanged; 57 of 57 accepted, 17 of 17 refused |
+| validator before against after, 22 corpus directories | 14 identical. 1,990 new warnings, none gone; 39 errors both times; 22,518 warnings |
+
+The 1,990: 1,897 triple-quoted blocks (draw-steel 1,889, callofcthulhu7e 3, daggerheart 2,
+dnd5.5e 1, dnd5e 1, root 1) and 93 strings over a raw line break (arm5e 46, armdef 46,
+draw-steel 1). The two bridges in `bridges/0.5` gain 11 and 85 warnings for their
+triple-quoted blocks.
+
+*A crash found and fixed.* `ttrpg_validator.py` raised `ValueError` on any `.bridge` with an
+`ALIASES` block: `tests/good.bridge`, and `bridges/0.5/dnd5e-to-dnd5.5e-0.5-srd-conversion.bridge`.
+B2's alias-cycle check read a bridge's aliases, which have another shape. The crash was in
+every commit from B2 (`4af9e46`) to C4 (`91a48d8`). It went unseen because the agent's
+fixture run listed its sets by hand and left out the four single-file bridge and codex
+fixtures. Every "fixtures unchanged" in B2 to C4 is true of the sets that were run and says
+nothing of those four.
+
+| Check | Result |
+|---|---|
+| B1's validator (`ecff698`) on `tests/good.bridge` as it was then | 0 errors, 0 warnings |
+| B2's validator (`4af9e46`) on the same file, and every later commit's | `ValueError` |
+| after the fix: `good.bridge`, `bad.bridge`, `good.codex`, `bad.codex` | 0 and 0; 22 errors; 0 and 0; 5 errors and 5 warnings. `bad.bridge` and both codex files match B1's validator |
+| after the fix: the two bridges in `bridges/0.5`, with no corpus given | 1 and 2 errors, as under B1's validator, and the 11 and 85 new warnings |
+
+The fixture run now includes those four files and both real bridges.
+
+*Agent's calls, to confirm:* a triple-quoted block is an error from 0.6, as the agent read
+"the other approaches"; neither finding takes a `FIAT`; the grammar keeps reading both forms.
+
+*Not done.* No corpus is converted (F29). The dedent rule proposed for triple-quoted blocks
+was not adopted and is not needed: the form goes.
+
+**Part 5, order: ruled 2026-11-13 and applied as DECISION-49.** The owner was
+asked "Part 5: state that order matters only in those three places?" and answered "Yes, as
+stated".
+
+- The order of statements in a block carries meaning in a `NEXT` chain, in the items of a
+  list and in bare strings in a row, and nowhere else.
+- A file keeps its source's order and a consumer shows definitions in that order. No rule or
+  reference depends on it. Order between files is load order (§13).
+- A heading has no form of its own: it is the name of the definition made for its section.
+
+*Applied.* The spec: §0 item 36; DECISION-49; §5 has a new part, "Order"; §8's sentence on
+`NEXT` points to it. Text only. No tool changes, and none checks it: there is nothing to check.
+
+UNVERIFIED: whether any consumer relies on the order of definitions for more than display.
+
+**Part 6, hash stability: ruled 2026-11-13 and applied as DECISION-50.** The
+agent proposed that a hash stay with its entity once a corpus is published. The owner:
+"Hashes are considered stable within same major versions (ie, all 0.5 instances should be
+hash-stable)."
+
+*Evidence.* tor2e's generator mints a hash as the SHA-1 of the entity's path, so a renamed or
+moved entity gets a new one. For ten corpora, each DEF's hash at an earlier commit of the same
+directory was set against today's, for names that stand once at both ends:
+
+| Corpus | From | Names at both ends | Hash changed |
+|---|---|---|---|
+| vtm5e | the first commit of `0.5/` (2026-09-13) | 1,026 | 1,025 |
+| vtm5e | mid-history (2026-09-23) | 5,710 | 104 |
+| root | the first commit (2026-09-20) | 1,751 | 29 |
+| arm5e | the first commit (2026-07-27) | 3,017 | 11 |
+| invisiblesun | mid-history (2026-09-20) | 9,036 | 6 |
+| tor2e; l5r5e | the first commit | 505; 1,036 | 1; 1 |
+| dnd5.5e, draw-steel, daggerheart, teeth | the first commit | 1,169 to 1,951 | 0 |
+
+*Applied.* The spec: §0 item 37; DECISION-50; a bullet in §5's hash rules; a clause in §19;
+the note on example IDs loses "and are regenerated during re-conversion". Text only.
+
+*Agent's calls, to confirm:* a major version is read as the number of the content-version
+directory (`0.5`); the rule covers a rename, a move to another file and a rebuild.
+
+*Not done.* No tool checks the rule; it takes two states of a corpus (F30).
+
+**Part 7, two leftover forms: ruled 2026-11-13 and applied as DECISION-51.** The
+agent first recommended keeping both forms illegal, then changed the first on looking at it.
+The owner was asked "Part 7: allow EMPHASIS in a guidance ENTRY, and keep BASE reserved?" and
+answered "Yes, both".
+
+- **`EMPHASIS` in a guidance `ENTRY` is legal.** 194 blocks in 52 files (pendragon6e 45 files,
+  marvelmultiverse 7). An entry's `TEXT` is verbatim, and emphasis is recorded beside verbatim
+  text.
+- **`BASE` stays reserved.** arm5e and armdef write `BASE n` 749 times in 36 files, all in
+  `LEVEL_CALCULATION` blocks. The rename goes with F5, which rebuilds those blocks.
+
+*Applied.* The spec: §0 item 38; DECISION-51; §22's entry gains the block and a rule that each
+span is in the entry's `TEXT`. `ttrpg.peg`: an entry's fields include `EMPHASIS_BLOCK`. No
+validator change; `check_references.py` already read the block.
+
+| Check | Result |
+|---|---|
+| `tests/guidance-good` in the validator, the grammar, `check_references.py`, `check_constructs.py` | 0 errors and 0 warnings; accepted; 0 errors; 0 errors. The grammar before refuses it |
+| `tests/guidance-bad` in `check_references.py` | 2 errors: a span in no text, and a span that is in the DEF's `DESCRIPTION` and not in its entry's `TEXT` |
+| every other fixture set, both grammar gates | unchanged; 58 of 58 accepted, 17 of 17 refused |
+| `check_references.py` on the two embedded-reference fixtures rewritten under part 4 | the same counts as the committed versions |
+| grammar before against after, 22 corpus directories | nothing newly refused; 52 more accepted (pendragon6e 45, marvelmultiverse 7): 5,563 of 7,055 |
+
+The fixture run now also runs `check_references.py` and `check_constructs.py` on every entry
+of `tests/`.
+
+*Agent's calls, to confirm:* `LABEL` is not added to an entry (no corpus writes one there);
+the block is allowed in a bridge's guidance entry too, which is the same construct.
+
+*Not done.* The synthesist's guidance reader does not read the block (the corpora's working
+rules record that it misreads it). F5 gains the `BASE` rename.
 
 ### C6. Specified and unused
 
@@ -2274,6 +2505,9 @@ read, so a file may hold further forms behind that one.
 
 - A corpus's `gates.sh` can run `check_grammar.py` once its own count is zero.
 - The four rulings belong with C5 (in heavy use and not in the spec).
+- 2026-11-13, DECISION-51: the `EMPHASIS`-in-`ENTRY` row is ruled legal, and its files are
+  accepted. The `BASE 3` row is ruled: `BASE` stays reserved and arm5e renames (F5). With
+  DECISION-51's grammar 1,492 of 7,055 files are refused.
 - 2026-11-13, DECISION-40: the `"Hungry" +6` row is ruled. It is a `SET` or a `TRANSFORM`,
   decided in conversion (F26). DECISION-41: the unnamed `DEF { … }` row is ruled legal, and
   the grammar accepts it: 351 of that row's 368 files are now accepted, and 1,544 of 7,055
@@ -2388,6 +2622,43 @@ callofcthulhu7e 504). They have not been sorted by kind. Sort them first:
 - UNVERIFIED: how many of the 9,709 are of the first kind.
 - The generators under `Titterpig/Temp` write these strings; the change belongs there for a
   generated corpus.
+
+### F30. A check that hashes hold within a major version
+
+**From:** C5 part 6, DECISION-50. **Status:** open, not started.
+
+- **The check.** Given two states of one content-version directory, report each entity whose
+  hash differs. The validator sees one state and cannot do it. The comparison made for the
+  audit matched DEFs by name, which misses a renamed entity; a check needs the generator's
+  own record of which entity is which.
+- **Generators that mint from the path.** tor2e's hash is the SHA-1 of the entity's path, so
+  a rename or a move mints a new one. Under the rule the generator carries the old hash
+  forward. UNVERIFIED: how the other generators mint.
+- **vtm5e.** A re-conversion inside `0.5/` replaced 1,025 of 1,026 hashes between 2026-09-13
+  and today. Anything saved against the earlier hashes points at nothing.
+
+### F29. Six corpora and two bridges: longer text as one string
+
+**From:** C5 part 4, DECISION-48. **Status:** open, not started. Owner, 2026-11-13: "we should
+ultimately convert the other approaches over." All are warnings today.
+
+| What | Count | Where |
+|---|---|---|
+| a triple-quoted block | 1,897 | draw-steel 1,889, callofcthulhu7e 3, daggerheart 2, dnd5.5e 1, dnd5e 1, root 1 |
+| the same, in this repo's bridges | 96 | `dnd5e-to-dnd5.5e` 85, `arm4-to-arm5e` 11 |
+| a single-quoted string over a raw line break | 93 | arm5e 46 (four True Lineages spell files), armdef 46, draw-steel 1 |
+
+- Each becomes one single-quoted string: `\n\n` between paragraphs, `\n` for a line break kept
+  inside one, `\"` for a quote.
+- **Indentation.** 580 of the triple-quoted blocks have every line indented. Whether that
+  indent is the text's or the file's layout is decided when each is converted; draw-steel
+  writes 1,283 blocks at the margin to keep indent out.
+- **Backslashes.** A triple-quoted block reads no escapes, so a backslash in one becomes
+  `\\` in the single-quoted string. draw-steel's blocks hold 11.
+- draw-steel is generated: the change is made in its generator.
+- **l5r5e's strings in a row.** 413 runs of bare strings sit in `EFFECT`, `OPPORTUNITIES` and
+  like blocks. They are legal as separate entries. Where a run is the paragraphs of one text,
+  it is one string by this decision; which runs are is a call on the source.
 
 ### F28. The corpora and their generators: the page as `^"Page"`
 
@@ -2550,6 +2821,10 @@ has no `+` on a number and the validator drops it. `^"Technique" STRING "Creo"` 
 `^"Form" STRING "Ignem"` become `REF`; arm5e already defines `^"Creo"` and `^"Ignem"`. Waits on the
 two parameter to-dos below.
 
+2026-11-13, C5 part 7: the same blocks open with `BASE n` (749 lines in 36 files of arm5e and
+armdef). `BASE` is a file-level keyword and stays reserved (DECISION-29, DECISION-51), so the
+line takes another word when the blocks are rebuilt.
+
 ### To-do recorded in the spec
 
 - **Nested conditions in `WITH`** (§5b). `A AND (B OR C)` is not defined; a `WITH` that mixes `AND`
@@ -2609,6 +2884,9 @@ two parameter to-dos below.
   which the validator does not check; a result given as a bare value in place of a block.
 
 ### Known gaps left by this change
+
+- **Nothing in this repo checks that a string is verbatim** (DECISION-47). The rule is stated
+  for converters and for the tools that hold the source.
 
 - **A hashless name in a system block is never resolved** (DECISION-44, by decision). A typo
   in one is not seen.
@@ -2966,6 +3244,15 @@ Filled in as each finding is walked through.
 | C4 | 2026-11-13 | No construct for provenance. (1) The page is the property `^"Page"`: a number, or what the source prints as text. (2) No field for the book. (3) §4 keeps its rule: a page in a comment is a note that no tool reads. Written as DECISION-45. | Owner: "Yes, all three". The corpora already write `^"Page"` 23,932 times; one tool reads a page; the file's `NAME` and `sources.json` name the book. |
 | C4 | 2026-11-13 | Agent's calls, to confirm. (1) No check is added for the page. (2) §4 drops "page references, source attributions" from what comments are for, and says a comment may still mention them. (3) The spec says a corpus's register names the book and does not state that a file holds one source. (4) Renaming `^"Pages"` and `^"Source Page"` is corpus work (F28). | (1): not asked for; a value is not typed. (2): the ruling's part 3. (3): one source per file is the corpora's rule and is not in the spec. |
 | C4 | 2026-11-13 | C4 is closed. The branch is committed and pushed. | Owner: "Close, commit, push". The agent's calls in the C4 row marked "to confirm" were reported to him before he closed and were not separately ruled on. |
+| C5 | 2026-11-13 | Part 1, tables: nothing more to rule. An open-ended key is `AT [ MIN n ]`; a d66 is a die a system defines and is not added to the shared dice module. | Owner: "Agreed". `TABLE` has had its form since DECISION-21, and only troika uses d66. |
+| C5 | 2026-11-13 | Part 2, string escapes: §10 lists the seven the grammar names (`\"`, `\\`, `\/`, `\n`, `\r`, `\t`, `\uXXXX`); a backslash before anything else is a warning below 0.6 and an error from 0.6; a triple-quoted string reads no escapes. Written as DECISION-46. | Owner: "Yes, seven". The corpora use four of the seven and no other; the alternative of listing only those four was not taken. |
+| C5 | 2026-11-13 | Part 3, what verbatim allows: a string matches its source after five allowances and no others: Unicode form (NFC); white space; quote style; the repair of page layout (line-end hyphenation, soft hyphens, ligature glyphs); decoded HTML entities. The kind of a dash, punctuation, capitals and wording are content. Written as DECISION-47. | Owner: "Yes, those five". §5c named a "standard normalisation" that nothing defined. The first three allowances are the name rule of DECISION-33. |
+| C5 | 2026-11-13 | Part 4, text of several paragraphs: one method only, a single string with `\n\n` between paragraphs. The other approaches are to be converted: a triple-quoted block and a string over a raw line break are a warning below 0.6 and an error from 0.6. Written as DECISION-48. | Owner: "let's just use the Paragraphs method; we should ultimately convert the other approaches over." The agent had proposed four rules, among them a dedent rule that kept triple-quoted blocks; that rule is not adopted. |
+| C5 | 2026-11-13 | Agent's calls, to confirm. (1) "The other approaches" is read to include the triple-quoted block, which becomes an error from 0.6. (2) Strings in a row stay legal as separate entries and are not reported. (3) A validator crash on bridges with an `ALIASES` block, present since B2, is fixed. (4) The agent's fixture run now includes the bridge and codex fixtures and the two real bridges. | (1): §10 gave three approaches and he kept one. (2): no tool can tell a list of entries from a text split into strings. (3) and (4): the crash went unseen for six commits because those files were not run. |
+| C5 | 2026-11-13 | Part 5, order: the order of statements in a block carries meaning only in a `NEXT` chain, in the items of a list and in bare strings in a row. A file keeps its source's order for display. Headings get no form of their own. Written as DECISION-49. | Owner: "Yes, as stated". The spec's one sentence on order sat in the dice section and denied any order. |
+| C5 | 2026-11-13 | Part 6, hash stability: a hash is stable within a major version. Every state of a system's `0.5` corpus gives an entity the same hash; a new major version may mint new ones. Written as DECISION-50. | Owner: "Hashes are considered stable within same major versions (ie, all 0.5 instances should be hash-stable)." The agent had proposed stability from publication on, with no bound; his rule sets the bound at the major version. |
+| C5 | 2026-11-13 | Part 7: an `EMPHASIS` block is legal in a guidance `ENTRY`, each span being in that entry's `TEXT`; `BASE` stays reserved everywhere and arm5e's `BASE n` lines are renamed with F5. Written as DECISION-51. | Owner: "Yes, both". The agent had first recommended keeping `EMPHASIS` out and changed that before he ruled: an entry's `TEXT` is verbatim, and emphasis is recorded beside verbatim text. |
+| C5 | 2026-11-13 | C5 is closed. The branch is committed and pushed. | Owner: "Close, commit, push". The agent's calls in the C5 section and rows marked "to confirm" were reported to him before he closed and were not separately ruled on. |
 
 ---
 

@@ -13,12 +13,7 @@ a comment. The grammar is permissive; do not use that permissiveness to bury dat
 # Avoid — everything in one string:
 #h9k7mQ2vX7wZ9tB4cD1a ^"Hida" DEF {
     EXTENDS #p4Tz8LwQ1nRv6YbK3xGs ^"Family"
-    DESCRIPTION """
-        Ring Increase: +1 Earth or +1 Fire
-        Skill Increases: +1 Command, +1 Tactics
-        Glory: 44
-        Starting Wealth: 4 koku
-    """
+    DESCRIPTION "Ring Increase: +1 Earth or +1 Fire\nSkill Increases: +1 Command, +1 Tactics\nGlory: 44\nStarting Wealth: 4 koku"
 }
 
 # Avoid — the fields named, the values still packed in strings:
@@ -148,6 +143,8 @@ for these instead of burying the meaning in a verbatim string (spec §5b):
   the amount, `#hash ^"Command" TRANSFORM ADD 1` when it goes up by it. A signed number in a string
   (`"+1"`) and a bare `1` both hide which one is meant. Which one a printed number is, is decided
   when the source is converted. Until it is decided, keep the string as printed.
+- **Longer text is one string.** Paragraphs are parted by `\n\n`, and a line break inside one is
+  `\n`. Do not use a triple-quoted block or let a string run over a line break.
 - **The page is `^"Page"`.** `^"Page" 243`, or `^"Page" "139-160"` as the source prints it. A page
   in a comment is a note that no tool reads.
 - **List entries need not be named.** `^"Key" LIST OF ^"Map Key Entry" [ DEF { … }, DEF { … } ]`.

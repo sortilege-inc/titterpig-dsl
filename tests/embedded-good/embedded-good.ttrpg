@@ -27,12 +27,9 @@ BASE "Demo_Embedded" {
         REFERENCES { "kept die" -> #EmbDemoFitnessCCCCCCCCCCC ^"Fitness" }
     }
 
-    # in a triple-quoted string the quotes are not escaped
+    # text of two lines is one string with \n between them
     #EmbDemoCrabEEEEEEEEEEEEEE ^"Way of the Crab" DEF {
-        DESCRIPTION """
-            Once per round, before making a ^"Fitness" check, you may
-            enter a #EmbDemoEnragedAAAAAAAAAAA ^"Enraged"/"cold fury" until the end of the scene.
-        """
+        DESCRIPTION "Once per round, before making a ^\"Fitness\" check, you may\nenter a #EmbDemoEnragedAAAAAAAAAAA ^\"Enraged\"/\"cold fury\" until the end of the scene."
         EMPHASIS { "a cold fury until" }
     }
 }

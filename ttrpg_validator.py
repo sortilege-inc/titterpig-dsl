@@ -154,6 +154,16 @@ TYPE KEYWORDS (spec §8, §9, DECISION-39).
   - a value's kind is not compared with the type it inherits: a text value where the type
     declares a number is no finding.
 
+TEXT OF SEVERAL PARAGRAPHS (spec §10, DECISION-48). It is one string with \\n\\n between the
+paragraphs. A triple-quoted string, and a single-quoted string that runs over a line break,
+are older forms: a WARNING in a file that declares SPEC_VERSION below 0.6, or none, and an
+ERROR from 0.6.
+
+ESCAPES (spec §10, DECISION-46). In a single-quoted string and in a caret name a backslash
+opens \\" \\\\ \\/ \\n \\r \\t or \\uXXXX. A backslash before anything else is a WARNING in a
+file that declares SPEC_VERSION below 0.6, or none, and an ERROR from 0.6. A triple-quoted
+string reads no escapes.
+
 REFERENCES NO KEYWORD MARKS (spec §5d, DECISION-44).
 
   - a `#hash ^"Name"` pair that declares nothing is a reference wherever it stands, and a
@@ -294,6 +304,35 @@ def name_key(name):
     return re.sub(r'\s+', ' ', s).strip()
 
 
+# The escapes of a single-quoted string and of a caret name (§10, DECISION-46).
+ESCAPE_CHARS = '"\\/nrt'
+
+
+def bad_escapes(body):
+    """The backslash sequences in `body` that are not escapes: [(offset, text)]."""
+    out, k = [], 0
+    while k < len(body):
+        if body[k] == '\\':
+            nxt = body[k + 1] if k + 1 < len(body) else ''
+            if nxt == 'u':
+                if not re.fullmatch(r'[0-9a-fA-F]{4}', body[k + 2:k + 6]):
+                    out.append((k, body[k:k + 6]))
+            elif nxt == '' or nxt not in ESCAPE_CHARS:
+                out.append((k, body[k:k + 2]))
+            k += 2
+        else:
+            k += 1
+    return out
+
+
+def note_escapes(body, start_line, fname, findings):
+    for off, seq in bad_escapes(body):
+        findings.append(Finding(fname, 'lint', 'gated', start_line + body.count('\n', 0, off),
+                                'a backslash before %s is not an escape: the escapes are \\" \\\\ '
+                                '\\/ \\n \\r \\t and \\uXXXX (§10)'
+                                % (repr(seq[1:]) if len(seq) > 1 else 'nothing')))
+
+
 def tokenize(text, fname, findings):
     toks = []
     i, n, line = 0, len(text), 1
@@ -330,6 +369,7 @@ def tokenize(text, fname, findings):
             if j >= n:
                 findings.append(Finding(fname, 'lint', 'error', start, "unterminated caret reference"))
                 break
+            note_escapes(text[i + 2:j], start, fname, findings)
             toks.append(Tok('CARET', name_key(text[i + 2:j]), start)); i = j + 1; continue
         if c == '"':
             if text[i:i + 3] == '"""':
@@ -337,6 +377,10 @@ def tokenize(text, fname, findings):
                 if j < 0:
                     findings.append(Finding(fname, 'lint', 'error', line, "unterminated triple-quoted string"))
                     break
+                # Text is one string with \n\n between its paragraphs (v0.6, DECISION-48).
+                findings.append(Finding(fname, 'lint', 'gated', line,
+                                        'a triple-quoted string is an older form: text of several '
+                                        'paragraphs is one string with \\n\\n between them (§10)'))
                 toks.append(Tok('STR', text[i + 3:j], line))
                 line += text[i:j + 3].count('\n'); i = j + 3; continue
             j, start = i + 1, line
@@ -349,6 +393,11 @@ def tokenize(text, fname, findings):
             if j >= n:
                 findings.append(Finding(fname, 'lint', 'error', start, "unterminated string"))
                 break
+            note_escapes(text[i + 1:j], start, fname, findings)
+            if '\n' in text[i + 1:j]:
+                findings.append(Finding(fname, 'lint', 'gated', start,
+                                        'a string runs over a line break, an older form: write \\n '
+                                        'for a line break and \\n\\n between paragraphs (§10)'))
             toks.append(Tok('STR', text[i + 1:j], start)); i = j + 1; continue
         simple = {'{': 'LBRACE', '}': 'RBRACE', '[': 'LBRACK', ']': 'RBRACK', ',': 'COMMA', ':': 'COLON',
                   '(': 'LPAREN', ')': 'RPAREN', '=': 'EQ'}
@@ -3333,6 +3382,8 @@ def value_pass(files_data, findings):
     # ALIAS cycles (§5b)
     alias_to, alias_site = {}, {}
     for d in files_data:
+        if d.get('kind') == 'bridge':
+            continue        # a bridge's ALIASES map one side's name to the other's (§21): another shape
         for alias, target, line in d.get('aliases', []):
             alias_to[alias] = target
             alias_site[alias] = (d, line)
@@ -3879,6 +3930,12 @@ def main(argv):
     modification_pass(files_data, findings)
     bridge_coherence(files_data, corpora, findings, notes)
 
+    # A finding the tokenizer could only mark as gated: a warning in a file that declares
+    # SPEC_VERSION below 0.6, or none, and an error from 0.6.
+    version_of = {d['file']: d.get('spec_version', (0, 0)) for d in files_data}
+    for f in findings:
+        if f.sev == 'gated':
+            f.sev = 'error' if version_of.get(f.file, (0, 0)) >= (0, 6) else 'warning'
     findings.sort(key=lambda f: (f.file, f.line, f.level, f.sev))
     errors = sum(1 for f in findings if f.sev == 'error')
     warnings = sum(1 for f in findings if f.sev == 'warning')

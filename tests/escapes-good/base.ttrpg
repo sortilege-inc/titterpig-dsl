@@ -1,0 +1,22 @@
+BASE "Escapes_Core" {
+    NAME "DECISION-46 fixture — the escapes of a string (§10)"
+    SPEC_VERSION "0.6"
+    VERSION "1.0"
+    RELEASE_DATE "2026-11-13"
+
+    #   ttrpg_validator.py tests/escapes-good        0 errors, 0 warnings
+    #   check_grammar.py   tests/escapes-good        accepted
+
+    # each of the seven
+    #EscSevenK2vQ9wN3cL7pA5x ^"The Seven" DEF {
+        ^"Quote" "She said \"no\"."
+        ^"Backslash" "C:\\Games"
+        ^"Slash" "and\/or"
+        ^"Line Break" "One line.\nThe next line."
+        ^"Return" "one\rtwo"
+        ^"Tab" "Name\tValue"
+        ^"Unicode" "caf\u00e9"
+    }
+    # a name takes the same escapes
+    #EscNameH4mK8wQ2xN6vB1tR ^"Mrinmoy \"Vidyapati\" Mishra" DEF { }
+}

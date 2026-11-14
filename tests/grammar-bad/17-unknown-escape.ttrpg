@@ -1,0 +1,7 @@
+BASE "Grammar_Bad_17" {
+    NAME "syntax fault — a backslash that opens no escape (§10)"
+    SPEC_VERSION "0.6"
+    #GrmBadRRRRRRRRRRRRRRRR ^"Faults" DEF {
+        DESCRIPTION "an unknown escape \q here"
+    }
+}

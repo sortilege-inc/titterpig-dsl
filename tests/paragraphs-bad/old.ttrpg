@@ -1,0 +1,18 @@
+EXTENSION "Paragraphs_Bad_Old" {
+    NAME "faults 3 and 4 — the same two forms in a file that declares 0.5 are warnings"
+    SPEC_VERSION "0.5"
+    VERSION "1.0"
+    RELEASE_DATE "2026-11-13"
+    DEPENDS_ON "Paragraphs_Bad_Core"
+
+    #PabOldCrabR5tJ1yL8sD4fG ^"Old Way of the Crab" DEF {
+        DESCRIPTION """
+            Ignore the Cumbersome quality of armor you wear.
+        """
+    }
+    #PabOldGripB9pK3xN7vM2cQ ^"Old Iron Grip" DEF {
+        DESCRIPTION "The first paragraph.
+
+The second paragraph."
+    }
+}

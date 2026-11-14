@@ -1,0 +1,29 @@
+BASE "Guidance_Bad_Core" {
+    NAME "DECISION-51 fixture — two faults: a span that is not in its entry's TEXT (§22, §5c)"
+    SPEC_VERSION "0.6"
+    VERSION "1.0"
+    RELEASE_DATE "2026-11-13"
+
+    #   check_references.py  tests/guidance-bad      2 errors
+
+    #GubReputationK2vQ9wN3cL ^"Mutant Reputation Effects" DEF {
+        DESCRIPTION "A mutant's reputation changes how strangers react."
+        GUIDANCE {
+            # fault 1 — the span is in no text at all
+            ENTRY ^"example-1" #GubEntryOneH4mK8wQ2xN6 {
+                CONCERNS [ #GubReputationK2vQ9wN3cL ^"Mutant Reputation Effects" ]
+                TEXT "Example: Wolverine is sneaking through a back alley."
+                EMPHASIS BOLD {
+                    "For instance:"
+                }
+            }
+            # fault 2 — the span is in the DEF's DESCRIPTION and not in this entry's TEXT
+            ENTRY ^"example-2" #GubEntryTwoR5tJ1yL8sD4 {
+                TEXT "Example: a shopkeeper refuses to serve her."
+                EMPHASIS BOLD {
+                    "reputation"
+                }
+            }
+        }
+    }
+}
