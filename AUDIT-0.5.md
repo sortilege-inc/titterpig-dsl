@@ -2516,13 +2516,65 @@ aliases are untouched.
 
 ### C7. The base spec reserves L5R mechanics
 
-**Status:** open
+**Status:** closed 2026-11-14 by the owner. Committed and pushed on branch `0.6`. A check and
+a reward are the system's, and the base spec defines neither (DECISION-58). The corpus work
+is F35.
 
 Design principle 5 is system-agnostic grammar. §16 and §18 reserve `RING`, `RING_TN`, `TN`,
 `APPROACH`, `XP_BASE` and `XP` for scenes, and fix scene types to a list that includes "Intrigue".
 A `CHECK` cannot hold a VtM dice pool against a Difficulty, a D&D DC with an ability and skill, or a
 CoC difficulty level. `CHECK` is used in l5r5e (59) and curseborne (13). The 448 scenes in vtm5e,
 callofcthulhu7e, draw-steel, teeth and tor2e have none.
+
+**Evidence, recounted 2026-11-14** over the 22 corpus directories and seven other repos.
+
+| | Checks | Notes |
+|---|---|---|
+| l5r5e | 60 | `SKILL`, `RING` 21, `TN` 68, `RING_TN` 65, `ALTERNATIVE` 8. The audit's first count was 59 |
+| curseborne | 13 | in L5R's words: `SKILL "Culture"`, `RING "Cunning"`, `TN 3`; `APPROACH` 10 |
+| dnd5e-3rdparty (Wyldwolf Axis) | 10 | `SKILL "Perception"`, `DC 10`: a field §16 does not list. Not in the audit's first count, which left out third-party repos |
+
+`REWARDS`, `XP_BASE` and `XP` are written by l5r5e only, in two arcs. The 448 scenes in vtm5e,
+callofcthulhu7e, draw-steel, teeth and tor2e hold no check. Neither the grammar, the validator,
+`check_references.py`, `check_constructs.py` nor the synthesist mentions `CHECKS`, `CHECK`,
+`RING`, `TN`, `RING_TN`, `APPROACH`, `ON_SUCCESS`, `ON_FAILURE`, `REWARDS`, `XP_BASE` or `XP`:
+the reservation was the spec's text and nothing else. The fixed list of scene types, with
+"Intrigue" on it, went with DECISION-23.
+
+**Ruled 2026-11-14: a check and a reward are the system's (DECISION-58).** The agent proposed
+that the base keep the frame of a check (`CHECKS`, `CHECK`, `ALTERNATIVE`, `ON_SUCCESS`,
+`ON_FAILURE`, and `REWARDS`, `CONDITIONAL_REWARDS`, `REWARD`) and give its fields to the system,
+and offered generic fields as the alternative. Owner: "why isn't it entirely delegated to the
+system? I don't think generic fields are helpful here, these should be system-specific. The
+base spec can provide a couple examples, but those examples are not part of the base spec."
+
+The frame had been kept so that a consumer could find every check and its outcomes without
+knowing the system. That does not hold: no tool reads the frame, three systems write one, and
+success against failure is itself one game's shape (Root's own rule has three results). A
+named block is a target through its hash whatever its keyword (§20), so a system's `CHECK`
+needs nothing from the base.
+
+*Applied.* Spec only: §0 item 45, DECISION-58; in §16, the `CHECKS` block is out of the ARC
+template and the scene template, the `REWARDS` block out of the ARC template, and the field
+list for `CHECKS` is replaced by *A system's own blocks*, with two checks as examples; §18's
+ARC and SCENE lists; and §15's example of a block keyword a system uses elsewhere, which was
+`SKILL` and is now `TRIGGER`. No tool, fixture or corpus file is changed, so no gate was rerun.
+
+| Check | Result |
+|---|---|
+| the l5r5e example in §16, against `l5r5e-0.5-gm-kit-dark-tides.arc` | found once, character for character |
+| the Wyldwolf example in §16, against `wyldwolf-axis-mikko-0.5-adventure.arc` | found once, character for character |
+| what the commit touches | the spec and this audit; `git status` shows no tool, fixture or sample changed |
+
+*Agent's calls, to confirm.* (1) `REWARDS`, `CONDITIONAL_REWARDS`, `REWARD`, `XP_BASE` and `XP`
+go with the check. He spoke of the check; C7 names `XP_BASE` and `XP` beside it, and only l5r5e
+writes them. (2) The l5r5e arc that §16 shows as its example keeps its `CHECKS` and `REWARDS`,
+labelled as l5r5e's. (3) §16's rules for when to write `SKILL`, `RING`, `TN`, `RING_TN`,
+`ALTERNATIVE` and the two outcomes are out of the spec (F35). (4) `MONTAGE` and `MOMENT`, which
+only l5r5e writes (2 and 6 times), are left in §18: C7 does not name them. (5) `CLUES`,
+`CONFLICT`, `OBJECTIVES` and `RESOLUTIONS` are left: five or six systems write each.
+
+*Not done.* No corpus is changed. Curseborne's 13 checks stay in L5R's words (F35).
 
 ### C8. Edition identity is load-bearing and undeclared
 
@@ -3273,6 +3325,18 @@ the source's.
   the hash.
 - **armdef's four statements** carry a hash and the target's name, and need no change.
 
+### F35. l5r5e and curseborne: a check is the system's own
+
+DECISION-58 takes the check and the reward out of the base spec.
+
+- **l5r5e.** The rules §16 held for writing a check are l5r5e's and belong in its own
+  documentation: repeat `SKILL` or `RING` where the text allows either; write `RING` only where
+  the text requires that ring; `RING_TN` for a ring with its own TN; `ALTERNATIVE` for a second
+  way to make the check; an outcome only where the text states one. The wording is in §16 of
+  the spec at commit `2410656`.
+- **curseborne.** Its 13 checks are written with L5R's keywords (`RING "Cunning"`, `TN 3`).
+  Whether to respell them in Curseborne's own terms is a question for its book.
+
 ### To-do recorded in the spec
 
 - **Nested conditions in `WITH`** (§5b). `A AND (B OR C)` is not defined; a `WITH` that mixes `AND`
@@ -3715,6 +3779,9 @@ Filled in as each finding is walked through.
 | C6 | 2026-11-14 | Part 7: an alias is a second name of a hash, written `ALIAS ^"name" FOR #hash`; the entity's own name may follow the hash. `#hash ^"name"` is a pair that agrees. An alias `FOR` a name with no hash, and `ALIAS "name"` inside a DEF, are older forms: a warning below 0.6 and an error from 0.6. Written as DECISION-57. The nine corpus lines are F34. | Owner, on the proposal to report the in-DEF line: "would it make sense instead to have ALIAS function kind of like \"ALIAS [hash] [alias name]\", so that it's a separate name that resolves to the same hash?"; then, given two spellings: "ALIAS name FOR #hash". A reference through an alias that carried the entity's hash was an error in `check_references.py`. His own spelling reads as a hash-name pair that disagrees, which every tool reports; the one chosen keeps armdef's four statements valid. |
 | C6 | 2026-11-14 | Agent's calls on part 7, to confirm. (1) `ALIAS "name"` inside a DEF is reported, though he ruled on the spelling and did not say so in words. (2) `FOR` a name with no hash is an older form. (3) The target's name is read on the hash's line only. (4) A hashed alias written as a list member with no hash is warned like any member. (5) The validator leaves the check of a name after the hash to `check_references.py`. (6) An alias of a bound reference is left as §5b had it. (7) Bridge aliases are untouched. | (1): the agent's message said the nine lines "are still reported" whichever spelling he picked, and he picked one. (2): the table he chose from said "hash required". (3): §8's rule for where a statement ends. (4): the exemption existed because an alias had no hash. (5): as before the change. (6): no corpus writes one, and it was named to him as open. (7): they are sided and by name, and he was told they would be left. |
 | C6 | 2026-11-14 | C6 is closed. The branch is committed and pushed. | Owner: "commit and push, then move on to the next". He did not say "close"; the agent read moving on as closing it. The agent's calls marked "to confirm" in parts 2 to 6 were reported to him as each part was applied, and those of part 7 with the commit; none was separately ruled on. |
+| C7 | 2026-11-14 | A check and a reward are the system's: the base spec defines neither and reserves none of their keywords, and §16 shows two systems' checks as examples that are no part of it. Written as DECISION-58. No file changes. | Owner: "why isn't it entirely delegated to the system? I don't think generic fields are helpful here, these should be system-specific. The base spec can provide a couple examples, but those examples are not part of the base spec." The agent had proposed to keep the frame of a check in the base. No tool reads the frame, three systems write a check, and one of them already uses its own field. |
+| C7 | 2026-11-14 | Agent's calls, to confirm. (1) `REWARDS` and its fields go with the check. (2) §16's l5r5e example arc keeps its `CHECKS` and `REWARDS`, labelled as l5r5e's. (3) §16's rules for writing an L5R check leave the spec (F35). (4) `MONTAGE` and `MOMENT` stay in §18. (5) `CLUES`, `CONFLICT`, `OBJECTIVES` and `RESOLUTIONS` stay. (6) §15's example of a block keyword used elsewhere is now `TRIGGER`. | (1): C7 names `XP_BASE` and `XP`, and only l5r5e writes them. (2): it is a real l5r5e arc. (3): they are L5R's rules. (4): C7 does not name them. (5): five or six systems write each. (6): `SKILL` is no longer a base keyword. |
+| C7 | 2026-11-14 | C7 is closed. The branch is committed and pushed. | Owner: "Close, commit, push". The agent's calls in the row above were reported to him before he closed and were not separately ruled on. |
 
 ---
 

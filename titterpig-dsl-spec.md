@@ -73,8 +73,8 @@ Changes made since v0.5, listed as they are decided. **Not all are additive.**
     it opens with the `EXTENSION` wrapper as a `.ttrpg` does, holds one or more instance DEFs, and
     holds nothing else. §2 had called it a standalone single DEF. A file that opens with a bare
     DEF is the older form and the validator warns on it.
-16. **A block's keywords are reserved inside that block** *(§15, §18, DECISION-29)* — `SKILL` is a
-    SCENE keyword, and outside a scene a system may use the word for a field of its own. The
+16. **A block's keywords are reserved inside that block** *(§15, §18, DECISION-29)* — `TRIGGER` is a
+    `HOOK` keyword, and outside a hook a system may use the word for a field of its own. The
     file-level, definition, type, modifier, scope, choice and modification keywords are reserved
     everywhere.
 17. **A definition's prose is `DESCRIPTION`** *(§10, DECISION-30; not additive)* — `TEXT` is no
@@ -172,6 +172,11 @@ Changes made since v0.5, listed as they are decided. **Not all are additive.**
     `ALIAS ^"name" FOR #hash`, and `#hash ^"name"` is then a pair that agrees. An alias `FOR`
     a name with no hash, and the line `ALIAS "name"` inside a DEF, are older forms: errors
     from 0.6, warnings below it. A bridge's sided aliases (§21) are as they were.
+45. **A check and a reward are the system's** *(§16, §18, DECISION-58)* — the base spec
+    defines no check and no reward and reserves none of their words. `CHECKS`, `CHECK`, `SKILL`,
+    `RING`, `TN`, `RING_TN`, `APPROACH`, `ALTERNATIVE`, `ON_SUCCESS`, `ON_FAILURE`, `REWARDS`,
+    `CONDITIONAL_REWARDS`, `REWARD`, `XP_BASE` and `XP` are keywords of the systems that write
+    them. §16 shows two systems' checks as examples. No file changes.
 
 ### v0.5 — five new constructs, and one rule tightened *(current)*
 
@@ -570,7 +575,7 @@ stay valid.
   2026-11-12)* (§15, §18): §15 said "only these keywords are reserved" and §18 reserved its list
   "for use within narrative containers", and neither said what the same word is elsewhere. The
   corpora use six of those words as a system's own field outside the block that reserves them:
-  `SKILL` on 1,698 lines (l5r5e's curricula), `TRIGGER` on 438, `TYPE` on 317, `TAGS` on 78,
+  `SKILL` on 1,698 lines (l5r5e's curricula; no longer a base keyword, DECISION-58), `TRIGGER` on 438, `TYPE` on 317, `TAGS` on 78,
   `THEMES` on 49 and `SOURCE` on 15. The grammar already read them so: 51 of §18's 58 words are
   not grammar keywords. The decision is that a keyword listed under a block (Tables, Hooks,
   Codex, Bridge, the narrative containers) is reserved inside that block, and a system may use
@@ -884,6 +889,17 @@ stay valid.
   declares 0.6 or later: an alias `FOR` a name with no hash; and `ALIAS "name"` inside a DEF,
   which nine definitions wrote (l5r5e 8, vtm5e 1), this spec never defined and no tool read.
   A bridge's alias (§21) names its target by side and name and is unchanged.
+- **DECISION-58 — A check and a reward are the system's** *(resolved, v0.6, 2026-11-14)* (§16,
+  §18): §16 gave a scene's `CHECK` the fields `SKILL`, `RING`, `TN`, `RING_TN` and `APPROACH`,
+  and an arc's `REWARDS` the fields `XP_BASE` and `XP`. They are L5R's. Three systems write a
+  check: l5r5e 60 times; Curseborne 13 times, in L5R's words (`RING "Cunning"`, `TN 3`); and
+  Wyldwolf Axis, a D&D third-party book, 10 times, with its own `DC 10`. Only l5r5e writes
+  `REWARDS`, in two arcs. No tool reads any of these words. The owner ruled that the whole of
+  it belongs to the system: the base spec defines no check and no reward, reserves none of
+  their keywords, and may show examples that are no part of it. Generic fields were
+  considered and not taken. Every file that writes a check or a reward stays as it is; the
+  words are its system's own (§1, §11).
+
 
 ## 1. Overview & Design Principles
 
@@ -2827,8 +2843,9 @@ Only these keywords are reserved by the base spec.
 
 **Where a keyword is reserved** *(v0.6, DECISION-29)*. A keyword listed under a block (Tables, Hooks,
 Codex, Bridge, the narrative containers of §18) is reserved inside that block. Outside it, a system
-may use the word for a field of its own: l5r5e's curricula write `SKILL "Aesthetics"`, and `SKILL`
-is a SCENE keyword. The file-level, definition, type, modifier, scope, choice and modification
+may use the word for a field of its own: Draw Steel and Root write `TRIGGER "…"` in their
+own DEFs, and `TRIGGER` is a `HOOK` keyword. (Before DECISION-58 the example here was
+`SKILL`, then a SCENE keyword.) The file-level, definition, type, modifier, scope, choice and modification
 keywords are reserved everywhere.
 
 **File-level:** `BASE`, `EXTENSION`, `EXTENDS`, `NAME`, `VERSION`, `SPEC_VERSION`, `RELEASE_DATE`, `DEPENDS_ON`, `ORIGIN` (a port's source, §19; shared with **Bridge**)
@@ -3151,15 +3168,7 @@ ARC "ArcID" {
             OPTIONAL "Secondary goal"
         }
 
-        CHECKS {
-            CHECK ^"Check Name" {
-                SKILL "skill_name"
-                RING "ring_name"
-                TN 2
-                ON_SUCCESS "What happens"
-                ON_FAILURE "What happens"
-            }
-        }
+        # the system's own blocks, such as its checks (see "A system's own blocks", below)
 
         CLUES {
             CLUE ^"Clue Name" {
@@ -3177,14 +3186,7 @@ ARC "ArcID" {
         }
     }
 
-    REWARDS {
-        XP_BASE 3
-        CONDITIONAL_REWARDS {
-            REWARD "Condition description" {
-                XP 1
-            }
-        }
-    }
+    # the system's own blocks, such as its rewards
 }
 ```
 
@@ -3196,9 +3198,9 @@ ARC "ArcID" {
 - `LOCATION`: Place definitions. A SETTING's location is imported with `FROM SETTING "id" INCLUDE [ … ]`
 - `FLOW`: Scene sequencing grouped into PHASEs
 - `SCENE`: Individual narrative/gameplay units (see Scene Block Specification)
-- `REWARDS`: XP and outcome-based rewards
+- A system's own blocks: its rewards, for one. The base spec defines none *(v0.6, DECISION-58)*
 
-**Example:**
+**Example.** An l5r5e arc. Its `CHECKS` and `REWARDS` blocks are l5r5e's own (DECISION-58).
 
 ```
 ARC "L5R5e_LostWriter" {
@@ -3488,22 +3490,7 @@ SCENE ^"Scene Name" #hash {
         OPTIONAL "Secondary goal description"
     }
 
-    CHECKS {
-        CHECK ^"Check Name" {
-            SKILL "skill_name"
-            RING "ring_name"
-            TN target_number
-            RING_TN "ring_name" target_number   # optional, repeatable (v0.5, 2026-09-23)
-            APPROACH "approach_name"       # optional
-            ALTERNATIVE {                  # optional, repeatable (v0.5, 2026-09-23)
-                SKILL "skill_name"
-                TN target_number
-                RING_TN "ring_name" target_number
-            }
-            ON_SUCCESS "Result description"
-            ON_FAILURE "Result description"
-        }
-    }
+    # the system's own blocks, such as its checks (see "A system's own blocks", below)
 
     CLUES {
         CLUE ^"Clue Name" {
@@ -3546,26 +3533,40 @@ SCENE ^"Scene Name" #hash {
 - `REQUIRED`: Must be addressed for the scene to reach a resolution
 - `OPTIONAL`: Bonus goals that enrich the experience
 
-**CHECKS** — Specific mechanical rolls the scene may call for.
-- `SKILL`: The skill used for the check. Repeat it when the text allows either of several skills
-  at the same TN (*"a TN 1 Medicine or Skulduggery check"*).
-- `RING`: The ring or attribute used — **only when the text requires that one**. A check that
-  allows any ring states no `RING`; never record one the text does not name. Repeat it when the
-  text allows either of several (*"a TN 2 Games [Water or Air] check"*).
-- `TN`: Target number for success — when `RING_TN` lines follow, the TN for any ring they do not name
-- `RING_TN` *(v0.5, 2026-09-23)*: the TN for one named ring, where the text gives rings their own
-  TNs. One line per ring, as printed: *"a TN 3 Fitness check (Earth 1, Fire 4)"* is `TN 3`,
-  `RING_TN "Earth" 1`, `RING_TN "Fire" 4` (L5R5e core p. 297: *"a TN of 4 if the character uses
-  their Fire Ring … a TN of only 1 if the character uses their Earth Ring … and a TN of 3 for any
-  other ring"*).
-- `APPROACH`: Optional specific approach (system-dependent)
-- `ALTERNATIVE { … }` *(v0.5, 2026-09-23)*: a second way to make the same check that the text
-  offers in the same breath with its own skill, TN or ring TNs — *"a TN 3 Aesthetics (Air 2) or
-  TN 2 Skulduggery (Earth 1) check"* is `SKILL "Aesthetics"`, `TN 3`, `RING_TN "Air" 2` and
-  `ALTERNATIVE { SKILL "Skulduggery" TN 2 RING_TN "Earth" 1 }`. It takes `SKILL`, `RING`, `TN`
-  and `RING_TN`; the outcomes are the check's.
-- `ON_SUCCESS` / `ON_FAILURE`: Narrative consequences — **only those the text states**; a check
-  whose failure the text leaves open has no `ON_FAILURE`.
+**A system's own blocks** *(v0.6, DECISION-58)*. A scene holds whatever further blocks its
+system defines, as a DEF does (§11). A check is one. What is rolled, against what, and what
+follows from the result differ from game to game, so the base spec defines no check and
+reserves none of its words; the same holds for an arc's rewards. A block that gives a name
+and a hash is a target like any named block (§20).
+
+Two systems' checks, as their corpora write them. They are examples, and no part of this
+spec:
+
+```
+# l5r5e: a skill, a target number, and a lower one for a named ring
+CHECKS {
+    CHECK ^"Read Mikoto's Motivations" {
+        SKILL "Sentiment"
+        TN 2
+        RING_TN "Void" 1
+        ON_SUCCESS "(A TN 2 Sentiment [Void 1] check can reveal hints as to her motivations during their questioning.)"
+    }
+}
+
+# Wyldwolf Axis (D&D 2024): a skill and a DC
+CHECKS {
+    CHECK ^"Claw scars in the wood" {
+        SKILL "Perception"
+        DC 10
+        ON_SUCCESS "the party will notice long, twisting scars in the wood, as though left by the claws of some terrible beast."
+    }
+}
+```
+
+Before v0.6 this section defined `CHECKS`, `CHECK`, `SKILL`, `RING`, `TN`, `RING_TN`,
+`APPROACH`, `ALTERNATIVE`, `ON_SUCCESS` and `ON_FAILURE`, and the ARC section `REWARDS`,
+`CONDITIONAL_REWARDS`, `REWARD`, `XP_BASE` and `XP`. The fields were L5R's. Each is now a
+keyword of the system that writes it, and a file that writes one is unchanged.
 
 **CLUES** — Discoverable information.
 - `DESCRIPTION`: What the PCs learn
@@ -3703,7 +3704,7 @@ reference to something that container defines (§5d).
 A `FROM "id"` with no kind is the older spelling. It raises a **warning** in a file that declares
 a `SPEC_VERSION` below 0.6, or none, and an **error** in one that declares 0.6 or later.
 
-**Declaring a block.** A named block (`SCENE`, `LOCATION`, `ENTRY`, `CHECK`) gives its name and then
+**Declaring a block.** A named block (`SCENE`, `LOCATION`, `ENTRY`, or a system's own, such as l5r5e's `CHECK`) gives its name and then
 its hash, by convention: `SCENE ^"Scene Name" #hash {`. Hash before name is also legal. A reference
 to a scene, a location or a cast member is written as any other reference (§5d): `#hash ^"Name"`.
 The hash makes the block a target for any file; the name alone is a label inside the file that
@@ -4092,9 +4093,9 @@ These keywords are reserved by the base spec inside the narrative container name
 
 **FRAME:** `STARTING_CONDITIONS`, `MODIFICATIONS`
 
-**ARC:** `CAST`, `FLOW`, `PHASE`, `SCENE_REF`, `REWARDS`, `XP_BASE`, `CONDITIONAL_REWARDS`, `REWARD`, `XP`
+**ARC:** `CAST`, `FLOW`, `PHASE`, `SCENE_REF`. `REWARDS`, `XP_BASE`, `CONDITIONAL_REWARDS`, `REWARD` and `XP` are a system's own from 0.6 (§16, DECISION-58)
 
-**SCENE:** `TYPE`, `PREREQUISITES`, `MINIMUM_CLUES`, `COMPLETED_SCENES`, `CONDITION`, `OBJECTIVES`, `REQUIRED`, `OPTIONAL`, `CHECKS`, `CHECK`, `SKILL`, `RING`, `TN`, `RING_TN`, `ALTERNATIVE`, `APPROACH`, `ON_SUCCESS`, `ON_FAILURE`, `CLUES`, `CLUE`, `DISCOVERED_BY`, `CONFLICT`, `STAKES`, `OPPONENTS`, `RESOLUTIONS`, `RESOLUTION`, `OUTCOME`, `MONTAGE`, `MOMENT`
+**SCENE:** `TYPE`, `PREREQUISITES`, `MINIMUM_CLUES`, `COMPLETED_SCENES`, `CONDITION`, `OBJECTIVES`, `REQUIRED`, `OPTIONAL`, `CLUES`, `CLUE`, `DISCOVERED_BY`, `CONFLICT`, `STAKES`, `OPPONENTS`, `RESOLUTIONS`, `RESOLUTION`, `OUTCOME`, `MONTAGE`, `MOMENT`. `CHECKS`, `CHECK`, `SKILL`, `RING`, `TN`, `RING_TN`, `ALTERNATIVE`, `APPROACH`, `ON_SUCCESS` and `ON_FAILURE` are a system's own from 0.6 (§16, DECISION-58)
 
 **LOCATION:** `TAGS`
 
