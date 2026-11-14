@@ -71,6 +71,30 @@ BASE "Required_Core" {
         }
     }
 
+    # an entry may extend an entry (DECISION-42): the variant has what its parent gives
+    #ReqParentR5tJ1yL8sD4fG0z ^"Storm Rider Tradition" DEF {
+        EXTENDS #ReqSchoolB8tJ1yL4sD5fG0z ^"School"
+        PROPERTIES {
+            ^"Clan" "Unicorn"
+            ^"Rank" 1
+        }
+    }
+    #ReqVariantQ8wN3cL7pA5xZ2 ^"Storm Rider Tradition (Revised)" DEF {
+        EXTENDS #ReqParentR5tJ1yL8sD4fG0z ^"Storm Rider Tradition"
+        PROPERTIES {
+            ^"Rank" 2
+        }
+    }
+
+    # a subtype that marks a field REQUIRED is a type though it gives a value (DECISION-43)
+    #ReqMinorClanD6fG0zX4hJ2w ^"Minor Clan School" DEF {
+        EXTENDS #ReqSchoolB8tJ1yL4sD5fG0z ^"School"
+        PROPERTIES {
+            ^"Rank" 1
+            ^"Patron" REQUIRED
+        }
+    }
+
     # a subtype declares and gives no value: it is a type, and owes nothing
     #ReqTraditionJ7mQ2xW9vN4c ^"Tradition" DEF {
         EXTENDS #ReqSchoolB8tJ1yL4sD5fG0z ^"School"

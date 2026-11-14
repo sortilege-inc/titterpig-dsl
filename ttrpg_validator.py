@@ -1043,9 +1043,13 @@ def collect_definitions(fname, toks):
             prev = toks[i - 1] if i else None
             nxt = toks[i + 1] if i + 1 < n else None
             first = prev is None or prev.line != t.line or prev.kind == 'LBRACE'
+            # The type keyword stands on the name's line. A word that opens the NEXT line belongs
+            # to the next statement: `EXTENDS ^"Complication"` followed by a line `TEXT "…"` is
+            # not a property named Complication, and read as one it made the DEF look like a type.
             keyword = in_props and nxt is not None and nxt.kind == 'ID' and nxt.val in VALUE_TYPES \
+                and nxt.line == t.line \
                 and not (prev is not None and prev.kind == 'ID'
-                         and prev.val in ('AXIS', 'OF', 'SET', 'NEXT', 'COLUMNS'))
+                         and prev.val in ('AXIS', 'OF', 'SET', 'NEXT', 'COLUMNS', 'EXTENDS'))
             # No type keyword (v0.6, DECISION-39): a value on the name's line, or a declaration,
             # which is the name first on its line with its constraints or, in a PROPERTIES
             # block or a property DEF, with nothing after it.
@@ -3116,7 +3120,7 @@ def value_pass(files_data, findings):
 
     The same gating, for REQUIRED (§8, DECISION-34): an instance that lacks a property a type
     up its chain declares REQUIRED. An instance is a DEF that extends something and is not a
-    type; a type is an ACTOR or TEMPLATE definition, a DEF another DEF extends, or a DEF that
+    type; a type is an ACTOR or TEMPLATE definition, or a DEF that
     declares fields and gives no value. The instance has the property when it writes it, when
     a type above gives it a value, when it is a PARAMETERS slot, or, for ^"Name", always: the
     DEF's own name answers.
@@ -3266,9 +3270,10 @@ def value_pass(files_data, findings):
                     todo.extend(y['extends'])
         return out
 
-    extended = {id(y) for x in every for nm, h, _ln in x['extends'] for y in resolve_any(nm, h)}
+    # An entry may extend an entry (DECISION-42): being extended does not make a DEF a type,
+    # and an entry that another extends owes what its types require like any other.
     for x in every:
-        if not x['extends'] or own_type(x) or id(x) in extended:
+        if not x['extends'] or own_type(x):
             continue                                    # a type, or nothing that extends one
         sev = gated(x, x['line'])
         if not sev:
@@ -3281,7 +3286,7 @@ def value_pass(files_data, findings):
                      if any(r['value'] is not None or r['members'] is not None for r in rs)}
         reported = set()
         for y in anc:
-            if not (own_type(y) or id(y) in extended):
+            if not own_type(y):
                 continue
             missing = [p for p, rs in y['props'].items()
                        if any(r['required'] for r in rs) and p not in have and p != 'Name'

@@ -1529,7 +1529,10 @@ A1 stands) and pairs of numbers. The owner adds no value types.
 
 ### C2. `EXTENDS` means both "is a kind of" and "is an instance of"
 
-**Status:** open
+**Status:** closed 2026-11-13 by the owner. Committed and pushed on branch `0.6`. An entry may
+extend an entry (DECISION-42). A type is told from an entry by what it holds, with no marker
+(DECISION-43). No change to the namespace or to paths. One validator defect found on the way
+is fixed. The corpora gain 12 warnings (F22).
 
 `ACTOR "Samurai" EXTENDS ^"Entity"` is a subtype. `^"Pilum of Fire" EXTENDS ^"Formulaic Spell"` is
 an instance. The syntax is the same and nothing marks which. §5 distinguishes definition from
@@ -1542,6 +1545,131 @@ instances sharing one namespace.
 Related: `^"Name"` is used for entities, property keys, parameter names, `GUIDANCE` labels, codex
 predicates and categories, and scene, clue and check names. Resolution is flat and corpus-wide, and
 no syntax addresses a nested thing by path. `.bridge` has `SCOPE` for this; nothing else does.
+
+**Since this was written:** DECISION-39 settles the `^"Level" INTEGER 20` point. A line with a
+literal is a value (`^"Level" 20`) and a line with none is a declaration. DECISION-13 and
+DECISION-27 settle the shared namespace: a reference resolves by hash, and a same-named DEF
+under another hash is a second entity. DECISION-34 gave the validator a rule for telling a type
+from an entry, which §5 does not state: a type is an `ACTOR` or `TEMPLATE` definition, a DEF
+that another DEF extends, or a DEF that declares fields and gives no value.
+
+**Evidence, counted 2026-11-13** over the 22 corpus directories with the validator's reader:
+111,333 DEFs and 72,974 `EXTENDS` lines. No DEF extends two things. Of the top-level DEFs that
+extend, 37,940 are one step from the top of their chain, 4,951 two and 378 three.
+
+| What an `EXTENDS` line joins | Lines |
+|---|---|
+| an entry to a type that declares fields | 62,126 |
+| an entry to a DEF that declares nothing and gives no value (draw-steel `^"Monster Ability"`, pendragon5e `^"Section"`, l5r5e `^"NPC"`) | 6,472, on 84 parents |
+| an entry to a type that carries `ACTOR` or `TEMPLATE` | 3,098 |
+| an entry to a DEF that gives values (dnd5.5e `^"Spell"` and `^"Monster"`, arm5e `^"Clumsy Magic"`) | 1,178 |
+| a type to a type (l5r5e `^"Distinction"` to `^"Advantage"`) | 100 |
+
+| Role, by the validator's rule | DEFs |
+|---|---|
+| an entry: it extends something and nothing extends it | 71,652 (29,705 of them nested) |
+| a type by its `ACTOR` or `TEMPLATE` marker | 1,098 |
+| a type because something extends it | 826 |
+| a type because it declares fields | 207 |
+| it extends something, is extended, and only declares: a subtype | 60 |
+| it extends something, is extended, and gives values | 200 (arm5e 86, armdef 86, l5r5e 22, dnd5.5e 5, invisiblesun 1) |
+| it is extended, extends nothing, and gives values | 11 |
+| no `EXTENDS` either way | 37,279 (29,515 nested) |
+
+1,304 DEFs act as a type and carry no marker (armdef 265, arm5e 246, pendragon6e 109, teeth 77,
+aegean 76, l5r5e 71).
+
+*What the rule cannot tell.*
+
+- **An entry that another entry extends.** arm5e's `^"Clumsy Magic"` is a Flaw with values, and
+  Rival Magic's Amazon flaw extends it. The rule counts it a type because something extends
+  it, so the `REQUIRED` properties of `^"Flaw"` are not checked on it.
+- **A type that gives a value.** dnd5.5e's `^"Spell"` and `^"Monster"` declare fields and give
+  some. They are types only because entries extend them.
+- **A type that declares nothing.** draw-steel's `^"Monster Ability"` is a type only because
+  2,282 entries extend it. With none it would be a thing of no type.
+- 50 names are carried by a type and by an entry of some other type, under different hashes.
+  §5d keeps them apart.
+
+*A defect found and fixed.* The validator read a type keyword on the line AFTER a
+name as that name's type. `EXTENDS ^"Complication"` followed by a line `TEXT "…"` became a
+property named Complication with no value, and the DEF was counted a type.
+
+| Check | Result |
+|---|---|
+| probe: two entries lack a `REQUIRED` property; one has `TEXT` after its `EXTENDS` line | before: 1 reported. After: 2 |
+| the validator as committed at B5, on the probe | 1 reported: the defect dates from B4 |
+| every fixture set and both grammar gates | unchanged |
+| old validator against new, 22 corpus directories | identical for all 22; 39 errors and 20,064 warnings both times |
+
+490 draw-steel entries were read as types. None of them lacks a `REQUIRED` property, so no
+corpus result changes and B4's counts stand.
+
+*Proposed 2026-11-13,* and the owner's answers:
+
+1. Mark a type with a word before its name, as `ACTOR` and `TEMPLATE` already do for
+   characters. Owner: "why do we need a "TYPE" or "KIND" at all?" Measured below, and the
+   proposal was withdrawn. Asked "Drop the marker, and write into §5 that a type is a
+   definition that declares a field?", he answered "Yes, no marker".
+2. An entry may extend an entry: a variant that starts from the parent's values. Owner: "yes."
+3. No second namespace and no path syntax. Owner: "no change".
+
+**Ruling 2, applied as DECISION-42.** §6 says an entry may extend an entry and
+that being extended does not make a definition a type. §8's account of who owes a `REQUIRED`
+property drops "a DEF that another DEF extends" from its list of types. The validator drops
+the same test.
+
+| Check | Result |
+|---|---|
+| `tests/required-good`, with a variant that takes its clan from the entry it extends | 0 errors, 0 warnings |
+| `tests/required-bad`, with an entry that lacks a clan and has a variant | 4 errors, 1 warning; the validator before the ruling reports 3 and misses that entry |
+| every other fixture set and both grammar gates | unchanged |
+| validator before the ruling against after, 22 corpus directories | 17 identical. 12 new warnings, none gone, 39 errors both times |
+
+The 12, all DEFs that extend a type, lack what it requires, and have something extending them:
+
+| Corpus | DEF | What it is |
+|---|---|---|
+| vtm5e | `^"Ritual"`, `^"Ceremony"`, `^"Formula"` under `^"Discipline Power"` | subtypes that declare nothing |
+| teeth | `^"Mutation"`, `^"Magic Device"`, `^"Hardship"`, `^"Complication"` under `^"Roll Table Entry"` | subtypes that declare nothing |
+| arm5e, armdef | `^"Child Virtue"` under `^"Virtue"`, `^"Child Flaw"` under `^"Flaw"` (2 each) | subtypes that declare nothing |
+| l5r5e | `^"Treasure Hunter"` under `^"School"`, no `^"Clan"` | an entry; a 2020 errata entry extends it |
+
+**Why a marker might be needed: measured.** With ruling 2 applied, the validator calls a DEF a
+type when it carries `ACTOR` or `TEMPLATE` or declares a field and gives no value. Since
+DECISION-39 a declaration and a value are written differently, so the file shows which a DEF
+is. Over 111,333 DEFs that rule misplaces 11: the subtypes above, which add no field of
+their own and so look like entries. Each takes an element-level `FIAT` or one declared field.
+A marker would settle those 11 and would be written on 1,304 DEFs to do it. UNVERIFIED:
+whether any consumer needs to list a system's types.
+
+**Ruling 1, applied as DECISION-43.** §5's "Definitions vs. Instances" is
+rewritten: a DEF is a type or an entry, and what it holds shows which; no word marks a type;
+`EXTENDS` is written the same for a subtype, an entry and a variant. §8 points to it. The
+validator's rule is the one §5 now states, and its code is not changed by this ruling.
+
+*The exact rule.* The question put to the owner said "a definition that declares a field".
+The rule that was measured, and that §5 states, is narrower: a type declares fields and gives
+no value of its own, or marks a field `REQUIRED`, or carries `ACTOR` or `TEMPLATE`. The
+difference is 282 corpus DEFs that extend something and hold one declaration-shaped line
+among their values (l5r5e 126, teeth 88, root 68): teeth's families write a value as
+`^"Group" ENUM ["Wealthy Estates"]`. They are entries. Read by the looser wording they would
+count as types and go unchecked.
+
+| Check | Result |
+|---|---|
+| `tests/required-good`: a subtype that marks a field `REQUIRED` and gives a value owes nothing | 0 errors, 0 warnings |
+| `tests/required-bad`: a DEF that gives a value and declares a field with no `REQUIRED` is an entry, and its missing clan is reported | 5 errors, 1 warning |
+| every other fixture set and both grammar gates | unchanged |
+| the validator's code | the copy that ran on the 22 corpora for DECISION-42; this ruling changes text only |
+
+*Not done.*
+
+- The 11 subtypes and l5r5e's `^"Treasure Hunter"` are warnings in their corpora (F22).
+- Nothing checks that a DEF with an element-level `FIAT` "says what it is"; a `FIAT` waives
+  the finding whatever its reason reads.
+- A DEF that only gives a `REF` or a `ROLL` has no literal value, and the validator reads it as
+  declaring. No corpus uses either form yet.
 
 ### C3. Most references in instance data are outside §5d and ungated
 
@@ -2052,6 +2180,10 @@ declare `SPEC_VERSION "0.5"`.
 - **The 239 `^"Name" … REQUIRED` declarations may stay.** The DEF's name answers each.
 - arm5e's are fixed in `arm5e/0.5` and reach armdef through the retarget. armdef's own 126
   (the laboratory categories and the abbreviations) come from the Definitive core's types.
+- 2026-11-13, DECISION-42: 12 more warnings, for DEFs that something extends (vtm5e 3,
+  teeth 4, arm5e 2, armdef 2, l5r5e 1). C2 lists them. Eleven are subtypes that declare
+  nothing, and each takes an element-level `FIAT` or a declared field; l5r5e's
+  `^"Treasure Hunter"` is a school with no `^"Clan"`.
 
 ### F23. Five corpora and two manifests: what the dependency rules report
 
@@ -2614,6 +2746,12 @@ Filled in as each finding is walked through.
 | C1 | 2026-11-13 | Agent's calls, to confirm. (8) A value stands on its statement's line: a property's value, a `REF`'s entity, the amount of a `SET` or `TRANSFORM`. §8's statement rule is rewritten around it. (9) The check of a value's kind against the type it inherits is removed at every version; `INTEGER "heavy"` is still reported below 0.6. (10) `MIN` / `MAX` bind a value only when it is a number. (11) A keyed `CHOOSE` takes a bare value. (12) Fixtures: `values-bad/03` now declares 0.5 and `04` is deleted; `tables-bad` T13 plants a different fault; `decision6.ttrpg` puts two declared names on two lines. (13) The records of earlier decisions keep the keywords they describe. | (8): with no keyword, a name alone after `REF OF ^"Type"` could be read as its entity. (9): the owner's reason for the ruling. (10): follows (9). (12): the checks those fixtures planted no longer exist at 0.6. |
 | C1 | 2026-11-13 | Agent's calls, to confirm. (1) A target with no hash that names a property of the enclosing definition, written there or declared by a type it extends, is that property; any other target is a reference as before. (2) The block holds changes only, at least one, and no `SITUATIONAL` inside another. (3) Every fault is an error at every version. (4) The word is reserved everywhere in the grammar. (5) Follow-up F24 is added for the corpus strings. | (1): the approved example writes `^"Injury" SET 18`, and a property is not an entity, so the old reference check failed it. (2): the owner's form shows changes only. (3): no corpus uses the word. (4): as `TRANSFORM` and `NEXT` are. |
 | C1 | 2026-11-13 | C1 is closed. The branch is committed and pushed. | Owner: "Close, commit, push". The agent's calls in the C1 rows marked "to confirm" were reported to him before he closed and were not separately ruled on. The row order below is not the order of the day: `SITUATIONAL` was ruled first, then the keywords' scope, then their gating, then the last three forms. |
+| C2 | 2026-11-13 | An entry may extend an entry: a variant that starts from the parent's values. Being extended does not make a DEF a type, and both entries are checked for what their type requires. Written as DECISION-42. | Owner: "yes.", to that proposal. 1,178 `EXTENDS` lines join an entry to a DEF that gives values. |
+| C2 | 2026-11-13 | No second namespace and no path syntax. | Owner: "no change". A reference resolves by hash (DECISION-13), which already keeps apart the 50 names a type and an entry share. |
+| C2 | 2026-11-13 | No marker for a type. §5 says a type is told from an entry by what it holds. Written as DECISION-43. | Owner: "why do we need a "TYPE" or "KIND" at all?", then "Yes, no marker". Measured: without a marker the rule misplaces 11 of 111,333 DEFs; a marker would be written on 1,304. The agent had recommended the marker and withdrew it. |
+| C2 | 2026-11-13 | Agent's calls, to confirm. (5) §5 states the validator's exact rule: a type declares fields and gives no value of its own, or marks a field `REQUIRED`, or carries `ACTOR` or `TEMPLATE`. The question the owner answered said only "declares a field". (6) A subtype that adds no field declares one or takes an element-level `FIAT`. (7) §5 keeps its title and calls an instance an entry as well. | (5): the looser wording would make types of 282 corpus entries that hold a declaration-shaped line. (6): the two means the language already has. (7): §16 and §17 refer to the section by its title. |
+| C2 | 2026-11-13 | Agent's calls, to confirm. (1) A validator defect is fixed: a type keyword on the line after a name was read as that name's type. (2) A variant has a property when the entry it extends gives it. (3) A parent's `FIAT` does not cover its variant. (4) §5's sentence on definitions and instances was left until the marker question was settled, and is now rewritten (row above). | (1): found while counting; a probe shows it and no corpus result changes. (2): §8 already let a type in between give the value. (3): `FIAT` covers a DEF and what is inside it. (4): it depends on that answer. |
+| C2 | 2026-11-13 | C2 is closed. The branch is committed and pushed. | Owner: "Close, commit, push". The agent's calls in the C2 rows marked "to confirm" were reported to him before he closed and were not separately ruled on. |
 
 ---
 

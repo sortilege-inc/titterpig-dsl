@@ -115,6 +115,12 @@ Changes made since v0.5, listed as they are decided. **Not all are additive.**
     two a number is, is decided when the source is converted. Until then it stays in a string.
 28. **The entries of a list need not be named** *(§8, DECISION-41)* — an item of a list may be a
     `DEF { … }` with no name. The list is named by the property that holds it.
+29. **An entry may extend an entry** *(§6, §8, DECISION-42)* — a variant starts from another
+    entry's values. Being extended does not make a definition a type, and both entries have what
+    their type requires.
+30. **A type is told from an entry by what it holds** *(§5, DECISION-43)* — a type declares
+    fields; an entry gives values. No word marks a type. §5 said the two were told apart "by
+    whether it `EXTENDS` an actor type", which covered characters only.
 
 ### v0.5 — five new constructs, and one rule tightened *(current)*
 
@@ -657,6 +663,27 @@ stay valid.
   named, by the property that holds it. Nothing refers to an unnamed entry and no `MODIFY`
   reaches one. A `DEF` anywhere else has a name.
 
+- **DECISION-42 — An entry may extend an entry** *(resolved, v0.6, 2026-11-13)* (§6, §8): of
+  72,974 `EXTENDS` lines in the corpora, 1,178 join an entry to a DEF that gives values. arm5e's
+  `^"Clumsy Magic (Amazon)"` extends the Flaw `^"Clumsy Magic"`, changes its source and adds three
+  properties.
+  The form is legal: the child starts from the parent's values. The validator had counted any
+  DEF that another extends as a type, so an entry with a variant escaped the check of what its
+  type requires. Being extended no longer makes a DEF a type. The corpora gain 12 warnings:
+  11 are subtypes that declare nothing (vtm5e's `^"Ritual"` under `^"Discipline Power"`), and
+  one is an l5r5e school with no clan.
+
+- **DECISION-43 — A type is told from an entry by what it holds; no marker** *(resolved, v0.6,
+  2026-11-13)* (§5, §8): `EXTENDS` is written the same from a subtype to a type, from an entry
+  to its type and from an entry to an entry, and §5 told a definition from an instance "by
+  whether it `EXTENDS` an actor type", which left out every spell, flaw and weapon. A marker
+  word before a type's name was proposed and not adopted. Since DECISION-39 a declaration and
+  a value are written differently, so the file shows which a DEF is: a type declares fields
+  and gives no value of its own, or marks a field `REQUIRED`, or carries `ACTOR` or
+  `TEMPLATE`; an entry extends something and is not a type. Over the 111,333 DEFs of the 22
+  corpus directories that rule misplaces 11, the subtypes of DECISION-42 that add no field. A
+  marker would have been written on 1,304 DEFs to settle the same 11.
+
 ## 1. Overview & Design Principles
 
 Titterpig is a domain-specific language (DSL) for defining tabletop role-playing game (TTRPG) systems, content, and narrative structures. The base specification defines a **system-agnostic syntax toolkit** — it owns the grammar, while each game system owns its vocabulary.
@@ -968,7 +995,7 @@ The `DEF` block is the core building block. Every named game concept — a schoo
 }
 ```
 
-`ACTOR` is an optional semantic marker indicating this DEF declares a character **type** (the schema a PC or NPC conforms to). It has no syntactic effect — it's documentation for humans and tooling. ACTOR DEFs typically have PROPERTIES and RULES blocks defining the character schema.
+`ACTOR` is an optional semantic marker indicating this DEF declares a character **type** (the schema a PC or NPC conforms to). It has no syntactic effect — it's documentation for humans and tooling. A DEF that carries it is a type (*Definitions vs. Instances*, below). ACTOR DEFs typically have PROPERTIES and RULES blocks defining the character schema.
 
 ### TEMPLATE Definition (instantiable archetype) *(v0.4, DECISION-5)*
 
@@ -1390,12 +1417,22 @@ A DEF body can contain any combination of:
 - System-defined sub-blocks (see §10)
 - Inline text strings
 
-### Definitions vs. Instances *(v0.4)*
+### Definitions vs. Instances *(v0.4; rewritten v0.6, DECISION-43)*
 
-A `DEF` serves two roles, distinguished by whether it `EXTENDS` an **actor type**:
+A `DEF` is a **type** or an **entry**, and what it holds shows which. No word marks a type.
 
-- **Definition (schema):** declares a type and its fields *with* type/constraint information — e.g. `ACTOR "Samurai" DEF { PROPERTIES { ^"Air" MIN 1 MAX 5 DEFAULT 1 } }`.
-- **Instance (a specific character — PC or NPC):** a `DEF` that `EXTENDS` an actor type and fills in concrete values via canonical `PROPERTIES`, using the inline-value form (§8). Types and constraints are **inherited** from the extended actor, not restated.
+- **A type** declares fields (§8): `ACTOR "Samurai" DEF { PROPERTIES { ^"Air" MIN 1 MAX 5 DEFAULT 1 } }`.
+  A DEF is a type when it declares fields and gives no value of its own, when it marks a field
+  `REQUIRED`, or when it carries `ACTOR` or `TEMPLATE`.
+- **An entry**, or instance, `EXTENDS` a type or another entry and is not a type: it gives
+  values. A character is an entry of its actor type. A spell, a flaw and a weapon are entries
+  of theirs. Constraints are inherited from the type, not restated.
+- A DEF that extends nothing and declares nothing is neither: a rule, a chapter, a thing of no
+  type.
+
+`EXTENDS` is written the same from a type to a type (a subtype), from an entry to its type, and
+from an entry to an entry (a variant, §6). A subtype that adds no field of its own reads as an
+entry. It declares a field, or carries an element-level `FIAT` that says what it is.
 
 ```
 #<hash> ^"Ide Tadaji" DEF {
@@ -1573,6 +1610,11 @@ A DEF that `EXTENDS` another inherits all of its PROPERTIES and RULES. The child
 **`EXTENDS` is acyclic** *(v0.6, DECISION-32)*. A definition that extends itself, directly or through
 others, is an **error**.
 
+**An entry may extend an entry** *(v0.6, DECISION-42)*. A definition that extends an entry starts
+from that entry's values and changes or adds its own. arm5e's `^"Clumsy Magic (Amazon)"` extends
+the Flaw `^"Clumsy Magic"`. Both are entries of the type at the top of the chain. Being extended
+does not make a definition a type.
+
 **By name:**
 ```
 ^"Samurai" DEF {
@@ -1733,10 +1775,10 @@ statement about the book: every row of a roll table has a roll and a text.
 ```
 
 - **Who must have it.** Every **instance** of the type: a DEF that extends the type, directly or
-  through others, and is not itself a type. A type is an `ACTOR` or `TEMPLATE` definition, a DEF
-  that another DEF extends, or a DEF that declares fields and gives no value.
-- **What counts as having it.** The instance writes the property. Or a type between the two gives
-  it a value, which then holds for everything below. Or the property is a `PARAMETERS` slot, which
+  through others, and is not itself a type (§5). An entry that another entry extends is still
+  an entry *(DECISION-42)*.
+- **What counts as having it.** The instance writes the property. Or a definition between the
+  two gives it a value, which then holds for everything below. Or the property is a `PARAMETERS` slot, which
   the reference supplies (§5b).
 - **`^"Name"`.** A required `^"Name"` is answered by the DEF's own name. An instance need not
   write its name twice.

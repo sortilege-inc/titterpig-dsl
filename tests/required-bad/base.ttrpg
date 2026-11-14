@@ -4,7 +4,7 @@ BASE "Required_Bad_Core" {
     VERSION "1.0"
     RELEASE_DATE "2026-11-12"
 
-    #   ttrpg_validator.py tests/required-bad        3 errors, 1 warning
+    #   ttrpg_validator.py tests/required-bad        5 errors, 1 warning
 
     # every entry of this type has a roll and a text; that is what REQUIRED says
     #ReqEntryK2vQ9wN3cL7pXdAa ^"Roll Table Entry" DEF {
@@ -50,6 +50,29 @@ BASE "Required_Bad_Core" {
         EXTENDS #ReqSchoolB8tJ1yL4sD5fG0z ^"School"
         PROPERTIES {
             ^"Rank" 1
+        }
+    }
+
+    # fault 4 — an entry that another entry extends is still an entry         ERROR
+    #ReqBadParentK2vQ9wN3cL7p ^"Storm Rider Tradition" DEF {
+        EXTENDS #ReqSchoolB8tJ1yL4sD5fG0z ^"School"
+        PROPERTIES {
+            ^"Rank" 1
+        }
+    }
+    #ReqBadChildH4mK8wQ2xN6vB ^"Storm Rider Tradition (Revised)" DEF {
+        EXTENDS #ReqBadParentK2vQ9wN3cL7p ^"Storm Rider Tradition"
+        PROPERTIES {
+            ^"Clan" "Unicorn"
+        }
+    }
+
+    # fault 5 — it gives a value and declares a field with no REQUIRED: an entry (DECISION-43)   ERROR
+    #ReqBadMixedR5tJ1yL8sD4fG ^"Wandering Blade Tradition" DEF {
+        EXTENDS #ReqSchoolB8tJ1yL4sD5fG0z ^"School"
+        PROPERTIES {
+            ^"Rank" 1
+            ^"Patron"
         }
     }
 
