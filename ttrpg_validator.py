@@ -154,6 +154,17 @@ TYPE KEYWORDS (spec §8, §9, DECISION-39).
   - a value's kind is not compared with the type it inherits: a text value where the type
     declares a number is no finding.
 
+REFERENCES NO KEYWORD MARKS (spec §5d, DECISION-44).
+
+  - a `#hash ^"Name"` pair that declares nothing is a reference wherever it stands, and a
+    caret that is an item of a property's list is a reference with or without its hash.
+  - WARNING in a file that declares SPEC_VERSION below 0.6, ERROR from 0.6, waived by FIAT: a
+    hash that is no anchor; a hash whose anchor has another name; a list member with no hash
+    that names nothing, or that more than one entity carries.
+  - WARNING at every version: a list member with no hash that names one entity.
+  - not read: a caret with no hash after a system keyword or alone in a system block. It is
+    the system's own name.
+
 VERSION PINS (spec §3, DECISION-35). DEPENDS_ON "Parent" VERSION "x" means the parent is at
 version x or later. Versions are compared part by part, numbers as numbers; a pin with fewer
 parts is met by any version that begins with it. A loaded parent that is older is an ERROR; a
@@ -2407,6 +2418,7 @@ def analyze_file(fname, text, findings):
 
     for fr in frames:
         findings.append(Finding(fname, 'lint', 'error', fr['open'], "unclosed '{'"))
+    site_refs = collect_site_refs(toks, refs)
     # §12: a rule states itself. `#hash: slug` alone on its line — a name with no text, the
     # rule only described in a comment beside it — carries nothing a tool can read (the L5R
     # corpus held 980 of them, 2026-09-23).
@@ -2466,7 +2478,7 @@ def analyze_file(fname, text, findings):
         'block_anchor_lines': block_anchor_lines, 'anchor_names': anchor_names, 'origins': origins,
         'vdefs': vdefs, 'bound': bound, 'spec_version': spec_version,
         'file_version': file_version, 'pins': pins, 'header': header,
-        'hash_refs': hash_refs, 'sit_targets': sit_targets,
+        'hash_refs': hash_refs, 'sit_targets': sit_targets, 'site_refs': site_refs,
     }
 
 
@@ -2906,6 +2918,140 @@ def choose_pass(files_data, findings):
                     findings.append(Finding(d['file'], 'coherence', 'error', line,
                                             "WITH names ^\"%s\", which ^\"%s\" does not declare "
                                             "(its own properties or inherited)" % (pname, c['type'])))
+
+
+# What may stand before a `[` without making it a property's list.
+NOT_A_PROPERTY_LIST = ('AXIS', 'COLUMNS', 'AT')
+# Blocks whose references another tool resolves (check_references.py, §5c).
+REFERENCE_BLOCKS = ('REFERENCES', 'REFERENCED', 'MENTIONS')
+
+
+def collect_site_refs(toks, refs):
+    """The reference sites no keyword marks (§5d, DECISION-44).
+
+    -> [(kind, name, hash or None, line)].
+    'list member': a caret that is an item of a property's list, `^"Skills" [ ^"A", #h ^"B" ]`
+    or `LIST OF ^"Type" [ … ]`, with or without a hash. A name inside an unnamed record of the
+    list is a property of the record and is not one.
+    'reference': a `#hash ^"Name"` pair that stands outside any list, declares nothing, and is
+    not already a recorded site: after a system keyword, or alone on its line in a block.
+    A caret with no hash in those places is the system's own name and is not collected."""
+    recorded = {(name, line) for kind, name, _h, line in refs if not kind.startswith('__')}
+    out, nest, blocks, parens = [], [], [], 0
+    n = len(toks)
+    for i, t in enumerate(toks):
+        k = t.kind
+        if k == 'LBRACE':
+            j = i - 1
+            while j >= 0 and toks[j].kind in ('CARET', 'HASH', 'STR', 'INT'):
+                j -= 1
+            blocks.append(toks[j].val if j >= 0 and toks[j].kind == 'ID' else None)
+            nest.append('{')
+        elif k == 'RBRACE':
+            if blocks:
+                blocks.pop()
+            if nest and nest[-1] == '{':
+                nest.pop()
+        elif k == 'LBRACK':
+            j, is_list = i - 1, False
+            if j >= 0 and toks[j].kind == 'ID' and toks[j].val == 'LIST':
+                is_list = True                                      # LIST [ … ]
+            elif j >= 0 and toks[j].kind == 'CARET':
+                jj = j - 1
+                if jj >= 0 and toks[jj].kind == 'HASH':
+                    jj -= 1
+                before = toks[jj] if jj >= 0 else None
+                if before is not None and before.kind == 'ID' and before.val == 'OF':
+                    # LIST OF ^"Type" [ … ]; a CHOOSE n OF ^"Type" is not a list of members
+                    is_list = jj >= 1 and toks[jj - 1].kind == 'ID' and toks[jj - 1].val == 'LIST'
+                elif not (before is not None and before.kind == 'ID'
+                          and before.val in NOT_A_PROPERTY_LIST and before.line == toks[j].line):
+                    is_list = True                                  # ^"Name" [ … ]
+            nest.append('[list' if is_list else '[')
+        elif k == 'RBRACK':
+            if nest and nest[-1].startswith('['):
+                nest.pop()
+        elif k == 'LPAREN':
+            parens += 1
+        elif k == 'RPAREN':
+            parens = max(0, parens - 1)
+        if k != 'CARET' or parens:
+            continue
+        prev = toks[i - 1] if i else None
+        nxt = toks[i + 1] if i + 1 < n else None
+        hsh = prev.val if prev is not None and prev.kind == 'HASH' and prev.line == t.line else None
+        if nxt is not None and (nxt.kind == 'LPAREN'
+                                or (nxt.kind == 'ID' and nxt.val == 'DEF')
+                                or (nxt.kind == 'HASH' and i + 2 < n and toks[i + 2].kind == 'ID'
+                                    and toks[i + 2].val == 'DEF')):
+            continue                                # a bound reference, or a DEF's own name
+        if (t.val, t.line) in recorded:
+            continue
+        top = nest[-1] if nest else None
+        if top == '[list':
+            out.append(('list member', t.val, hsh, t.line))
+        elif hsh and (top is None or top == '{'):
+            if blocks and blocks[-1] in REFERENCE_BLOCKS:
+                continue
+            if nxt is not None and nxt.kind == 'LBRACE':
+                continue                            # a named block, or a target another rule reads
+            before = toks[i - 2] if i >= 2 else None
+            if before is not None and before.kind == 'CARET' and before.line == t.line:
+                continue                            # a name and its hashed value: check_references.py
+            out.append(('reference', t.val, hsh, t.line))
+    return out
+
+
+def site_pass(files_data, findings):
+    """§5d on the sites of collect_site_refs (DECISION-44). A warning in a file that declares
+    SPEC_VERSION below 0.6, or none, and an error from 0.6; FIAT waives. A hash that is no
+    anchor; a hash whose anchor has another name; a name with no hash that names nothing, or
+    that more than one entity carries. A list member with no hash that names one entity is a
+    warning at every version: a reference should carry its hash. A member that is an ALIAS is
+    not warned: an alias has no hash."""
+    hash_names, entities, names, alias_names = {}, {}, set(), set()
+    for d in files_data:
+        if d.get('kind') == 'bridge':
+            continue
+        names.update(name_key(nm) for nm in d.get('names', ()))
+        alias_names.update(name_key(al) for al, _target, _ln in d.get('aliases', []))
+        for key in ('anchor_names', 'block_anchors', 'entity_anchors'):
+            for h, nms in (d.get(key) or {}).items():
+                hash_names.setdefault(h, set()).update(name_key(x) for x in nms)
+        for h in d.get('anchors', {}):
+            hash_names.setdefault(h, set())
+        for x in d.get('vdefs', []):
+            entities.setdefault(x['name'], set()).add(x['hash'])
+    for d in files_data:
+        sev_gated = 'error' if d.get('spec_version', (0, 0)) >= (0, 6) else 'warning'
+        for kind, name, hsh, line in d.get('site_refs', []):
+            if is_waived(line, d):
+                continue
+            what = 'a list member' if kind == 'list member' else 'a reference'
+            nm = name_key(name)
+            if hsh:
+                if hsh not in hash_names:
+                    findings.append(Finding(d['file'], 'coherence', sev_gated, line,
+                                            '%s, %s ^"%s": the hash is not a declared anchor (§5d)'
+                                            % (what, hsh, name)))
+                elif hash_names[hsh] and nm not in hash_names[hsh]:
+                    findings.append(Finding(d['file'], 'coherence', sev_gated, line,
+                                            '%s, %s ^"%s": the hash is the anchor of ^"%s" (§5d)'
+                                            % (what, hsh, name, sorted(hash_names[hsh])[0])))
+                continue
+            if nm not in names and nm not in {name_key(x) for x in d.get('block_names', ())}:
+                findings.append(Finding(d['file'], 'coherence', sev_gated, line,
+                                        '%s, ^"%s", names nothing that is defined (§5d). A name '
+                                        'in a list is a reference; text is written as a string'
+                                        % (what, name)))
+            elif len(entities.get(nm, ())) > 1:
+                findings.append(Finding(d['file'], 'coherence', sev_gated, line,
+                                        '%s, ^"%s", is ambiguous: %d entities carry the name; '
+                                        'add the #hash (§5d)' % (what, name, len(entities[nm]))))
+            elif nm not in alias_names:             # an ALIAS has no hash of its own to carry
+                findings.append(Finding(d['file'], 'coherence', 'warning', line,
+                                        '%s, ^"%s", has no hash: a reference should carry its '
+                                        '#hash (§5d)' % (what, name)))
 
 
 def situational_pass(files_data):
@@ -3719,6 +3865,7 @@ def main(argv):
         files_data.append(analyze_file(path, text, findings))
     situational_pass(files_data)
     coherence_pass(files_data, findings)
+    site_pass(files_data, findings)
     choose_pass(files_data, findings)
     ref_pass(files_data, findings)
     roll_pass(files_data, findings)

@@ -1673,7 +1673,10 @@ count as types and go unchecked.
 
 ### C3. Most references in instance data are outside §5d and ungated
 
-**Status:** open
+**Status:** closed 2026-11-13 by the owner. Committed and pushed on branch `0.6`. A hash and
+name pair is a reference wherever it stands, and so is a name that is an item of a list; the
+validator checks both. A name with no hash elsewhere in a system block is the system's own
+(DECISION-44). The corpora gain 452 warnings (F27).
 
 §5d lists the reference sites: `EXTENDS`, `APPLIES TO`, `LIST OF`, `CONCERNS`, `OVERRIDE`, `MODIFY`,
 `ALIAS … FOR`, `REFERENCES`. It omits list members (`[ ^"A", ^"B" ]`), carets in system sub-blocks
@@ -1686,6 +1689,104 @@ defined name: root 6 of 749, l5r5e 3 of 2,852, the other four corpora measured 0
 `root-0.5-travelers-outsiders-playbook-the-pirate.ttrpg:113` lists `^"Blinside"`; the feat is
 defined as `^"Blindside"`. Those list members also carry no hash, and `check_references.py` reports
 0 hashless for root because it does not count them.
+
+**Since this was written,** §5d's list has grown (A1 to A4, C1): `CHOOSE` options, `REF`, `SET`
+and `TRANSFORM`, `SITUATIONAL`, `ROLL`, table axes and coordinates, embedded references, and
+the references between narrative blocks, which are now the hash and name pair.
+
+**What each tool checks today,** from a probe with one undefined name at each place
+(2026-11-13):
+
+| Place | Checked by |
+|---|---|
+| `APPLIES TO [ … ]`, a `CHOOSE` option, a bound reference and its arguments, `PARAMETERS … OF` | the validator |
+| a `HOOK`'s `THEN`, an `OPTIONAL`'s `SCOPE`, a guidance `CONCERNS` | `check_constructs.py` |
+| a name and a hashed reference on a line (`^"Nature" #hash ^"Extrovert"`) | `check_references.py` |
+| a codex's `IS`, its predicates and its relationship objects | the validator |
+| a member of a property's list: `^"Skills" [ ^"A" ]`, `LIST OF ^"Type" [ ^"A" ]` | nothing |
+| a caret after a system keyword (`KATA ^"Name"`), alone on a line in a system block, or in a keyed block (`RANK 1 { ^"Name" }`) | nothing |
+| a hash that is no anchor, or a hash whose anchor has another name, in any of the places in the two rows above | nothing |
+
+§5d's list does not name the first, second and fourth rows, though the tools check them.
+
+**Evidence, counted 2026-11-13:** 730,196 carets in the 22 corpus directories. 560,841 are the
+name of a DEF or of a property. 10,290 stand where no tool checks them:
+
+| Place | Carets | With a hash that resolves | With a hash that does not | No hash: one such name | No hash: several | No hash: no such name |
+|---|---|---|---|---|---|---|
+| a member of a property's list | 6,191 (armdef 3,139, arm5e 2,865, root 161) | 5,845 | 0 | 310 | 30 | 6 |
+| a member of a `LIST OF ^"Type"` list | 1,850 (teeth 1,346, invisiblesun 303, curseborne 201) | 1,634 | 15 | 201 | 0 | 0 |
+| the value after a name, no hash (`^"Nature" ^"Extrovert"`) | 965 (teeth 395, daggerheart 326, curseborne 164) | | | 588 | 72 | 305 |
+| alone on its line in a system block | 778 (arm5e 388, armdef 238, l5r5e 151) | 0 | 0 | 550 | 50 | 178 |
+| after a system keyword | 506 (draw-steel 289, l5r5e 191) | 12 | 0 | 126 | 80 | 288 |
+
+- **The 15 broken hashes are all in teeth.** `teeth-0.5-worldbook-gatlock.ttrpg:433` lists
+  `#txZPXb7KhtPS1Zm0QeROZYw ^"Dogmaker and Vulpids"` in a `LIST OF ^"Creature"`. No DEF has that
+  hash or that name. 12 name no anchor, and 3 name an anchor that has another name.
+- **A hashless caret in a list is a reference:** 541 of 547 name something. The 6 that do not
+  are root's (`^"Blinside"`, `^"Pick pocket"`).
+- **A hashless caret in a system block is not always one.** draw-steel's
+  `SPEND ^"Special" "The target must be grabbed…"` is a label and its text. curseborne's
+  `RULE ^"Starting Entanglement" ADDS_TO PARENT {` names a rule. teeth's
+  `^"Attribute" ^"Attribute"` declares a property and its type. arm5e's
+  `VIRTUES { ^"Second Sight" }` and l5r5e's `KATA ^"…"` are references. Of the 2,249 carets in
+  these three places, 1,264 name one thing, 214 several and 771 nothing.
+
+*Proposed 2026-11-13.* The owner was asked "Take all four C3 parts as recommended?" and
+answered "Yes, all four".
+
+1. A `#hash ^"Name"` pair is a reference wherever it stands, unless it declares, and §5d's
+   rule 1 is checked on it.
+2. A caret that is a member of a list is a reference, with or without a hash.
+3. Elsewhere in a system block a caret with no hash is the system's own name and is not
+   checked. Its hash makes it a reference.
+4. §5d's list names the places the tools already check.
+
+**Applied as DECISION-44.**
+
+- **Spec:** §0 item 31; DECISION-44; §5d's list gains the bound reference, `PARAMETERS … OF`,
+  a hook's `THEN`, `SCOPE`, `SELECT` and the codex; §5d has a new part, "References that no
+  keyword marks", with the three rules.
+- **`ttrpg_validator.py`:** reads each member of a property's list and each stray hash and
+  name pair, and applies §5d to it. `check_references.py` is not changed.
+- **Fixtures:** `tests/sites-good`, `tests/sites-bad`.
+
+| Check | Result |
+|---|---|
+| `ttrpg_validator.py tests/sites-good` | 0 errors, 0 warnings |
+| `ttrpg_validator.py tests/sites-bad` | 7 errors, 2 warnings: eight planted faults and one in a 0.5 file. The validator before reports nothing |
+| the probe above, run again | the two list rows and the broken hashes are now reported |
+| every other fixture set and both grammar gates | unchanged. `tests/decision6.ttrpg` listed an `ALIAS` with no hash and drew a warning until the rule left aliases out |
+| validator before against after, 22 corpus directories | 17 identical. 452 new warnings, none gone; 39 errors both times; 20,528 warnings |
+
+The 452:
+
+| Finding | Count | Where |
+|---|---|---|
+| a list member with no hash that names one entity | 401 | curseborne 194, armdef 141, root 40, daggerheart 26 |
+| a list member with no hash whose name several entities carry | 28 | armdef (`^"Covenfolk"`, `^"Heartbeast"`, `^"Faerie Magic"`) |
+| a list member whose hash is no anchor | 12 | teeth |
+| a list member whose hash is another name's anchor | 3 | teeth |
+| a list member with no hash that names nothing | 6 | root (`^"Blinside"`, `^"Pick pocket"`, `^"Sleight of hand"`, `^"Honor"`, `^"Workshop"`, `^"Plots & Schemes"`) |
+| a hash and name pair whose hash is no anchor | 2 | root: `^"Clement "Clem" Glenn"` and `^"Bee "Baby" Glenn"` in `sundew-bend.frame` |
+
+The last two are not broken references. Each is a DEF whose name holds an unescaped quote, so
+the reader stops at `^"Clement "` and never sees a DEF. Neither definition was being read at
+all. DECISION-25 gives the form: `^"Clement \"Clem\" Glenn"`.
+
+The census had estimated 511 hashless members. The validator finds 401: it leaves out a
+member that is an `ALIAS` and one under a `FIAT`.
+
+*Not done.*
+
+- No corpus is changed (F27).
+- `check_references.py` does not count these places among its reference sites, so its site
+  and hashless totals are unchanged. The validator applies the three §5d rules to them.
+- A hashless name in a system block that is a reference stays unresolved until it carries
+  its hash: 1,264 of them name one entity today (arm5e's `VIRTUES { ^"Second Sight" }`,
+  l5r5e's `KATA ^"Open-Hand Style"`).
+- A member of a list that sits inside a `REFERENCES` block, or of a keyword list the grammar
+  does not know, is not read.
 
 ### C4. Provenance has no construct
 
@@ -2226,6 +2327,26 @@ callofcthulhu7e 504). They have not been sorted by kind. Sort them first:
 - The generators under `Titterpig/Temp` write these strings; the change belongs there for a
   generated corpus.
 
+### F27. Five corpora: what the new reference checks report
+
+**From:** C3, DECISION-44. **Status:** open, not started. All are warnings today, in files that
+declare `SPEC_VERSION` below 0.6. Each but the first becomes an error when its file declares
+0.6.
+
+| Corpus | Warnings | What to do |
+|---|---|---|
+| curseborne | 194 | add the hash to each list member; every name resolves to one entity |
+| armdef | 169 | 141 as curseborne; 28 names that several entities carry need the hash chosen. Fix in arm5e where the list comes from arm5e, then retarget |
+| root | 48 | 40 as curseborne; 6 names that name nothing (`^"Blinside"` is `^"Blindside"`); 2 DEF names with an unescaped quote in `sundew-bend.frame` |
+| daggerheart | 26 | as curseborne |
+| teeth | 15 | 12 list members carry a hash no DEF has (`^"Dogmaker and Vulpids"`), 3 a hash that belongs to another name. The entities are missing or the hashes are stale |
+
+- The hash for a name that resolves to one entity can be added by script.
+- **Hashless references in system blocks.** 1,264 names after a system keyword or alone in a
+  system block name one entity and carry no hash (arm5e and armdef `VIRTUES` and `FLAWS`,
+  l5r5e `KATA`, `SHUJI`, `RITUAL` and `RANK`). Nothing resolves them until they carry it.
+  l5r5e's `RANK` and `FAMILIES` blocks hold 109 names that name nothing.
+
 ### F26. The corpora: signed numbers and names with numbers become `SET` or `TRANSFORM`
 
 **From:** C1, DECISION-40. **Status:** open, not started. Owner, 2026-11-13: "This will likely
@@ -2408,6 +2529,13 @@ two parameter to-dos below.
   which the validator does not check; a result given as a bare value in place of a block.
 
 ### Known gaps left by this change
+
+- **A hashless name in a system block is never resolved** (DECISION-44, by decision). A typo
+  in one is not seen.
+- **`check_references.py` does not count a list member or a stray hash and name pair as a
+  reference site.** The validator checks them.
+- **An unescaped quote in a DEF's name is reported as a hash that is no anchor,** and only
+  because the name's first part reads as a stray reference. Nothing reports the quote itself.
 
 - **The type keywords are not reported in a `.bridge` or a `.codex`.** Each has its own reader
   in the validator.
@@ -2752,6 +2880,9 @@ Filled in as each finding is walked through.
 | C2 | 2026-11-13 | Agent's calls, to confirm. (5) §5 states the validator's exact rule: a type declares fields and gives no value of its own, or marks a field `REQUIRED`, or carries `ACTOR` or `TEMPLATE`. The question the owner answered said only "declares a field". (6) A subtype that adds no field declares one or takes an element-level `FIAT`. (7) §5 keeps its title and calls an instance an entry as well. | (5): the looser wording would make types of 282 corpus entries that hold a declaration-shaped line. (6): the two means the language already has. (7): §16 and §17 refer to the section by its title. |
 | C2 | 2026-11-13 | Agent's calls, to confirm. (1) A validator defect is fixed: a type keyword on the line after a name was read as that name's type. (2) A variant has a property when the entry it extends gives it. (3) A parent's `FIAT` does not cover its variant. (4) §5's sentence on definitions and instances was left until the marker question was settled, and is now rewritten (row above). | (1): found while counting; a probe shows it and no corpus result changes. (2): §8 already let a type in between give the value. (3): `FIAT` covers a DEF and what is inside it. (4): it depends on that answer. |
 | C2 | 2026-11-13 | C2 is closed. The branch is committed and pushed. | Owner: "Close, commit, push". The agent's calls in the C2 rows marked "to confirm" were reported to him before he closed and were not separately ruled on. |
+| C3 | 2026-11-13 | Four rules for references that no keyword marks. (1) A `#hash ^"Name"` pair that declares nothing is a reference wherever it stands. (2) A name that is an item of a list is a reference, with or without its hash. (3) Elsewhere in a system block a name with no hash is the system's own and is not resolved. (4) §5d's list names the places the tools already checked. A miss is a warning below 0.6 and an error from 0.6. Written as DECISION-44. | Owner: "Yes, all four". 10,290 of 730,196 corpus carets stood where no tool looked; 15 hashes in teeth were broken; of 2,249 hashless names in system blocks, 771 name nothing, so checking them all would mix broken references with labels. |
+| C3 | 2026-11-13 | Agent's calls, to confirm. (1) The validator applies §5d's rules to the new places, and `check_references.py` is left as it is. (2) A list member with no hash that names one entity is a warning at every version. (3) A member that is an `ALIAS` draws no hash warning. (4) `FIAT` waives each finding. (5) A name inside an unnamed record of a list is the record's property. (6) `tests/decision6.ttrpg` is unchanged; the alias rule (3) came from it. | (1): the validator has the bracket context, the file's version and the waivers. (2): §5d rule 2 says a hashless reference warns. (3): an alias has no hash to carry. (4): as for every gated finding. (5): DECISION-41. |
+| C3 | 2026-11-13 | C3 is closed. The branch is committed and pushed. | Owner: "Close, commit, push". The agent's calls in the C3 row marked "to confirm" were reported to him before he closed and were not separately ruled on. |
 
 ---
 

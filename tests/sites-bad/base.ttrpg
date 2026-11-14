@@ -1,0 +1,28 @@
+BASE "Sites_Bad_Core" {
+    NAME "DECISION-44 fixture — eight faults in references that no keyword marks (§5d)"
+    SPEC_VERSION "0.6"
+    VERSION "1.0"
+    RELEASE_DATE "2026-11-13"
+
+    #   ttrpg_validator.py tests/sites-bad           7 errors, 2 warnings
+
+    #SibVirtueK2vQ9wN3cL7pA5 ^"Virtue" DEF { }
+    #SibSightH4mK8wQ2xN6vB1t ^"Second Sight" DEF { EXTENDS #SibVirtueK2vQ9wN3cL7pA5 ^"Virtue" }
+    #SibLuckR5tJ1yL8sD4fG0zX ^"Luck" DEF { EXTENDS #SibVirtueK2vQ9wN3cL7pA5 ^"Virtue" }
+    # two entities of one name
+    #SibShieldOneB9pK3xN7vM2 ^"Shield" DEF { }
+    #SibShieldTwoP7cJ3yT9hL5 ^"Shield" DEF { }
+
+    #SibGrogM3cT7yB1nK9xQ2wZ ^"Shield Grog" DEF {
+        ^"F1" [ ^"Blinside" ]                                                   # ERROR  1: names nothing
+        ^"F2" [ #SibNoSuchAnchorAAAAAAAA ^"Second Sight" ]                      # ERROR  2: no such anchor
+        ^"F3" [ #SibLuckR5tJ1yL8sD4fG0zX ^"Second Sight" ]                      # ERROR  3: another name's anchor
+        ^"F4" LIST OF #SibVirtueK2vQ9wN3cL7pA5 ^"Virtue" [ ^"Third Sight" ]     # ERROR  4: names nothing
+        ^"F5" [ ^"Luck" ]                                                       # WARNING 5: no hash
+        ^"F6" [ ^"Shield" ]                                                     # ERROR  6: two entities
+        QUALITIES {
+            #SibNoSuchAnchorBBBBBBBB ^"Second Sight"                            # ERROR  7: no such anchor
+        }
+        KATA #SibLuckR5tJ1yL8sD4fG0zX ^"Second Sight"                           # ERROR  8: another name's anchor
+    }
+}

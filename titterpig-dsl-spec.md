@@ -121,6 +121,10 @@ Changes made since v0.5, listed as they are decided. **Not all are additive.**
 30. **A type is told from an entry by what it holds** *(§5, DECISION-43)* — a type declares
     fields; an entry gives values. No word marks a type. §5 said the two were told apart "by
     whether it `EXTENDS` an actor type", which covered characters only.
+31. **References that no keyword marks** *(§5d, DECISION-44)* — a `#hash ^"Name"` pair is a
+    reference wherever it stands, and a name that is an item of a list is a reference with or
+    without its hash; the validator now checks both. In a system block a name with no hash is
+    the system's own and is not a reference.
 
 ### v0.5 — five new constructs, and one rule tightened *(current)*
 
@@ -683,6 +687,20 @@ stay valid.
   `TEMPLATE`; an entry extends something and is not a type. Over the 111,333 DEFs of the 22
   corpus directories that rule misplaces 11, the subtypes of DECISION-42 that add no field. A
   marker would have been written on 1,304 DEFs to settle the same 11.
+
+- **DECISION-44 — References that no keyword marks** *(resolved, v0.6, 2026-11-13)* (§5d,
+  §20): §5d listed the places a reference stands by their keywords. A reference in a
+  property's list, after a system's keyword or alone on a line of a system block was in no
+  list, and no tool resolved it: 10,290 of the 730,196 carets in the 22 corpus directories.
+  Four rules. A `#hash ^"Name"` pair that declares nothing is a reference wherever it stands.
+  A name that is an item of a property's list is a reference, with or without its hash. In a
+  system block a name with no hash is the system's own, a label or a key, and is not
+  resolved: of 2,249 such names 771 name no definition (draw-steel's `SPEND ^"Special" "…"`).
+  And §5d's list now names the places the tools already checked. A miss is a warning in a file
+  that declares a `SPEC_VERSION` below 0.6, or none, and an error from 0.6; `FIAT` waives it.
+  The corpora gain 452 warnings and no error: 401 list members with no hash, 28 ambiguous
+  names in armdef, 15 broken hashes in teeth, 6 names in root that name nothing, and 2 root
+  DEFs whose names hold an unescaped quote.
 
 ## 1. Overview & Design Principles
 
@@ -1463,8 +1481,24 @@ or `TRANSFORM`, the condition of a `SITUATIONAL` where it is a reference, and th
 axis point and an entity given as a coordinate of an `AT` (§5e), the `REFERENCES` /
 `REFERENCED BY` targets and embedded references of §5c, and the references between narrative
 blocks of §16: `SCENE_REF`, `LEADS_TO`, `COMPLETED_SCENES`, `OPPONENTS`, a scene's `LOCATION`, and
-each `INCLUDE` item of a `FROM`. All of them obey the same rule. What a reference may point at is
-set out in §20.
+each `INCLUDE` item of a `FROM`. So are the base and the arguments of a bound reference and the
+type after a `PARAMETERS … OF` (§5b), a `HOOK`'s `THEN` (§23), an `OPTIONAL`'s `SCOPE` and a
+`SELECT` (§24), and a codex's `IS` and the objects of its relationships (§25). All of them obey
+the same rule. What a reference may point at is set out in §20.
+
+**References that no keyword marks** *(v0.6, DECISION-44)*. Three more rules cover the places
+where no keyword says a reference follows.
+
+- **A hash and a name together are a reference wherever they stand.** `#hash ^"Name"` that
+  declares nothing (no `DEF` follows it, and it is not the name of a block) is a reference: in
+  a list, after a system's keyword, or alone on a line of a system block.
+- **A name that is an item of a list is a reference,** with or without its hash:
+  `^"Virtues" [ #hash ^"Second Sight", ^"Luck" ]`. Text in a list is written as a string. A name
+  inside an unnamed record of the list (§8) is that record's property.
+- **Elsewhere in a system block, a name with no hash is the system's own.** draw-steel's
+  `SPEND ^"Special" "The target must be grabbed by the sunderer."` is a label and its text. No
+  tool resolves such a name. To refer to an entity there, write its hash:
+  `KATA #hash ^"Lord Hida's Grip"`.
 
 **Declaration sites are not reference sites.** `ADD #hash ^"Name" DEF { … }` (§13) *asserts new
 content*, so its hash is an anchor being minted, not a pointer to one; `ALIAS ^"New" FOR ^"Existing"`

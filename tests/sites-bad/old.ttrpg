@@ -1,0 +1,11 @@
+EXTENSION "Sites_Bad_Old" {
+    NAME "fault 9 — in a file that declares 0.5, a list member that names nothing is a warning"
+    SPEC_VERSION "0.5"
+    VERSION "1.0"
+    RELEASE_DATE "2026-11-13"
+    DEPENDS_ON "Sites_Bad_Core"
+
+    #SibOldGrogX8wQ2vN6kL4mJ ^"Old Grog" DEF {
+        ^"Virtues" LIST [ ^"Blinside" ]                                         # WARNING
+    }
+}
