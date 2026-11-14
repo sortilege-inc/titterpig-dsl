@@ -75,10 +75,17 @@ BLOCKLINE = re.compile(r'^\s*([A-Z_]+)\s+(?:\^"((?:[^"\\]|\\.)+)"\s+(#[A-Za-z0-9
 NOT_A_BLOCK = ('MODIFY', 'OVERRIDE', 'ADD', 'EXTENDS', 'ALIAS', 'FOR', 'OF', 'REF', 'FROM', 'REPRINT')
 
 # Pass 1: declared names/anchors + which hashed DEFs carry an OPTIONAL block.
+# An alias is a second name of the hash it names: ALIAS ^"name" FOR #hash (§5b, DECISION-57).
+ALIASLINE = re.compile(r'^\s*ALIAS\s+\^"((?:[^"\\]|\\.)+)"\s+FOR\s+(#[A-Za-z0-9_]+)')
+hash_alias = {}
 names, hash_name, optional_hashes = {}, {}, set()
 for f in ttrpg + context:
     cur_hash = None
     for l in open(f, encoding='utf-8'):
+        ma = ALIASLINE.match(l)
+        if ma:
+            hash_alias.setdefault(ma.group(2), set()).add(nk(ma.group(1)))
+            names.setdefault(nk(ma.group(1)), set()).add(ma.group(2))
         mb = BLOCKLINE.match(l)
         if mb and mb.group(1) not in NOT_A_BLOCK:
             bname, bhash = (mb.group(2), mb.group(3)) if mb.group(2) else (mb.group(5), mb.group(4))
@@ -102,7 +109,7 @@ def resolve(hsh, name, where):
     if hsh:
         if hsh not in hash_name:
             err(f'{where}: hash {hsh} is not a declared anchor')
-        elif hash_name[hsh] != k:
+        elif hash_name[hsh] != k and k not in hash_alias.get(hsh, ()):
             err(f'{where}: hash {hsh} names "{hash_name[hsh]}" but ^"{name}"')
     elif k not in names:
         err(f'{where}: unresolved ref ^"{name}"')

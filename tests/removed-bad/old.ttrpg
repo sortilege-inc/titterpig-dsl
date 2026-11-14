@@ -1,0 +1,31 @@
+EXTENSION "Removed_Bad_Old" {
+    NAME "faults 4 to 6 — the same three forms in a file that declares 0.5 are warnings"
+    SPEC_VERSION "0.5"
+    VERSION "1.0"
+    RELEASE_DATE "2026-11-14"
+    DEPENDS_ON "Removed_Bad_Core"
+
+    #RmbOldWoundsQ6r7S8t9U1v ^"Old Wounds" DEF {
+        DESCRIPTION "Characters suffer wounds of increasing severity."
+        REFERENCED BY { "Light Wound" <- #RmbOldFleshW2x3Y4z5A6b7 ^"Old Close the Flesh" }
+    }
+
+    #RmbOldFleshW2x3Y4z5A6b7 ^"Old Close the Flesh" DEF {
+        DESCRIPTION "The target heals a Light Wound."
+        MENTIONS {
+            "Light Wound" -> #RmbOldWoundsQ6r7S8t9U1v ^"Old Wounds"
+        }
+    }
+
+    #RmbOldPotencyC8d9E1f2G3 ^"Old Blood Potency" DEF {
+        RULES {
+            #RmbOldSurgeH4j5K6m7N8p9: old_blood_surge "Blood Surge: The first printing of the rule."
+        }
+    }
+
+    MODIFY #RmbOldPotencyC8d9E1f2G3 ^"Old Blood Potency" {
+        RULES {
+            #RmbOldSurgeH4j5K6m7N8p9 MODIFY: old_blood_surge NOW REFERENCES #RmbTableE8f9G1h2J3k4M5n ^"Blood Surge Table"
+        }
+    }
+}

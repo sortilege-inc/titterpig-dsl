@@ -1,0 +1,9 @@
+SELECTIONS "Marked_Saga" {
+    NAME "DECISION-53 fixture — a .selections file"
+    VERSION "1.0"
+    SPEC_VERSION "0.6"
+    RELEASE_DATE "2026-11-14"
+    FOR "Marked" VERSION "1.0"
+
+    SELECT #MrkOptionE8f9G1h2J3k4M5 on
+}

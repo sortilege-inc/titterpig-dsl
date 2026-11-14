@@ -1,0 +1,20 @@
+BASE "Rules_Bad_New" {
+    NAME "DECISION-56 fixture — the removed rule form in a file that declares 0.6: three errors"
+    SPEC_VERSION "0.6"
+    VERSION "1.0"
+    RELEASE_DATE "2026-11-14"
+
+    # Run:
+    #   ttrpg_validator.py tests/rules-bad      3 errors (new.ttrpg), 3 warnings (old.ttrpg)
+
+    #RlbnHeroA1b2C3d4E5f6G7 ^"Hero" DEF {
+        RULES {
+            # under a hash
+            #RlbnRuleH8j9K1m2N3p4Q5: WHEN [a hero makes a move] THEN roll two dice and add the stat
+            # with no hash
+            WHEN [the level is 5 or more] THEN the hero is of the second echelon
+            # two conditions in one rule: reported once
+            #RlbnRuleR6s7T8u9V1w2X3: WHEN [the roll is 10 or more] THEN strong hit ELSE WHEN [the roll is 7 or more] THEN weak hit ELSE miss
+        }
+    }
+}

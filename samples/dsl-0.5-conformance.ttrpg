@@ -19,10 +19,6 @@ BASE "DSL_0_5_Conformance" {
     #tRecoveryRoll000000000001 ^"Recovery Roll" DEF {
         APPLIES TO [^"Character"]
         DESCRIPTION "A roll made at a wound's recovery interval to improve, stabilise, or worsen it."
-        # #4 REFERENCED BY — optional inverse mirror of the REFERENCES below.
-        REFERENCED BY {
-            "recovery roll" <- #tCloseTheFlesh00000001 ^"Close the Flesh"
-        }
     }
 
     # ── #4 REFERENCES (parent target + strict hash) and #2 HOOKS ────────────

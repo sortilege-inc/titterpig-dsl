@@ -1,7 +1,7 @@
 #!/usr/bin/env python3
 """DSL 0.5 reference coherence gate.
 
-Part A — REFERENCES / REFERENCED BY (DECISION-11).
+Part A — REFERENCES (DECISION-11).
 Part B — every OTHER reference site (§5d, DECISION-13): EXTENDS, APPLIES TO,
 LIST OF, CONCERNS, OVERRIDE, MODIFY, REPRINT, ADD, ALIAS ... FOR. The hash is the
 referent and the caret name is a readability aid, so a hashless reference whose
@@ -10,25 +10,25 @@ says which is meant, and two consumers that invent different tie-breaks disagree
 about what the corpus says.
 
 Per edition-scoped corpus root:
-  1. Every REFERENCES / (deprecated) MENTIONS target resolves — by #hash when given
+  1. Every REFERENCES target resolves (MENTIONS, its 0.4 name, is read the same) — by #hash when given
      (the hash must be a declared anchor AND its name must match the caret), else by name.
   2. STRICT hash rule (owner decision B): a target WITHOUT a #hash → WARN (non-fatal). ~207
      arm5e names are multiply-defined; a later same-name entity must not silently re-point a link.
   3. Every surface form appears as a substring of its entry's DESCRIPTION (drift check).
-  4. REFERENCED BY (optional inverse mirror): its referrer resolves, AND each entry corresponds to
-     a real REFERENCES pointing at this DEF (consistency). Absence of REFERENCED BY is never an error.
+  4. REFERENCED BY was removed in v0.6 (DECISION-52). A block of that name is read past and its
+     entries are counted and not checked; the validator reports the block.
   5. EMPHASIS and LABEL (v0.6, DECISION-19): each surface form appears in its DEF's own prose; an
      EMPHASIS kind is BOLD and/or ITALIC, each once; a LABEL depth is a whole number of 1 or more.
 
   6. Embedded references (v0.6, DECISION-20): every ^\"Name\" inside a string resolves, by its
      #hash when it carries one; a hashless one WARNs; a /\"literal\" after it is not empty. Each
-     counts as a reference from the entity around it, so REFERENCED BY may mirror it. Surface forms
+     counts as a reference from the entity around it. Surface forms
      are matched against a string's TEXT: the string with each embedded reference read as its
      literal, or as its name where it has none.
   7. Two tiers of target (v0.6, DECISION-24, §20): a DEF or a codex ENTITY is a name any file may
      use; a named block (SCENE, LOCATION, ENTRY, …) is reachable from any file by its #hash, and by
      its name only inside the file that declares it.
-Exit 1 on any ERROR (unresolved / bad-hash / name-hash mismatch / surface-drift / mirror-inconsistency).
+Exit 1 on any ERROR (unresolved / bad-hash / name-hash mismatch / surface-drift).
 WARNs (hashless targets) do not fail the gate but are reported and counted.
 
   usage: check_references.py <edition-dir> [--strict-warn-as-error] [--with <dir> ...]
@@ -126,10 +126,19 @@ BLOCKDECL = re.compile(r'^\s*([A-Z_]+)\s+(?:(#[A-Za-z0-9_]+)\s+)?\^"((?:[^"\\]|\
 NOT_A_BLOCK = ('DEF', 'MODIFY', 'OVERRIDE', 'ADD', 'EXTENDS', 'ALIAS', 'FOR', 'OF', 'REF', 'FROM',
                'INCLUDE', 'TO', 'REPRINT', 'SELECT', 'CONCERNS', 'AXIS', 'AT', 'ROLL', 'CHOOSE',
                'WITH', 'TYPE', 'SCENE_REF', 'LEADS_TO', 'OPPONENTS', 'COMPLETED_SCENES')
+# An alias is a second name of the hash it names: ALIAS ^"name" FOR #hash (§5b, DECISION-57).
+# `#hash ^"name"` then agrees, and the alias is a name any file may use.
+ALIASLINE = re.compile(r'^\s*ALIAS\s+\^"((?:[^"\\]|\\.)+)"\s+FOR\s+(#[A-Za-z0-9_]+)')
+hash_alias = {}         # hash -> name_keys that an ALIAS gives it
 names, hash_name = {}, {}
 local_names = {}        # file -> name_keys of the named blocks it declares
 for f in files + context:
     for l in open(f, encoding='utf-8'):
+        m = ALIASLINE.match(l)
+        if m:
+            hash_alias.setdefault(m.group(2), set()).add(nk(m.group(1)))
+            names.setdefault(nk(m.group(1)), set()).add(m.group(2))
+            continue
         m = DEF.match(l)
         if m:
             h = m.group(1); name = m.group(2) or m.group(3); k = nk(name)
@@ -149,10 +158,8 @@ for f in files + context:
             if h:
                 hash_name[h] = k
 
-# Pass 2: collect REFERENCES pairs (referrer_def -> target) and REFERENCED BY claims.
+# Pass 2: check every REFERENCES, EMPHASIS and LABEL entry and every embedded reference.
 errors = warns = total = rby_total = emph_total = label_total = embedded_total = 0
-ref_pairs = set()      # (referrer_defkey, target_namekey)
-rby_claims = []        # (target_defkey, referrer_namekey, referrer_hash, surface, file, line)
 
 def err(msg):
     global errors; errors += 1; print(f'  ERROR {msg}')
@@ -318,17 +325,6 @@ for f in files:
                 best = sp
         return best
 
-    def referrer(i, _spans=spans):
-        # The nearest NAMED enclosing entity -- PROPERTIES / TABLE and the like
-        # open a scope but declare nothing, so they inherit their parent's name.
-        best = None
-        for sp in _spans:
-            if sp[2] == 'ref' or sp[3] is None or not (sp[0] <= i < sp[1]):
-                continue
-            if best is None or sp[0] > best[0]:
-                best = sp
-        return best[3] if best else None
-
     def prose_at(i, _lines=prose_line):
         s = owner(i)
         return None if s is None else ' '.join(x for x in _lines[s[0]:s[1]] if x)
@@ -341,7 +337,7 @@ for f in files:
         if thash:
             if thash not in hash_name:
                 err(f'{b}:{ln} target hash {thash} is not a declared anchor')
-            elif hash_name[thash] != tk:
+            elif hash_name[thash] != tk and tk not in hash_alias.get(thash, ()):
                 err(f'{b}:{ln} hash {thash} names "{hash_name[thash]}" but caret says ^"{tname}"')
         elif tk not in names and tk not in local_names.get(f, ()):
             err(f'{b}:{ln} unresolved target ^"{tname}"')
@@ -353,9 +349,6 @@ for f in files:
             err(f'{b}:{ln} surface "{surface}" has no prose in this DEF to appear in')
         elif surface not in p:
             err(f'{b}:{ln} surface "{surface}" not a substring of its DEF\'s prose')
-        rf = referrer(ln - 1)
-        if rf:
-            ref_pairs.add((rf, tk))
 
     def head_words(kind, words, ln):
         """Check what stands between a block keyword and its brace."""
@@ -415,8 +408,7 @@ for f in files:
                     check_ref(rm, ln)
             continue
         if block is None and '^' in l and not OPEN.match(l):
-            # Embedded references: reference sites like any other (§5d). The referrer is the
-            # nearest named entity around the string, so REFERENCED BY can mirror them.
+            # Embedded references: reference sites like any other (§5d).
             for part in string_parts(l, start_state[ln - 1]):
                 for em in EMBEDDED.finditer(part):
                     embedded_total += 1
@@ -427,7 +419,7 @@ for f in files:
                     if ehash:
                         if ehash not in hash_name:
                             err(f'{b}:{ln} embedded reference hash {ehash} is not a declared anchor')
-                        elif hash_name[ehash] != ek:
+                        elif hash_name[ehash] != ek and ek not in hash_alias.get(ehash, ()):
                             err(f'{b}:{ln} embedded hash {ehash} names "{hash_name[ehash]}" but caret says ^"{ename}"')
                     elif ek not in names and ek not in local_names.get(f, ()):
                         err(f'{b}:{ln} unresolved embedded reference ^"{ename}"')
@@ -438,9 +430,6 @@ for f in files:
                     else:
                         warn(f'{b}:{ln} hashless embedded reference ^"{ename}" (strict: add #hash; name has '
                              f'{len(names.get(ek, ()))} anchor(s))')
-                    rf = referrer(ln - 1)
-                    if rf:
-                        ref_pairs.add((rf, ek))
         o = OPEN.match(l)
         if o:
             head_words(o.group(1), o.group(2), ln)
@@ -475,25 +464,7 @@ for f in files:
                 if l.strip() and not l.strip().startswith('#'):
                     err(f'unparseable REFERENCED BY entry in {b}:{ln}: {l.strip()}')
                 continue
-            rby_total += 1
-            surface, rhash, rname = m.group(1), m.group(2), m.group(3)
-            rk = nk(rname)
-            if rhash:
-                if rhash not in hash_name:
-                    err(f'{b}:{ln} REFERENCED BY referrer hash {rhash} is not a declared anchor')
-                elif hash_name[rhash] != rk:
-                    err(f'{b}:{ln} REFERENCED BY hash {rhash} names "{hash_name[rhash]}" but ^"{rname}"')
-            elif rk not in names:
-                err(f'{b}:{ln} REFERENCED BY unresolved referrer ^"{rname}"')
-            rf = referrer(ln - 1)
-            if rf:
-                rby_claims.append((rf, rk, f'{b}:{ln}'))
-
-# Consistency: every REFERENCED BY(target=X, referrer=Y) needs a REFERENCES(Y -> X).
-for target_def, referrer, loc in rby_claims:
-    if (referrer, target_def) not in ref_pairs:
-        err(f'{loc} REFERENCED BY claims "{referrer}" references this entry, but no REFERENCES '
-            f'from "{referrer}" -> "{target_def}" exists')
+            rby_total += 1      # removed in v0.6 (DECISION-52): counted, not checked
 
 print(f'REFERENCES: {total} refs | {rby_total} referenced-by | {emph_total} emphasis | {label_total} labels | {embedded_total} embedded | '
       f'{errors} error(s) | {warns} hashless WARN(s)')
@@ -575,12 +546,25 @@ SITE_LIST = re.compile(r'\b(APPLIES\s+TO|CONCERNS)\b[ \t]*\[([^\]]*)\]', re.S)
 ALIAS_FOR = re.compile(r'\bALIAS\b[^\n]*?\bFOR\b[ \t]+(?:ORIGIN[ \t]+|DESTINATION[ \t]+)?'
                        r'((?:#[A-Za-z0-9_]+[ \t]+)?\^"(?:[^"\\]|\\.)+")')
 TARGET = re.compile(r'(#[A-Za-z0-9_]+)?[ \t]*\^"((?:[^"\\]|\\.)+)"')
+# ALIAS ^"name" FOR #hash, with no target name after the hash (DECISION-57): a site whose hash
+# must be a declared anchor.
+ALIAS_HASH = re.compile(r'\bALIAS[ \t]+\^"(?:[^"\\]|\\.)+"[ \t]+FOR[ \t]+(#[A-Za-z0-9_]+)(?![A-Za-z0-9_])(?![ \t]*\^")')
 
 b_err = b_warn = b_sites = 0
 amb_by_name = {}
+for f in all_files + all_ctx:
+    for l in open(f, encoding='utf-8', errors='ignore'):
+        m = ALIASLINE.match(l)
+        if m:
+            hash_alias.setdefault(m.group(2), set()).add(nk(m.group(1)))
 for f in all_files:
     src = open(f, encoding='utf-8', errors='ignore').read()
     base = os.path.relpath(f, root)
+    for m in ALIAS_HASH.finditer(src):
+        b_sites += 1
+        if m.group(1) not in anchor_name:
+            b_err += 1
+            print(f'  ERROR {base}:{src.count(chr(10), 0, m.start()) + 1} ALIAS FOR hash {m.group(1)} is not a declared anchor')
     for m in (list(SITE.finditer(src)) + list(SITE_LIST.finditer(src))
               + list(PROP_REF.finditer(src)) + list(ALIAS_FOR.finditer(src))):
         if m.re is PROP_REF:
@@ -597,7 +581,7 @@ for f in all_files:
                 if thash not in anchor_name:
                     b_err += 1
                     print(f'  ERROR {base}:{ln} {kw} hash {thash} is not a declared anchor')
-                elif anchor_name[thash] != k:
+                elif anchor_name[thash] != k and k not in hash_alias.get(thash, ()):
                     b_err += 1
                     print(f'  ERROR {base}:{ln} {kw} hash {thash} names '
                           f'"{anchor_name[thash]}" but caret says ^"{tname}"')

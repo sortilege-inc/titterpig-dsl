@@ -1,0 +1,28 @@
+BASE "Rules_Good" {
+    NAME "DECISION-56 fixture — a rule is a label with the source's text, or a DEF with a DESCRIPTION (§12)"
+    SPEC_VERSION "0.6"
+    VERSION "1.0"
+    RELEASE_DATE "2026-11-14"
+
+    # Run:
+    #   ttrpg_validator.py tests/rules-good     0 errors, 0 warnings
+
+    #RlgMinionA1b2C3d4E5f6G7h ^"Minion" DEF {
+        RULES {
+            #RlgCritJ8k9M1n2P3q4R5s6: minion_critical_strike_rules "If a minion would be dealt a critical strike, it receives fatigue equal to the severity instead."
+        }
+    }
+
+    # a rule that stands alone is a DEF with a DESCRIPTION
+    #RlgRestT7u8V9w1X2y3Z4a5 ^"Rest" DEF {
+        DESCRIPTION "A character who rests for a night removes all fatigue."
+        # WHEN and THEN are a hook's keywords; a hook's WHEN takes a string
+        HOOKS {
+            HOOK {
+                FORMALITY TAGGED
+                WHEN "a minion would be dealt a critical strike"
+                THEN [ #RlgMinionA1b2C3d4E5f6G7h ^"Minion" ]
+            }
+        }
+    }
+}

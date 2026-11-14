@@ -1,7 +1,8 @@
 # Intentionally-broken §13 modification system — one instance of each finding.
 # Validate together with good.ttrpg, which declares the targets:
 #     python3 ttrpg_validator.py tests/good.ttrpg tests/mods-bad.ttrpg
-# Expected: 8 error(s), 3 warning(s).
+# Expected: 8 error(s), 7 warning(s). Four of the warnings are for OVERRIDE, ADD_TO, REMOVE_FROM
+# and ADD … DEF, marked as likely to be replaced (v0.6, DECISION-53).
 #
 #   ERROR    MODIFY names a target that does not exist
 #   ERROR    OVERRIDE names a target that does not exist

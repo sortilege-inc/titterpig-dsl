@@ -162,11 +162,14 @@ PARAMETERS_BLOCK <- 'PARAMETERS' _ '{' _ (PARAM_DECL _)* '}'
 # A parameter with no domain takes free text (v0.6, DECISION-39; the older form wrote OF STRING).
 PARAM_DECL       <- CARET_REF (_ 'OF' _ (HASHED_REF / 'STRING' / BRACKET_LIST))?
 
-# ALIAS declares one name a display synonym of an existing entity — same
-# entity/hash, different label, no value change (distinct from MODIFY/OVERRIDE).
-#   ALIAS ^"Ride" FOR ^"Drive"
-# Ships in a setting's own extension file to re-skin vocabulary.
-ALIAS_STATEMENT  <- 'ALIAS' _ CARET_REF _ 'FOR' _ HASH_ID? _ CARET_REF
+# ALIAS declares a second name of an existing entity — same entity, same hash, another
+# label, no value change (distinct from MODIFY/OVERRIDE). The target is its hash; its own
+# name may follow the hash on the same line (v0.6, DECISION-57).
+#   ALIAS ^"Ride" FOR #hash
+#   ALIAS ^"Ride" FOR #hash ^"Drive"
+# FOR with no hash is the older form, still read here for a file below 0.6; the validator
+# reports it. Ships in a setting's own extension file to re-skin vocabulary.
+ALIAS_STATEMENT  <- 'ALIAS' _ CARET_REF _ 'FOR' _ (HASH_ID (SP CARET_REF)? / CARET_REF)
 
 # REPRINT records that this book prints an existing entity whose text the target holds --
 # unchanged, or in an older wording the target supersedes (v0.5 addendum, DECISION-14). It
@@ -183,7 +186,8 @@ REPRINT_STATEMENT <- 'REPRINT' _ HASH_ID? _ CARET_REF
 # Links a surface form in the enclosing DESCRIPTION to a target, which may (and per the
 # strict rule SHOULD) carry the target's #hash. Targeting a mechanic's PARENT DEF
 # (Light Wound -> ^"Wounds") is the norm when the mechanic is not its own DEF.
-# MENTIONS is accepted as a deprecated alias.
+# MENTIONS, the block's 0.4 name, was removed in v0.6 (DECISION-52). The grammar still reads it
+# for a file below 0.6; the validator reports it.
 REFERENCES_BLOCK    <- ('REFERENCES' / 'MENTIONS') _ '{' _ (REFERENCE_ENTRY _)* '}'
 REFERENCE_ENTRY     <- STRING OCC_INDEX? _ '->' _ HASH_ID? _ CARET_REF
                      / COMMENT
@@ -213,8 +217,8 @@ EMPHASIS_ENTRY      <- STRING OCC_INDEX?
 LABEL_BLOCK         <- 'LABEL' _ LABEL_DEPTH? _ '{' _ (EMPHASIS_ENTRY _)* '}'
 LABEL_DEPTH         <- [1-9] [0-9]*
 
-# Optional inverse mirror: what references THIS entry. Tool-derivable; when present,
-# each entry must correspond to a real REFERENCES pointing here (validator gate).
+# REFERENCED BY listed, on the target, what refers to it. Removed in v0.6 (DECISION-52). The
+# grammar still reads it for a file below 0.6; the validator reports it.
 REFERENCED_BY_BLOCK <- 'REFERENCED' _ 'BY' _ '{' _ (REFERENCED_BY_ENTRY _)* '}'
 REFERENCED_BY_ENTRY <- (STRING _)? '<-' _ HASH_ID? _ CARET_REF
                      / COMMENT
@@ -483,7 +487,8 @@ RULE_ENTRY      <- HASH_ID _ RULE_BODY
 RULE_BODY       <- ':' _ RULE_CONTENT
                  / RULE_LABEL
 
-# Structured rule: WHEN [...] THEN ... or MODIFY: ...
+# Structured rule: WHEN [...] THEN ... or MODIFY: ... Both are removed in v0.6 (DECISION-52,
+# DECISION-56) and are still read here for a file below 0.6; the validator reports them.
 RULE_CONTENT    <- 'WHEN' _ '[' RULE_TEXT_INNER ']' _ 'THEN' _ RULE_TEXT
                  / 'MODIFY' ':' _ RULE_TEXT
                  / RULE_TEXT
@@ -876,7 +881,7 @@ EOF             <- !.
 # Modification:  OVERRIDE, ADD, MODIFY, SET, ADD_TO, REMOVE_FROM, REPRINT
 # Parameterize:  PARAMETERS, OF (also a type keyword), ALIAS, FOR   (DECISION-6)
 # Choice:        CHOOSE, DISTINCT, INDISTINCT, OF, WITH, AND, OR, NOT   (v0.6, DECISION-15)
-# References:    REFERENCES, MENTIONS (deprecated alias), REFERENCED, BY       (v0.5, §5c)
+# References:    REFERENCES (v0.5, §5c); MENTIONS, REFERENCED, BY: removed in v0.6, DECISION-52
 # Beside text:   EMPHASIS (v0.5), BOLD, ITALIC, LABEL                 (v0.6, §5c, DECISION-19)
 # Tables:        TABLE, AXIS, AT, COLUMNS, ANY, MIN, MAX              (v0.6, §5e, DECISION-21)
 # Hooks:         HOOKS, HOOK, FORMALITY, WHEN, TRIGGER, THEN,

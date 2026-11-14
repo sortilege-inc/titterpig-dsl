@@ -129,7 +129,8 @@ for these instead of burying the meaning in a verbatim string (spec §5b):
   Weapon")`. Don't mint 40 separate `Puissant X` DEFs, and don't leave it a dead string. The slot's
   domain is a caret type (must resolve) or nothing (free text like a place — `^"Area Lore"("Normandy")`).
   Don't parameterize what isn't actually variable.
-- **Alias for setting renames, not for variants.** `ALIAS ^"Ride" FOR ^"Drive"` when a setting
+- **Alias for setting renames, not for variants.** `ALIAS ^"Ride" FOR #hash`, with the hash of
+  `Drive`, when a setting
   re-labels the *same* mechanic. It changes only the name — no value, no slot. If the value differs,
   it's a `MODIFY`/`OVERRIDE` (errata) or a new DEF, not an alias. Ship aliases in a `*-aliases-*`
   extension so base files stay pristine.
@@ -143,6 +144,9 @@ for these instead of burying the meaning in a verbatim string (spec §5b):
   the amount, `#hash ^"Command" TRANSFORM ADD 1` when it goes up by it. A signed number in a string
   (`"+1"`) and a bare `1` both hide which one is meant. Which one a printed number is, is decided
   when the source is converted. Until it is decided, keep the string as printed.
+- **References in prose go in a `REFERENCES` block** on the DEF that holds the prose. Do not
+  write `MENTIONS`, its older name, or a `REFERENCED BY` block on the target: what refers to an
+  entity is read from the `REFERENCES` blocks that name it.
 - **Longer text is one string.** Paragraphs are parted by `\n\n`, and a line break inside one is
   `\n`. Do not use a triple-quoted block or let a string run over a line break.
 - **The page is `^"Page"`.** `^"Page" 243`, or `^"Page" "139-160"` as the source prints it. A page
@@ -174,6 +178,8 @@ inconsistency:
 - **Never in comments.** A stripped comment is a lost correction.
 - Put corrections in a dedicated `*-errata-*` EXTENSION file as machine-readable
   `MODIFY` / `OVERRIDE` / `ADD`. Keep source files pristine; tooling composes the overlay.
+- **To correct a rule, write it whole under its hash** in the `RULES` block of a `MODIFY`. The
+  entry replaces the rule. The older form `#hash MODIFY: … NOW REFERENCES` is not written.
 
 ## 7. Narrative — `.lore`
 

@@ -10,7 +10,6 @@ BASE "Demo_Embedded" {
 
     #EmbDemoEnragedAAAAAAAAAAA ^"Enraged" DEF {
         DESCRIPTION "The character sees only their goal."
-        REFERENCED BY { <- #EmbDemoFireBBBBBBBBBBBBBB ^"Fire Outburst" }
     }
     #EmbDemoFitnessCCCCCCCCCCC ^"Fitness" DEF { }
     #EmbDemoWarAxDDDDDDDDDDDDD ^"War Ax" DEF { }

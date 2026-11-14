@@ -41,14 +41,14 @@ BASE "Demo_Decision6" {
     }
 
     # --- alias (DECISION-6): Ride is a synonym of Drive --------------------
-    ALIAS ^"Ride" FOR ^"Drive"
+    ALIAS ^"Ride" FOR #Decision6Drive00000hhhhhhhhh
 
     # --- a template using bound refs, an alias ref, and choices ------------
     #Decision6Template00lllllllll TEMPLATE "Sample Warrior" DEF {
         EXTENDS ^"Ability"
         PROPERTIES {
             ^"Virtues" [ ^"Puissant"(^"Single Weapon"), ^"Great"(^"Stamina") ]
-            ^"Abilities" [ ^"Area Lore"("Normandy"), ^"Ride" ]
+            ^"Abilities" [ ^"Area Lore"("Normandy"), #Decision6Drive00000hhhhhhhhh ^"Ride" ]
             ^"Required" CHOOSE 1 [ #Decision6DemonMight0ffffffff ^"Demonic Might", #Decision6DemonPower0gggggggg ^"Demonic Powers" ]
             ^"Allotment" CHOOSE 1 [
                 CHOOSE 1 OF #Decision6Virtue00cccccccccc ^"Virtue" WITH { ^"Size" ["Major"] AND ^"Category" ["Supernatural"] },

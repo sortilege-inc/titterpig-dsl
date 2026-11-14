@@ -1,0 +1,7 @@
+CAMPAIGN "UsesBad_Old_Campaign" {
+    NAME "DECISION-55 fixture — USES_FRAME in a file that declares 0.5: one warning"
+    SPEC_VERSION "0.5"
+    VERSION "1.0"
+    DEPENDS_ON "UsesBad_Base"
+    USES_FRAME "UsesBad_Frame"
+}

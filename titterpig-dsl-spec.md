@@ -6,7 +6,7 @@
 > `ttrpg.peg` grammar states the syntax and `check_grammar.py` runs it: every good fixture in this
 > repo is accepted and every planted syntax fault refused (§20). Validation is split:
 > `ttrpg_validator.py` lints spec adherence, while `check_references.py` and `check_constructs.py` coherence-check the v0.5
-> `REFERENCES`/`REFERENCED BY`, `HOOKS`, `OPTIONAL`/`.selections`, and `GUIDANCE` constructs.
+> `REFERENCES`, `HOOKS`, `OPTIONAL`/`.selections`, and `GUIDANCE` constructs.
 
 ## 0. What changed
 
@@ -147,6 +147,31 @@ Changes made since v0.5, listed as they are decided. **Not all are additive.**
     A new major version may mint new ones.
 38. **`EMPHASIS` in a guidance `ENTRY`** *(§22, DECISION-51)* — an entry may hold the spans the
     source marks in its `TEXT`, as a DEF does for its `DESCRIPTION`.
+39. **Three forms removed** *(§5c, §13, DECISION-52; not additive)* — `REFERENCED BY`; `MENTIONS`,
+    the 0.4 name of `REFERENCES`; and the rule form `#hash MODIFY: … NOW REFERENCES`. No corpus
+    wrote any of them. Each is an error from 0.6 and a warning below it. A `MODIFY` changes a
+    rule by writing it whole under its hash.
+40. **Four forms marked as likely to be replaced** *(§5c, §13, §24, DECISION-53)* — `ADD_TO`
+    and `REMOVE_FROM`; the `@n` occurrence index; the `.selections` file; `OVERRIDE` and
+    `ADD … DEF`. No replacement is ruled yet, and each reads as before. The validator warns
+    wherever one is written, at any `SPEC_VERSION`.
+41. **Two hook levels and `TRIGGER` marked as likely to be replaced** *(§23, DECISION-54)* —
+    `FORMALITY CONDITIONAL`, `FORMALITY FORMAL` and the `TRIGGER` of a `HOOK`. No corpus writes
+    any of them. Each reads as before, and the validator warns wherever one is written, at any
+    `SPEC_VERSION`. `PROSE` and `TAGGED` are not marked.
+42. **The three `USES_` lines fold into `DEPENDS_ON`** *(§3, §16, DECISION-55; not additive)* —
+    a container names every file it needs with `DEPENDS_ON`: its BASE, an EXTENSION, a SETTING,
+    a FRAME. `USES_EXTENSION`, `USES_SETTING` and `USES_FRAME` are older forms: errors from
+    0.6, warnings below it. No tool read them, and three of the 26 lines written named no file.
+43. **The rule form `WHEN [condition] THEN action` removed** *(§12, DECISION-56; not additive)* —
+    a rule is a label with the source's text, or a DEF with a `DESCRIPTION`. The corpora wrote
+    31 rules in the removed form, each in the converter's words, and no tool read the condition
+    or the action. An error from 0.6 and a warning below it. `WHEN` and `THEN` stay a hook's
+    keywords (§23).
+44. **An alias is a second name of a hash** *(§5b, DECISION-57; not additive)* —
+    `ALIAS ^"name" FOR #hash`, and `#hash ^"name"` is then a pair that agrees. An alias `FOR`
+    a name with no hash, and the line `ALIAS "name"` inside a DEF, are older forms: errors
+    from 0.6, warnings below it. A bridge's sided aliases (§21) are as they were.
 
 ### v0.5 — five new constructs, and one rule tightened *(current)*
 
@@ -164,7 +189,8 @@ Changes made since v0.5, listed as they are decided. **Not all are additive.**
 4. **`REFERENCES` / `REFERENCED BY`** *(renamed + extended, §5c, DECISION-11)* — v0.4's `MENTIONS` is
    renamed **`REFERENCES`** (`MENTIONS` kept as a deprecated alias). A target may be a mechanic's
    **parent** DEF and **SHOULD** carry the target's `#hash` (a hashless target **WARNs**), with an
-   optional inverse **`REFERENCED BY`** mirror.
+   optional inverse **`REFERENCED BY`** mirror. *(v0.6: `MENTIONS` and `REFERENCED BY` are
+   removed, DECISION-52.)*
 5. **`.codex`** *(new container, §25, DECISION-12)* — a **stand-off lore knowledge graph**: typed
    `ENTITY` nodes, a declared `RELATIONS` predicate vocabulary (with `INVERSE`/`DOMAIN`/`RANGE`/
    `SYMMETRIC`/`TRANSITIVE`), and a `CATEGORIES` taxonomy, all derived from `.lore` prose and stored
@@ -254,7 +280,7 @@ v0.4 is a consistency/clarity pass over v0.3's grammar — not a redesign. Key c
   reference can carry more than a bare name. **Parameterized DEFs** declare typed slots
   (`PARAMETERS { ^"subject" OF ^"Ability" }`) that **bound references** fill
   (`^"Puissant"(^"Single Weapon")`, `^"Area Lore"("Normandy")`) — one base entity, a family of
-  instances. **`ALIAS ^"Ride" FOR ^"Drive"`** makes one name a display synonym of an existing entity
+  instances. **`ALIAS ^"Ride" FOR ^"Drive"`** *(v0.6: `FOR #hash`, DECISION-57)* makes one name a display synonym of an existing entity
   (a setting-level rename; same entity/hash, no value change). **A choice** is a structured
   "pick from these" value — specific entities, verbatim strings, or a number of entities of a type
   (written `CHOOSE n` since v0.6; DECISION-15 replaced the keyword this decision introduced). Motivated by ArM5's pervasive parameterized virtues
@@ -305,7 +331,8 @@ stay valid.
   sub-component DEFs need be minted. A target **SHOULD carry the target's `#hash`**; a hashless target
   **WARNs** (many names are multiply-defined, and a later same-name entity must not silently re-point a
   link). An optional inverse **`REFERENCED BY`** block mirrors it (tool-derivable; when present each
-  entry must correspond to a real `REFERENCES`).
+  entry must correspond to a real `REFERENCES`). *(v0.6: `MENTIONS` and `REFERENCED BY` are
+  removed, DECISION-52.)*
 - **DECISION-12 — Lore is queryable via a stand-off `.codex` graph, never by structuring the prose**
   *(resolved)* (§25): the queryable companion to `.lore` is a new **`.codex`** container — a knowledge
   graph of typed `ENTITY` nodes over a declared `RELATIONS` predicate vocabulary and a `CATEGORIES`
@@ -344,7 +371,7 @@ stay valid.
   which adds nothing is a **pointer**, chosen by what should show: the **target's** text — because the
   printing is unchanged, or because the target supersedes it (a definitive edition over an older
   supplement's wording) → `REPRINT ^"Name"`; **only the name** differs → `ALIAS ^"New" FOR
-  ^"Existing"`; the **printing's own** wording should take effect → `MODIFY ^"Existing" { SET
+  ^"Existing"` *(v0.6: `FOR #hash`, DECISION-57)*; the **printing's own** wording should take effect → `MODIFY ^"Existing" { SET
   DESCRIPTION "…" }`, which carries the variant text verbatim. A `MODIFY` always applies on top of the
   entity it modifies, so it is the wrong pointer when the target's text is the authoritative one. An
   empty `MODIFY` was rejected as the reprint marker: it reads as an unfinished patch, and says nothing
@@ -400,7 +427,8 @@ stay valid.
   rolls dice, and the existing `SET`, `TRANSFORM` and `REF` do the rest: the modifier, where the sum
   is stored, the damage type. That needs order, which the DSL did not have, so **`NEXT`** before a
   statement makes it a step that follows the statement above. `NEXT` was chosen over `THEN`, which
-  already means the consequence of a `WHEN` in rules and hooks. A chain runs forward only: this is
+  already means the consequence of a `WHEN` in rules and hooks *(v0.6: in hooks only, since the
+  rule form is removed, DECISION-56)*. A chain runs forward only: this is
   not a rules engine, and there is no branch and no loop.
 
 - **DECISION-19 — `EMPHASIS` says how a span is set, and a run-in label is a `LABEL`** *(resolved,
@@ -795,6 +823,67 @@ stay valid.
   span is in that entry's `TEXT`. `check_references.py` already read the block and tested the
   spans against the entry's own text. The same finding left `BASE` as it was: a file-level
   keyword, reserved everywhere (DECISION-29), which arm5e's 749 `BASE n` lines must rename.
+- **DECISION-52 — Three forms no corpus wrote are removed** *(resolved, v0.6, 2026-11-14; not
+  additive)* (§5c, §13): a count of every keyword of §15 and §18 over 29 corpus directories and
+  three bridges found three forms older than 0.6 that no file writes and that the owner ruled
+  out. **`REFERENCED BY`** repeated, on the target, a `REFERENCES` line that the referring DEF
+  already holds; what refers to an entity is read from the `REFERENCES` blocks that name it.
+  **`MENTIONS`** was the 0.4 name of `REFERENCES`, kept in 0.5 so that 0.4 files validated; none
+  of the 170 files that still declare 0.4 or lower writes it. **`#hash MODIFY: label NOW
+  REFERENCES …`** was shown once in §13 and defined nowhere. A `MODIFY` changes a rule the way
+  l5r5e's errata does: the rule is written whole, under its hash, in the `MODIFY`'s `RULES`
+  block. Each removed form is a **warning** in a file that declares a `SPEC_VERSION` below 0.6,
+  or none, and an **error** in one that declares 0.6 or later.
+- **DECISION-53 — Four forms are marked as likely to be replaced** *(resolved, v0.6,
+  2026-11-14)* (§5c, §13, §24): the same count found four forms that none of the 22 corpus
+  directories writes, and the owner marked each as likely to be replaced. **`ADD_TO` and
+  `REMOVE_FROM`** (§13) are in no file. The **`@n` occurrence index** (§5c) is in no file.
+  No corpus holds a **`.selections` file** (§24). **`OVERRIDE` and `ADD … DEF`** (§13) are
+  written in third-party corpora only: `OVERRIDE` 3 times and `ADD … DEF` 74 times. None is
+  replaced yet. Each reads as it did, and the validator raises a **warning** wherever one is
+  written, whatever `SPEC_VERSION` the file declares. `FIAT` does not waive it.
+- **DECISION-54 — Two hook levels and `TRIGGER` are marked as likely to be replaced**
+  *(resolved, v0.6, 2026-11-14)* (§23): the corpora write three hooks, all in arm5e and all
+  `TAGGED`. No corpus file writes `FORMALITY CONDITIONAL`, `FORMALITY FORMAL` or a `TRIGGER`
+  in a hook, and §23 gives a `TRIGGER` no shape, so no tool reads one. The owner marked the
+  three as likely to be replaced. None is replaced yet. Each reads as it did, and the
+  validator raises a **warning** wherever one is written, whatever `SPEC_VERSION` the file
+  declares. `FIAT` does not waive it. `PROSE` and `TAGGED` are not marked. Outside a `HOOK`,
+  `TRIGGER` is a system's own keyword (§15) and is not marked.
+- **DECISION-55 — The three `USES_` lines fold into `DEPENDS_ON`** *(resolved, v0.6,
+  2026-11-14; not additive)* (§3, §16): §16 gave a container three lines for the files it
+  needs beside its BASE: `USES_EXTENSION`, `USES_SETTING` and `USES_FRAME`. No tool read any of
+  them. Files in 29 corpus directories write `USES_EXTENSION` 26 times and the other two not at
+  all, and three of the 26, in TEETH's one-shots, name an id no file declares. `DEPENDS_ON` is
+  the same statement, and the validator checks it. A file now names every file it needs with
+  `DEPENDS_ON`, and the id may be that of a BASE, an EXTENSION, a SETTING, a FRAME, an ARC or
+  a CAMPAIGN. Each `USES_` line is a **warning** in a file that declares a `SPEC_VERSION`
+  below 0.6, or none, and an **error** in one that declares 0.6 or later.
+- **DECISION-56 — The rule form `WHEN [condition] THEN action` is removed** *(resolved, v0.6,
+  2026-11-14; not additive)* (§12): §12 gave a rule two forms, and left the grammar of this
+  one's condition and action to the system, so no tool read either. Files in 29 corpus
+  directories write 31 such rules, in the core base file of nine systems: Call of Cthulhu 4,
+  Daggerheart 2, D&D 2014 2, D&D 2024 2, Draw Steel 4, The Expanse 4, Invisible Sun 3, L5R 7,
+  Root 3. Each is in the converter's words:
+  `WHEN [^"Investigator" CREATED] THEN ^"Hit Points".Maximum = …` reads as a formula, and
+  nothing defines `CREATED` or `.Maximum`. The
+  other form, a label with the source's text, is written about 1,500 times, all in l5r5e and
+  its third-party repo. A rule is now that form, or a DEF with a `DESCRIPTION`. The removed
+  form is a **warning** in a file that declares a `SPEC_VERSION` below 0.6, or none, and an
+  **error** in one that declares 0.6 or later. `WHEN` and `THEN` stay the keywords of a `HOOK`
+  (§23), where `WHEN` takes a string.
+- **DECISION-57 — An alias is a second name of a hash** *(resolved, v0.6, 2026-11-14; not
+  additive)* (§5b): an entity is its hash (§5d), and an alias named its target by name:
+  `ALIAS ^"Ride" FOR ^"Drive"`, the hash optional. The tools then knew the alias as a name
+  with no hash, so a reference through it that carried the entity's hash, `#hash ^"Ride"`,
+  was reported as a hash and a name that disagree. An alias now names the hash:
+  **`ALIAS ^"name" FOR #hash`**. The entity's own name may follow the hash on the same line,
+  as the four alias statements in the corpora write it. `#hash ^"name"` is then a reference
+  to the entity wherever `#hash` and its own name are. Two forms are older ones, a **warning**
+  in a file that declares a `SPEC_VERSION` below 0.6, or none, and an **error** in one that
+  declares 0.6 or later: an alias `FOR` a name with no hash; and `ALIAS "name"` inside a DEF,
+  which nine definitions wrote (l5r5e 8, vtm5e 1), this spec never defined and no tool read.
+  A bridge's alias (§21) names its target by side and name and is unchanged.
 
 ## 1. Overview & Design Principles
 
@@ -886,7 +975,7 @@ The DSL uses multiple file extensions, each corresponding to a specific containe
 | `.bridge` | BRIDGE | **Cross-edition conversion** — a directed correspondence between two editions (DSL) *(v0.4, §21)* |
 | `.lore` | (none — Markdown) | **Free narrative prose / flavor** — no DSL syntax *(v0.4)* |
 | `.codex` | CODEX | **Stand-off lore knowledge graph** — typed entities + declared relationships over `.lore` prose (DSL) *(v0.5, §25)* |
-| `.selections` | SELECTIONS | **User's optional-rule choices** for a corpus — `SELECT #hash on\|off` (DSL) *(v0.5, §24)* |
+| `.selections` | SELECTIONS | **User's optional-rule choices** for a corpus — `SELECT #hash on\|off` (DSL) *(v0.5, §24; likely to be replaced, v0.6, DECISION-53)* |
 
 **An `.actor` file is an `EXTENSION` file that holds instances and nothing else** *(v0.6,
 DECISION-28)*. The extension says what the file holds, which makes characters easy to share, version
@@ -1022,6 +1111,14 @@ EXTENSION "ArM5_Core_Errata" {
   do not share an id.
 - **An `EXTENSION` names at least one parent.** A `BASE` names none, the dice module aside.
 - A dependency loads before the file that names it (§13).
+
+**A container says it the same way** *(v0.6, DECISION-55)*. A FRAME, an ARC or a CAMPAIGN names
+its BASE with `DEPENDS_ON`, and each EXTENSION, SETTING or FRAME it needs with a `DEPENDS_ON`
+line of its own (§16). The id is that of any file in the loaded set, whatever kind of file
+declares it. Before v0.6 the lines for an arc's extensions, a setting and a campaign's frame
+were `USES_EXTENSION`, `USES_SETTING` and `USES_FRAME`, which no tool read. Each is an older
+form: a **warning** in a file that declares a `SPEC_VERSION` below 0.6, or none, and an
+**error** in one that declares 0.6 or later.
 
 A cycle, and a `DEPENDS_ON` that names nothing, are errors at every version. A header `EXTENDS`
 that names nothing, an id declared twice, an `EXTENSION` with no parent and a `BASE` with one are
@@ -1184,21 +1281,35 @@ Weapon`, `Great Stamina`, `Affinity with Ignem`, `Area Lore` → `Normandy Lore`
   encoded in the file. A bound reference whose base declares no `PARAMETERS`, or whose argument
   count or types don't match, is a coherence error.
 
-#### Aliases — setting/edition renames
+#### Aliases — setting/edition renames *(rewritten v0.6, DECISION-57)*
 
-`ALIAS` declares one name a **display synonym** of an existing entity — the same entity (same hash,
-same rules), a different label, and **no** change of value:
+`ALIAS` gives an existing entity a **second name** — the same entity (same hash, same rules), a
+different label, and **no** change of value. An entity is its hash (§5d), so the alias names the
+hash:
 
 ```
-ALIAS ^"Ride" FOR ^"Drive"
+ALIAS ^"Ride" FOR #tDrive7hK2mN4pQ6rS8tV0w
+ALIAS ^"Ride" FOR #tDrive7hK2mN4pQ6rS8tV0w ^"Drive"     # the entity's own name may follow, on the same line
 ```
 
-References to `^"Ride"` resolve to the `Drive` entity but display as `Ride`. An alias is distinct
+`^"Ride"` is then a name of that entity. `#tDrive7hK2mN4pQ6rS8tV0w ^"Ride"` is a reference to it
+wherever `#tDrive7hK2mN4pQ6rS8tV0w ^"Drive"` is: the hash and the name agree (§5d). The
+reference displays as `Ride`. An alias is distinct
 from `MODIFY`/`OVERRIDE` (which patch an entity) and from a new DEF (a different entity); it adds
 nothing and changes nothing. Aliases are edition-scoped, so a setting ships an `*-aliases-*`
 extension file to re-skin vocabulary without touching base definitions (a VtM 1200s campaign
-renaming `Drive` to `Ride`). The `FOR` target must resolve; alias chains must be acyclic; an alias
+renaming `Drive` to `Ride`). The hash must be a declared anchor; where the entity's own name
+follows it, that name must be the anchor's; an alias
 name must not already name a *different* entity. An alias may target a bound reference.
+
+**Two older forms** *(v0.6, DECISION-57)*. An alias `FOR` a name with no hash,
+`ALIAS ^"Ride" FOR ^"Drive"`, named its target by name, so the alias was bound to no hash. And
+nine definitions in the corpora wrote `ALIAS "name"` inside the DEF, a line this spec never
+defined and no tool read. Each is a **warning** in a file that declares a `SPEC_VERSION` below
+0.6, or none, and an **error** in one that declares 0.6 or later. An alias `FOR` a hash cannot
+point at another alias; a chain can be written only in the older form, and a cycle there is an
+error at every version. A bridge's alias names its target by side and name (§21) and is not
+changed by this.
 
 #### Reprints — the same entity printed again *(v0.5 addendum, DECISION-14)*
 
@@ -1296,8 +1407,8 @@ writes `CHOICE` raises a **warning**; its options are still resolved. A file tha
 
 ### §5c — In-prose references: the `REFERENCES` block *(v0.4 as `MENTIONS`; v0.5, DECISION-11)*
 
-**v0.5 changes (DECISION-11).** The block is renamed **`REFERENCES`** (`MENTIONS` remains a deprecated
-alias, still accepted so 0.4 corpora keep validating). Four additions:
+**v0.5 changes (DECISION-11).** The block is renamed **`REFERENCES`**. Three additions, and
+two forms since removed:
 1. **Hash-qualified targets, strict.** A target may be written `#hash ^"Name"` and — per the strict
    rule — SHOULD be; a **hashless target WARNs** (a name may resolve to several DEFs, and a later
    same-name entity must not silently re-point the link). Resolution is by hash when present (the hash
@@ -1305,13 +1416,15 @@ alias, still accepted so 0.4 corpora keep validating). Four additions:
 2. **Mechanical-parent targets.** When a referenced mechanic is not its own DEF, target its owning
    **parent** DEF (`"Light Wound" -> ^"Wounds"`); the surface form carries the sub-component
    specificity, so sub-component DEFs need not be minted.
-3. **Optional inverse mirror `REFERENCED BY`.** `REFERENCED BY { "surface" <- #hash ^"Referrer" }` on
-   the target records what references it — tool-derivable, and gated for consistency against the
-   forward `REFERENCES`; its absence is never an error.
+3. **Removed in v0.6** *(DECISION-52)*: **`REFERENCED BY`**, a block on the target that listed
+   what refers to it, and **`MENTIONS`**, the block's 0.4 name. What refers to an entity is read
+   from the `REFERENCES` blocks that name it. Either word is a **warning** in a file that
+   declares a `SPEC_VERSION` below 0.6, or none, and an **error** in one that declares 0.6 or
+   later.
 4. **`EMPHASIS` — a marked span with no referent.** `EMPHASIS { "surface form" }`. DECISION-7 settled
    that a span the source sets apart is recorded *beside* the verbatim text and never as markup
    inside it; `REFERENCES` covers the case where the span names another DEF, and this covers the case
-   where it names nothing. No target, so no hash, no resolution and no inverse mirror — the only
+   where it names nothing. No target, so no hash and no resolution — the only
    coherence rule is the one `REFERENCES` already has: **the surface form must appear in the DEF's
    own prose.** An `@n` occurrence index is accepted on the same terms.
 
@@ -1319,8 +1432,7 @@ alias, still accepted so 0.4 corpora keep validating). Four additions:
 
    ```
    #tOf8uzMsrgh5Gd67BS7ge8AJ ^"Travel Through the Forest" DEF {
-       TRIGGER "When you travel from clearing to clearing through the forest, the band
-                collectively decides how it travels and one member of the band rolls for the group:"
+       TRIGGER "When you travel from clearing to clearing through the forest, the band collectively decides how it travels and one member of the band rolls for the group:"
        EMPHASIS { "travel from clearing to clearing through the forest" }
    }
    ```
@@ -1342,10 +1454,7 @@ alias, still accepted so 0.4 corpora keep validating). Four additions:
 
    ```
    SCENE #txWKzqF0ygAjNWBHNG3TOPs ^"2nd Floor Passenger: The Gas Form" {
-       DESCRIPTION "Outside the door is a cloud of green gas with little balloon bladders floating
-                    in it supporting decorative jewelry much like your ear would. The mandrill takes
-                    a little gas mask (mandrill-sized only) out from a compartment in the wall by
-                    his panel and put it on. …"
+       DESCRIPTION "Outside the door is a cloud of green gas with little balloon bladders floating in it supporting decorative jewelry much like your ear would. The mandrill takes a little gas mask (mandrill-sized only) out from a compartment in the wall by his panel and put it on. …"
        EMPHASIS BOLD        { "cloud of green gas" }
        EMPHASIS ITALIC {
            "decorative jewelry"
@@ -1362,9 +1471,7 @@ alias, still accepted so 0.4 corpora keep validating). Four additions:
    the text it labels stays in the string as printed and is named here:
 
    ```
-   DESCRIPTION "Prot: The bonus the armor grants to the character’s Soak score.\nLoad: The amount
-                the armor adds to the character’s Burden.\nCost: A general indication of the expense
-                of the armor. More expensive armor is better."
+   DESCRIPTION "Prot: The bonus the armor grants to the character’s Soak score.\nLoad: The amount the armor adds to the character’s Burden.\nCost: A general indication of the expense of the armor. More expensive armor is better."
    LABEL {
        "Prot:"
        "Load:"
@@ -1376,9 +1483,7 @@ alias, still accepted so 0.4 corpora keep validating). Four additions:
    label of depth 2 sits under the depth-1 label before it:
 
    ```
-   DESCRIPTION "Sample Vestals Initiation: Nature Lore\n\nEase Factor: 15 (Minor Virtue known to the
-                Mystagogue)\n\nScript Bonus: +10 Script Details: The Initiate must prepare a cake
-                using ritual ingredients. …"
+   DESCRIPTION "Sample Vestals Initiation: Nature Lore\n\nEase Factor: 15 (Minor Virtue known to the Mystagogue)\n\nScript Bonus: +10 Script Details: The Initiate must prepare a cake using ritual ingredients. …"
    LABEL   { "Sample Vestals Initiation: Nature Lore" }
    LABEL 2 {
        "Ease Factor:"
@@ -1428,31 +1533,24 @@ EFFECT "… they also become #hash ^\"Enraged\" …"
   `^"Enraged"/"state of rage"`.
 - **Each one is a reference site (§5d).** It resolves by its hash when it carries one; a hashless
   one WARNs, and a hashless one whose name is more than one entity is an ERROR. It counts as a
-  reference from the entity around the string, so a `REFERENCED BY` may mirror it.
+  reference from the entity around the string.
 - **A string's text** is the string with each embedded reference read as its literal, or as its
   name where it has none. The verbatim rule below is a rule about the text, and the surface forms
   of `REFERENCES`, `EMPHASIS` and `LABEL` are matched against it.
 - A `REFERENCES` block and embedded references are two ways to record the same fact, and both are
   legal.
 
-The rest of this section (byte-verbatim `DESCRIPTION`, exact-surface-form rules, page-cite stripping)
-is unchanged — read `MENTIONS` below as `REFERENCES`.
-
 An entry's rules text **is** the entry — a spell's effect, a virtue's mechanics — so it is captured
 **verbatim** in `DESCRIPTION`, not dropped to prose or a `.lore` file. But that prose names other
 DEFs: *"the target heals a Light Wound … if the roll exceeds the Improvement Ease Factor."* Those
-names are made machine-resolvable by a **stand-off `MENTIONS` block**, not by editing the text.
+names are made machine-resolvable by a **stand-off `REFERENCES` block**, not by editing the text.
 
 ```
 #hashID ^"Close the Flesh" DEF {
     EXTENDS ^"Rune Spell"
     PROPERTIES { ^"Rune" "Berkanan" FIXED  ^"Level" 20 … }
-    DESCRIPTION "This spell is usually carved onto an amulet … The target heals a Light
-      Wound, and as long as the runes last … the character must make an immediate recovery roll
-      for that injury. If this equals or exceeds the Improvement Ease Factor, then the wound
-      remains healed. If the roll equals or exceeds the Stable Ease Factor, then the Light Wound
-      re-opens …"
-    MENTIONS {
+    DESCRIPTION "This spell is usually carved onto an amulet … The target heals a Light Wound, and as long as the runes last … the character must make an immediate recovery roll for that injury. If this equals or exceeds the Improvement Ease Factor, then the wound remains healed. If the roll equals or exceeds the Stable Ease Factor, then the Light Wound re-opens …"
+    REFERENCES {
         "Light Wound"             -> ^"Light Wound"
         "recovery roll"           -> ^"Recovery Roll"
         "Improvement Ease Factor" -> ^"Improvement Ease Factor"
@@ -1465,21 +1563,23 @@ Rules:
 
 - **`DESCRIPTION` stays verbatim.** It is the source's text, with the five allowances below
   **and** the stripping of a cross-rulebook page citation
-  (`(ArM5, page 179)`, `(see ArM5 p. 42)`) — the `MENTIONS`/`EXTENDS` reference supersedes the
+  (`(ArM5, page 179)`, `(see ArM5 p. 42)`) — the `REFERENCES`/`EXTENDS` reference supersedes the
   citation, which would otherwise be a dead pointer once the entity has a DEF. Nothing else is
   added, removed, or reworded. No inline markup is ever inserted into the text. From v0.6 an
   embedded reference (above) is the one thing a string may hold besides its text, and the rule
   applies to the text: the string with each embedded reference read as its literal or its name.
-- **Each `MENTIONS` entry is `"<surface form>" -> <caret ref>`.** The surface form is the term
+- **Each `REFERENCES` entry is `"<surface form>" -> <caret ref>`.** The surface form is the term
   **exactly as printed in this `DESCRIPTION`** (including case and inflection — `"recovery roll"`,
   not `"Recovery Roll"`). This is what lets a renderer locate and link the occurrence, and lets two
   different targets in one paragraph (Improvement vs Stable Ease Factor) each resolve correctly.
 - **Coherence checks:** every caret ref target must resolve in the corpus (same as any reference);
-  and every surface form **must appear as a substring of the `DESCRIPTION`** — a `MENTIONS` entry
-  whose surface string is absent is drift and fails validation. A term may be mentioned once even if
+  and every surface form **must appear as a substring of the `DESCRIPTION`** — a `REFERENCES` entry
+  whose surface string is absent is drift and fails validation. A term may be listed once even if
   it recurs; add a `@<n>` occurrence index (`"Light Wound"@2 -> …`) only when different occurrences
-  of the *same* surface string must point to *different* targets, which is rare.
-- **Optional and additive.** A DEF with no external references simply omits `MENTIONS`. Existing
+  of the *same* surface string must point to *different* targets, which is rare. The index is
+  marked as **likely to be replaced** *(v0.6, DECISION-53)*: it reads as before, and the
+  validator warns wherever one is written, here and in an `EMPHASIS` or `LABEL` block.
+- **Optional and additive.** A DEF with no external references simply omits `REFERENCES`. Existing
   files are unaffected until re-treated.
 
 **What verbatim allows** *(v0.6, DECISION-47)*. A string is verbatim when it matches the source's
@@ -1604,8 +1704,8 @@ A **reference site** is any place one definition names *an entity that already e
 option or `OF` type of a `CHOOSE` (§5b), the type and the value of a `REF`, the target of a `SET`
 or `TRANSFORM`, the condition of a `SITUATIONAL` where it is a reference, and the die of a
 `ROLL` (§8), the type of an `AXIS … OF`, an entity listed as an
-axis point and an entity given as a coordinate of an `AT` (§5e), the `REFERENCES` /
-`REFERENCED BY` targets and embedded references of §5c, and the references between narrative
+axis point and an entity given as a coordinate of an `AT` (§5e), the `REFERENCES`
+targets and embedded references of §5c, and the references between narrative
 blocks of §16: `SCENE_REF`, `LEADS_TO`, `COMPLETED_SCENES`, `OPPONENTS`, a scene's `LOCATION`, and
 each `INCLUDE` item of a `FROM`. So are the base and the arguments of a bound reference and the
 type after a `PARAMETERS … OF` (§5b), a `HOOK`'s `THEN` (§23), an `OPTIONAL`'s `SCOPE` and a
@@ -1627,8 +1727,8 @@ where no keyword says a reference follows.
   `KATA #hash ^"Lord Hida's Grip"`.
 
 **Declaration sites are not reference sites.** `ADD #hash ^"Name" DEF { … }` (§13) *asserts new
-content*, so its hash is an anchor being minted, not a pointer to one; `ALIAS ^"New" FOR ^"Existing"`
-likewise declares `^"New"` and references only `^"Existing"`. `SET`, `ADD_TO` and `REMOVE_FROM` name a
+content*, so its hash is an anchor being minted, not a pointer to one; `ALIAS ^"New" FOR #hash`
+likewise declares `^"New"` and references only the entity that carries the hash. `SET`, `ADD_TO` and `REMOVE_FROM` name a
 **property** of the entity being modified, not an entity, and are outside this rule.
 
 **The `#hash` is the referent. The `^"Name"` is a readability aid.**
@@ -2437,15 +2537,14 @@ The base spec recognizes the **pattern** (keyword followed by `{ }`, `[ ]`, or a
 
 ```
 RULES {
-    #L5R002mN3oP: WHEN [^"Entity" CREATED] THEN REQUIRE ^"Name"
-    #L5R005uV1wX: WHEN [^"Strife" > ^"Composure"] THEN ^"Samurai" IS compromised
+    #L5R012tU3vW5xY7zA9bC2e: minion_critical_strike_rules "If a minion would be dealt a critical strike, it receives fatigue equal to the severity instead."
+    #L5RGS18fG9hI1jK3lM5nO7p: ref_condition_compromised "Compromised: Effects: Cannot keep dice with (st) symbols (to a possible minimum of 0 kept dice). Their vigilance counts as 1.\n\nRemoved When: Strife is reduced to a value lower than or equal to their composure."
     #L5R300aB2cD: technique_categories_granted_by_school
 }
 ```
 
 Rules are hash-labeled entries inside a `RULES { }` block. The base spec defines the container syntax:
 
-- `#hashID: WHEN [condition] THEN action` — structured rule with trigger
 - `#hashID: label_name "text"` — a named rule carrying the source's own statement of it,
   verbatim (paragraphs as `\n\n`, §10). Where the source prints a name for the item — a table
   row, a bulleted term, a step heading — the text leads with it: `"Label: text"`.
@@ -2457,7 +2556,12 @@ pass under this section's earlier wording ("named rule placeholder — descripti
 comments or documentation"); they were given the book's text, or removed where the book has no
 such rule.
 
-The condition/action grammar is system-defined. `WHEN` and `THEN` are recognized by the base spec as rule structure markers. Other keywords used in rule expressions (`REQUIRE`, `IS`, `CREATED`, `INTERACTS`, `ENTERS`, `USE`, etc.) are conventions, not base-spec reserved words.
+**The form `#hashID: WHEN [condition] THEN action` is removed** *(v0.6, DECISION-56)*. Its
+condition and action had no grammar, so no tool read them, and what the corpora wrote in it was
+the converter's wording of a rule. A rule is a label with the source's text, as above, or a
+DEF with a `DESCRIPTION` (§10). The removed form is a **warning** in a file that declares a
+`SPEC_VERSION` below 0.6, or none, and an **error** in one that declares 0.6 or later. `WHEN`
+and `THEN` are a hook's keywords (§23).
 
 ---
 
@@ -2465,9 +2569,10 @@ The condition/action grammar is system-defined. `WHEN` and `THEN` are recognized
 
 Extensions can modify parent content using three strategies:
 
-### OVERRIDE — Full Replacement
+### OVERRIDE — Full Replacement *(likely to be replaced, v0.6, DECISION-53)*
 
-Completely replaces a parent DEF:
+Completely replaces a parent DEF. `OVERRIDE` is marked as likely to be replaced: it reads as
+before, and the validator warns wherever it is written.
 
 ```
 EXTENSION "Errata2020" EXTENDS "L5R5e_Core" {
@@ -2477,9 +2582,10 @@ EXTENSION "Errata2020" EXTENDS "L5R5e_Core" {
 }
 ```
 
-### ADD — New Content
+### ADD — New Content *(likely to be replaced, v0.6, DECISION-53)*
 
-Introduces content not in the parent:
+Introduces content not in the parent. `ADD … DEF` is marked as likely to be replaced: it reads
+as before, and the validator warns wherever it is written.
 
 ```
 EXTENSION "Sourcebook" EXTENDS "L5R5e_Core" {
@@ -2515,11 +2621,13 @@ Both spellings of the statement are legal and mean the same thing: `MODIFY ^"X" 
 
 Within a `MODIFY` block:
 - `SET` — change a property value or constraint
-- `ADD_TO` — append to a list property
-- `REMOVE_FROM` — remove from a list property
+- `ADD_TO` — append to a list property *(likely to be replaced, v0.6, DECISION-53)*
+- `REMOVE_FROM` — remove from a list property *(likely to be replaced, v0.6, DECISION-53)*
 - `SET DESCRIPTION "…"` — replace the target's whole `DESCRIPTION` *(v0.5 addendum)*
 - `PROPERTIES { … }` — **introduce** properties the target does not have
-- `RULES { … }` — modify individual rules (below)
+- `RULES { … }` — replace individual rules (below)
+
+`ADD_TO` and `REMOVE_FROM` read as before, and the validator warns wherever either is written.
 
 ### Variant printings — `SET DESCRIPTION` *(v0.5 addendum, DECISION-14)*
 
@@ -2567,17 +2675,25 @@ layer's `ADD_TO` may legitimately have put it there.
 loaded definition that still assigns a dropped value is orphaned by it, and each such instance
 raises a **warning** against the instance, naming the `SET` responsible.
 
-### MODIFY in Rules
+### Changing a rule *(v0.6, DECISION-52)*
 
-Extensions can also modify individual rules within a DEF:
+A `MODIFY` changes a rule of its target by writing the rule whole, under the rule's hash, in a
+`RULES` block. The entry replaces the rule that has that hash. l5r5e's 2020 errata corrects the
+last sentence of a rule this way:
 
 ```
-^"Blood Potency" MODIFY {
+MODIFY #t94d8eaee1f03a4f4d9ec5 ^"Rhinoceros" {
     RULES {
-        #5Gpn6DrSZp MODIFY: blood_surge_mechanics NOW REFERENCES #YD4PosF ^"Blood Surge Table"
+        #L5RPW71oN4gU7xY4lR3tT0dX4gO: rhino_charge "Furious Charge: A rhinoceros is a creature of silhouette 4. As an Attack action, a rhinoceros may target a location within range 3–5. The rhinoceros charges at the targeted location, and any creatures within range 0–1 of the location must make a TN 4 Fitness check (Fire 6, Air 2) to resist. If they fail, they suffer a critical strike of severity 8 and the Unconscious condition."
     }
 }
 ```
+
+The replacement is the entire rule, as `SET DESCRIPTION` replaces an entire description.
+
+Before 0.6 this section showed one line, `#hash MODIFY: label NOW REFERENCES #hash ^"Table"`,
+and defined no part of it. That form is a **warning** in a file that declares a `SPEC_VERSION`
+below 0.6, or none, and an **error** in one that declares 0.6 or later.
 
 ### Errata & Corrections *(v0.4)*
 
@@ -2677,7 +2793,7 @@ Unique anchors for cross-file traceability:
 
 ```
 #L5R001aB2cD4eF6gH8iJ0kL ACTOR "Entity" DEF { }
-#L5R002: WHEN [^"Entity" CREATED] THEN REQUIRE ^"Name"
+#L5R012tU3vW5xY7zA9bC2e: minion_critical_strike_rules "If a minion would be dealt a critical strike, it receives fatigue equal to the severity instead."
 ```
 
 ### Embedded References in Strings
@@ -2733,19 +2849,17 @@ keywords are reserved everywhere.
 
 **Choice (§5b):** `CHOOSE`, `DISTINCT`, `INDISTINCT`, `WITH`, `AND`, `OR`, `NOT` (`OF` is shared with **Types**)
 
-**Rule structure:** `WHEN`, `THEN`
+**Hooks (§23):** `HOOKS`, `HOOK`, `FORMALITY`, `WHEN`, `THEN`, `PROSE`, `TAGGED`, `CONDITIONAL`, `FORMAL`, and `TRIGGER` inside a `HOOK`. `WHEN` and `THEN` are not written in a `RULES` block from 0.6 (§12, DECISION-56). `CONDITIONAL`, `FORMAL` and `TRIGGER` inside a `HOOK` are marked as likely to be replaced (§23, DECISION-54)
 
-**Hooks (§23):** `HOOKS`, `HOOK`, `FORMALITY`, `PROSE`, `TAGGED`, `CONDITIONAL`, `FORMAL`, and `TRIGGER` inside a `HOOK` (`WHEN` and `THEN` are shared with **Rule structure**)
+**Optional rules and selections (§24):** `OPTIONAL`, `GLOBAL`, `SELECTIONS`, `SELECT`, `on`, `off` (`DEFAULT` is shared with **Modifiers**, `SCOPE` with **Bridge**, `FOR` and `VERSION` with §3/§19; `OPTIONAL` is also a SCENE keyword, §18). `SELECTIONS` and `SELECT` are the keywords of a `.selections` file, which is marked as likely to be replaced (§24, DECISION-53)
 
-**Optional rules and selections (§24):** `OPTIONAL`, `GLOBAL`, `SELECTIONS`, `SELECT`, `on`, `off` (`DEFAULT` is shared with **Modifiers**, `SCOPE` with **Bridge**, `FOR` and `VERSION` with §3/§19; `OPTIONAL` is also a SCENE keyword, §18)
-
-**Modification:** `OVERRIDE`, `ADD`, `MODIFY`, `SET`, `ADD_TO`, `REMOVE_FROM`, `REPRINT`
+**Modification:** `OVERRIDE`, `ADD`, `MODIFY`, `SET`, `ADD_TO`, `REMOVE_FROM`, `REPRINT`. `OVERRIDE`, `ADD … DEF`, `ADD_TO` and `REMOVE_FROM` are marked as likely to be replaced (§13, DECISION-53)
 
 **Text:** `DESCRIPTION`, `TEXT`
 
 **Tables (§5e):** `TABLE`, `AXIS`, `AT`, `COLUMNS`, `ANY` (`OF` and `ROLL` are shared with **Types**, `MIN` / `MAX` with **Modifiers**, `AT` with **Codex**)
 
-**Annotation beside text (§5c):** `REFERENCES`, `MENTIONS`, `REFERENCED`, `BY`, `EMPHASIS`, `BOLD`, `ITALIC`, `LABEL`
+**Annotation beside text (§5c):** `REFERENCES`, `EMPHASIS`, `BOLD`, `ITALIC`, `LABEL`. `MENTIONS`, `REFERENCED` and `BY` stay reserved and are not written from 0.6 (§5c, DECISION-52)
 
 **Narrative containers:** `SETTING`, `FRAME`, `ARC`, `CAMPAIGN`, `SCENE`, `LOCATION` (and their sub-keywords as defined in §16)
 
@@ -2872,7 +2986,7 @@ FRAME "FrameID" {
     VERSION "1.0.0"
     SPEC_VERSION "0.6"
     DEPENDS_ON "BaseSystemID"
-    USES_SETTING "SettingID"    # optional
+    DEPENDS_ON "SettingID"      # optional: a SETTING
 
     THEMES {
         "Theme description"
@@ -2913,8 +3027,7 @@ FRAME "FrameID" {
 
 **Fields:**
 - `FrameID`: Unique identifier
-- `DEPENDS_ON`: Required BASE system
-- `USES_SETTING`: Optional SETTING reference for world-building context
+- `DEPENDS_ON`: Required BASE system. A second line names an optional SETTING, for world-building context
 - `STARTING_CONDITIONS`: Character creation modifications. `MODIFICATIONS` holds them in the forms
   §8 already defines: `#hash ^"Property" SET value` for a starting value, and a property
   declaration with `MIN` / `MAX` for a range
@@ -2930,7 +3043,7 @@ FRAME "RichFrogFrame" {
     VERSION "0.1.0"
     SPEC_VERSION "0.6"
     DEPENDS_ON "L5R5e"
-    USES_SETTING "RichFrog"
+    DEPENDS_ON "RichFrog"
 
     THEMES {
         "Trade and espionage at the crossroads"
@@ -2986,8 +3099,8 @@ ARC "ArcID" {
     VERSION "1.0.0"
     SPEC_VERSION "0.6"
     DEPENDS_ON "BaseSystemID"
-    USES_SETTING "SettingID"        # optional
-    USES_EXTENSION "ExtensionID"    # optional, repeatable
+    DEPENDS_ON "SettingID"          # optional: a SETTING
+    DEPENDS_ON "ExtensionID"        # optional, repeatable: an EXTENSION
 
     THEMES {
         "Theme description"
@@ -3077,11 +3190,9 @@ ARC "ArcID" {
 
 **Fields:**
 - `ArcID`: Unique identifier
-- `DEPENDS_ON`: Required BASE system
-- `USES_SETTING`: Optional SETTING reference
-- `USES_EXTENSION`: Optional EXTENSION dependencies (repeatable)
+- `DEPENDS_ON`: Required BASE system. Further lines name an optional SETTING and any EXTENSIONs the arc needs
 - `CAST`: NPC roster — imported via `FROM <KIND> "id" INCLUDE [ … ]` or defined inline. The
-  `FROM` line is the declaration of that dependency; no `USES_` line is written for it
+  `FROM` line is the declaration of that dependency; no `DEPENDS_ON` line is needed for it
 - `LOCATION`: Place definitions. A SETTING's location is imported with `FROM SETTING "id" INCLUDE [ … ]`
 - `FLOW`: Scene sequencing grouped into PHASEs
 - `SCENE`: Individual narrative/gameplay units (see Scene Block Specification)
@@ -3095,7 +3206,7 @@ ARC "L5R5e_LostWriter" {
     VERSION "0.5.5"
     SPEC_VERSION "0.6"
     DEPENDS_ON "L5R5e_Core_Core"
-    USES_EXTENSION "L5R5e_Children_of_Five_Winds"
+    DEPENDS_ON "L5R5e_Children_of_Five_Winds"
 
     THEMES {
         "Duty versus ethics — must you obey orders that conflict with your conscience?"
@@ -3268,8 +3379,8 @@ CAMPAIGN "CampaignID" {
     VERSION "1.0.0"
     SPEC_VERSION "0.6"
     DEPENDS_ON "BaseSystemID"
-    USES_SETTING "SettingID"    # optional
-    USES_FRAME "FrameID"       # optional
+    DEPENDS_ON "SettingID"      # optional: a SETTING
+    DEPENDS_ON "FrameID"        # optional: a FRAME
 
     THEMES {
         "Overarching theme"
@@ -3296,9 +3407,7 @@ CAMPAIGN "CampaignID" {
 
 **Fields:**
 - `CampaignID`: Unique identifier
-- `DEPENDS_ON`: Required BASE system
-- `USES_SETTING`: Optional SETTING reference
-- `USES_FRAME`: Optional FRAME reference for campaign scaffolding
+- `DEPENDS_ON`: Required BASE system. Further lines name an optional SETTING and an optional FRAME, for campaign scaffolding
 - `RECURRING_CAST`: NPCs that persist across arcs
 - `FROM ARC`: References to constituent arcs in sequence
 - `PROGRESSION`: Downtime and advancement between arcs
@@ -3563,31 +3672,21 @@ ARC "MarketInquiry" {
 
 ### Cross-Container References
 
-Containers reference each other using three mechanisms: `DEPENDS_ON`, `USES_*`, and `FROM`.
+Containers reference each other using two mechanisms: `DEPENDS_ON` and `FROM`.
 
-**DEPENDS_ON** — Declares a required BASE system dependency:
+**DEPENDS_ON** — Names a file this one needs *(§3; v0.6, DECISION-55)*: its BASE system, and
+each EXTENSION, SETTING or FRAME, one line for each:
 ```
 DEPENDS_ON "BaseSystemID"
+DEPENDS_ON "SettingID"        # a SETTING, for world-building context
+DEPENDS_ON "FrameID"          # a FRAME, for campaign scaffolding
+DEPENDS_ON "ExtensionID"      # an EXTENSION, for additional mechanical content
 ```
 Used by: FRAME, ARC, CAMPAIGN, EXTENSION (with optional VERSION)
 
-**USES_SETTING** — References a SETTING for world-building context:
-```
-USES_SETTING "SettingID"
-```
-Used by: FRAME, ARC, CAMPAIGN
-
-**USES_FRAME** — References a FRAME for campaign scaffolding:
-```
-USES_FRAME "FrameID"
-```
-Used by: CAMPAIGN
-
-**USES_EXTENSION** — References an EXTENSION for additional mechanical content:
-```
-USES_EXTENSION "ExtensionID"
-```
-Used by: ARC
+Before v0.6 the last three were written `USES_SETTING`, `USES_FRAME` and `USES_EXTENSION`. Each
+is an older form: a **warning** in a file that declares a `SPEC_VERSION` below 0.6, or none, and
+an **error** in one that declares 0.6 or later.
 
 **FROM** — Cross-container import *(v0.6, DECISION-22)*:
 ```
@@ -3598,7 +3697,7 @@ FROM ARC "ArcID"
 FROM SETTING "SettingID" INCLUDE [#hash ^"Location Name"]
 ```
 A `FROM` names the kind of container it imports from, then the container's id. It is itself the
-declaration of that dependency: no `USES_` line is written for it. Each `INCLUDE` item is a
+declaration of that dependency: no `DEPENDS_ON` line is needed for it. Each `INCLUDE` item is a
 reference to something that container defines (§5d).
 
 A `FROM "id"` with no kind is the older spelling. It raises a **warning** in a file that declares
@@ -3631,24 +3730,24 @@ SCENE blocks sit inside an ARC, or inside an EXTENSION as reusable encounters
 | From | To | By |
 |---|---|---|
 | CAMPAIGN | BASE | `DEPENDS_ON` |
-| CAMPAIGN | SETTING | `USES_SETTING` |
-| CAMPAIGN | FRAME | `USES_FRAME`, `FROM FRAME` |
+| CAMPAIGN | SETTING | `DEPENDS_ON` |
+| CAMPAIGN | FRAME | `DEPENDS_ON`, `FROM FRAME` |
 | CAMPAIGN | ARC | `FROM ARC` |
 | ARC | BASE | `DEPENDS_ON` |
-| ARC | SETTING | `USES_SETTING`, `FROM SETTING` |
-| ARC | EXTENSION | `USES_EXTENSION`, `FROM EXTENSION` |
+| ARC | SETTING | `DEPENDS_ON`, `FROM SETTING` |
+| ARC | EXTENSION | `DEPENDS_ON`, `FROM EXTENSION` |
 | ARC | FRAME | `FROM FRAME` |
 | ARC | ARC | `FROM ARC` |
 | FRAME | BASE | `DEPENDS_ON` |
-| FRAME | SETTING | `USES_SETTING`, `FROM SETTING` |
+| FRAME | SETTING | `DEPENDS_ON`, `FROM SETTING` |
 | EXTENSION | BASE | `EXTENDS` |
 
 #### Dependency Rules
 
 1. **SETTING** has no dependencies — it is system-agnostic and self-contained
-2. **FRAME** requires exactly one BASE via `DEPENDS_ON` and optionally one SETTING via `USES_SETTING`
-3. **ARC** requires exactly one BASE via `DEPENDS_ON`, optionally one SETTING via `USES_SETTING`, and optionally one or more EXTENSIONs via `USES_EXTENSION`
-4. **CAMPAIGN** requires exactly one BASE via `DEPENDS_ON`, optionally one SETTING, and optionally one FRAME via `USES_FRAME`
+2. **FRAME** requires exactly one BASE and optionally one SETTING, each via `DEPENDS_ON`
+3. **ARC** requires exactly one BASE, optionally one SETTING, and optionally one or more EXTENSIONs, each via `DEPENDS_ON`
+4. **CAMPAIGN** requires exactly one BASE, optionally one SETTING, and optionally one FRAME, each via `DEPENDS_ON`
 5. **Cycles are forbidden** — no container may directly or transitively depend on itself
 6. **SCENE** blocks exist within ARCs or within EXTENSIONs (as standalone reusable encounters)
 7. A `FROM` names the kind of the container it imports from, and that container must be in the loaded set and be of that kind. The `FROM` line is itself a dependency of the file and counts under rule 5 *(v0.6, DECISION-22; before v0.6 this rule required the container to be declared a second time in the header)*
@@ -3679,7 +3778,7 @@ BASE "L5R5e_Core" {
         EXTENDS #L5R001aB2cD ^"Entity"
         PROPERTIES {
             REF OF ^"Clan" REQUIRED
-            REF OF ^"School"
+            REF OF ^"School" REQUIRED
             ^"School Rank" MIN 1 MAX 6 DEFAULT 1
             ^"Honor" MIN 0 MAX 100
             ^"Glory" MIN 0 MAX 100
@@ -3699,8 +3798,7 @@ BASE "L5R5e_Core" {
             ^"Techniques" LIST OF ^"Technique"
         }
         RULES {
-            #L5R004jK5lM: WHEN [^"Samurai" CREATED] THEN REQUIRE ^"Clan", ^"School"
-            #L5R005uV6wX: WHEN [^"Strife" > ^"Composure"] THEN ^"Samurai" IS compromised
+            #L5RGS18fG9hI1jK3lM5nO7p: ref_condition_compromised "Compromised: Effects: Cannot keep dice with (st) symbols (to a possible minimum of 0 kept dice). Their vigilance counts as 1.\n\nRemoved When: Strife is reduced to a value lower than or equal to their composure."
         }
     }
 
@@ -3815,10 +3913,6 @@ BASE "VTM5e_Core" {
                 ^"Resolve" MIN 1 MAX 5 DEFAULT 1
             }
             ^"Disciplines" LIST OF ^"Discipline"
-        }
-        RULES {
-            #vtm001abc: WHEN [^"Hunger" >= 5] THEN ^"Kindred" IS starving
-            #vtm002def: WHEN [^"Humanity" == 0] THEN ^"Kindred" IS lost_to_the_beast
         }
     }
 
@@ -4006,7 +4100,7 @@ These keywords are reserved by the base spec inside the narrative container name
 
 **CAMPAIGN:** `RECURRING_CAST`, `PROGRESSION`, `BETWEEN`, `AND`, `DOWNTIME`, `ADVANCEMENT`
 
-**Cross-container:** `DEPENDS_ON`, `USES_SETTING`, `USES_FRAME`, `USES_EXTENSION`, `FROM`, `INCLUDE`, `LEADS_TO`
+**Cross-container:** `DEPENDS_ON`, `FROM`, `INCLUDE`, `LEADS_TO`. `USES_SETTING`, `USES_FRAME` and `USES_EXTENSION` stay reserved and are not written from 0.6 (§3, DECISION-55)
 
 ---
 
@@ -4135,6 +4229,13 @@ every `MODIFY ^"X"` / `OVERRIDE ^"X"` target must resolve in the loaded corpus (
 alongside the per-directive rules in §13: `SET` against an undeclared property and `ADD_TO` /
 `REMOVE_FROM` against a non-`LIST` are errors; a colliding `ADD`, a `REMOVE_FROM` of an absent
 value, and an enum narrowed out from under a live instance are warnings.
+
+**Forms marked as likely to be replaced** *(v0.6, DECISION-53, DECISION-54)*. `ADD_TO`,
+`REMOVE_FROM`, `OVERRIDE` and `ADD … DEF` (§13), an `@n` occurrence index (§5c) and a
+`.selections` file (§24) each raise a **warning** wherever written, in a file of any
+`SPEC_VERSION`. So do `FORMALITY CONDITIONAL`, `FORMALITY FORMAL` and a `TRIGGER` inside a
+`HOOK` (§23). `FIAT` does not waive the warning. The validator does not read a `.selections`
+file: it reports each one it finds, and `check_constructs.py` checks the `SELECT` lines.
 
 **What counts as "defined."** *(v0.6, DECISION-24)* There are two tiers.
 
@@ -4537,6 +4638,9 @@ HOOKS {
   optional structured overlay for `CONDITIONAL`/`FORMAL`; its internal shape is open (as formal as
   authored). **`THEN`** lists the mechanic caret refs implicated (may be empty at `PROSE`).
 - Coherence: `FORMALITY` is one of the four levels; every `THEN`/`TRIGGER` ref resolves.
+- **Likely to be replaced** *(v0.6, DECISION-54)*: the levels `CONDITIONAL` and `FORMAL`, and
+  `TRIGGER`. Each reads as above, and the validator warns wherever one is written in a `HOOK`.
+  `PROSE` and `TAGGED` are not marked.
 
 ## 24. Optional & variant rules *(v0.5, DECISION-10)* — the `OPTIONAL` marker and `.selections`
 
@@ -4559,7 +4663,10 @@ in-corpus; a saga's actual choices live in a separate `.selections` file.
   the types/entities it applies to, or the literal `GLOBAL` for a wide rule. The DEF's `#hash` is how a
   `.selections` file names it.
 
-### `.selections` files
+### `.selections` files *(likely to be replaced, v0.6, DECISION-53)*
+
+The file kind is marked as likely to be replaced. It reads as below until then, and the
+validator warns for each `.selections` file it finds.
 
 A `.selections` file records a corpus's / campaign's user choices, as a DSL container so it round-trips
 through the same parser and validator:
@@ -4746,5 +4853,5 @@ ENTITY #hash ^"Name" {
 ---
 
 **Spec Version:** 0.5
-**Last Updated:** 2026-11-13
+**Last Updated:** 2026-11-14
 **Status:** Canonical (supersedes v0.4)

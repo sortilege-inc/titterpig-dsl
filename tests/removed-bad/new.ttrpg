@@ -1,0 +1,37 @@
+BASE "Removed_Bad_Core" {
+    NAME "DECISION-52 fixture — three removed forms in a file that declares 0.6: three errors"
+    SPEC_VERSION "0.6"
+    VERSION "1.0"
+    RELEASE_DATE "2026-11-14"
+
+    # Run:  ttrpg_validator.py tests/removed-bad      expect 3 errors, 3 warnings
+
+    #RmbWoundsA1b2C3d4E5f6G7 ^"Wounds" DEF {
+        DESCRIPTION "Characters suffer wounds of increasing severity."
+        # fault 1: REFERENCED BY was removed
+        REFERENCED BY { "Light Wound" <- #RmbCloseFleshH8j9K1m2N3 ^"Close the Flesh" }
+    }
+
+    #RmbCloseFleshH8j9K1m2N3 ^"Close the Flesh" DEF {
+        DESCRIPTION "The target heals a Light Wound."
+        # fault 2: MENTIONS is the 0.4 name of REFERENCES
+        MENTIONS {
+            "Light Wound" -> #RmbWoundsA1b2C3d4E5f6G7 ^"Wounds"
+        }
+    }
+
+    #RmbPotencyP4q5R6s7T8u9V ^"Blood Potency" DEF {
+        RULES {
+            #RmbSurgeW1x2Y3z4A5b6C7d: blood_surge "Blood Surge: The first printing of the rule."
+        }
+    }
+
+    #RmbTableE8f9G1h2J3k4M5n ^"Blood Surge Table" DEF { }
+
+    MODIFY #RmbPotencyP4q5R6s7T8u9V ^"Blood Potency" {
+        RULES {
+            # fault 3: the rule form MODIFY: … NOW REFERENCES was removed
+            #RmbSurgeW1x2Y3z4A5b6C7d MODIFY: blood_surge NOW REFERENCES #RmbTableE8f9G1h2J3k4M5n ^"Blood Surge Table"
+        }
+    }
+}

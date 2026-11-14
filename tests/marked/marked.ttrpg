@@ -1,0 +1,99 @@
+BASE "Marked" {
+    NAME "DECISION-53 and DECISION-54 fixture — the forms marked as likely to be replaced (§5c, §13, §23, §24)"
+    SPEC_VERSION "0.6"
+    VERSION "1.0"
+    RELEASE_DATE "2026-11-14"
+
+    # Run:
+    #   ttrpg_validator.py tests/marked        0 errors, 10 warnings: one for each line marked below
+    #                                          and one for marked.selections
+    #   check_references.py tests/marked
+    #   check_constructs.py tests/marked
+
+    #MrkSchoolA1b2C3d4E5f6G7 ^"School" DEF {
+        PROPERTIES {
+            ^"Roles" LIST
+        }
+    }
+
+    #MrkWoundsH7j8K9m1N2p3Q4 ^"Wounds" DEF {
+        DESCRIPTION "Characters suffer wounds of increasing severity."
+    }
+
+    #MrkFatigueR5s6T7u8V9w1X ^"Fatigue" DEF {
+        DESCRIPTION "A weary character loses a Fatigue level."
+    }
+
+    #MrkDefenderY2z3A4b5C6d7 ^"Hida Defender" DEF {
+        EXTENDS #MrkSchoolA1b2C3d4E5f6G7 ^"School"
+        PROPERTIES {
+            ^"Roles" ["Bushi", "Shinobi"]
+        }
+    }
+
+    #MrkOptionE8f9G1h2J3k4M5 ^"Constriction Attack" DEF {
+        OPTIONAL {
+            DEFAULT off
+            SCOPE [ GLOBAL ]
+            TEXT "Optional rule: a grappled opponent may be constricted."
+        }
+        DESCRIPTION "A creature may constrict an opponent it has grappled."
+    }
+
+    # marked: an @n occurrence index, on a REFERENCES line
+    #MrkRecoveryN6p7Q8r9S1t2 ^"Recovery" DEF {
+        DESCRIPTION "A Light Wound heals in a week. Rest also removes what a Light Wound cost in vigour."
+        REFERENCES {
+            "Light Wound"@1 -> #MrkWoundsH7j8K9m1N2p3Q4 ^"Wounds"
+        }
+        EMPHASIS {
+            "Light Wound"@2
+        }
+    }
+
+    # hooks (§23, DECISION-54): PROSE and TAGGED are not marked
+    #MrkAmuletB9c1D2e3F4g5H6 ^"Amulet of Mending" DEF {
+        DESCRIPTION "If the amulet is removed, the character makes a Recovery roll."
+        HOOKS {
+            HOOK {
+                FORMALITY PROSE
+                WHEN "the amulet is removed"
+            }
+            HOOK {
+                FORMALITY TAGGED
+                WHEN "the amulet is removed"
+                THEN [ #MrkWoundsH7j8K9m1N2p3Q4 ^"Wounds" ]
+            }
+            HOOK #MrkHookJ7k8M9n1P2q3R4s5 {
+                # marked: the level, and the TRIGGER below it
+                FORMALITY CONDITIONAL
+                WHEN "the amulet is removed or damaged"
+                TRIGGER { ANY [ "amulet removed", "amulet damaged" ] }
+                THEN [ #MrkWoundsH7j8K9m1N2p3Q4 ^"Wounds" ]
+            }
+            HOOK {
+                # marked: the level
+                FORMALITY FORMAL
+                WHEN "the amulet is removed"
+                THEN [ #MrkWoundsH7j8K9m1N2p3Q4 ^"Wounds" ]
+            }
+        }
+        # outside a HOOK, TRIGGER is a system's own keyword and is not marked
+        ACTIVATION {
+            TRIGGER "the wearer is wounded"
+        }
+    }
+
+    MODIFY #MrkDefenderY2z3A4b5C6d7 ^"Hida Defender" {
+        ADD_TO ^"Roles" "Courtier"
+        REMOVE_FROM ^"Roles" "Shinobi"
+    }
+
+    OVERRIDE #MrkFatigueR5s6T7u8V9w1X ^"Fatigue" {
+        DESCRIPTION "A weary character loses a Fatigue level, as the second printing has it."
+    }
+
+    ADD #MrkNewSchoolU3v4W5x6Y7z8 ^"Kuni Purifier" DEF {
+        EXTENDS #MrkSchoolA1b2C3d4E5f6G7 ^"School"
+    }
+}

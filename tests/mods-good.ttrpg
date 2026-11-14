@@ -1,7 +1,8 @@
 # Conformant §13 modification system — every directive in its legal form.
 # Validate together with good.ttrpg, which declares the targets:
 #     python3 ttrpg_validator.py tests/good.ttrpg tests/mods-good.ttrpg
-# Expected: 0 error(s), 0 warning(s).
+# Expected: 0 error(s), 4 warning(s): ADD_TO, REMOVE_FROM, OVERRIDE and ADD … DEF are marked as
+# likely to be replaced (v0.6, DECISION-53).
 
 EXTENSION "Demo_Core_Ext" {
     NAME "Demo System — conformant overlay"

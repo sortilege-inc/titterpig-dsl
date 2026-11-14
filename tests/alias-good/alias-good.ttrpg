@@ -1,0 +1,47 @@
+BASE "Alias_Good" {
+    NAME "DECISION-57 fixture — an alias is a second name of a hash (§5b)"
+    SPEC_VERSION "0.6"
+    VERSION "1.0"
+    RELEASE_DATE "2026-11-14"
+
+    # Run:
+    #   ttrpg_validator.py tests/alias-good      0 errors, 0 warnings
+    #   check_references.py tests/alias-good     0 errors
+    #   check_constructs.py tests/alias-good     0 errors
+
+    #AlgAdvantageA1b2C3d4E5f6 ^"Advantage" DEF { }
+
+    #AlgNinjoG7h8J9k1M2n3P4q5 ^"Ninjō" DEF {
+        EXTENDS #AlgAdvantageA1b2C3d4E5f6 ^"Advantage"
+        DESCRIPTION "A samurai's personal desire."
+    }
+
+    # an alias names the hash of the entity it renames
+    ALIAS ^"Ninjo" FOR #AlgNinjoG7h8J9k1M2n3P4q5
+    # a caret that opens the next line is the next statement, not the alias's target
+    ^"Ninjō" MODIFY {
+        SET DESCRIPTION "A samurai's personal desire, as the second printing has it."
+    }
+    # the target's own name may follow the hash on the line
+    ALIAS ^"Desire" FOR #AlgNinjoG7h8J9k1M2n3P4q5 ^"Ninjō"
+
+    # with its hash, an alias is written wherever the entity's own name is
+    #AlgGiriR6s7T8u9V1w2X3y4 ^"Giri" DEF {
+        EXTENDS #AlgAdvantageA1b2C3d4E5f6 ^"Advantage"
+        DESCRIPTION "Giri pulls against Ninjo, and against Desire."
+        REFERENCES {
+            "Ninjo" -> #AlgNinjoG7h8J9k1M2n3P4q5 ^"Ninjo"
+            "Desire" -> #AlgNinjoG7h8J9k1M2n3P4q5 ^"Desire"
+        }
+        PROPERTIES {
+            ^"Opposes" [ #AlgNinjoG7h8J9k1M2n3P4q5 ^"Ninjo" ]
+        }
+        HOOKS {
+            HOOK {
+                FORMALITY TAGGED
+                WHEN "a samurai follows desire over duty"
+                THEN [ #AlgNinjoG7h8J9k1M2n3P4q5 ^"Desire" ]
+            }
+        }
+    }
+}

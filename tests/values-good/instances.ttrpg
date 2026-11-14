@@ -35,7 +35,7 @@ EXTENSION "Values_Instances" {
         }
     }
 
-    # an alias chain that ends
+    # two aliases of one entity: each names its hash (v0.6, DECISION-57)
     ALIAS ^"Bushi" FOR #ValActorH2nV6kQ9wX3mC7pL ^"Samurai"
-    ALIAS ^"Warrior" FOR ^"Bushi"
+    ALIAS ^"Warrior" FOR #ValActorH2nV6kQ9wX3mC7pL
 }

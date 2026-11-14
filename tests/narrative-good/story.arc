@@ -8,7 +8,7 @@ ARC "Demo_Narrative_Arc" {
     FROM SETTING "Demo_Narrative_Setting" INCLUDE [ #NarDemoRiverCityJJJJJJJJ ^"The River City" ]
 
     CAST {
-        # the FROM line is the declaration: no USES_ line is needed for it
+        # the FROM line is the declaration: no DEPENDS_ON line is needed for it
         FROM EXTENSION "Demo_Narrative_NPCs" INCLUDE [
             #NarDemoGovernorBBBBBBBBBB ^"The Governor",
             #NarDemoSpiritCCCCCCCCCCCC ^"The Spirit"

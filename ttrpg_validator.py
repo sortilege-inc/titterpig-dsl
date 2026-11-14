@@ -128,6 +128,11 @@ ACTOR FILES (spec §2, DECISION-28). An .actor file is an EXTENSION file of inst
     file that declares SPEC_VERSION below 0.6, ERROR from 0.6).
   - a wrapped .actor declares SPEC_VERSION as any file does.
 
+FORMS MARKED AS LIKELY TO BE REPLACED (spec §5c, §13, §23, §24, DECISION-53, DECISION-54). A
+WARNING wherever one is written, at any SPEC_VERSION, with no FIAT: ADD_TO and REMOVE_FROM;
+OVERRIDE; ADD … DEF; an @n occurrence index after a string; a .selections file, which is
+reported and not read; and, inside a HOOK, FORMALITY CONDITIONAL, FORMALITY FORMAL and TRIGGER.
+
 VALUES AGAINST DECLARATIONS (spec §5, §5b, §6, §8, DECISION-32).
 
   - errors at every version: an EXTENDS cycle; an ALIAS cycle; a bound reference with more
@@ -180,8 +185,11 @@ version x or later. Versions are compared part by part, numbers as numbers; a pi
 parts is met by any version that begins with it. A loaded parent that is older is an ERROR; a
 parent that declares no VERSION is a WARNING.
 
-DEPENDENCIES (spec §3, DECISION-36). A file depends on every id it names with DEPENDS_ON and
-on the id its header EXTENDS.
+DEPENDENCIES (spec §3, DECISION-36, DECISION-55). A file depends on every id it names with
+DEPENDS_ON and on the id its header EXTENDS. The id is that of any loaded file: a BASE, an
+EXTENSION, a SETTING, a FRAME, an ARC or a CAMPAIGN. USES_EXTENSION, USES_SETTING and USES_FRAME
+are the older forms of the line: a WARNING in a file that declares SPEC_VERSION below 0.6, an
+ERROR from 0.6. The older line is reported and not checked as a dependency.
 
   - errors at every version: a DEPENDS_ON that names no loaded file; two files that depend on
     each other, through any chain.
@@ -227,6 +235,10 @@ MODIFIER_KW = ('REQUIRED', 'FIXED', 'DEFAULT', 'MIN', 'MAX', 'FIAT')
 # The type keywords a file at 0.6 or later does not write (DECISION-39).
 DROPPED_TYPE_KW = ('STRING', 'INTEGER', 'BOOLEAN')
 CHANGE_METHODS = ('ADD', 'SUBTRACT', 'MULTIPLY', 'DIVIDE')
+# Forms marked as likely to be replaced (v0.6, DECISION-53 and DECISION-54): a warning wherever
+# one is written, at any SPEC_VERSION. Each reads as before until a replacement is ruled.
+LIKELY_REPLACED = ('%s is marked as likely to be replaced (%s, %s); it reads as '
+                   'before until a replacement is ruled')
 EMPHASIS_KINDS = ('BOLD', 'ITALIC')      # v0.6, DECISION-19 (§5c)
 CONTAINER_KINDS = ('BASE', 'EXTENSION', 'SETTING', 'FRAME', 'ARC', 'CAMPAIGN')    # §3, §16
 # Keywords whose `#hash ^"Name" {` names something that exists already, and so declare no block.
@@ -414,6 +426,10 @@ def tokenize(text, fname, findings):
                 j += 1
             w = text[i:j]
             toks.append(Tok('BOOL' if w in ('true', 'false') else 'ID', w, line)); i = j; continue
+        if c == '@' and i > 0 and text[i - 1] == '"' and i + 1 < n and text[i + 1].isdigit():
+            # "surface"@n (§5c): marked as likely to be replaced (v0.6, DECISION-53).
+            findings.append(Finding(fname, 'lint', 'warning', line, LIKELY_REPLACED % (
+                'an @n occurrence index', '§5c', 'DECISION-53')))
         i += 1  # unknown char — skip
     return toks
 
@@ -1330,6 +1346,7 @@ def analyze_file(fname, text, findings):
     adds = []                            # §13 ADD ^"X" DEF sites: (name, line)
     reprints = []                        # REPRINT ^"X" sites: (name, line)  (DECISION-14)
     aliases = []                         # ALIAS ^"A" FOR ^"B" sites: (alias, target, line)  (§5b)
+    alias_hashes = []                    # ALIAS ^"A" FOR #hash: (alias, hash, line)  (DECISION-57)
     chooses = []                         # CHOOSE n OF ^"T" WITH { } sites  (§5b, DECISION-15)
     ref_values = []                      # ^"P" REF ^"Entity" sites: (owner, prop, entity, line)  (§8)
     rolls = []                           # ROLL n OF ^"Die" sites: (die, line)  (§8, DECISION-18)
@@ -1672,10 +1689,20 @@ def analyze_file(fname, text, findings):
                and k + 1 < len(toks) and toks[k + 1].kind == 'CARET':
                 refs.append(('list of', toks[k + 1].val, None, toks[k + 1].line))
         elif w == 'ALIAS':
-            # ALIAS ^"new" FOR ^"existing"  (DECISION-6): the alias name resolves
-            # as a defined name; the FOR target must resolve.
+            # ALIAS ^"new" FOR #hash [^"existing"]  (§5b, DECISION-6, DECISION-57): the alias is
+            # a second name of the entity that carries the hash. The alias name resolves as a
+            # defined name, and `#hash ^"new"` is a pair that agrees. The target's own name may
+            # follow the hash on the same line (§8, where a statement ends). FOR with no hash is
+            # the older form, and so is `ALIAS "name"` inside a DEF, which no tool ever read: a
+            # warning in a file below 0.6, an error from 0.6.
             k = idx + 1
-            if k < len(toks) and toks[k].kind == 'CARET':
+            gated = 'error' if spec_version >= (0, 6) else 'warning'
+            if k < len(toks) and toks[k].kind == 'STR':
+                findings.append(Finding(fname, 'lint', gated, t.line,
+                                        'ALIAS "%s" declares nothing: an alias is the statement '
+                                        'ALIAS ^"%s" FOR #hash, with the hash of the entity it '
+                                        'renames (§5b)' % (toks[k].val, toks[k].val)))
+            elif k < len(toks) and toks[k].kind == 'CARET':
                 defined_names.setdefault(toks[k].val, []).append(t.line)
                 k += 1
                 if k < len(toks) and toks[k].kind == 'ID' and toks[k].val == 'FOR':
@@ -1683,9 +1710,23 @@ def analyze_file(fname, text, findings):
                     hsh = None
                     if k < len(toks) and toks[k].kind == 'HASH':
                         hsh = toks[k].val; k += 1
-                    if k < len(toks) and toks[k].kind == 'CARET':
-                        refs.append(('alias target', toks[k].val, hsh, toks[k].line))
-                        aliases.append((toks[idx + 1].val, toks[k].val, t.line))
+                    tgt = None
+                    if k < len(toks) and toks[k].kind == 'CARET' \
+                            and (hsh is None or toks[k].line == toks[k - 1].line):
+                        tgt = toks[k].val
+                    if hsh is not None:
+                        alias_hashes.append((toks[idx + 1].val, hsh, t.line))
+                        if tgt is None:
+                            hash_refs.append(('alias target', hsh, t.line))
+                    elif tgt is not None:
+                        findings.append(Finding(fname, 'lint', gated, t.line,
+                                                'ALIAS ^"%s" FOR ^"%s" names its target with no hash: '
+                                                'an alias is a second name of a hash, ALIAS ^"%s" FOR '
+                                                '#hash (§5b)' % (toks[idx + 1].val, tgt, toks[idx + 1].val)))
+                    if tgt is not None:
+                        refs.append(('alias target', tgt, hsh, toks[k].line))
+                    if hsh is not None or tgt is not None:
+                        aliases.append((toks[idx + 1].val, tgt, t.line))
         elif w == 'REPRINT':
             # REPRINT [#hash] ^"existing"  (v0.5 addendum, DECISION-14): a pointer to an
             # entity this book prints unchanged. It declares nothing; the target resolves.
@@ -2363,9 +2404,9 @@ def analyze_file(fname, text, findings):
                         refs.append(('choice option', tk.val, None, tk.line))
                     k += 1
         elif w == 'MODIFY':
-            # §13 has two block spellings — `MODIFY ^"X" { }` and `^"X" MODIFY { }` —
-            # and one non-statement use, `#hash MODIFY: rule text` inside RULES, which
-            # names no target and must not be mistaken for either.
+            # §13 has two block spellings — `MODIFY ^"X" { }` and `^"X" MODIFY { }`. The older
+            # rule form `#hash MODIFY: rule text` inside RULES (removed in v0.6, reported
+            # below) names no target and must not be mistaken for either.
             nxt = toks[idx + 1] if idx + 1 < len(toks) else None
             tgt, hsh, lb = None, None, None
             if nxt is None or nxt.kind == 'COLON':
@@ -2476,8 +2517,8 @@ def analyze_file(fname, text, findings):
         if a.kind == 'HASH' and b.kind == 'COLON' and c.kind == 'ID' and a.line == b.line == c.line \
                 and (k + 3 >= len(toks) or toks[k + 3].line != a.line):
             findings.append(Finding(fname, 'lint', 'warning', a.line,
-                                    "rule %s (%s) has no text: give it the source's statement of the rule, "
-                                    "or a structured WHEN … THEN (§12)" % (a.val, c.val)))
+                                    "rule %s (%s) has no text: give it the source's statement of the rule "
+                                    "(§12)" % (a.val, c.val)))
     # Markdown emphasis inside a string (§5c, DECISION-19). The span belongs in an EMPHASIS or
     # LABEL block beside the text. A warning in a file below 0.6, an error from 0.6. A FIAT on
     # the property's line, or on the DEF around it, excuses asterisks the source prints.
@@ -2498,6 +2539,93 @@ def analyze_file(fname, text, findings):
                                 'string holds Markdown emphasis (%s): record each span in an EMPHASIS '
                                 'or LABEL block beside the text, or FIAT "reason" where the source '
                                 'prints the asterisks (§5c)' % what))
+    # Three forms removed in v0.6 (DECISION-52): a warning in a file below 0.6, an error from 0.6.
+    for i, tk in enumerate(toks):
+        if tk.kind != 'ID':
+            continue
+        nxt = toks[i + 1] if i + 1 < len(toks) else None
+        msg = None
+        if tk.val == 'MENTIONS' and nxt is not None and nxt.kind == 'LBRACE':
+            msg = ('MENTIONS is the 0.4 name of the REFERENCES block and was removed in v0.6: '
+                   'write REFERENCES (§5c)')
+        elif tk.val == 'REFERENCED' and nxt is not None and nxt.kind == 'ID' and nxt.val == 'BY':
+            msg = ('REFERENCED BY was removed in v0.6: what refers to an entity is read from '
+                   'the REFERENCES blocks that name it (§5c)')
+        elif tk.val == 'MODIFY' and nxt is not None and nxt.kind == 'COLON' \
+                and i > 0 and toks[i - 1].kind == 'HASH':
+            msg = ('the rule form `#hash MODIFY: …` was removed in v0.6: to change a rule, write '
+                   'it whole under its hash in the RULES block of a MODIFY (§13)')
+        if msg:
+            findings.append(Finding(fname, 'lint', 'error' if spec_version >= (0, 6) else 'warning',
+                                    tk.line, msg))
+    # The rule form `WHEN [condition] THEN action` is removed (v0.6, DECISION-56): a warning in a
+    # file below 0.6, an error from 0.6. Reported once for a rule, where WHEN opens it: after the
+    # hash's colon, after the block's brace, or first on its line. A HOOK's WHEN takes a string.
+    for i, tk in enumerate(toks):
+        if tk.kind == 'ID' and tk.val == 'WHEN' and i + 1 < len(toks) and toks[i + 1].kind == 'LBRACK' \
+                and (i == 0 or toks[i - 1].kind in ('COLON', 'LBRACE') or toks[i - 1].line < tk.line):
+            findings.append(Finding(fname, 'lint', 'error' if spec_version >= (0, 6) else 'warning',
+                                    tk.line, 'the rule form `WHEN [condition] THEN action` was removed in '
+                                    'v0.6: a rule is a label with the source\'s text, '
+                                    '`#hash: label "text"` (§12)'))
+    # USES_EXTENSION, USES_SETTING and USES_FRAME are folded into DEPENDS_ON (v0.6, DECISION-55):
+    # a warning in a file below 0.6, an error from 0.6. The line is reported and not read as a
+    # dependency; written as DEPENDS_ON it is checked as one.
+    for i, tk in enumerate(toks):
+        if tk.kind == 'ID' and tk.val in ('USES_EXTENSION', 'USES_SETTING', 'USES_FRAME') \
+                and i + 1 < len(toks) and toks[i + 1].kind == 'STR':
+            findings.append(Finding(fname, 'lint', 'error' if spec_version >= (0, 6) else 'warning',
+                                    tk.line, '%s is an older form: a file names every file it '
+                                    'needs with DEPENDS_ON "%s" (§3)' % (tk.val, toks[i + 1].val)))
+    # Forms marked as likely to be replaced (DECISION-53): a warning at any SPEC_VERSION.
+    for i, tk in enumerate(toks):
+        if tk.kind != 'ID' or tk.val not in ('ADD_TO', 'REMOVE_FROM', 'OVERRIDE', 'ADD'):
+            continue
+        k = i + 1
+        if k < len(toks) and toks[k].kind == 'HASH':
+            k += 1
+        if k >= len(toks) or toks[k].kind != 'CARET':
+            continue
+        if tk.val == 'ADD':
+            if not (k + 1 < len(toks) and toks[k + 1].kind == 'ID' and toks[k + 1].val == 'DEF'):
+                continue
+            what = 'ADD … DEF'
+        else:
+            what = tk.val
+        findings.append(Finding(fname, 'lint', 'warning', tk.line, LIKELY_REPLACED % (what, '§13', 'DECISION-53')))
+    # The two upper hook levels and TRIGGER (§23, DECISION-54), marked the same way. Read inside
+    # a HOOK only: outside one, TRIGGER is a system's own keyword (§15).
+    i = 0
+    while i < len(toks):
+        tk = toks[i]
+        k = i + 1
+        if tk.kind == 'ID' and tk.val == 'HOOK':
+            if k < len(toks) and toks[k].kind == 'HASH':
+                k += 1
+        if not (tk.kind == 'ID' and tk.val == 'HOOK' and k < len(toks) and toks[k].kind == 'LBRACE'):
+            i += 1
+            continue
+        depth, j = 0, k
+        while j < len(toks):
+            t2 = toks[j]
+            if t2.kind == 'LBRACE':
+                depth += 1
+            elif t2.kind == 'RBRACE':
+                depth -= 1
+                if depth == 0:
+                    break
+            elif depth == 1 and t2.kind == 'ID':
+                what = None
+                if t2.val == 'TRIGGER':
+                    what = 'TRIGGER in a HOOK'
+                elif t2.val == 'FORMALITY' and j + 1 < len(toks) and toks[j + 1].kind == 'ID' \
+                        and toks[j + 1].val in ('CONDITIONAL', 'FORMAL'):
+                    what = 'FORMALITY %s' % toks[j + 1].val
+                if what:
+                    findings.append(Finding(fname, 'lint', 'warning', t2.line,
+                                            LIKELY_REPLACED % (what, '§23', 'DECISION-54')))
+            j += 1
+        i = j + 1
     for tk in toks:
         # A hash is `#` and 16 or more of [A-Za-z0-9] (§5). Shorter, or with an underscore:
         # a warning in a file below 0.6, an error from 0.6 (DECISION-32).
@@ -2521,7 +2649,8 @@ def analyze_file(fname, text, findings):
         'depends': depends, 'file_ids': file_ids,
         'waived_ranges': waived_ranges, 'waived_lines': waived_lines,
         'def_props': def_props, 'def_extends': def_extends, 'mods': mods, 'adds': adds,
-        'reprints': reprints, 'aliases': aliases, 'chooses': chooses, 'ref_values': ref_values,
+        'reprints': reprints, 'aliases': aliases, 'alias_hashes': alias_hashes,
+        'chooses': chooses, 'ref_values': ref_values,
         'rolls': rolls, 'tables': tables, 'containers': containers, 'froms': froms,
         'block_types': block_types, 'block_names': block_names, 'block_anchors': block_anchors,
         'block_anchor_lines': block_anchor_lines, 'anchor_names': anchor_names, 'origins': origins,
@@ -2741,6 +2870,8 @@ def coherence_pass(files_data, findings):
         if d.get('kind') != 'bridge':
             corpus_names.update(d['names'])
             corpus_file_ids.update(d['file_ids'])
+            # a SETTING, FRAME, ARC or CAMPAIGN is a file a DEPENDS_ON may name (§3, DECISION-55)
+            corpus_file_ids.update(d.get('containers', {}))
         for h, lines in d['anchors'].items():
             for ln in lines:
                 all_anchors.setdefault(h, []).append((d['file'], ln))
@@ -3056,8 +3187,9 @@ def site_pass(files_data, findings):
     SPEC_VERSION below 0.6, or none, and an error from 0.6; FIAT waives. A hash that is no
     anchor; a hash whose anchor has another name; a name with no hash that names nothing, or
     that more than one entity carries. A list member with no hash that names one entity is a
-    warning at every version: a reference should carry its hash. A member that is an ALIAS is
-    not warned: an alias has no hash."""
+    warning at every version: a reference should carry its hash, and a member that is an ALIAS
+    carries the hash its alias names (DECISION-57). An alias in the older form, FOR a name, has
+    no hash and is not warned."""
     hash_names, entities, names, alias_names = {}, {}, set(), set()
     for d in files_data:
         if d.get('kind') == 'bridge':
@@ -3071,6 +3203,13 @@ def site_pass(files_data, findings):
             hash_names.setdefault(h, set())
         for x in d.get('vdefs', []):
             entities.setdefault(x['name'], set()).add(x['hash'])
+    # An alias is a second name of the hash it names (§5b, DECISION-57): `#hash ^"alias"` agrees.
+    hashed_aliases = set()
+    for d in files_data:
+        for al, h, _ln in d.get('alias_hashes', []):
+            hashed_aliases.add(name_key(al))
+            if h in hash_names:
+                hash_names[h].add(name_key(al))
     for d in files_data:
         sev_gated = 'error' if d.get('spec_version', (0, 0)) >= (0, 6) else 'warning'
         for kind, name, hsh, line in d.get('site_refs', []):
@@ -3097,7 +3236,8 @@ def site_pass(files_data, findings):
                 findings.append(Finding(d['file'], 'coherence', sev_gated, line,
                                         '%s, ^"%s", is ambiguous: %d entities carry the name; '
                                         'add the #hash (§5d)' % (what, name, len(entities[nm]))))
-            elif nm not in alias_names:             # an ALIAS has no hash of its own to carry
+            elif nm not in alias_names or nm in hashed_aliases:
+                # an alias written in the older form, FOR a name, has no hash to carry
                 findings.append(Finding(d['file'], 'coherence', 'warning', line,
                                         '%s, ^"%s", has no hash: a reference should carry its '
                                         '#hash (§5d)' % (what, name)))
@@ -3868,9 +4008,23 @@ def collect_paths(args):
                         files.append(os.path.join(root, nm))
         elif p.endswith(exts):
             files.append(p)
-        else:
+        elif not p.endswith('.selections'):
             print("skipping non-DSL path: %s" % p, file=sys.stderr)
     return sorted(files)
+
+
+def collect_selections(args):
+    """Every .selections file among the arguments. The validator does not read one
+    (check_constructs.py checks its SELECT lines); it reports that the file kind is
+    marked as likely to be replaced (§24, DECISION-53)."""
+    out = []
+    for p in args:
+        if os.path.isdir(p):
+            for root, _, names in os.walk(p):
+                out.extend(os.path.join(root, nm) for nm in names if nm.endswith('.selections'))
+        elif p.endswith('.selections'):
+            out.append(p)
+    return sorted(out)
 
 
 def main(argv):
@@ -3889,7 +4043,8 @@ def main(argv):
               file=sys.stderr)
         return 2
     paths = collect_paths(args)
-    if not paths:
+    selections = collect_selections(args)
+    if not paths and not selections:
         print("no .ttrpg files found", file=sys.stderr)
         return 2
 
@@ -3906,6 +4061,9 @@ def main(argv):
         corpora[ed] = load_corpus_names(d, corpus_index[ed])
 
     findings, files_data, notes = [], [], []
+    for path in selections:
+        findings.append(Finding(path, 'lint', 'warning', 1, LIKELY_REPLACED % (
+            'a .selections file', '§24', 'DECISION-53')))
     for path in paths:
         try:
             with open(path, encoding='utf-8') as fh:

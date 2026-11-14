@@ -2114,7 +2114,12 @@ rules record that it misreads it). F5 gains the `BASE` rename.
 
 ### C6. Specified and unused
 
-**Status:** open
+**Status:** closed 2026-11-14 by the owner. Committed and pushed on branch `0.6`. Its seven
+parts were ruled one at a time: no "provisional" status; three forms removed (DECISION-52);
+four forms marked as likely to be replaced (DECISION-53); two hook levels and `TRIGGER` marked
+the same way (DECISION-54); the three `USES_` lines folded into `DEPENDS_ON` (DECISION-55); the
+rule form `WHEN […] THEN` removed (DECISION-56); an alias as a second name of a hash
+(DECISION-57). The corpus work is F31 to F34.
 
 Counts over the `0.5/` directories of all 21 corpus repos:
 
@@ -2135,6 +2140,379 @@ Counts over the `0.5/` directories of all 21 corpus repos:
 
 `RULES` with a slug and text (§12) is an l5r5e form (1,374 rules). Later corpora state rules as
 DEFs with a `DESCRIPTION`.
+
+**Evidence, recounted 2026-11-14.** Two counts, by token, with comments and strings left out:
+the 22 corpus directories (7,055 files), and seven repos outside them (202 files: six
+third-party repos and expanse, which is still 0.4). The three bridge files were counted for
+the bridge keywords. Every keyword of §15 and §18 was counted, so the list of what nothing
+writes is taken from the spec's own lists.
+
+The first table was wrong in three rows, and its scope left out the third-party repos.
+
+| Construct | First table | The 22 directories | The seven other repos |
+|---|---|---|---|
+| `ALIAS ^"A" FOR ^"B"` | 0 | 4 (armdef) | 0 |
+| `OVERRIDE` | 0 | 0 | 3 (l5r5e-3rdparty, three errata files) |
+| `ADD … DEF` | 0 | 0 | 74 (l5r5e-3rdparty 72, dnd5e-3rdparty 2) |
+| `REFERENCED BY` | 0 | 0 | 0 |
+| `@n` occurrence index | 0 | 0 | 0 |
+| `.selections` files | 0 | 0 | 0 |
+| `HOOKS` | 3 | 3 (arm5e), each `FORMALITY TAGGED` | 0 |
+| `OPTIONAL { }` | 15 | 16 in six corpora, 15 of them `DEFAULT off` | 1 |
+| bound reference `^"X"(…)` | 2 | 109, in three armdef files | 0 |
+| `PARAMETERS { }` | 176 | 263 (armdef 87, arm5e 86, vtm5e 80, callofcthulhu7e 9, l5r5e 1) | 10 |
+| a rule `WHEN […] THEN` | 23 | 23 in seven corpora | 4 (expanse) |
+| a rule with a label and text | 1,374 | 1,374 (l5r5e) | 141 (l5r5e-3rdparty) |
+| a rule with a label alone | | 15 (armdef 14, arm5e 1) | 49 (l5r5e-3rdparty) |
+| bare constraint (§9) | 110 | 105 (l5r5e 60, eight others 45) | 7 (expanse) |
+| `MODIFY` | 392 | 603 (arm5e 316, armdef 211, l5r5e 69, vtm5e 7) | 39 |
+
+- **Most `MODIFY` blocks add guidance.** 567 of the 603 hold a `GUIDANCE` block and nothing
+  else. 33 hold a `SET` and 38 a `PROPERTIES` block.
+- **l5r5e and vtm5e write `ALIAS "name"` inside a DEF,** 9 times, for a second spelling of the
+  entity's own name (`^"Ninjō" DEF { ALIAS "Ninjo" …`). §5b's `ALIAS` is a statement outside the
+  DEF, and §15 reserves the word everywhere. No tool reports the 9 lines.
+- **Every bridge keyword is written** in at least one of the three bridges.
+
+**What nothing writes.** These forms are older than 0.6, and no file in the 29 directories or
+the three bridges writes them.
+
+| Form | Fixture | What reads it |
+|---|---|---|
+| `ADD_TO`, `REMOVE_FROM` (§13) | two fixture files | the validator checks both; the synthesist parses them |
+| `#hash MODIFY: label NOW REFERENCES …` (§13, "MODIFY in Rules") | none | nothing |
+| `REFERENCED BY` (§5c) | one fixture, one sample | `check_references.py` checks it against the `REFERENCES` it mirrors |
+| `"surface"@n` (§5c) | none | `check_references.py` reads past the number and does not use it |
+| `MENTIONS` (§5c, the 0.4 name of `REFERENCES`) | none | read as `REFERENCES` |
+| `SELECTIONS`, `SELECT` (§24) | the sample file | `check_constructs.py`; the synthesist does not |
+| `FORMALITY PROSE`, `CONDITIONAL`, `FORMAL`; `TRIGGER` in a `HOOK` (§23) | the sample has `CONDITIONAL` | `check_constructs.py` checks the level is one of the four; nothing reads a `TRIGGER` |
+| `USES_SETTING`, `USES_FRAME` (§16) | none | nothing |
+
+- **One case in the corpora is what `@n` is for.** arm5e's *Realms of Power: Magic* lists the
+  surface "Magical Meditation" twice in one `REFERENCES` block, with two hashes (mirrored in
+  armdef). It is the only surface with two targets in 3,694 blocks.
+- **`USES_EXTENSION` is written and read by nothing.** 17 lines (teeth 14, l5r5e 2,
+  curseborne 1). Three of the 15 ids they name are declared by no file (`teeth-cotillion`,
+  `teeth-hogmen`, `teeth-stranger`). DECISION-36 names `DEPENDS_ON` and the header `EXTENDS`
+  as what a file depends on, and says nothing of a `USES_` line.
+- **The 27 `WHEN […] THEN` rules are written by the converter, in its own words.** They sit in
+  eight core base files (`WHEN [^"Character" makes an attack roll] THEN roll 1d20 + ability
+  modifier + …`). No tool reads the condition or the action. l5r5e's first one,
+  `WHEN [^"Entity" CREATED] THEN REQUIRE ^"Name"`, is what `REQUIRED` now says (DECISION-34).
+- **New in 0.6 and not yet written:** `TRANSFORM`, `SITUATIONAL`, `REF OF`, `AXIS`, `AT`,
+  `WEIGHT`, `NEXT`, `WITH`, `INDISTINCT`, `LABEL`, `EMPHASIS BOLD` and `ITALIC`, and `ORIGIN`
+  in a port. The corpora declare 0.5, and the follow-ups hold their migrations (F4, F6, F7,
+  F9, F14, F24, F26). l5r5e already writes `CHOOSE` (308), `DISTINCT` (4), `FACES` (2) and
+  `ROLL` (7).
+
+*Proposed 2026-11-14,* and ruled one part at a time, below.
+
+1. The spec gains no "provisional" status: each form nothing writes is either removed or kept.
+2. Remove four: the rule form `MODIFY: … NOW REFERENCES`; `REFERENCED BY`; `MENTIONS`;
+   `USES_SETTING` and `USES_FRAME`. Each is an older form: a warning below 0.6 and an error
+   from 0.6.
+3. Keep four as they are: `ADD_TO` and `REMOVE_FROM`; `@n`; `.selections`; `OVERRIDE` and
+   `ADD … DEF` (written in the third-party repos).
+4. Hooks keep two levels, `PROSE` and `TAGGED`. `CONDITIONAL`, `FORMAL` and the `TRIGGER`
+   overlay go: the spec gives a `TRIGGER` no shape, so no tool can check one.
+5. `USES_EXTENSION` is a dependency like `DEPENDS_ON`, and the validator checks that it names
+   a loaded file.
+6. The rule form `WHEN […] THEN` goes. A rule is a label with the book's text, or a DEF with
+   a `DESCRIPTION`.
+7. `ALIAS "name"` inside a DEF is reported: `ALIAS` is the §5b statement.
+
+**Part 1, ruled 2026-11-14: no "provisional" status.** Owner: "I agree to no provisional
+status". The spec gains no mark for a form nothing writes, and candidate improvement 7 is not
+taken. Each such form is ruled on its own in parts 2 to 4. Nothing in the spec, the grammar or
+a tool changes for this part.
+
+He asked for two things to be taken up once the C findings are done. They are listed under
+*To revisit once C1 to C9 are closed*, after C9.
+
+**Part 2, ruled 2026-11-14: three forms removed (DECISION-52).** Owner: "a. remove the form.
+b. remove. c. remove the alias, and rewrite that half of §5c with REFERENCES."
+
+Before he ruled, the agent took `USES_SETTING` and `USES_FRAME` out of this part and put them
+with `USES_EXTENSION` in part 5, so that one rule covers the three lines. He ruled on the three
+forms that were left.
+
+- **a. The rule form `#hash MODIFY: label NOW REFERENCES …`.** §13's "MODIFY in Rules" is now
+  "Changing a rule": a `MODIFY` changes a rule by writing it whole, under its hash, in a `RULES`
+  block, and the entry replaces the rule. The example is l5r5e's 2020 erratum to the Rhinoceros
+  rule `rhino_charge`, which is written that way.
+- **b. `REFERENCED BY`.** §5c no longer defines it. What refers to an entity is read from the
+  `REFERENCES` blocks that name it.
+- **c. `MENTIONS`.** The alias is gone, and the half of §5c that still taught the block under
+  its 0.4 name is written with `REFERENCES`.
+
+Each of the three is a warning in a file that declares a `SPEC_VERSION` below 0.6, or none, and
+an error in one that declares 0.6 or later.
+
+*Applied.* Spec: §0 item 39, DECISION-52, §5c, §5d's list of sites, §13, §15, and a note on the
+0.5 record and on DECISION-11. Validator: one finding for each form. `check_references.py`
+reads past a `REFERENCED BY` block and no longer checks it against the `REFERENCES` it
+mirrored; the bookkeeping for that check is removed. The grammar changes in its comments
+only: it still reads `MENTIONS` and `REFERENCED BY` for a file below 0.6, and it has refused
+the `MODIFY:` rule form since B1, so the spec's own §13 example never passed its grammar. Guidelines: two lines.
+README: the tool table and the fixture list. `tests/embedded-good` and the 0.5 sample each lose
+their `REFERENCED BY` block. New: `tests/removed-good` and `tests/removed-bad`.
+
+| Check | Result |
+|---|---|
+| `tests/removed-good` in the validator, `check_references.py`, the grammar | 0 errors and 0 warnings; 0 errors; accepted |
+| `tests/removed-bad` in the validator | 3 errors (the file that declares 0.6) and 3 warnings (the one that declares 0.5) |
+| `tests/removed-bad` in the validator before the change | 0 errors, 0 warnings |
+| the §13 example, with a DEF for it to modify, run as a file | validator 0 errors, 0 warnings; grammar accepted |
+| the fixture run against the run at the C5 commit | the same, but for the two new sets, `embedded-good`'s `referenced-by` count (1, now 0) and the grammar's count |
+| both grammar gates | 59 of 59 good files accepted; 17 of 17 planted faults refused |
+| `samples/` in the four tools | validator 0 errors, 0 warnings; `check_references.py` 0 errors; `check_constructs.py` 0 errors; grammar 3 of 3 accepted |
+| validator, before against after, 22 corpus directories | identical output in all 22: 39 errors, 22,518 warnings |
+| `check_references.py`, before against after, 22 corpus directories | identical output in all 22 |
+
+*Agent's calls, to confirm.* (1) `MENTIONS`, `REFERENCED` and `BY` stay reserved words, as
+`STRING` did. (2) §13 says what an entry under an existing rule's hash does. It says nothing of
+an entry under a hash the target has no rule for; no corpus writes one in a `MODIFY`. (3) None
+of the three findings takes a `FIAT`. (4) Five example strings in §5c ran over a raw line
+break, which DECISION-48 made an older form. C5's sweep missed them. Each is now one line.
+
+*Not done.* The validator does not check that a rule written in a `MODIFY` carries the hash of
+a rule its target has. The synthesist still reads `REFERENCED BY` (F31).
+
+**Part 3, ruled 2026-11-14: four forms marked as likely to be replaced (DECISION-53).** Owner:
+"flag all four of these as likely to be replaced and make them WARN if present, but we won't do
+the replacements just yet."
+
+The agent had proposed to keep the four as they are. He marked them.
+
+- **a. `ADD_TO` and `REMOVE_FROM`** (§13).
+- **b. The `@n` occurrence index** (§5c).
+- **c. The `.selections` file** (§24).
+- **d. `OVERRIDE` and `ADD … DEF`** (§13).
+
+Each reads as it did. The validator raises a warning wherever one is written, whatever
+`SPEC_VERSION` the file declares. No replacement is ruled for any of them.
+
+*Applied.* Spec: §0 item 40, DECISION-53, a mark at each form (§5c; the two headings and two
+bullets of §13; the heading in §24; the `.selections` row of §2's table), §15 and §20.
+Validator: one warning for each form. It finds a `.selections` file and reports it, and still
+does not read one. The grammar, `check_references.py` and `check_constructs.py` are unchanged.
+README: the fixture list. `tests/mods-good.ttrpg` and `tests/mods-bad.ttrpg` hold the four §13
+forms, so each shows four more warnings, and their header notes say so. New: `tests/marked`.
+
+| Check | Result |
+|---|---|
+| `tests/marked` in the validator | 0 errors, 7 warnings: two `@n`, `ADD_TO`, `REMOVE_FROM`, `OVERRIDE`, `ADD … DEF`, and the `.selections` file |
+| `tests/marked` in the validator before the change | 0 errors, 0 warnings |
+| `tests/marked` in `check_references.py`, `check_constructs.py`, the grammar | 0 errors; 0 errors; 2 of 2 accepted |
+| the fixture run against the run after part 2 | the same, but for the new set and four more warnings on `good.ttrpg` with `mods-good.ttrpg` (0, now 4) and on `bad.ttrpg` with `mods-bad.ttrpg` (3, now 7) |
+| both grammar gates | 59 of 59 good files accepted; 17 of 17 planted faults refused |
+| `samples/` in the validator | 0 errors, 1 warning, for the `.selections` file; before the change, 0 and 0 |
+| validator, before against after, 22 corpus directories | identical output in all 22: 39 errors, 22,518 warnings |
+| validator, before against after, the seven other repos | five identical. l5r5e-3rdparty: 75 more warnings (72 `ADD … DEF`, 3 `OVERRIDE`), 125 to 200. dnd5e-3rdparty: 2 more (`ADD … DEF`), 277 to 279. No other line of output differs, and each count is the count of the form in that repo |
+
+*Agent's calls, to confirm.* (1) The ruling is written as DECISION-53, in his words: "likely to
+be replaced". Part 1 ruled out a status for every unused form; this marks four named ones.
+(2) The warning is the same at every `SPEC_VERSION`, and no `FIAT` waives it. (3) The validator
+reports a `.selections` file; `check_constructs.py`, which reads them, prints nothing new.
+(4) The mark is on the statement `ADD … DEF`. `ADD` as a method of `TRANSFORM` (§8) is not
+touched. (5) §24's `OPTIONAL` block is not marked: he named the four forms of part 3, and §24
+is on his list for after C9.
+
+*Not done.* No replacement is ruled. No corpus is changed: l5r5e-3rdparty and dnd5e-3rdparty
+carry the new warnings until one is. The grammar accepts `OVERRIDE "name"`, with a string for
+the caret, which the spec does not show; the validator does not report that spelling, and no
+file in the 29 directories writes it. The synthesist is unchanged.
+
+**Part 4, ruled 2026-11-14: two hook levels and `TRIGGER` marked as likely to be replaced
+(DECISION-54).** Owner: "mark as likely to replace and warn."
+
+The agent had proposed to remove `CONDITIONAL`, `FORMAL` and `TRIGGER`, and gave the part 3
+treatment as the alternative. He took the alternative.
+
+`FORMALITY CONDITIONAL`, `FORMALITY FORMAL` and a `TRIGGER` inside a `HOOK` each read as they
+did. The validator raises a warning wherever one is written, whatever `SPEC_VERSION` the file
+declares. `PROSE` and `TAGGED` are not marked. No replacement is ruled.
+
+*Applied.* Spec: §0 item 41, DECISION-54, a bullet in §23, §15 and §20. Validator: one warning
+for each of the three, read inside a `HOOK` only. The grammar, `check_references.py` and
+`check_constructs.py` are unchanged. README: the fixture list. `tests/marked` gains four hooks,
+one at each level, and a system's `TRIGGER` outside a hook.
+
+| Check | Result |
+|---|---|
+| `tests/marked` in the validator | 0 errors, 10 warnings: the seven of part 3, and `FORMALITY CONDITIONAL`, `TRIGGER` in a hook, `FORMALITY FORMAL` |
+| `tests/marked` in the validator before the change | 0 errors, 7 warnings |
+| in that fixture, the `PROSE` hook, the `TAGGED` hook, and `TRIGGER` in a system's block outside a hook | no warning |
+| `tests/marked` in `check_references.py`, `check_constructs.py`, the grammar | 0 errors; 0 errors, 4 hooks; 2 of 2 accepted |
+| the fixture run against the run after part 3 | the same, but for `tests/marked` |
+| both grammar gates | 59 of 59 good files accepted; 17 of 17 planted faults refused |
+| `samples/` in the validator | 0 errors, 3 warnings: the `.selections` file, and the sample hook's `CONDITIONAL` and `TRIGGER`; before the change, 0 and 1 |
+| validator, before against after, 22 corpus directories | identical output in all 22: 39 errors, 22,518 warnings |
+| validator, before against after, the seven other repos | identical output in all seven |
+
+*Agent's calls, to confirm.* (1) Written as DECISION-54, apart from DECISION-53. (2) The same
+terms as part 3: a warning at every `SPEC_VERSION`, and no `FIAT`. (3) `TRIGGER` is marked
+inside a `HOOK` only; outside one it is a system's keyword (§15). (4) §23's example, which is a
+`CONDITIONAL` hook with a `TRIGGER`, stands as it was, and so does the sample that copies it.
+
+*Not done.* No replacement is ruled. §23 still says every `TRIGGER` reference resolves, and no
+tool reads a `TRIGGER`. Found while writing the fixture and not fixed: `check_constructs.py`
+skips a `FORMALITY` line that ends in a comment, so `FORMALITY BOGUS  # note` passes it with 0
+hooks counted; the grammar refuses that line. No corpus is changed, and the synthesist is
+unchanged.
+
+**Part 5, ruled 2026-11-14: the three `USES_` lines fold into `DEPENDS_ON` (DECISION-55).**
+Owner: "Fold into DEPENDS_ON".
+
+The agent had proposed to keep the three keywords and check them as dependencies, and gave the
+fold as the alternative. He took the fold.
+
+The count the proposal rested on, taken again over the 29 directories: `USES_EXTENSION` is
+written 26 times, 17 in the 22 corpus directories (teeth 14, l5r5e 2, curseborne 1) and 9 in
+third-party repos (dnd5e-3rdparty 4, troika-3rdparty 5). `USES_SETTING` and `USES_FRAME` are
+written nowhere. Three of the 26, one in each TEETH one-shot, name an id no file declares:
+`teeth-hogmen`, `teeth-stranger`, `teeth-cotillion`. Five, in troika-3rdparty, stand in
+`.ttrpg` files, where §16 never defined the line.
+
+A file names every file it needs with `DEPENDS_ON`: a container's BASE, and each EXTENSION,
+SETTING or FRAME, one line for each. A `USES_` line is an older form: a warning in a file that
+declares a `SPEC_VERSION` below 0.6, or none, and an error in one that declares 0.6 or later.
+
+*Applied.* Spec: §0 item 42, DECISION-55, a paragraph in §3, and in §16 the three templates,
+their field lists, two examples, *Cross-Container References*, the dependency table and rules 2
+to 4; §18's keyword list. Validator: one finding for each `USES_` line; and a `DEPENDS_ON` may
+now name a SETTING, a FRAME, an ARC or a CAMPAIGN, where before it had to name a BASE or an
+EXTENSION and any other id was an error. README: the fixture list. A comment in
+`tests/narrative-good/story.arc`. New: `tests/uses-good` and `tests/uses-bad`.
+
+| Check | Result |
+|---|---|
+| `tests/uses-good` in the validator, the grammar | 0 errors, 0 warnings; 6 of 6 accepted |
+| `tests/uses-good` in the validator before the change | 4 errors: each `DEPENDS_ON` that names the setting or the frame |
+| `tests/uses-bad` in the validator | 4 errors and 3 warnings: three `USES_` lines in files that declare 0.6, three in files that declare 0.5, and one `DEPENDS_ON` that names no file |
+| `tests/uses-bad` in the validator before the change | 2 errors, 0 warnings, and no `USES_` line reported |
+| the fixture run against the run after part 4 | the same, but for the two new sets and the grammar's count |
+| both grammar gates | 65 of 65 good files accepted; 17 of 17 planted faults refused |
+| validator, before against after, 22 corpus directories | 19 identical. Three gain the `USES_` warnings and nothing else: teeth 14 (233 to 247), l5r5e 2 (198 to 200), curseborne 1 (231 to 232). Totals: 39 errors, as before; 22,535 warnings, 17 more |
+| validator, before against after, the seven other repos | five identical. dnd5e-3rdparty gains 4 warnings (279 to 283) and troika-3rdparty 5 (66 to 71), each a `USES_` line; no other line of output differs |
+| the lines rewritten as `DEPENDS_ON` in copies of teeth, curseborne, wyldwolf and Down In Yongardy | every `USES_` warning goes; teeth gains 3 errors, the three ids that name no file; no cycle; nothing else changes |
+| the same in a copy of l5r5e 0.5 | the two `USES_` warnings go and nothing else changes: 27 errors, 198 warnings |
+
+*Agent's calls, to confirm.* (1) A `USES_` line is reported and is not itself read as a
+dependency: its id is checked once the line is rewritten. So the three TEETH ids show as three
+"older form" warnings now and as errors after the rewrite. (2) `DEPENDS_ON` accepts the id of
+any loaded file, which is what §3 already said ("Each names a file in the loaded set"); the
+validator had accepted a BASE or an EXTENSION only. (3) `USES_EXTENSION`, `USES_SETTING` and
+`USES_FRAME` stay reserved. (4) Rules 2 to 4 of §16 keep "exactly one BASE", "optionally one
+SETTING" and "optionally one FRAME"; only the keyword changes. No tool checks those counts,
+before or after. (5) The grammar is unchanged: it reads a `USES_` line as it reads any line of
+a keyword and a string, at every version.
+
+*Not done.* No corpus is changed: the 26 lines are F32. With one keyword, a reader of a file
+no longer sees from the line what kind of file is named.
+
+**Part 6, ruled 2026-11-14: the rule form `WHEN […] THEN` is removed (DECISION-56).** Owner:
+"Yes, remove".
+
+Two counts in the proposal were short, and he was told both. The audit and the first proposal
+gave 27 such rules; there are 31. Four in Draw Steel's core base are written with no hash, and
+the count had looked for a hash. By system: Call of Cthulhu 4, Daggerheart 2, D&D 2014 2, D&D
+2024 2, Draw Steel 4, The Expanse 4, Invisible Sun 3, L5R 7, Root 3. And the other form, a
+label with the source's text, is written about 1,500 times, but in l5r5e and l5r5e-3rdparty
+only: no other system writes it. He was given the second fact after he ruled.
+
+A rule is a label with the source's text, or a DEF with a `DESCRIPTION`. The removed form is a
+warning in a file that declares a `SPEC_VERSION` below 0.6, or none, and an error in one that
+declares 0.6 or later. `WHEN` and `THEN` stay a hook's keywords.
+
+*Applied.* Spec: §0 item 43, DECISION-56, §12 (its example, its list of forms and its last
+paragraph), the example in §14, §15, the two worked examples in §17, and a note on
+DECISION-18's record. Validator: one finding for a rule, where `WHEN [` opens it; and the
+warning for a rule with no text no longer offers "a structured WHEN … THEN". Grammar: a
+comment. README: the fixture list. New: `tests/rules-good` and `tests/rules-bad`.
+
+| Check | Result |
+|---|---|
+| `tests/rules-good` in the validator, the grammar | 0 errors, 0 warnings; accepted |
+| `tests/rules-bad` in the validator | 3 errors (the file that declares 0.6) and 3 warnings (the one that declares 0.5): a rule under a hash, one with no hash, and one with two conditions, reported once |
+| `tests/rules-bad` in the validator before the change | 0 errors, 0 warnings |
+| the fixture run against the run after part 5 | the same, but for the two new sets, the grammar's count, and one more warning on `bad.ttrpg`, which holds a rule in the removed form |
+| both grammar gates | 66 of 66 good files accepted; 17 of 17 planted faults refused |
+| the two rules the spec now quotes, against l5r5e | each found once, character for character: `minion_critical_strike_rules` in the core base, `ref_condition_compromised` in the GM screen reference |
+| validator, before against after, 22 corpus directories | 14 identical. Eight gain one warning for each rule in the removed form and no other finding: Call of Cthulhu 4, Daggerheart 2, D&D 2014 2, D&D 2024 2, Draw Steel 4, Invisible Sun 3, L5R 7, Root 3. Totals: 39 errors, as before; 22,562 warnings, 27 more. The reworded no-text warning (15 lines, in arm5e and armdef) is read as the same line |
+| validator, before against after, the seven other repos | six identical, with l5r5e-3rdparty's 49 reworded no-text warnings read as the same lines; expanse gains 4 warnings (20 to 24), its four rules |
+
+*Agent's calls, to confirm.* (1) §12's example and §14's now quote two rules from the l5r5e
+corpus. (2) In §17's L5R example the rule `REQUIRE ^"Clan", ^"School"` is gone and `School`
+is marked `REQUIRED`, as `Clan` already was; the "compromised" rule is the corpus's. (3) In
+§17's VTM example the `RULES` block is deleted: its two rules were in the converter's words and
+the vtm5e corpus holds no rule text to put in their place. (4) §15 loses its "Rule structure"
+line; `WHEN` and `THEN` are listed with the hook keywords. (5) The finding is for `WHEN [`
+wherever it opens a statement, in a `RULES` block or outside one; every one in the 29
+directories is in a `RULES` block. (6) The grammar still reads the form, for a file below 0.6.
+It refuses a rule with no hash, as it always has.
+
+*Not done.* No corpus is changed: the 31 rules are F33.
+
+**Part 7, ruled 2026-11-14: an alias is a second name of a hash (DECISION-57).** The proposal
+was to report `ALIAS "name"` inside a DEF, which nine definitions write and no tool reads, and
+to have the nine rewritten as §5b's statement. Before ruling, the owner asked: "would it make
+sense instead to have ALIAS function kind of like "ALIAS [hash] [alias name]", so that it's a
+separate name that resolves to the same hash?" A test showed the gap his question points at:
+with a valid alias in the 0.5 form, a reference through it that carries the entity's hash,
+`#hash ^"Ninjo"`, was an error in `check_references.py`: the hash names "Ninjō" and the caret
+says "Ninjo". He was given two spellings, his own `ALIAS #hash ^"name"` and
+`ALIAS ^"name" FOR #hash`, and chose: "ALIAS name FOR #hash".
+
+He did not say in words that the line inside a DEF is to be reported. The agent's message had
+said that part 7 "is unchanged by this: the nine `ALIAS "name"` lines inside a DEF are still
+reported, and they are rewritten in whichever spelling you pick", and he then picked the
+spelling. The report is applied on that reading, to confirm.
+
+- **The form.** `ALIAS ^"name" FOR #hash`. The entity's own name may follow the hash on the
+  same line, which is how the four alias statements in armdef are written; they stay valid.
+- **What it means.** The alias is a name of the entity that carries the hash. `#hash ^"name"`
+  is a pair that agrees, wherever a reference is written.
+- **Older forms.** An alias `FOR` a name with no hash, and `ALIAS "name"` inside a DEF. Each is
+  a warning in a file that declares a `SPEC_VERSION` below 0.6, or none, and an error in one
+  that declares 0.6 or later.
+
+*Applied.* Spec: §0 item 44, DECISION-57, §5b's *Aliases* rewritten, a line of §5d, and a note
+on the records of DECISION-6 and DECISION-14. Validator: the alias statement reads `FOR #hash`
+with or without a name after it; an alias is a name of its hash in the check of a hash against
+a name; one finding for each older form. `check_references.py` and `check_constructs.py`: the
+same, in each place a hash is checked against a name, and `check_references.py` counts an alias
+`FOR #hash` as a site whose hash must be an anchor. Grammar: the statement's rule. Guidelines:
+one line. README: the fixture list. Three older fixtures that wrote an alias with no hash in a
+file declaring 0.6 are brought to the new form (`tests/decision6.ttrpg`,
+`tests/values-good/instances.ttrpg`) or set to declare 0.5 (`tests/values-bad/10-alias-cycle.ttrpg`,
+since a cycle can now be written only in the older form). New: `tests/alias-good` and
+`tests/alias-bad`.
+
+| Check | Result |
+|---|---|
+| `tests/alias-good` in the four tools | validator 0 errors, 0 warnings; `check_references.py` 0 errors; `check_constructs.py` 0 errors; grammar accepted |
+| `tests/alias-good` before the change | validator 1 error (a list member `#hash ^"Ninjo"`); `check_references.py` 2 errors (two `REFERENCES` lines); `check_constructs.py` 1 error (a hook's `THEN`) |
+| `tests/alias-bad` in the validator | 3 errors (the file that declares 0.6: the line in a DEF, `FOR` a name, a hash that is no anchor) and 2 warnings (the file that declares 0.5); before the change, 0 and 0 |
+| `tests/alias-bad` in `check_references.py` | 3 errors: a hash that is no anchor, a hash with another entity's name after it, and `#hash ^"Yearning"` where no alias gives that name |
+| the fixture run against the run after part 6 | the same, but for the two new sets, the grammar's count, two more warnings in `values-bad` and one in `mods-bad.ttrpg` (aliases `FOR` a name, in files below 0.6) |
+| both grammar gates | 67 of 67 good files accepted; 17 of 17 planted faults refused |
+| the nine lines rewritten as statements in copies of l5r5e and vtm5e (run before the tools changed) | validator and `check_references.py`: the same findings as the corpora as written |
+| validator, before against after, 29 directories | 27 identical. l5r5e gains 8 warnings and vtm5e 1, the nine `ALIAS "name"` lines, and no other finding. Totals over the 22: 39 errors, as before; 22,571 warnings, 9 more |
+| `check_references.py`, before against after, 29 directories | identical output in all 29 |
+| `check_constructs.py`, before against after, 29 directories | identical output in all 29 |
+
+*Agent's calls, to confirm.* (1) The report of `ALIAS "name"` inside a DEF, as above. (2) An
+alias `FOR` a name with no hash is an older form; the proposal's table said "hash required".
+(3) The target's name is read only on the hash's line (§8, *Where a statement ends*), so a
+caret that opens the next line is the next statement. (4) A list member that is an alias with
+a hash is now warned when it is written with no hash, as any member is; before, every alias was
+exempt because it had no hash to carry. (5) The validator does not check that a name written
+after the hash is the anchor's; `check_references.py` does. (6) §5b still says an alias may
+target a bound reference; how that is written with a hash is not ruled. (7) A bridge's sided
+aliases are untouched.
+
+*Not done.* No corpus is changed: the nine lines are F34. The synthesist is unchanged (F34).
 
 ### C7. The base spec reserves L5R mechanics
 
@@ -2190,6 +2568,22 @@ file's own `VERSION` and `SPEC_VERSION`.
 - **`ADD`.** In an EXTENSION, `ADD ^"X" DEF { }` and a plain `^"X" DEF { }` differ only in a
   warning.
 
+### To revisit once C1 to C9 are closed
+
+Asked for by the owner, 2026-11-14, while ruling C6 part 1: "I would like to follow up on the
+following issues once we're done with the C# items".
+
+- **§24, Optional & variant rules.** (He quoted the heading as the proposal had shown it,
+  `## 24. Optional & variant rules *(provisional)*`.)
+- **`ADD_TO`, `REMOVE_FROM`, `@n`, `.selections`.** The four forms C6 found that no file writes
+  and that part 3 proposes to keep.
+
+He gave the list and no more. What is to be decided about each is his to say when it is taken
+up.
+
+Part 3 of C6, ruled the same day, marked those four forms as likely to be replaced, and
+`OVERRIDE` and `ADD … DEF` with them (DECISION-53). The replacements are not ruled.
+
 ---
 
 ## Candidate improvements (not decided)
@@ -2202,7 +2596,7 @@ file's own `VERSION` and `SPEC_VERSION`.
 | 4 | Type system: a reference property, a reference-with-value list, numeric and dice literals, documented value forms | C1, C2 | each new type is a migration |
 | 5 | Provenance: a book identifier in the header and a page field on DEFs | C4 | generators must emit it; mechanical backfill from comments |
 | 6 | Implement the stated semantic checks, or remove the claims | B2, B4 | per-instance `REQUIRED` raises hundreds of findings in arm5e |
-| 7 | Mark unused constructs provisional until a corpus and a consumer use them | C6 | none for corpora |
+| 7 | Mark unused constructs provisional until a corpus and a consumer use them. *Not taken: C6 part 1, 2026-11-14.* | C6 | none for corpora |
 
 ---
 
@@ -2825,6 +3219,60 @@ two parameter to-dos below.
 armdef). `BASE` is a file-level keyword and stays reserved (DECISION-29, DECISION-51), so the
 line takes another word when the blocks are rebuilt.
 
+### F31. synthesist: what C6 removed
+
+`REFERENCED BY` was removed in 0.6 (DECISION-52). The synthesist's parser, its AST and both of
+its emitters read the block (`internal/ttrpg/parser.go`, `ast.go`, `internal/emit/ttrpg.go`,
+`json.go`). No corpus writes it, so no output changes when the reading is dropped. The
+synthesist reads neither `MENTIONS` nor the `MODIFY:` rule form.
+
+### F32. Five repos, two generators and the synthesist: `USES_` lines become `DEPENDS_ON`
+
+DECISION-55 folds the three `USES_` lines into `DEPENDS_ON`. 26 `USES_EXTENSION` lines are to
+be rewritten: teeth 14, l5r5e 2, curseborne 1, dnd5e-3rdparty 4 (Wyldwolf Axis), troika-3rdparty
+5 (Down In Yongardy). Each is a warning until then, since every file that writes one declares
+`SPEC_VERSION` 0.5.
+
+- **teeth.** Three of its lines name an id no file declares (`teeth-hogmen`, `teeth-stranger`,
+  `teeth-cotillion`), and each becomes an error once it is a `DEPENDS_ON`. The Hogmen folder's
+  file is `EXTENSION "teeth-hogmen-base"`. The lines are written by
+  `titterpig-dsl-teeth/support/gen_oneshot.py`, which is where to fix them.
+- **Down In Yongardy.** Its conversion scripts write the line
+  (`Temp/yongardy-conversion/scripts/`).
+- **synthesist.** It does not read a `USES_` line. It holds one `DEPENDS_ON` for a file
+  (`internal/ttrpg/ast.go`, `parser.go`), so a container with several keeps one of them.
+
+### F33. Nine core base files: 31 rules in the removed `WHEN […] THEN` form
+
+DECISION-56 removes the form. Each of the 31 is a warning until its file declares 0.6: Call of
+Cthulhu 4, Daggerheart 2, D&D 2014 2, D&D 2024 2, Draw Steel 4, The Expanse 4 (a 0.4 corpus),
+Invisible Sun 3, L5R 7, Root 3. Each is rewritten against its book, since the text has to be
+the source's.
+
+- **A restatement of the core mechanic** (most of them) becomes a label with the book's
+  sentence, or a DEF with a `DESCRIPTION`.
+- **l5r5e's three `REQUIRE` rules** say what `REQUIRED` on a property says (§8, DECISION-34).
+- **Draw Steel's four lines** give an echelon for a range of levels. They have no hash, and the
+  grammar refuses them.
+- **synthesist.** It carries whatever follows a rule's colon as the rule's text, so a consumer
+  gets a rule in the removed form in the field that holds the book's wording
+  (`internal/ttrpg/parser.go`, `parseRuleEntry`).
+
+### F34. l5r5e, vtm5e and the synthesist: aliases under DECISION-57
+
+- **Nine lines.** `ALIAS "name"` inside a DEF, in l5r5e (8, each the unaccented spelling of a
+  name with a macron) and vtm5e (1, "Descendants of the Baron" on "The Nation of Blood"),
+  becomes `ALIAS ^"name" FOR #hash` beside the DEF. Each is a warning until then. Rewritten in
+  copies, the two corpora validate as before.
+- **`Ichiro`.** In l5r5e the name is also a codex entity's
+  (`l5r5e-0.5-path-of-waves-twin-blessings.codex`). §5b forbids an alias that already names a
+  different entity, and the validator did not report this one in the copy. Whether the two are
+  one character is to be checked against the books.
+- **synthesist.** `parseAliasStatement` (`internal/ttrpg/parser.go`) reads the target as it was
+  written in 0.5. It has to accept `FOR #hash` with no name, and carry the alias as a name of
+  the hash.
+- **armdef's four statements** carry a hash and the target's name, and need no change.
+
 ### To-do recorded in the spec
 
 - **Nested conditions in `WITH`** (§5b). `A AND (B OR C)` is not defined; a `WITH` that mixes `AND`
@@ -3253,6 +3701,20 @@ Filled in as each finding is walked through.
 | C5 | 2026-11-13 | Part 6, hash stability: a hash is stable within a major version. Every state of a system's `0.5` corpus gives an entity the same hash; a new major version may mint new ones. Written as DECISION-50. | Owner: "Hashes are considered stable within same major versions (ie, all 0.5 instances should be hash-stable)." The agent had proposed stability from publication on, with no bound; his rule sets the bound at the major version. |
 | C5 | 2026-11-13 | Part 7: an `EMPHASIS` block is legal in a guidance `ENTRY`, each span being in that entry's `TEXT`; `BASE` stays reserved everywhere and arm5e's `BASE n` lines are renamed with F5. Written as DECISION-51. | Owner: "Yes, both". The agent had first recommended keeping `EMPHASIS` out and changed that before he ruled: an entry's `TEXT` is verbatim, and emphasis is recorded beside verbatim text. |
 | C5 | 2026-11-13 | C5 is closed. The branch is committed and pushed. | Owner: "Close, commit, push". The agent's calls in the C5 section and rows marked "to confirm" were reported to him before he closed and were not separately ruled on. |
+| C6 | 2026-11-14 | Part 1: the spec gains no "provisional" status for a form nothing writes. Candidate improvement 7 is not taken; each unused form is ruled on its own in parts 2 to 4. To be taken up once C1 to C9 are closed: §24 (Optional & variant rules), and `ADD_TO`, `REMOVE_FROM`, `@n` and `.selections`. | Owner: "I agree to no provisional status, but I would like to follow up on the following issues once we're done with the C# items", with that list. The agent had recommended no status: the list is eight forms, a status needs rules of its own, and it would also mark the forms new in 0.6. |
+| C6 | 2026-11-14 | Part 2: three forms are removed. (a) The rule form `#hash MODIFY: label NOW REFERENCES …`; a `MODIFY` changes a rule by writing it whole under its hash. (b) `REFERENCED BY`. (c) `MENTIONS`, with the second half of §5c rewritten under `REFERENCES`. Each is a warning below 0.6 and an error from 0.6. Written as DECISION-52. | Owner: "a. remove the form. b. remove. c. remove the alias, and rewrite that half of §5c with REFERENCES." No file in 29 corpus directories writes any of the three. The first was shown once in §13 and defined nowhere, and the grammar refused it. The second repeated a `REFERENCES` line. The third was the block's 0.4 name. |
+| C6 | 2026-11-14 | Agent's calls, to confirm. (1) `USES_SETTING` and `USES_FRAME` were taken out of part 2 before he ruled and put with `USES_EXTENSION` in part 5. (2) `MENTIONS`, `REFERENCED` and `BY` stay reserved. (3) §13 is silent on a rule entry under a hash the target has no rule for. (4) No `FIAT` waives the three findings. (5) `check_references.py` reads past a `REFERENCED BY` block and checks nothing in it. (6) Five example strings in §5c that ran over a raw line break are joined to one line each. | (1): one rule should cover the three `USES_` lines. (2): the same treatment as `STRING` under DECISION-39. (3): he ruled on replacement, and no corpus adds a rule in a `MODIFY`. (4): the other older forms take none. (5): the validator reports the block. (6): DECISION-48 made the form an older one and C5's sweep of the spec missed these five. |
+| C6 | 2026-11-14 | Part 3: four forms are marked as likely to be replaced, and the validator warns wherever one is written, at any `SPEC_VERSION`: `ADD_TO` and `REMOVE_FROM`; the `@n` occurrence index; the `.selections` file; `OVERRIDE` and `ADD … DEF`. Each reads as it did. No replacement is ruled. Written as DECISION-53. | Owner: "flag all four of these as likely to be replaced and make them WARN if present, but we won't do the replacements just yet." The agent had recommended keeping the four unchanged. None of the 22 corpus directories writes any of them; third-party corpora write `OVERRIDE` 3 times and `ADD … DEF` 74 times. |
+| C6 | 2026-11-14 | Agent's calls on part 3, to confirm. (1) Written as DECISION-53, in the words "likely to be replaced". (2) The warning is the same at every `SPEC_VERSION` and takes no `FIAT`. (3) The validator reports a `.selections` file without reading it; `check_constructs.py` is unchanged. (4) `ADD` as a `TRANSFORM` method is not marked. (5) §24's `OPTIONAL` block is not marked. | (1): part 1 ruled out a status for every unused form, and this marks four named ones. (2): he said "WARN if present" and named no version. (3): the validator is the tool that counts warnings. (4): the form in part 3 was `ADD … DEF`. (5): he named the four forms of part 3, and §24 is on his list for after C9. |
+| C6 | 2026-11-14 | Part 4: `FORMALITY CONDITIONAL`, `FORMALITY FORMAL` and a `TRIGGER` inside a `HOOK` are marked as likely to be replaced, and the validator warns wherever one is written, at any `SPEC_VERSION`. Each reads as it did. `PROSE` and `TAGGED` are not marked. No replacement is ruled. Written as DECISION-54. | Owner: "mark as likely to replace and warn." The agent had recommended removing the three: the corpora write three hooks, all `TAGGED`, and §23 gives a `TRIGGER` no shape. He chose the part 3 treatment. |
+| C6 | 2026-11-14 | Agent's calls on part 4, to confirm. (1) Written as DECISION-54. (2) A warning at every `SPEC_VERSION`, with no `FIAT`. (3) `TRIGGER` is marked inside a `HOOK` only. (4) §23's example and the 0.5 sample keep their `CONDITIONAL` hook and `TRIGGER`. | (1): a second ruling on other forms. (2): the terms of part 3. (3): outside a hook the word is a system's own (§15). (4): the forms still read, and he ruled no rewrite. |
+| C6 | 2026-11-14 | Part 5: `USES_EXTENSION`, `USES_SETTING` and `USES_FRAME` fold into `DEPENDS_ON`. A file names every file it needs with `DEPENDS_ON`, and the id may be that of any loaded file. Each `USES_` line is a warning below 0.6 and an error from 0.6. Written as DECISION-55. The 26 lines in five repos are F32. | Owner: "Fold into DEPENDS_ON". The agent had recommended keeping the keywords and checking them. No tool read the lines, three of the 26 name no file, and `DEPENDS_ON` is the same statement with a check behind it. |
+| C6 | 2026-11-14 | Agent's calls on part 5, to confirm. (1) A `USES_` line is reported and not read as a dependency. (2) `DEPENDS_ON` accepts the id of a SETTING, a FRAME, an ARC or a CAMPAIGN. (3) The three keywords stay reserved. (4) §16's rules keep their counts ("exactly one BASE"), which no tool checks. (5) The grammar is unchanged. | (1): the line's id is checked once it is rewritten, and an older form is reported once. (2): §3 already said "Each names a file in the loaded set", and the fold needs it. (3): as `STRING` and `MENTIONS`. (4): he ruled on the keyword. (5): it never named the three keywords. |
+| C6 | 2026-11-14 | Part 6: the rule form `WHEN [condition] THEN action` is removed. A rule is a label with the source's text, or a DEF with a `DESCRIPTION`. A warning below 0.6 and an error from 0.6. `WHEN` and `THEN` stay a hook's keywords. Written as DECISION-56. The 31 rules in nine core base files are F33. | Owner: "Yes, remove". The agent had recommended it: no tool read the condition or the action, and each of the 31 is in the converter's words. The proposal's count was 27; four more, with no hash, are in Draw Steel. |
+| C6 | 2026-11-14 | Agent's calls on part 6, to confirm. (1) §12 and §14 quote two rules from the l5r5e corpus. (2) §17's L5R example marks `School` `REQUIRED` in place of its `REQUIRE` rule. (3) §17's VTM example loses its `RULES` block. (4) §15's "Rule structure" line goes; `WHEN` and `THEN` are hook keywords. (5) `WHEN [` is reported wherever it opens a statement. (6) The grammar still reads the form. (7) The no-text warning no longer offers the removed form. | (1): an example of a rule should be a rule a book prints. (2): the rule said both were required. (3): its two rules were paraphrase, and the corpus has no text for them. (4): the rule use is gone. (5): every one in the 29 directories is in a `RULES` block. (6): as it does `MENTIONS`, for files below 0.6. (7): it would have told an author to write a removed form. |
+| C6 | 2026-11-14 | Part 7: an alias is a second name of a hash, written `ALIAS ^"name" FOR #hash`; the entity's own name may follow the hash. `#hash ^"name"` is a pair that agrees. An alias `FOR` a name with no hash, and `ALIAS "name"` inside a DEF, are older forms: a warning below 0.6 and an error from 0.6. Written as DECISION-57. The nine corpus lines are F34. | Owner, on the proposal to report the in-DEF line: "would it make sense instead to have ALIAS function kind of like \"ALIAS [hash] [alias name]\", so that it's a separate name that resolves to the same hash?"; then, given two spellings: "ALIAS name FOR #hash". A reference through an alias that carried the entity's hash was an error in `check_references.py`. His own spelling reads as a hash-name pair that disagrees, which every tool reports; the one chosen keeps armdef's four statements valid. |
+| C6 | 2026-11-14 | Agent's calls on part 7, to confirm. (1) `ALIAS "name"` inside a DEF is reported, though he ruled on the spelling and did not say so in words. (2) `FOR` a name with no hash is an older form. (3) The target's name is read on the hash's line only. (4) A hashed alias written as a list member with no hash is warned like any member. (5) The validator leaves the check of a name after the hash to `check_references.py`. (6) An alias of a bound reference is left as §5b had it. (7) Bridge aliases are untouched. | (1): the agent's message said the nine lines "are still reported" whichever spelling he picked, and he picked one. (2): the table he chose from said "hash required". (3): §8's rule for where a statement ends. (4): the exemption existed because an alias had no hash. (5): as before the change. (6): no corpus writes one, and it was named to him as open. (7): they are sided and by name, and he was told they would be left. |
+| C6 | 2026-11-14 | C6 is closed. The branch is committed and pushed. | Owner: "commit and push, then move on to the next". He did not say "close"; the agent read moving on as closing it. The agent's calls marked "to confirm" in parts 2 to 6 were reported to him as each part was applied, and those of part 7 with the commit; none was separately ruled on. |
 
 ---
 

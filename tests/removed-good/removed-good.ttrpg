@@ -1,0 +1,38 @@
+BASE "Removed_Good" {
+    NAME "DECISION-52 fixture — what is written in place of the three removed forms (§5c, §13)"
+    SPEC_VERSION "0.6"
+    VERSION "1.0"
+    RELEASE_DATE "2026-11-14"
+
+    # Run:
+    #   ttrpg_validator.py tests/removed-good
+    #   check_references.py tests/removed-good
+
+    #RmgCreatureA1b2C3d4E5f6G ^"Creature" DEF { }
+
+    #RmgWoundsH7j8K9m1N2p3Q4 ^"Wounds" DEF {
+        DESCRIPTION "Characters suffer wounds of increasing severity."
+    }
+
+    # the block is REFERENCES; nothing on the target lists what refers to it
+    #RmgCloseFleshR5s6T7u8V9w ^"Close the Flesh" DEF {
+        DESCRIPTION "The target heals a Light Wound."
+        REFERENCES {
+            "Light Wound" -> #RmgWoundsH7j8K9m1N2p3Q4 ^"Wounds"
+        }
+    }
+
+    #RmgRhinoX1y2Z3a4B5c6D7e ^"Rhinoceros" DEF {
+        EXTENDS #RmgCreatureA1b2C3d4E5f6G ^"Creature"
+        RULES {
+            #RmgChargeF8g9H1j2K3m4N5: charge "Charge: The first printing of the rule."
+        }
+    }
+
+    # a rule is changed by writing it whole under its hash
+    MODIFY #RmgRhinoX1y2Z3a4B5c6D7e ^"Rhinoceros" {
+        RULES {
+            #RmgChargeF8g9H1j2K3m4N5: charge "Charge: The corrected rule, whole."
+        }
+    }
+}

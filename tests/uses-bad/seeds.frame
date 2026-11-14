@@ -1,0 +1,11 @@
+FRAME "UsesBad_Frame" {
+    NAME "DECISION-55 fixture — a frame names its BASE and its SETTING with DEPENDS_ON"
+    SPEC_VERSION "0.6"
+    VERSION "1.0"
+    DEPENDS_ON "UsesBad_Base"
+    DEPENDS_ON "UsesBad_Setting"
+
+    THEMES {
+        "Trade at the crossroads"
+    }
+}

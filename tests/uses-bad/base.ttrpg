@@ -1,0 +1,11 @@
+BASE "UsesBad_Base" {
+    NAME "DECISION-55 fixture — the BASE the containers depend on (§3, §16)"
+    SPEC_VERSION "0.6"
+    VERSION "1.0"
+    RELEASE_DATE "2026-11-14"
+
+    # Run:
+    #   ttrpg_validator.py tests/uses-bad       3 errors (new.arc, new.campaign), 3 warnings (old.arc, old.campaign), 1 error (stale.arc)
+
+    #UsbNpcTypeA1b2C3d4E5f6G7 ^"NPC" DEF { }
+}
