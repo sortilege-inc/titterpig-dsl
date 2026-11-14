@@ -2578,7 +2578,10 @@ only l5r5e writes (2 and 6 times), are left in §18: C7 does not name them. (5) 
 
 ### C8. Edition identity is load-bearing and undeclared
 
-**Status:** open
+**Status:** closed 2026-11-14 by the owner. Committed and pushed on branch `0.6`. Its three
+parts were ruled one at a time: every file declares its edition (DECISION-59); a codex
+declares it the same way (DECISION-60); the `VERSION` beside an edition is its corpus's
+content version (DECISION-61). The corpus work is F36 and F37.
 
 The edition is the namespace for hash identity (§19), the scope of coherence (§20) and the key of
 `--corpus`. No file declares its edition. Three constructs point at one, each with its own syntax:
@@ -2586,6 +2589,157 @@ The edition is the namespace for hash identity (§19), the scope of coherence (�
 `ORIGIN "dnd5e" VERSION "0.4"` (`.bridge`). The binding is the directory name and a command-line
 argument. The `VERSION` in those lines is the content-version directory, a third meaning beside the
 file's own `VERSION` and `SPEC_VERSION`.
+
+**Evidence, recounted 2026-11-14** over the 22 corpus directories, the third-party repos, the
+bridges and the tools.
+
+| What names an edition | Count | What reads it |
+|---|---|---|
+| a file declaring its own edition | 0 | |
+| `.codex`: `FOR EDITION "l5r5e"` | 69 files in l5r5e; one `"tor2e"` fixture | no tool |
+| `.bridge`: `ORIGIN "x" VERSION "y"`, `DESTINATION …` | 3 bridges, 6 sides | the validator, as the key of `--corpus x=<dir>`; the `VERSION` is read by nothing |
+| port: `ORIGIN "x" <KIND> "id"` | 0 in the corpora (F14 is not done) | the validator, as the key of `--corpus` |
+| `.selections`: `FOR "x" VERSION "y"` | 1 sample; the `tests/marked` fixture writes a BASE's id there and nothing objects | no tool |
+| synthesist manifest: `"edition": "arm5e"` | outside the DSL | the synthesist |
+
+- **The directory does not give the edition for a third-party tree.**
+  `titterpig-dsl-dnd5e-3rdparty/wyldwolf/5.5` depends on `Dnd5_5e_Core_Base`, the D&D 2024
+  base. Every tree in `titterpig-dsl-arm5e-3rdparty` depends on `ARMDef_…` files, the armdef
+  edition.
+- **The `VERSION` beside an edition has three meanings in three bridges:** `"arm5e" VERSION
+  "0.4"` (the corpus is at 0.5), `"pendragon6e" VERSION "0.5.1"` (a file's version),
+  `"arm4" VERSION "4"`.
+- **An edition has from 1 to 19 BASE files:** one in 18 of the 22 directories, 8 in arm5e, 12
+  in armdef, 19 in l5r5e.
+- **Every file's `VERSION` in the 22 directories begins with its directory's version.** The
+  corpus's content version can be read from a file.
+
+*Proposed 2026-11-14,* to be ruled one part at a time.
+
+1. An edition is declared in the files. Either each BASE file declares it and every other
+   file takes the edition of the BASE its dependencies reach (recommended), or every file
+   declares it.
+2. The lines that point at an edition are checked against what the files declare, and their
+   three spellings are looked at together.
+3. What the `VERSION` beside an edition means.
+
+**Part 1, ruled 2026-11-14: every file declares its edition (DECISION-59).** Owner: "In every
+file". The agent had recommended a declaration in BASE files that the rest would inherit, with
+this as the alternative.
+
+`EDITION "id"` stands in the header of every BASE, EXTENSION, FRAME, ARC and CAMPAIGN. A file
+with none is a warning where it declares a `SPEC_VERSION` below 0.6, or none, and an error from
+0.6.
+
+*Applied.* Spec: §0 item 46, DECISION-59, the rule in §19, a sentence in §20, §3's three
+templates and field list, the field lists of §16's four containers, §15, and the header of nine
+examples that declare 0.6. Validator: the header line is read; a new pass reports a file with
+no edition, `EDITION` written twice, a run that holds two editions, and a `--corpus x=<dir>`
+directory that declares another. Grammar: the header takes `EDITION "id"`. Guidelines: two
+lines. README: the fixture list. 158 fixture and sample files gain the line, so that each set
+stays as it was. New: `tests/edition-good` and `tests/edition-bad`.
+
+| Check | Result |
+|---|---|
+| `tests/edition-good` in the validator, the grammar | 0 errors, 0 warnings; 4 of 4 accepted |
+| `tests/edition-good`, given as `--corpus other=<dir>` | 1 error: three files there declare "edition-demo" |
+| `tests/edition-bad` in the validator | 3 errors and 1 warning: no `EDITION` at 0.6; none at 0.5; `EDITION` twice; a second edition in the run. Before the change, 0 and 0 |
+| the fixture run against the run after C6, once the 158 files carry the line | identical, but for the two new sets and the grammar's count |
+| both grammar gates | 71 of 71 good files accepted; 17 of 17 planted faults refused |
+| validator, before against after, 22 corpus directories | every directory gains one warning for each file that must declare an edition and no other finding: 6,280 in all. Totals: 39 errors, as before; 28,851 warnings |
+| validator, before against after, the seven other repos | the same: 200 new warnings between the seven, and no other finding |
+
+*Agent's calls, to confirm.* (1) The keyword is `EDITION`, which a codex already writes in
+`FOR EDITION`. (2) A file below 0.6 with no edition is a warning, as every new requirement of
+0.6 has been; that is one warning for each of 6,280 files in the 22 directories. (3) A SETTING
+may declare an edition or none: §16 calls it system-agnostic, with no dependencies. 38 exist.
+(4) The dice module declares none. (5) A codex and a bridge are not read by the new pass: each
+points at editions, which is part 2. (6) Two editions in one run is one error, at every
+version, reported once. (7) An edition id is any string; the 22 directory names are the ids in
+use, and nothing checks an id against a list. (8) A bare `.actor` file has no header to hold
+the line; it gets one with its wrapper (F17).
+
+*Not done.* No corpus is changed: F36. The validator does not check that an extension declares
+the edition of the files it depends on, except through the rule that a run holds one edition.
+
+**Part 2, ruled 2026-11-14: a codex declares its edition as every file does (DECISION-60).**
+Owner: "Yes, fold it".
+
+Four lines name an edition. Two name the file's own: `EDITION` (part 1) and a codex's optional
+`FOR EDITION`, which 69 codex files write, all in l5r5e, and no tool read. Two name another
+edition: a bridge's sides and a port's `ORIGIN`. Those two share a keyword already, and part
+1's check on `--corpus x=<dir>` covers both. `.selections` writes a fifth, `FOR "x" VERSION
+"y"`; it is marked as likely to be replaced (DECISION-53) and is left.
+
+A codex writes `EDITION "id"` in its header. `FOR EDITION "id"` is read as the same line and is
+a warning in a file that declares a `SPEC_VERSION` below 0.6, or none, and an error from 0.6. A
+codex with neither is reported as any file is.
+
+*Applied.* Spec: §0 item 47, DECISION-60, §25's header and its paragraph on the line, a bullet
+of §19, §15. Validator: a codex is one of the files of the edition pass; `FOR EDITION` is
+reported and read as the codex's edition. Grammar: a comment. README: the fixture list, and
+`samples/`, which holds two editions and is validated as two. Four codex fixtures and the codex
+sample gain the line. `tests/edition-good` and `tests/edition-bad` gain codex files.
+
+| Check | Result |
+|---|---|
+| `tests/edition-good`, with a codex that declares `EDITION` | validator 0 errors, 0 warnings; grammar 5 of 5 accepted |
+| `tests/edition-bad` in the validator | 5 errors and 2 warnings; the three new findings are `FOR EDITION` at 0.6 (error), `FOR EDITION` at 0.5 (warning) and a codex with no edition at 0.6 (error). Before the change, 3 and 1 |
+| the fixture run against the run after part 1, once the codex fixtures carry the line | identical, but for the two edition sets and the grammar's count |
+| both grammar gates | 72 of 72 good files accepted; 17 of 17 planted faults refused |
+| `samples/` as one run | 1 error: it holds "arm5e" and "tor2e". Each half alone: 0 errors |
+| validator, before against after, 22 corpus directories | 21 identical. l5r5e gains 69 warnings, its 69 codex files' `FOR EDITION`, and no other finding (312 to 381). Totals: 39 errors, as before; 28,920 warnings |
+| validator, before against after, the seven other repos | identical output in all seven |
+
+*Agent's calls, to confirm.* (1) A codex with no edition is reported as any file is; the line
+was optional before, and he was told so in the proposal. (2) `FOR EDITION` in a file below 0.6
+is read as the codex's edition, so the 69 l5r5e codex files count as "l5r5e" in the rule that
+a run holds one edition. (3) `samples/` is two editions and is validated as two; the codex
+sample is about tor2e and the conformance sample about arm5e. (4) A bridge's sides, a port's
+`ORIGIN` and a `.selections` file's `FOR` are untouched.
+
+*Not done.* No corpus is changed: the 69 codex files are in F36.
+
+**Part 3, ruled 2026-11-14: the `VERSION` beside an edition is its corpus's content version
+(DECISION-61).** Owner: "Define and check it". The alternative put to him was to remove the
+`VERSION` from a bridge's side.
+
+A corpus has a content version, the `0.5` of its directory and file names, and DECISION-50 made
+it the span in which a hash is stable. The `VERSION` of every file in the 22 corpus directories
+begins with its directory's version, so the version is in the files. The `VERSION` beside an
+edition names it: a file belongs to the corpus when its own `VERSION` begins with that version,
+part for part. The validator checks a bridge's side against the files given as
+`--corpus <edition>=<dir>`: a warning in a bridge that declares a `SPEC_VERSION` below 0.6, or
+none, and an error from 0.6.
+
+The proposal said two of the three bridges would be reported. It is all three: the D&D bridge
+writes `"0.4"` on both sides and both corpora are at 0.5. He is told with the result.
+
+*Applied.* Spec: §0 item 48, DECISION-61, §19's third axis and a paragraph under *Editions &
+version namespaces*, a sentence of §21, a bullet of §20. Validator: a new pass over a bridge's
+sides. README: the fixture list. New: `tests/sides`, two bridges and two small corpora.
+
+| Check | Result |
+|---|---|
+| `tests/sides/good.bridge` with its two corpora | 0 errors, 0 warnings; one corpus holds files at 0.5.1 and 0.5.10 under a side that says `"0.5"` |
+| `tests/sides/bad.bridge` with the same corpora | 2 errors: `"0.4.9"` against a file at 0.4.2, and `"0.4"` against files at 0.5. Before the change, 0 |
+| `tests/sides` in the grammar | 5 of 5 accepted |
+| the fixture run against the run after part 2 | identical, but for the two new lines |
+| both grammar gates | 72 of 72 good files accepted; 17 of 17 planted faults refused |
+| the D&D bridge, with the dnd5e and dnd5.5e corpora | 2 new warnings: both sides say `"0.4"`; all 12 and all 14 files are at 0.5 |
+| the arm4 to arm5e bridge, with the arm5e corpus | 1 new warning: `"arm5e"` at `"0.4"`; all 2,435 files are at 0.5. The `"arm4"` side is `EXTERNAL` and is not checked |
+| the Pendragon bridge, with both corpora | 1 new warning: `"pendragon6e"` at `"0.5.1"`; 266 of 270 files do not begin with it. `"pendragon5e"` at `"0.5"` passes |
+| validator, before against after, 29 directories | identical output in all 29; the 22 corpus directories stand at 39 errors and 28,920 warnings |
+
+*Agent's calls, to confirm.* (1) "Begins with" is exact on the parts given, numbers as
+numbers: `"0.5"` is met by 0.5.10 and not by 0.4.2. It is not DECISION-35's "at least". (2) A
+file that declares no `VERSION` is not counted. (3) Within a corpus, nothing checks that its
+files share a content version; the check runs only where a side names one. (4) A side with no
+`VERSION` is not reported. (5) A `.selections` file's `FOR "x" VERSION "y"` is left
+(DECISION-53). (6) §21's example bridge keeps `"0.4"` on its sides; it declares `SPEC_VERSION
+"0.4"`.
+
+*Not done.* No bridge is changed: F37.
 
 ### C9. Smaller gaps
 
@@ -3337,6 +3491,35 @@ DECISION-58 takes the check and the reward out of the base spec.
 - **curseborne.** Its 13 checks are written with L5R's keywords (`RING "Cunning"`, `TN 3`).
   Whether to respell them in Curseborne's own terms is a question for its book.
 
+### F36. Every corpus, its generators and the synthesist: the `EDITION` line
+
+DECISION-59 has every BASE, EXTENSION, FRAME, ARC and CAMPAIGN declare its edition. 6,480 files
+in the 29 directories need the line (6,280 in the 22 corpus directories), and each is a
+warning until it has it.
+
+- **The id.** The 22 directory names are the ids in use: `arm5e`, `armdef`, `dnd5e`,
+  `dnd5.5e`, and so on. A third-party tree declares the edition it depends on, whatever repo it
+  sits in: Wyldwolf Axis is `dnd5.5e`, and the trees of `titterpig-dsl-arm5e-3rdparty` are
+  `armdef`.
+- **Generators.** Each writes the header and has to write the line; the arm5e retarget writes
+  `armdef` into what it derives.
+- **Bare `.actor` files** (670, F17) get the line with their wrapper.
+- **l5r5e's 69 codex files** write `FOR EDITION "l5r5e"`, the older form under DECISION-60,
+  and change it to `EDITION "l5r5e"`.
+- **synthesist.** Its manifest names the edition (`"edition": "arm5e"`). It can check that
+  against what the files declare.
+- **Found in passing, pendragon5e.** `pendragon5e-0.5-core-chapter-5-game-mechanics.ttrpg` holds
+  a NUL byte on line 1129. The validator reads past it; `grep` treats the file as binary, which
+  is how a count by `grep` came out one short of the validator's.
+
+### F37. Three bridges: the `VERSION` on four sides
+
+Under DECISION-61 the `VERSION` beside an edition is its corpus's content version. Four sides
+name another, and each is a warning until corrected to `"0.5"`: `"dnd5e"` and `"dnd5.5e"` at
+`"0.4"` in the D&D bridge, `"arm5e"` at `"0.4"` in the arm4 bridge, and `"pendragon6e"` at
+`"0.5.1"` in the Pendragon bridge. `bridges/sources.json` records the same versions and
+changes with them.
+
 ### To-do recorded in the spec
 
 - **Nested conditions in `WITH`** (§5b). `A AND (B OR C)` is not defined; a `WITH` that mixes `AND`
@@ -3782,6 +3965,13 @@ Filled in as each finding is walked through.
 | C7 | 2026-11-14 | A check and a reward are the system's: the base spec defines neither and reserves none of their keywords, and §16 shows two systems' checks as examples that are no part of it. Written as DECISION-58. No file changes. | Owner: "why isn't it entirely delegated to the system? I don't think generic fields are helpful here, these should be system-specific. The base spec can provide a couple examples, but those examples are not part of the base spec." The agent had proposed to keep the frame of a check in the base. No tool reads the frame, three systems write a check, and one of them already uses its own field. |
 | C7 | 2026-11-14 | Agent's calls, to confirm. (1) `REWARDS` and its fields go with the check. (2) §16's l5r5e example arc keeps its `CHECKS` and `REWARDS`, labelled as l5r5e's. (3) §16's rules for writing an L5R check leave the spec (F35). (4) `MONTAGE` and `MOMENT` stay in §18. (5) `CLUES`, `CONFLICT`, `OBJECTIVES` and `RESOLUTIONS` stay. (6) §15's example of a block keyword used elsewhere is now `TRIGGER`. | (1): C7 names `XP_BASE` and `XP`, and only l5r5e writes them. (2): it is a real l5r5e arc. (3): they are L5R's rules. (4): C7 does not name them. (5): five or six systems write each. (6): `SKILL` is no longer a base keyword. |
 | C7 | 2026-11-14 | C7 is closed. The branch is committed and pushed. | Owner: "Close, commit, push". The agent's calls in the row above were reported to him before he closed and were not separately ruled on. |
+| C8 | 2026-11-14 | Part 1: every file declares its edition. `EDITION "id"` stands in the header of every BASE, EXTENSION, FRAME, ARC and CAMPAIGN; without it a file is a warning below 0.6 and an error from 0.6. A run holds one edition, and a `--corpus x=<dir>` directory holds edition `x`. Written as DECISION-59. The corpus work is F36. | Owner: "In every file". The agent had recommended a declaration in BASE files only, about 55 lines against about 6,500, with nothing restated. No file named its edition, and the directory name is wrong for two third-party trees. |
+| C8 | 2026-11-14 | Agent's calls on part 1, to confirm. (1) The keyword is `EDITION`. (2) Absence below 0.6 is a warning, one for each of 6,280 files in the 22 directories. (3) A SETTING may declare none. (4) The dice module declares none. (5) A codex and a bridge are left to part 2. (6) Two editions in a run is one error. (7) An id is any string. (8) A bare `.actor` gets the line with its wrapper. | (1): a codex already writes `FOR EDITION`. (2): the terms of every new requirement in 0.6. (3): §16 calls a setting system-agnostic. (4): §19 calls it edition-neutral. (5): each points at editions. (6): §19 says nothing resolves across one. (7): no list of editions exists. (8): it has no header. |
+| C8 | 2026-11-14 | Part 2: a codex declares its edition as every file does, `EDITION "id"`. `FOR EDITION "id"` is the older form: read as the same line, a warning below 0.6 and an error from 0.6. A bridge's sides and a port's `ORIGIN` are unchanged. Written as DECISION-60. | Owner: "Yes, fold it". The agent had recommended it: `FOR EDITION` named the codex's own edition in a second spelling, 69 files write it and no tool read it. |
+| C8 | 2026-11-14 | Agent's calls on part 2, to confirm. (1) A codex with no edition is reported. (2) `FOR EDITION` below 0.6 is read as the codex's edition. (3) `samples/` is validated as two editions. (4) A bridge's sides, a port's `ORIGIN` and `.selections` are untouched. | (1): the proposal said so, and he ruled on it. (2): an older form is read. (3): its two samples are about two games. (4): the first two share a keyword and are covered by part 1's `--corpus` check; the third is marked as likely to be replaced. |
+| C8 | 2026-11-14 | Part 3: the `VERSION` beside an edition is its corpus's content version, the version each of the corpus's files' `VERSION` begins with. The validator checks a bridge's side against the corpus it is given: a warning below 0.6 and an error from 0.6. Written as DECISION-61. Four sides of the three bridges are reported: F37. | Owner: "Define and check it". §21 said a side pins "a content `VERSION`" and no tool read it; the three bridges meant three things by it. DECISION-50 makes an edition and a content version the span of a hash. |
+| C8 | 2026-11-14 | Agent's calls on part 3, to confirm. (1) "Begins with" is exact on the parts given. (2) A file with no `VERSION` is not counted. (3) Nothing checks that a corpus's files share a content version. (4) A side with no `VERSION` is not reported. (5) `.selections` is left. (6) §21's example keeps `"0.4"`. | (1): a hash namespace is one version, where a dependency pin is a floor. (2): there is nothing to compare. (3): he ruled on the line beside an edition. (4): §21 makes it optional. (5): it is marked as likely to be replaced. (6): it is a 0.4 example. |
+| C8 | 2026-11-14 | C8 is closed. The branch is committed and pushed. | Owner: "Close, commit, push". The agent's calls marked "to confirm" in parts 1 to 3 were reported to him as each part was applied and were not separately ruled on. |
 
 ---
 

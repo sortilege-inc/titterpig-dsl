@@ -177,6 +177,18 @@ Changes made since v0.5, listed as they are decided. **Not all are additive.**
     `RING`, `TN`, `RING_TN`, `APPROACH`, `ALTERNATIVE`, `ON_SUCCESS`, `ON_FAILURE`, `REWARDS`,
     `CONDITIONAL_REWARDS`, `REWARD`, `XP_BASE` and `XP` are keywords of the systems that write
     them. §16 shows two systems' checks as examples. No file changes.
+46. **A file declares its edition** *(§3, §19, DECISION-59; not additive)* — `EDITION "id"` in
+    the header of every BASE, EXTENSION, FRAME, ARC and CAMPAIGN. Its absence is an error from
+    0.6 and a warning below it. The dice module declares none, and a SETTING may. A run loads
+    files of one edition, and a directory given as `--corpus x=<dir>` holds edition `x`.
+47. **A codex declares its edition as every file does** *(§25, DECISION-60; not additive)* —
+    `EDITION "id"` in its header. `FOR EDITION "id"`, which was optional and which no tool
+    read, is the older form: an error from 0.6 and a warning below it.
+48. **The `VERSION` beside an edition is its corpus's content version** *(§19, §21,
+    DECISION-61)* — the version that the `VERSION` of each of the corpus's files begins with:
+    `"0.5"` for files at `0.5.0` and `0.5.10`. An edition and that version name a corpus. The
+    validator checks a bridge's side against the corpus it is given: an error from 0.6 and a
+    warning below it.
 
 ### v0.5 — five new constructs, and one rule tightened *(current)*
 
@@ -899,6 +911,45 @@ stay valid.
   their keywords, and may show examples that are no part of it. Generic fields were
   considered and not taken. Every file that writes a check or a reward stays as it is; the
   words are its system's own (§1, §11).
+- **DECISION-59 — A file declares its edition** *(resolved, v0.6, 2026-11-14; not additive)*
+  (§3, §19): the edition is the namespace of a hash (§19) and the scope in which a reference
+  resolves (§20), and no file said which one it belongs to. The tools took it from a directory
+  name, from the validator's `--corpus <edition>=<dir>` and from a synthesist manifest. The
+  directory is wrong for third-party books: the Wyldwolf Axis tree depends on the D&D 2024 base
+  and sits in the 2014 edition's third-party repo, and every tree in the arm5e third-party repo
+  depends on armdef. The owner ruled that every file declares its edition, in place of a
+  declaration in BASE files that the rest would inherit. **`EDITION "id"`** stands in the
+  header of every BASE, EXTENSION, FRAME, ARC and CAMPAIGN. A file with none is a **warning**
+  where it declares a `SPEC_VERSION` below 0.6, or none, and an **error** from 0.6. The dice
+  module is edition-neutral and declares none; a SETTING is system-agnostic (§16) and may
+  declare one or none. Errors at every version: `EDITION` twice in a file; a run whose files
+  declare more than one edition; a file under `--corpus x=<dir>` that declares another. The
+  lines that point at an edition, and the `VERSION` beside one, are C8's parts 2 and 3.
+- **DECISION-60 — A codex declares its edition as every file does** *(resolved, v0.6,
+  2026-11-14; not additive)* (§19, §25): a codex named its edition with an optional
+  `FOR EDITION "id"`, the edition whose DEFs its categories and objects resolve against. That
+  is the codex's own edition in a second spelling, and no tool read it; 69 codex files write
+  it, all in l5r5e. A codex now writes `EDITION "id"` in its header and is one of the files
+  of its edition: the validator counts it in the rule that a run holds one edition. `FOR
+  EDITION` is read as the same line and is a **warning** in a file that declares a
+  `SPEC_VERSION` below 0.6, or none, and an **error** from 0.6. A codex with neither is
+  reported as any file is (DECISION-59). The two lines that name another edition, a bridge's
+  sides and a port's `ORIGIN`, share a keyword already and are unchanged.
+- **DECISION-61 — The `VERSION` beside an edition is its corpus's content version** *(resolved,
+  v0.6, 2026-11-14)* (§19, §21): a bridge's side may give a `VERSION` after its edition, and
+  §21 said only that it pins "a content `VERSION`". No tool read it, and the three bridges
+  meant three things by it: a content version with no corpus directory (`"arm5e"` at `"0.4"`),
+  one file's version (`"pendragon6e"` at `"0.5.1"`) and the game's edition number (`"arm4"`
+  at `"4"`). A corpus has a content version, the `0.5` of its directory and file names, and
+  DECISION-50 made it the span within which a hash is stable; so an edition and that version
+  together name a corpus. The `VERSION` of every file in the 22 corpus directories begins
+  with its directory's version, so the content version is in the files already. The decision
+  is that the `VERSION` beside an edition is that version: a file belongs to the corpus when
+  its own `VERSION` begins with it, part for part. The validator checks a side against the
+  files given as `--corpus <edition>=<dir>`: a **warning** in a bridge that declares a
+  `SPEC_VERSION` below 0.6, or none, and an **error** from 0.6. A side declared `EXTERNAL`
+  has no corpus and is not checked. Four sides of the three bridges are reported. A
+  `.selections` file writes the same pair and is left to its own review (DECISION-53).
 
 
 ## 1. Overview & Design Principles
@@ -1002,6 +1053,7 @@ EXTENSION "tor2e-core-ash" EXTENDS "tor2e" {
     NAME "Ash"
     VERSION "0.5"
     SPEC_VERSION "0.6"
+    EDITION "tor2e"
     RELEASE_DATE "2026-11-12"
 
     #tzjEoZpJbPbQBT05csRIVx5 ^"Ash" DEF {
@@ -1070,8 +1122,9 @@ A BASE defines a self-contained ruleset module. It has no parent, with one excep
 ```
 BASE "FileID" {
     NAME "Human-readable Name"
+    EDITION "EditionID"
     VERSION "0.1"
-    SPEC_VERSION "0.4"
+    SPEC_VERSION "0.6"
     RELEASE_DATE "YYYY-MM-DD"
 
     # ... definitions ...
@@ -1086,6 +1139,7 @@ An EXTENSION modifies or adds to a parent module. Two forms exist:
 ```
 EXTENSION "FileID" EXTENDS "ParentFileID" {
     NAME "Extension Name"
+    EDITION "EditionID"
     VERSION "0.1"
     RELEASE_DATE "YYYY-MM-DD"
 
@@ -1097,6 +1151,7 @@ EXTENSION "FileID" EXTENDS "ParentFileID" {
 ```
 EXTENSION "FileID" {
     NAME "Extension Name"
+    EDITION "EditionID"
     VERSION "0.1"
     RELEASE_DATE "YYYY-MM-DD"
     DEPENDS_ON "ParentFileID" VERSION "0.1"
@@ -1156,6 +1211,9 @@ version or a later one.
 **Fields:**
 - `FileID`: Unique identifier (e.g., `"L5R5e_Core_Core"`, `"VTM5e_Companion_Errata"`)
 - `NAME`: Full display name
+- `EDITION` *(v0.6, DECISION-59)*: the edition the file belongs to, as `"l5r5e"` or `"armdef"` (§19).
+  Every BASE, EXTENSION, FRAME, ARC and CAMPAIGN declares it, once. Without it a file is a
+  **warning** where it declares a `SPEC_VERSION` below 0.6, or none, and an **error** from 0.6
 - `VERSION`: Content version of this file (semantic or date-based)
 - `SPEC_VERSION` *(v0.4)*: The DSL-spec version this file targets (e.g., `"0.4"`). Distinct from `VERSION`; lets tooling detect spec conformance.
 - `RELEASE_DATE`: ISO date format
@@ -2848,7 +2906,7 @@ own DEFs, and `TRIGGER` is a `HOOK` keyword. (Before DECISION-58 the example her
 `SKILL`, then a SCENE keyword.) The file-level, definition, type, modifier, scope, choice and modification
 keywords are reserved everywhere.
 
-**File-level:** `BASE`, `EXTENSION`, `EXTENDS`, `NAME`, `VERSION`, `SPEC_VERSION`, `RELEASE_DATE`, `DEPENDS_ON`, `ORIGIN` (a port's source, §19; shared with **Bridge**)
+**File-level:** `BASE`, `EXTENSION`, `EXTENDS`, `NAME`, `EDITION` (§19; shared with **Codex**), `VERSION`, `SPEC_VERSION`, `RELEASE_DATE`, `DEPENDS_ON`, `ORIGIN` (a port's source, §19; shared with **Bridge**)
 
 **Definition:** `DEF`, `ACTOR`, `TEMPLATE`, `CHOICES`, `PROPERTIES`, `RULES`
 
@@ -2880,7 +2938,7 @@ keywords are reserved everywhere.
 
 **Narrative containers:** `SETTING`, `FRAME`, `ARC`, `CAMPAIGN`, `SCENE`, `LOCATION` (and their sub-keywords as defined in §16)
 
-**Codex (§25):** `CODEX`, `SOURCES`, `CATEGORIES`, `RELATIONS`, `ENTITY`, `IS`, `RELATIONSHIPS`, `INVERSE`, `DOMAIN`, `RANGE`, `SYMMETRIC`, `TRANSITIVE`, `SOURCE`, `AT`, `FROM` (`FOR`/`EDITION`/`DEPENDS_ON`/`VERSION` are shared with §3/§19; `EXTENDS` with §6)
+**Codex (§25):** `CODEX`, `SOURCES`, `CATEGORIES`, `RELATIONS`, `ENTITY`, `IS`, `RELATIONSHIPS`, `INVERSE`, `DOMAIN`, `RANGE`, `SYMMETRIC`, `TRANSITIVE`, `SOURCE`, `AT`, `FROM` (`EDITION`/`DEPENDS_ON`/`VERSION` are shared with §3/§19; `EXTENDS` with §6; `FOR EDITION` is not written from 0.6, DECISION-60)
 
 **Bridge (§21):** `BRIDGE`, `ORIGIN`, `DESTINATION`, `EXTERNAL`, `DISPOSITIONS`, `DISPOSITION`, `ALIASES`, `CONVERSION`, `GUIDANCE`, `MAP`, `REMAINDER`, `PROCEDURE`, `SUBJECT`, `SCOPE`, `ASPECT`, `CONCERNS`, `TOPICS`, `EXHAUSTIVE`, `CONVERT`, `INTO`, `UNCHANGED`, `SCALE`, `OVER`, `RESTATE`, `MANUAL` (`ALIAS`/`FOR` are shared with §5b; `ENTRY` and `TEXT` with §16/§10)
 
@@ -2933,6 +2991,7 @@ SETTING "SettingID" {
 
 **Fields:**
 - `SettingID`: Unique identifier (e.g., `"RichFrog"`, `"Rokugan"`)
+- `EDITION`: Optional. A setting is system-agnostic and may belong to no edition (§19)
 - `NAME`: Full display name
 - `VERSION`: Semantic version
 - `THEMES`: Narrative themes as a string list
@@ -3002,6 +3061,7 @@ FRAME "FrameID" {
     NAME "Human-readable Frame Name"
     VERSION "1.0.0"
     SPEC_VERSION "0.6"
+    EDITION "EditionID"
     DEPENDS_ON "BaseSystemID"
     DEPENDS_ON "SettingID"      # optional: a SETTING
 
@@ -3044,6 +3104,7 @@ FRAME "FrameID" {
 
 **Fields:**
 - `FrameID`: Unique identifier
+- `EDITION`: The edition the frame belongs to (§19)
 - `DEPENDS_ON`: Required BASE system. A second line names an optional SETTING, for world-building context
 - `STARTING_CONDITIONS`: Character creation modifications. `MODIFICATIONS` holds them in the forms
   §8 already defines: `#hash ^"Property" SET value` for a starting value, and a property
@@ -3059,6 +3120,7 @@ FRAME "RichFrogFrame" {
     NAME "Rich Frog Chronicles"
     VERSION "0.1.0"
     SPEC_VERSION "0.6"
+    EDITION "l5r5e"
     DEPENDS_ON "L5R5e"
     DEPENDS_ON "RichFrog"
 
@@ -3115,6 +3177,7 @@ ARC "ArcID" {
     NAME "Human-readable Arc Name"
     VERSION "1.0.0"
     SPEC_VERSION "0.6"
+    EDITION "EditionID"
     DEPENDS_ON "BaseSystemID"
     DEPENDS_ON "SettingID"          # optional: a SETTING
     DEPENDS_ON "ExtensionID"        # optional, repeatable: an EXTENSION
@@ -3192,6 +3255,7 @@ ARC "ArcID" {
 
 **Fields:**
 - `ArcID`: Unique identifier
+- `EDITION`: The edition the arc belongs to (§19)
 - `DEPENDS_ON`: Required BASE system. Further lines name an optional SETTING and any EXTENSIONs the arc needs
 - `CAST`: NPC roster — imported via `FROM <KIND> "id" INCLUDE [ … ]` or defined inline. The
   `FROM` line is the declaration of that dependency; no `DEPENDS_ON` line is needed for it
@@ -3207,6 +3271,7 @@ ARC "L5R5e_LostWriter" {
     NAME "The Lost Writer in the City of the Rich Frog"
     VERSION "0.5.5"
     SPEC_VERSION "0.6"
+    EDITION "l5r5e"
     DEPENDS_ON "L5R5e_Core_Core"
     DEPENDS_ON "L5R5e_Children_of_Five_Winds"
 
@@ -3380,6 +3445,7 @@ CAMPAIGN "CampaignID" {
     NAME "Human-readable Campaign Name"
     VERSION "1.0.0"
     SPEC_VERSION "0.6"
+    EDITION "EditionID"
     DEPENDS_ON "BaseSystemID"
     DEPENDS_ON "SettingID"      # optional: a SETTING
     DEPENDS_ON "FrameID"        # optional: a FRAME
@@ -3409,6 +3475,7 @@ CAMPAIGN "CampaignID" {
 
 **Fields:**
 - `CampaignID`: Unique identifier
+- `EDITION`: The edition the campaign belongs to (§19)
 - `DEPENDS_ON`: Required BASE system. Further lines name an optional SETTING and an optional FRAME, for campaign scaffolding
 - `RECURRING_CAST`: NPCs that persist across arcs
 - `FROM ARC`: References to constituent arcs in sequence
@@ -3421,6 +3488,7 @@ CAMPAIGN "ChildrenOfFear" {
     NAME "The Children of Fear"
     VERSION "0.5"
     SPEC_VERSION "0.6"
+    EDITION "callofcthulhu7e"
     DEPENDS_ON "CallOfCthulhu7e_Core_Base"
 
     THEMES {
@@ -3593,6 +3661,7 @@ EXTENSION "EncounterPack" EXTENDS "L5R5e" {
     NAME "Rich Frog Encounters"
     VERSION "0.1.0"
     SPEC_VERSION "0.6"
+    EDITION "l5r5e"
 
     SCENE ^"Roadside Duel" #y4Hc9PvM2xQe7JrW5tLf8NdB {
         TYPE #e5Wj2NxB9cTm4QfV7hDr6LpS ^"Combat"
@@ -4111,7 +4180,7 @@ Three distinct version axes, kept separate:
 
 - **DSL-spec version** — the version of *this specification*. Files pin the spec they target via `SPEC_VERSION`.
 - **File content `VERSION`** — the version of a file's game content (semantic or date-based), independent of the spec version.
-- **Directory organization** — a system keeps its files under a content-version directory (`0.5/`), and each filename carries that version too (`l5r5e-0.5-core-base.ttrpg`), so a file names its version wherever it is copied. That number is the corpus's content version. It is neither the file's own `VERSION` nor its `SPEC_VERSION`.
+- **The corpus's content version** — a system keeps its files under a content-version directory (`0.5/`), and each filename carries that version too (`l5r5e-0.5-core-base.ttrpg`), so a file names its version wherever it is copied. That number is the corpus's content version, and the `VERSION` of every file in the corpus begins with it *(v0.6, DECISION-61)*: a file at `0.5.9` is a file of the `0.5` corpus. It is not a file's `SPEC_VERSION`.
 
 `DEPENDS_ON "Parent" VERSION "x"` says the parent's *content* version is x or later (§3, DECISION-35). Tooling treats `SPEC_VERSION` as the conformance target.
 
@@ -4134,6 +4203,32 @@ A hash stands in two editions on purpose in two cases only:
 An entity converted afresh for another edition has a hash of its own: the cores of `arm5e` and
 `armdef` share none, and `^"Faerie Blood"` has one hash in each.
 
+**A file declares its edition** *(v0.6, DECISION-59)*. `EDITION "armdef"` stands in the header
+of every BASE, EXTENSION, FRAME, ARC and CAMPAIGN, once, beside `NAME` and `VERSION`. Before
+v0.6 a file's edition was the name of its directory, which is wrong for a third-party book
+kept in another edition's repository.
+
+- A file with no `EDITION` is a **warning** where it declares a `SPEC_VERSION` below 0.6, or
+  none, and an **error** from 0.6.
+- The dice module (§8) is edition-neutral and declares none. A SETTING is system-agnostic
+  (§16) and may declare one or none.
+- **A set is of one edition.** Files that declare different editions are not loaded together:
+  that is an **error**. An extension declares the edition of the files it depends on.
+- A directory handed to the validator as another edition's corpus, `--corpus x=<dir>`, holds
+  files that declare `x`; one that declares another is an **error**.
+- A bridge has two sides and names an edition for each (§21).
+- A codex declares its edition the same way *(DECISION-60)*. Its older spelling, `FOR EDITION
+  "id"`, is a **warning** below 0.6 and an **error** from 0.6 (§25).
+
+**An edition and a content version name a corpus** *(v0.6, DECISION-61)*. A hash is stable
+within one content version of an edition (§5), so the namespace is the pair: `arm5e` at `0.5`.
+A line that points at an edition may give that version after it, as a bridge's side does:
+`DESTINATION "arm5e" VERSION "0.5"` (§21). A file belongs to the corpus named when its own
+`VERSION` begins with that version, part for part, numbers as numbers: `"0.5"` is met by
+`0.5.0` and by `0.5.10`, and not by `0.4.2`. Where the validator is given the edition's corpus
+it checks every file there. A side that names a version its corpus is not at is a **warning**
+in a bridge that declares a `SPEC_VERSION` below 0.6, or none, and an **error** from 0.6.
+
 **Forward-porting.** A sourcebook published for an older edition does **not** automatically apply to a
 newer one — it references the old edition's hashes. To use it under a newer edition, generate a **new
 `.ttrpg` of that sourcebook converted to the newer edition**, targeting the newer edition's
@@ -4149,6 +4244,7 @@ EXTENSION "ARMDef_Grogs_Abilities" {
     NAME "Ars Magica Fifth Edition, Grogs - New Abilities"
     VERSION "0.5.2"
     SPEC_VERSION "0.6"
+    EDITION "armdef"
     RELEASE_DATE "2026-07-25"
     ORIGIN "arm5e" EXTENSION "ArM5_Grogs_Abilities"
     DEPENDS_ON "ARMDef_Grogs_Core_Ext"
@@ -4218,6 +4314,10 @@ DECISION-35), and an older parent is an error.
 So are a file's dependencies (§3, DECISION-36): each names a loaded file, no two files depend on
 each other, a file id is declared once, an `EXTENSION` names a parent and a `BASE` does not. The
 order files are loaded in is not checked. The validator is given no order.
+
+And its edition (§19, DECISION-59): a BASE, EXTENSION, FRAME, ARC or CAMPAIGN declares one,
+the files of a run declare the same one, and a `--corpus` directory holds the edition it is
+given as.
 
 Not checked, and why: a value for a property no type declares, which no rule forbids; the fields
 of a nested or unnamed DEF; and a misspelt keyword, which reads as a system's own (§15). A name that
@@ -4290,6 +4390,8 @@ coherence for it is checked against **two** corpora, not one:
 - A `DESTINATION`-side caret reference must resolve in the **destination** edition's corpus.
 - Neither side is checked against the other, and a bridge's own definitions (its declared
   dispositions, its guidance entry labels) belong to **neither** edition — they are file-local.
+- A side's `VERSION` is the content version of the corpus given for it *(v0.6, DECISION-61)*:
+  the `VERSION` of each file there begins with it (§19).
 
 The validator is therefore given a corpus per edition id:
 
@@ -4357,7 +4459,8 @@ BRIDGE "FileID" {
 ```
 
 `ORIGIN` / `DESTINATION` name an **edition id** (the system id under which that edition's corpus
-lives, §19), optionally pinning a content `VERSION`. A side with no titterpig corpus is declared
+lives, §19), optionally with the content `VERSION` of that edition's corpus: the version each of
+its files' `VERSION` begins with (§19, DECISION-61). A side with no titterpig corpus is declared
 `EXTERNAL` with a **required reason**, exactly as `FIAT` requires one:
 
 ```
@@ -4706,9 +4809,9 @@ consumer to parse the body.
 
 ```
 CODEX "FileID" {
-    NAME "…"  VERSION "…"  SPEC_VERSION "0.5"  RELEASE_DATE "…"
+    NAME "…"  VERSION "…"  SPEC_VERSION "0.6"  RELEASE_DATE "…"
+    EDITION "tor2e"                              # the codex's edition: its categories and objects resolve against that edition's DEFs
     [DEPENDS_ON "SchemaCodexID" VERSION "…"]   # import a shared ontology
-    [FOR EDITION "tor2e"]                        # edition whose DEFs categories/objects may resolve against
 
     [SOURCES { … }]       # derived-provenance manifest (which prose, which versions)
     CATEGORIES { … }      # the type taxonomy (schema)
@@ -4746,9 +4849,12 @@ provenance/manifest metadata; it does not itself assert graph facts (those are `
 `SOURCE … AT` bind individual nodes into the prose). On a split graph it lives in the parent and grows
 as each book is folded in.
 
-`FOR EDITION` (optional) names the edition namespace (§19) whose DEFs a category or relationship object
-may resolve to (`IS ^"Hobbit"` → that edition's culture DEF). Absent it, carets resolve within the
-codex and any co-validated corpus.
+`EDITION` names the edition the codex belongs to (§19) *(v0.6, DECISION-60)*: the namespace whose
+DEFs a category or relationship object may resolve to (`IS ^"Hobbit"` → that edition's culture
+DEF). A codex is validated with the files of its edition, and carets resolve within the codex
+and that corpus. Before v0.6 the line was `FOR EDITION "id"` and was optional; that spelling
+is a **warning** in a file that declares a `SPEC_VERSION` below 0.6, or none, and an **error**
+from 0.6.
 
 ### CATEGORIES — the type taxonomy
 

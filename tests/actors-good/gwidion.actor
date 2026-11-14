@@ -1,6 +1,7 @@
 EXTENSION "Actors_Gwidion" {
     NAME "Gwidion of Verditius"
     SPEC_VERSION "0.6"
+    EDITION "demo"
     VERSION "1.0"
     RELEASE_DATE "2026-11-12"
     DEPENDS_ON "Actors_Core"

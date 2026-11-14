@@ -742,6 +742,11 @@ def analyze_bridge(fname, text, findings):
         'waived_ranges': waived_ranges, 'waived_lines': set(),
         'sides': sides, 'sided_refs': sided_refs, 'local_refs': local_refs, 'topics': topics,
         'aliases': aliases,
+        'declared_spec_version': next(
+            ((int(m.group(1)), int(m.group(2)))
+             for m in (re.match(r'\s*(\d+)\.(\d+)', toks[i + 1].val) for i, t in enumerate(toks[:-1])
+                       if t.kind == 'ID' and t.val == 'SPEC_VERSION' and toks[i + 1].kind == 'STR')
+             if m), (0, 0)),
     }
 
 
@@ -798,7 +803,7 @@ def bridge_coherence(files_data, corpora, findings, notes):
                                 unverified.get(side, 0), rec['external']))
 
 
-def load_corpus_names(path, index=None):
+def load_corpus_names(path, index=None, declared=None, versions=None):
     """Every ^"Name" / ACTOR / TEMPLATE / ALIAS name defined in an edition corpus.
     `index`, when given, is filled with  container id -> {'kinds', 'anchors', 'file'}:
     the kinds declared under that id and hash -> {names} for the file that declares it
@@ -816,6 +821,11 @@ def load_corpus_names(path, index=None):
             except OSError:
                 continue
             names.update(data['names'])
+            if declared is not None:
+                for ed, _ln in data.get('header', {}).get('editions', []):
+                    declared.setdefault(ed, []).append(p)
+            if versions is not None and data.get('kind') != 'bridge' and data.get('file_version'):
+                versions.append((p, data['file_version']))
             if index is not None:
                 anchors = {}
                 for src in (data.get('anchor_names', {}), data.get('block_anchors', {}),
@@ -1229,13 +1239,24 @@ def collect_header(toks, HEADER=None):
         elif depth == 0 and t.kind == 'ID' and t.val in HEADER_KINDS and 'kind' not in HEADER \
                 and i + 1 < len(toks) and toks[i + 1].kind == 'STR':
             # the file's own declaration: KIND "id" [EXTENDS "parent"] {
-            HEADER.update(kind=t.val, id=toks[i + 1].val, line=t.line, extends=None, depends=[])
+            HEADER.update(kind=t.val, id=toks[i + 1].val, line=t.line, extends=None, depends=[],
+                          editions=[], for_editions=[])
             if i + 3 < len(toks) and toks[i + 2].kind == 'ID' and toks[i + 2].val == 'EXTENDS' \
                     and toks[i + 3].kind == 'STR':
                 HEADER['extends'] = (toks[i + 3].val, t.line)
         elif depth == 1 and t.kind == 'ID' and t.val == 'DEPENDS_ON' and 'kind' in HEADER \
                 and i + 1 < len(toks) and toks[i + 1].kind == 'STR':
             HEADER['depends'].append((toks[i + 1].val, t.line))
+        elif depth == 1 and t.kind == 'ID' and t.val == 'EDITION' and 'kind' in HEADER \
+                and i + 1 < len(toks) and toks[i + 1].kind == 'STR' \
+                and not (i > 0 and toks[i - 1].kind == 'ID' and toks[i - 1].val == 'FOR'):
+            # the file's own edition (§19, DECISION-59)
+            HEADER['editions'].append((toks[i + 1].val, t.line))
+        elif depth == 1 and t.kind == 'ID' and t.val == 'EDITION' and HEADER.get('kind') == 'CODEX' \
+                and i + 1 < len(toks) and toks[i + 1].kind == 'STR' \
+                and i > 0 and toks[i - 1].kind == 'ID' and toks[i - 1].val == 'FOR':
+            # a codex's older spelling of the same line, FOR EDITION "x" (DECISION-60)
+            HEADER['for_editions'].append((toks[i + 1].val, t.line))
         elif depth == 1 and t.kind == 'ID' and t.val == 'VERSION' \
                 and i + 1 < len(toks) and toks[i + 1].kind == 'STR':
             lead = toks[i - 2].val if i >= 2 and toks[i - 1].kind == 'STR' \
@@ -1262,6 +1283,15 @@ def version_at_least(have, want):
             hp, wp = str(hp), str(wp)
         return hp > wp
     return True
+
+
+def version_begins(have, want):
+    """Does the version `have` begin with `want`, part for part (§19, DECISION-61)? "0.5.9"
+    begins with "0.5"; "0.5.9" does not begin with "0.4" or with "0.5.1"."""
+    def parts(v):
+        return [int(x) if x.isdigit() else x for x in re.split(r'[.\-]', v.strip())]
+    h, w = parts(have), parts(want)
+    return len(h) >= len(w) and h[:len(w)] == w
 
 
 def check_actor_file(fname, toks, spec_version, findings):
@@ -2851,6 +2881,11 @@ def analyze_codex(fname, text, findings):
         'entity_anchors': entity_anchors,
         'file_version': collect_header(toks)[0], 'pins': collect_header(toks)[1],
         'header': (lambda h: (collect_header(toks, h), h)[1])({}), 'spec_version': (0, 0),
+        'declared_spec_version': next(
+            ((int(m.group(1)), int(m.group(2)))
+             for m in (re.match(r'\s*(\d+)\.(\d+)', toks[i + 1].val) for i, t in enumerate(toks[:-1])
+                       if t.kind == 'ID' and t.val == 'SPEC_VERSION' and toks[i + 1].kind == 'STR')
+             if m), (0, 0)),
         'relations': relations, 'edges': edges, 'dr_refs': dr_refs, 'sources': sources,
     }
 
@@ -3730,6 +3765,89 @@ def pin_pass(files_data, findings):
 DICE_MODULE = 'Titterpig_Dice'
 
 
+def side_version_pass(files_data, corpus_versions, findings):
+    """The VERSION beside an edition, on a bridge's side (§19, §21, DECISION-61): the content
+    version of that edition's corpus, which is what the VERSION of each of its files begins
+    with. Checked where --corpus <edition>=<dir> gives the corpus. A warning in a bridge that
+    declares SPEC_VERSION below 0.6, or none, and an error from 0.6. An EXTERNAL side has no
+    corpus and is not checked; nor is a side that writes no VERSION."""
+    for d in files_data:
+        if d.get('kind') != 'bridge':
+            continue
+        sev = 'error' if d.get('declared_spec_version', (0, 0)) >= (0, 6) else 'warning'
+        for side, rec in sorted(d.get('sides', {}).items()):
+            want, ed = rec.get('version'), rec['edition']
+            if not want or rec.get('external') or ed not in corpus_versions:
+                continue
+            files = corpus_versions[ed]
+            off = sorted((f, v) for f, v in files if not version_begins(v, want))
+            if off:
+                findings.append(Finding(d['file'], 'coherence', sev, rec['line'],
+                                        '%s "%s" VERSION "%s": %d of the %d file(s) given for that '
+                                        'edition declare a VERSION that does not begin with it '
+                                        '(%s declares "%s"). The VERSION beside an edition is its '
+                                        'corpus\'s content version (§19)'
+                                        % (side, ed, want, len(off), len(files),
+                                           os.path.basename(off[0][0]), off[0][1])))
+
+
+EDITION_KINDS = ('BASE', 'EXTENSION', 'FRAME', 'ARC', 'CAMPAIGN', 'CODEX')
+
+
+def edition_pass(files_data, corpus_declared, findings):
+    """A file declares its edition (§19, DECISION-59): EDITION "id" in its header.
+
+    A warning in a file that declares SPEC_VERSION below 0.6, or none, and an error from 0.6: a
+    BASE, EXTENSION, FRAME, ARC, CAMPAIGN or CODEX with no EDITION; and a codex that writes the
+    line as FOR EDITION "id", the older form (DECISION-60), which is read as its edition. The
+    dice module is edition-neutral and declares none. A SETTING may declare one or none (§16:
+    it is system-agnostic). A bridge has two sides and is not read here.
+
+    Errors at every version: EDITION written twice in a file; a run whose files declare more
+    than one edition; a file under --corpus <edition>=<dir> that declares another edition."""
+    seen = {}                    # edition -> [(file, line)] among the files of this run
+    for d in files_data:
+        h = d.get('header') or {}
+        if not h.get('kind') or d.get('kind') == 'bridge':
+            continue
+        version = d.get('declared_spec_version', d.get('spec_version', (0, 0)))
+        gated = 'error' if version >= (0, 6) else 'warning'
+        eds = list(h.get('editions', []))
+        for ed, ln in h.get('for_editions', []):
+            findings.append(Finding(d['file'], 'lint', gated, ln,
+                                    'FOR EDITION "%s" is an older form: a codex declares its edition '
+                                    'as every file does, EDITION "%s" (§19, §25)' % (ed, ed)))
+            if not eds:
+                eds.append((ed, ln))
+        if not eds:
+            if h['kind'] in EDITION_KINDS and h['id'] != DICE_MODULE:
+                sev = gated
+                findings.append(Finding(d['file'], 'lint', sev, h['line'],
+                                        '%s "%s" declares no EDITION: a file names the edition it '
+                                        'belongs to, EDITION "id" in its header (§19)'
+                                        % (h['kind'], h['id'])))
+            continue
+        if len(h.get('editions', [])) > 1:
+            findings.append(Finding(d['file'], 'lint', 'error', h['editions'][1][1],
+                                    '%s "%s" declares EDITION twice: a file belongs to one '
+                                    'edition (§19)' % (h['kind'], h['id'])))
+        seen.setdefault(eds[0][0], []).append((d['file'], eds[0][1]))
+    if len(seen) > 1:
+        order = sorted(seen, key=lambda e: (-len(seen[e]), e))
+        f, line = sorted(seen[order[1]])[0]
+        findings.append(Finding(f, 'coherence', 'error', line,
+                                'this run loads files of %d editions (%s): nothing resolves across '
+                                'an edition, so each is validated on its own (§19)'
+                                % (len(seen), ', '.join('"%s" in %d file(s)' % (e, len(seen[e]))
+                                                         for e in order))))
+    for key, declared in sorted(corpus_declared.items()):
+        for ed, files in sorted(declared.items()):
+            if ed != key:
+                findings.append(Finding(sorted(files)[0], 'coherence', 'error', 1,
+                                        '--corpus %s=<dir>: %d file(s) there declare EDITION "%s" '
+                                        '(§19)' % (key, len(files), ed)))
+
+
 def dependency_pass(files_data, findings):
     """What a file depends on (§3, DECISION-36): every DEPENDS_ON, and the id its header EXTENDS.
 
@@ -4048,7 +4166,7 @@ def main(argv):
         print("no .ttrpg files found", file=sys.stderr)
         return 2
 
-    corpora, corpus_index = {}, {}
+    corpora, corpus_index, corpus_declared, corpus_versions = {}, {}, {}, {}
     for spec in corpus_args:
         if '=' not in spec:
             print("--corpus expects <edition>=<dir>, got %r" % spec, file=sys.stderr)
@@ -4058,7 +4176,9 @@ def main(argv):
             print("--corpus %s: not a directory: %s" % (ed, d), file=sys.stderr)
             return 2
         corpus_index[ed] = {}
-        corpora[ed] = load_corpus_names(d, corpus_index[ed])
+        corpus_declared[ed] = {}
+        corpus_versions[ed] = []
+        corpora[ed] = load_corpus_names(d, corpus_index[ed], corpus_declared[ed], corpus_versions[ed])
 
     findings, files_data, notes = [], [], []
     for path in selections:
@@ -4084,9 +4204,11 @@ def main(argv):
     port_pass(files_data, corpus_index, findings)
     pin_pass(files_data, findings)
     dependency_pass(files_data, findings)
+    edition_pass(files_data, corpus_declared, findings)
     value_pass(files_data, findings)
     modification_pass(files_data, findings)
     bridge_coherence(files_data, corpora, findings, notes)
+    side_version_pass(files_data, corpus_versions, findings)
 
     # A finding the tokenizer could only mark as gated: a warning in a file that declares
     # SPEC_VERSION below 0.6, or none, and an error from 0.6.

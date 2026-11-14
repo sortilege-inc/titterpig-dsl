@@ -1,6 +1,7 @@
 BASE "Pins_Bad_Core" {
     NAME "DECISION-35 fixture — pins the loaded parent does not meet (§3)"
     SPEC_VERSION "0.6"
+    EDITION "demo"
     VERSION "0.5.9"
     RELEASE_DATE "2026-11-13"
 

@@ -2,6 +2,7 @@ BASE "RefsBad" {
     NAME "Reference resolution — intentionally broken (§5d)"
     VERSION "0.1"
     SPEC_VERSION "0.5"
+    EDITION "demo"
     RELEASE_DATE "2026-09-15"
 
     #refsBadShieldType00001 ^"Shield" DEF {

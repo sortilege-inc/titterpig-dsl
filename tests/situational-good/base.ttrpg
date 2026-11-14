@@ -1,6 +1,7 @@
 BASE "Situational_Core" {
     NAME "DECISION-38 fixture — SITUATIONAL, changes that hold in a situation (§8)"
     SPEC_VERSION "0.6"
+    EDITION "demo"
     VERSION "1.0"
     RELEASE_DATE "2026-11-13"
 

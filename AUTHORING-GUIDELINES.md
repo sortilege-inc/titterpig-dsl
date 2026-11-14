@@ -109,7 +109,7 @@ in `.lore`) — mirror, don't duplicate.
 - Organize files under a **content-version directory** (`0.3/`, `1.0/`) — version lives in the
   directory, not re-encoded redundantly everywhere.
 - Consistent filenames within a system: `<system>-<version>-<book>-<facet>.ttrpg`.
-- Every file declares `NAME`, `VERSION` (content), `SPEC_VERSION` (DSL-spec targeted, e.g. `"0.4"`),
+- Every file declares `NAME`, `EDITION` (the edition it belongs to, e.g. `"l5r5e"`; v0.6), `VERSION` (content), `SPEC_VERSION` (DSL-spec targeted, e.g. `"0.4"`),
   and `RELEASE_DATE`.
 
 ## 4. Identity & references
@@ -242,7 +242,7 @@ A published edition-conversion document ("Converting to SRD 5.2.1", Ars Magica 5
 - [ ] All mechanical data is structured (no data in strings or comments)
 - [ ] No content trimmed to fit a structure — exceptions and riders kept verbatim (completeness beats shape)
 - [ ] Correct file type for the content
-- [ ] `NAME` / `VERSION` / `SPEC_VERSION` / `RELEASE_DATE` present
+- [ ] `NAME` / `EDITION` / `VERSION` / `SPEC_VERSION` / `RELEASE_DATE` present
 - [ ] Hash IDs are opaque, `≥16` chars, unique — on everything referenced
 - [ ] Every `^"Name"` / `#hash` / `EXTENDS` / `APPLIES TO` / `DEPENDS_ON` resolves
 - [ ] One keyword-and-structure pattern per entity type

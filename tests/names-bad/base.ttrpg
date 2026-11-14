@@ -1,6 +1,7 @@
 BASE "Names_Bad_Core" {
     NAME "DECISION-33 fixture — names that are not the same (§14)"
     SPEC_VERSION "0.6"
+    EDITION "demo"
     VERSION "1.0"
     RELEASE_DATE "2026-11-12"
 

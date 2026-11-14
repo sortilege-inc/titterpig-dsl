@@ -1,6 +1,7 @@
 ARC "Page_Story" {
     NAME "DECISION-45 fixture — a page on a narrative block"
     SPEC_VERSION "0.6"
+    EDITION "demo"
     VERSION "1.0"
     RELEASE_DATE "2026-11-13"
     FROM BASE "Page_Core" INCLUDE [ #PagDisciplinesK2vQ9wN3c ^"Disciplines" ]

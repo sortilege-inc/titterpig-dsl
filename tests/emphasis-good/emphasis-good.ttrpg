@@ -1,6 +1,7 @@
 BASE "Demo_Emphasis" {
     NAME "DECISION-19 fixture — EMPHASIS kinds and LABEL (§5c)"
     SPEC_VERSION "0.6"
+    EDITION "demo"
     VERSION "1.0"
     RELEASE_DATE "2026-11-12"
 

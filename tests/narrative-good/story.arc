@@ -1,6 +1,7 @@
 ARC "Demo_Narrative_Arc" {
     NAME "DECISION-22 fixture — imports by FROM, and both orders of a block's name and hash"
     SPEC_VERSION "0.6"
+    EDITION "demo"
     VERSION "1.0"
     DEPENDS_ON "Demo_Narrative_Base"
 

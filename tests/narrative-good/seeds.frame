@@ -1,6 +1,7 @@
 FRAME "Demo_Narrative_Frame" {
     NAME "DECISION-22 fixture — a frame an arc and a campaign import from"
     SPEC_VERSION "0.6"
+    EDITION "demo"
     VERSION "1.0"
     DEPENDS_ON "Demo_Narrative_Base"
 

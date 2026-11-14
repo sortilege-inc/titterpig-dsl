@@ -1,6 +1,7 @@
 BASE "Guidance_Bad_Core" {
     NAME "DECISION-51 fixture — two faults: a span that is not in its entry's TEXT (§22, §5c)"
     SPEC_VERSION "0.6"
+    EDITION "demo"
     VERSION "1.0"
     RELEASE_DATE "2026-11-13"
 

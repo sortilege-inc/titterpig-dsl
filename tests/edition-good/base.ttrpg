@@ -1,0 +1,14 @@
+BASE "Edition_Base" {
+    NAME "DECISION-59 fixture — every file names its edition (§19)"
+    SPEC_VERSION "0.6"
+    EDITION "edition-demo"
+    VERSION "1.0"
+    RELEASE_DATE "2026-11-14"
+
+    # Run:
+    #   ttrpg_validator.py tests/edition-good modules/0.6                    0 errors, 0 warnings
+    #   ttrpg_validator.py tests/edition-good --corpus other=tests/edition-good
+    #                                          1 error: the directory's files declare "edition-demo"
+
+    #EdnNpcTypeA1b2C3d4E5f6G7 ^"NPC" DEF { }
+}

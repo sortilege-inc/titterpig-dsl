@@ -2,6 +2,7 @@ BASE "DSL_0_5_Conformance" {
     NAME "DSL 0.5 Conformance Fixture"
     VERSION "0.5.0"
     SPEC_VERSION "0.5"
+    EDITION "arm5e"
     RELEASE_DATE "2026-07-26"
 
     # ── Base entities the constructs reference ──────────────────────────────

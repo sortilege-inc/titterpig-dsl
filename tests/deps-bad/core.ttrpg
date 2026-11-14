@@ -1,6 +1,7 @@
 BASE "Deps_Bad_Core" {
     NAME "DECISION-36 fixture — one dependency fault per file (§3)"
     SPEC_VERSION "0.6"
+    EDITION "demo"
     VERSION "1.0"
     RELEASE_DATE "2026-11-13"
 

@@ -1,6 +1,7 @@
 BASE "Alias_Bad_New" {
     NAME "DECISION-57 fixture — aliases that are not a second name of a hash, in a file that declares 0.6"
     SPEC_VERSION "0.6"
+    EDITION "demo"
     VERSION "1.0"
     RELEASE_DATE "2026-11-14"
 

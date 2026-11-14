@@ -1,6 +1,7 @@
 BASE "Alias_Good" {
     NAME "DECISION-57 fixture — an alias is a second name of a hash (§5b)"
     SPEC_VERSION "0.6"
+    EDITION "demo"
     VERSION "1.0"
     RELEASE_DATE "2026-11-14"
 

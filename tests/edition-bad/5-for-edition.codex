@@ -1,0 +1,11 @@
+CODEX "EditionBad_5" {
+    NAME "DECISION-60 fixture — fault 5 — the older FOR EDITION in a codex that declares 0.6: an error"
+    VERSION "1.0"
+    SPEC_VERSION "0.6"
+    FOR EDITION "edition-demo"
+    RELEASE_DATE "2026-11-14"
+
+    CATEGORIES {
+        ^"Place EditionBad_5" DEF {}
+    }
+}

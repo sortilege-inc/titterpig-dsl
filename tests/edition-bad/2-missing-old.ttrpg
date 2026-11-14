@@ -1,0 +1,7 @@
+EXTENSION "EditionBad_2" {
+    NAME "fault 2 — no EDITION, in a file that declares 0.5: a warning"
+    SPEC_VERSION "0.5"
+    VERSION "1.0"
+    RELEASE_DATE "2026-11-14"
+    DEPENDS_ON "EditionBad_Base"
+}

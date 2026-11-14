@@ -1,6 +1,7 @@
 ARC "Demo_NarBad_Arc" {
     NAME "DECISION-22 fixture — each FROM line here holds one intentional finding"
     SPEC_VERSION "0.6"
+    EDITION "demo"
     VERSION "1.0"
     DEPENDS_ON "Demo_NarBad_Base"
 

@@ -1,6 +1,7 @@
 ARC "Demo_AncBad_Arc" {
     NAME "DECISION-24 fixture — each reference and each repeated hash here is an intentional finding"
     SPEC_VERSION "0.6"
+    EDITION "demo"
     VERSION "1.0"
     DEPENDS_ON "Demo_AncBad_Base"
 

@@ -1,6 +1,7 @@
 BASE "Demo_Markdown_Good" {
     NAME "DECISION-19 fixture — asterisks a book prints, and a FIAT for the ones that look like Markdown"
     SPEC_VERSION "0.6"
+    EDITION "demo"
     VERSION "1.0"
     RELEASE_DATE "2026-11-12"
 

@@ -1,0 +1,9 @@
+BASE "Sides_New_Core" {
+    NAME "DECISION-61 fixture — the destination edition's corpus, at content version 0.5"
+    SPEC_VERSION "0.6"
+    EDITION "sides-new"
+    VERSION "0.5.1"
+    RELEASE_DATE "2026-11-14"
+
+    #SdnDriveJ9k1M2n3P4q5R6s7 ^"Drive" DEF { }
+}

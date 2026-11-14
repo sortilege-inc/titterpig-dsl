@@ -115,13 +115,15 @@ BODY_ENTRY      <- METADATA
 # ═══════════════════════════════════════════════════════════
 
 METADATA        <- NAME_DECL / SPEC_VERSION_DECL / VERSION_DECL / RELEASE_DATE_DECL / DEPENDS_ON_DECL
-                 / ORIGIN_DECL
+                 / ORIGIN_DECL / EDITION_DECL
 
 NAME_DECL       <- 'NAME' _ STRING
 SPEC_VERSION_DECL <- 'SPEC_VERSION' _ STRING
 VERSION_DECL    <- 'VERSION' _ STRING
 RELEASE_DATE_DECL <- 'RELEASE_DATE' _ STRING
 DEPENDS_ON_DECL <- 'DEPENDS_ON' _ STRING (_ 'VERSION' _ STRING)?
+# v0.6 (DECISION-59, §19): a file names the edition it belongs to.
+EDITION_DECL    <- 'EDITION' _ STRING
 
 # v0.6 (DECISION-26, §19): a port names the edition and the container it was made from.
 #   ORIGIN "arm5e" EXTENSION "ArM5_Grogs_Abilities"
@@ -265,6 +267,8 @@ SELECTIONS_ENTRY <- METADATA
 # (IS/object resolution, undeclared-predicate, DOMAIN/RANGE, slug match) is in the
 # validator (see FILE, §1).
 CODEX_BLOCK      <- 'CODEX' _ STRING _ '{' _ (CODEX_ENTRY _)* '}'
+# A codex declares EDITION "id" as every file does (METADATA; v0.6, DECISION-60). FOR EDITION is
+# the older form, still read here for a file below 0.6; the validator reports it.
 CODEX_ENTRY      <- METADATA
                   / 'FOR' _ 'EDITION' _ STRING
                   / SOURCES_BLOCK

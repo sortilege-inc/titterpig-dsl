@@ -1,6 +1,7 @@
 ARC "Demo_Anchors_Arc" {
     NAME "DECISION-24 fixture — named blocks: anchors by hash, labels by name"
     SPEC_VERSION "0.6"
+    EDITION "demo"
     VERSION "1.0"
     DEPENDS_ON "Demo_Anchors_Base"
 

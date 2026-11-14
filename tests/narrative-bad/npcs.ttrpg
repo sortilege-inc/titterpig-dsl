@@ -1,6 +1,7 @@
 EXTENSION "Demo_NarBad_NPCs" EXTENDS "Demo_NarBad_Base" {
     NAME "DECISION-22 fixture (bad set) — people an arc imports"
     SPEC_VERSION "0.6"
+    EDITION "demo"
     VERSION "1.0"
     RELEASE_DATE "2026-11-12"
 

@@ -1,0 +1,8 @@
+EXTENSION "EditionBad_4" {
+    NAME "fault 4 — a file of another edition in the run: an error"
+    SPEC_VERSION "0.6"
+    EDITION "edition-other"
+    VERSION "1.0"
+    RELEASE_DATE "2026-11-14"
+    DEPENDS_ON "EditionBad_Base"
+}

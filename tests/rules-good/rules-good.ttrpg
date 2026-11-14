@@ -1,6 +1,7 @@
 BASE "Rules_Good" {
     NAME "DECISION-56 fixture — a rule is a label with the source's text, or a DEF with a DESCRIPTION (§12)"
     SPEC_VERSION "0.6"
+    EDITION "demo"
     VERSION "1.0"
     RELEASE_DATE "2026-11-14"
 

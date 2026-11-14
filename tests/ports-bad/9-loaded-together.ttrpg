@@ -1,6 +1,7 @@
 EXTENSION "Port_Bad_9" {
     NAME "fault 9 — a port and its origin in one loaded set"
     SPEC_VERSION "0.6"
+    EDITION "port-new"
     VERSION "1.0"
     RELEASE_DATE "2026-11-12"
     DEPENDS_ON "Port_Bad_Core"

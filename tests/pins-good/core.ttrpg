@@ -1,6 +1,7 @@
 BASE "Pins_Core" {
     NAME "DECISION-35 fixture — a version pin means at least (§3)"
     SPEC_VERSION "0.6"
+    EDITION "demo"
     VERSION "0.5.10"
     RELEASE_DATE "2026-11-13"
 

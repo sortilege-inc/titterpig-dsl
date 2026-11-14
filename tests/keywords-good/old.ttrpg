@@ -1,6 +1,7 @@
 EXTENSION "Keywords_Old" {
     NAME "DECISION-39 fixture — a file that declares 0.5 keeps the type keywords, with no finding"
     SPEC_VERSION "0.5"
+    EDITION "demo"
     VERSION "1.0"
     RELEASE_DATE "2026-11-13"
     DEPENDS_ON "Keywords_Core"

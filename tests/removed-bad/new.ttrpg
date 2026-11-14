@@ -1,6 +1,7 @@
 BASE "Removed_Bad_Core" {
     NAME "DECISION-52 fixture — three removed forms in a file that declares 0.6: three errors"
     SPEC_VERSION "0.6"
+    EDITION "demo"
     VERSION "1.0"
     RELEASE_DATE "2026-11-14"
 

@@ -1,0 +1,10 @@
+EXTENSION "Sides_New_Book" {
+    NAME "DECISION-61 fixture — a second file of the 0.5 corpus, at its own VERSION"
+    SPEC_VERSION "0.6"
+    EDITION "sides-new"
+    VERSION "0.5.10"
+    RELEASE_DATE "2026-11-14"
+    DEPENDS_ON "Sides_New_Core"
+
+    #SdnSailT8u9V1w2X3y4Z5a6 ^"Sail" DEF { }
+}

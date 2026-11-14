@@ -1,0 +1,9 @@
+SETTING "Edition_Setting" {
+    NAME "DECISION-59 fixture — a setting is system-agnostic and may declare no edition"
+    SPEC_VERSION "0.6"
+    VERSION "1.0"
+
+    LOCATION ^"The River City" #EdnRiverCityR6s7T8u9V1w2 {
+        DESCRIPTION "A port at the meeting of two rivers."
+    }
+}

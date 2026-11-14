@@ -1,0 +1,12 @@
+EXTENSION "Edition_Book" {
+    NAME "DECISION-59 fixture — an extension declares the edition of its base"
+    SPEC_VERSION "0.6"
+    EDITION "edition-demo"
+    VERSION "1.0"
+    RELEASE_DATE "2026-11-14"
+    DEPENDS_ON "Edition_Base"
+
+    #EdnGovernorH8j9K1m2N3p4Q5 ^"The Governor" DEF {
+        EXTENDS #EdnNpcTypeA1b2C3d4E5f6G7 ^"NPC"
+    }
+}

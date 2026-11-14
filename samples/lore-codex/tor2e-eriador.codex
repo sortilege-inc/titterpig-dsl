@@ -14,8 +14,9 @@ CODEX "TOR2E_Eriador_Codex" {
     VERSION "0.1"
     SPEC_VERSION "0.5"
     RELEASE_DATE "2026-08-08"
-    # FOR EDITION "tor2e"  → resolves ^"Hobbit" etc. against the tor2e .ttrpg corpus
-    #                         when validated in-corpus; here they are local nodes.
+    # the codex's edition (v0.6, DECISION-60; before that, FOR EDITION "tor2e"). Validated with
+    # the tor2e corpus, ^"Hobbit" and the rest resolve against it; here they are local nodes.
+    EDITION "tor2e"
 
     # ---- ONTOLOGY: category taxonomy (the "IS a ___" types) -----------------
     # A category is a node; some categories ARE existing game DEFs (^"Hobbit" is

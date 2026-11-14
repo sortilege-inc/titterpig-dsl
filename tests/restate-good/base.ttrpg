@@ -1,6 +1,7 @@
 BASE "Restate_Core" {
     NAME "DECISION-27 fixture — what may be stated twice (§13, §20)"
     SPEC_VERSION "0.6"
+    EDITION "demo"
     VERSION "1.0"
     RELEASE_DATE "2026-11-12"
 

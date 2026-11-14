@@ -1,4 +1,5 @@
 BASE "Bad_Core" {
+    EDITION "demo"
     NAME "Bad Demo"
     VERSION "1.0"
 

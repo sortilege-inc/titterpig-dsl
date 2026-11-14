@@ -5,6 +5,7 @@ CODEX "Good_Codex" {
     NAME "Conformant lore knowledge graph"
     VERSION "0.1"
     SPEC_VERSION "0.5"
+    EDITION "demo"
     RELEASE_DATE "2026-08-08"
 
     SOURCES {

@@ -1,0 +1,9 @@
+BASE "Sides_Old_Core" {
+    NAME "DECISION-61 fixture — the origin edition's corpus, at content version 0.4"
+    SPEC_VERSION "0.6"
+    EDITION "sides-old"
+    VERSION "0.4.2"
+    RELEASE_DATE "2026-11-14"
+
+    #SdoRideA1b2C3d4E5f6G7h8 ^"Ride" DEF { }
+}
