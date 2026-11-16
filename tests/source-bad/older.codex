@@ -1,0 +1,17 @@
+# An edge with no source in a file that declares 0.5: a warning there (DECISION-66).
+
+CODEX "Source_Bad_Older" {
+    NAME "Edge-source fixture: the fault below 0.6"
+    VERSION "0.1"
+    SPEC_VERSION "0.5"
+    EDITION "demo"
+    RELEASE_DATE "2026-11-14"
+    DEPENDS_ON "Source_Bad" VERSION "0.1"
+
+    ENTITY #srcBadPersonWenna001 ^"Wenna" {
+        IS ^"Person"
+        RELATIONSHIPS {
+            ^"lives-in" -> ^"Harrow Ford"                                                   # 3: no source; a warning at 0.5
+        }
+    }
+}

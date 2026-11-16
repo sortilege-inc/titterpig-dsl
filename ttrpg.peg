@@ -56,7 +56,14 @@
 # 1. File-Level Structure
 # ═══════════════════════════════════════════════════════════
 
-FILE            <- _ (BASE_BLOCK / EXTENSION_BLOCK / CONTAINER_BLOCK / BRIDGE_BLOCK / SELECTIONS_BLOCK / CODEX_BLOCK) _ EOF
+FILE            <- _ (BASE_BLOCK / EXTENSION_BLOCK / CONTAINER_BLOCK / BRIDGE_BLOCK / SELECTIONS_BLOCK / CODEX_BLOCK / SYSTEM_BLOCK) _ EOF
+
+# v0.6 (DECISION-62, §19): a .system file is the edition. It declares the system's own keywords
+# and indexes its files.
+#   SYSTEM "l5r5e" { NAME "…" VERSION "0.5" SPEC_VERSION "0.6" KEYWORDS [ "ACTIVATION" ] FILES [ "l5r5e-0.5-core-base.ttrpg" ] }
+SYSTEM_BLOCK    <- 'SYSTEM' _ STRING _ '{' _ (SYSTEM_ENTRY _)* '}'
+SYSTEM_ENTRY    <- METADATA / ('KEYWORDS' / 'FILES') _ STRING_LIST / COMMENT
+STRING_LIST     <- '[' _ (STRING (_ ',' _ STRING)* _ ','? _)? ']'
 
 BASE_BLOCK      <- 'BASE' _ STRING _ EXTENDS_CLAUSE? _ '{' _ BODY _ '}'
 
@@ -297,6 +304,8 @@ RELATION_QUAL    <- 'INVERSE' _ CARET_REF
                   / 'TRANSITIVE'
                   / COMMENT
 
+# An entity is its hash (v0.6, DECISION-64). The hash stays optional here so that an older
+# file is read; the validator reports an ENTITY with none.
 ENTITY_BLOCK     <- 'ENTITY' _ HASH_ID? _ CARET_REF _ '{' _ (ENTITY_ENTRY _)* '}'
 ENTITY_ENTRY     <- 'IS' _ CARET_REF+
                   / 'SOURCE' _ STRING (_ 'AT' _ STRING)?
@@ -304,7 +313,11 @@ ENTITY_ENTRY     <- 'IS' _ CARET_REF+
                   / COMMENT
 RELATIONSHIPS_BLOCK <- 'RELATIONSHIPS' _ '{' _ (EDGE_DECL _)* '}'
 # The '->' arrow is cosmetic (non-token); an edge is predicate-caret + object-caret.
-EDGE_DECL        <- CARET_REF _ ARROW? _ CARET_REF (_ 'FROM' _ STRING)?
+# The object may carry its hash (v0.6, DECISION-65): ^"pred" -> #hash ^"Object".
+# An edge cites its own source (v0.6, DECISION-66): ... FROM "phrase" SOURCE "file" AT "heading".
+# The source stays optional here so that an older file is read; the validator reports an edge
+# with none.
+EDGE_DECL        <- CARET_REF _ ARROW? _ HASHED_REF (_ 'FROM' _ STRING)? (_ 'SOURCE' _ STRING (_ 'AT' _ STRING)?)?
 ARROW            <- '->'
 
 # ═══════════════════════════════════════════════════════════
@@ -651,6 +664,9 @@ BRIDGE_ALIAS    <- 'ALIAS' _ CARET_REF _ 'FOR' _ SIDED_REF
 CONVERSION_BLOCK <- 'CONVERSION' _ '{' _ (CONVERSION_UNIT _)* '}'
 CONVERSION_UNIT  <- MAP_UNIT / REMAINDER_UNIT / PROCEDURE_UNIT / COMMENT
 
+# One correspondence. DISPOSITION is optional (v0.6, DECISION-67): a MAP with none
+# asserts the correspondence and says nothing of the kind of change. The validator
+# requires at least one of ORIGIN / DESTINATION.
 MAP_UNIT        <- 'MAP' _ HASH_ID? _ '{' _ (MAP_FIELD _)* '}'
 MAP_FIELD       <- SIDE_KW _ REFERENT_SET        # slot supplies the side
                  / 'SCOPE' _ SIDED_REF
@@ -660,7 +676,8 @@ MAP_FIELD       <- SIDE_KW _ REFERENT_SET        # slot supplies the side
                  / FIAT_STATEMENT
                  / COMMENT
 
-# A bulk disposition over every member of SCOPE that no MAP names.
+# A bulk disposition over every member of SCOPE that no MAP names. The validator
+# requires SCOPE and DISPOSITION: the tag is all a remainder says (DECISION-67).
 # EXHAUSTIVE false records a hedging source ("Most magic items not listed…").
 REMAINDER_UNIT  <- 'REMAINDER' _ HASH_ID? _ '{' _ (REMAINDER_FIELD _)* '}'
 REMAINDER_FIELD <- 'SCOPE' _ SIDED_REF
@@ -684,6 +701,8 @@ CONVERT_STMT    <- 'CONVERT' _ SIDED_REF _ CONVERT_OP (_ 'INTO' _ SIDED_REF)?
 
 # Closed operation vocabulary — deliberately NOT an expression language
 # (the DSL guarantees a knowledge base, not a rules engine, §20).
+# SCALE states the arithmetic and no rounding (v0.6, DECISION-68): a result that is
+# not whole is rounded by the destination edition's own general rule, where it has one.
 CONVERT_OP      <- 'UNCHANGED'
                  / 'SCALE' _ INTEGER_LIT (_ 'OVER' _ INTEGER_LIT)?
                  / 'RESTATE'
@@ -702,7 +721,10 @@ GUIDANCE_FIELD  <- 'CONCERNS' _ '[' _ GUIDANCE_REF (_ ',' _ GUIDANCE_REF)* _ ']'
                  / DISPOSITION_FIELD
                  / TEXT_FIELD
                  / EMPHASIS_BLOCK            # v0.6, DECISION-51 — the spans the source marks in TEXT
+                 / REFERENCES_BLOCK          # v0.6, DECISION-63 — the spans of TEXT that name another entity
+                 / ENTRY_PAGE                # v0.6, DECISION-45 — the page the entry is printed on
                  / COMMENT
+ENTRY_PAGE      <- '^"Page"' _ (INTEGER_LIT / STRING)
 GUIDANCE_REF    <- SIDED_REF / (HASH_ID? _ CARET_REF)
 
 # ── Shared bridge pieces ──────────────────────────────────────
@@ -809,6 +831,8 @@ BOOLEAN_LIT     <- 'true' / 'false'
 # display name ("Puissant Single Weapon") is rendered by consumers, not stored.
 # A quote inside a name is escaped, as in a string (v0.6, DECISION-25):
 #   ^"Mrinmoy \"Vidyapati\" Mishra"
+# A name is not empty and holds no control character (v0.6, DECISION-69). The validator
+# reports both; the rule here stays as it was so that an older file is still read.
 CARET_REF       <- '^' '"' STRING_CHAR* '"' PARAM_BINDING?
 PARAM_BINDING   <- _ '(' _ PARAM_ARG (_ ',' _ PARAM_ARG)* _ ')'
 PARAM_ARG       <- (CARET_REF _ '=' _)? (CARET_REF / STRING)

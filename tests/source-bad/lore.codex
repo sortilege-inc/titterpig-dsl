@@ -1,0 +1,34 @@
+# Planted faults for DECISION-66 (spec §25): an edge cites its own source. This file is at 0.6.
+# older.codex holds the same fault below 0.6. 1 error, 2 warnings.
+
+CODEX "Source_Bad" {
+    NAME "Edge-source fixture: faults"
+    VERSION "0.1"
+    SPEC_VERSION "0.6"
+    EDITION "demo"
+    RELEASE_DATE "2026-11-14"
+
+    CATEGORIES {
+        ^"Place"  DEF {}
+        ^"Person" DEF {}
+    }
+
+    RELATIONS {
+        ^"lives-in" { INVERSE ^"residents" DOMAIN ^"Person" RANGE ^"Place" }
+        ^"born-at"  { INVERSE ^"birthplace-of" DOMAIN ^"Person" RANGE ^"Place" }
+    }
+
+    ENTITY #srcBadPlaceFord00001 ^"Harrow Ford" {
+        IS ^"Place"
+        SOURCE "harrow.lore" AT "the-ford"
+    }
+
+    ENTITY #srcBadPersonOdile001 ^"Odile" {
+        IS ^"Person"
+        SOURCE "harrow.lore" AT "odile"
+        RELATIONSHIPS {
+            ^"lives-in" -> ^"Harrow Ford" FROM "Odile keeps the ferry at Harrow Ford"      # 1: no source; the block's is not the edge's
+            ^"born-at"  -> ^"Harrow Ford" SOURCE "harrow.lore" AT "the-weir"               # 2: no such heading in the file (a warning)
+        }
+    }
+}

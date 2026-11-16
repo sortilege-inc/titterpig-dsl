@@ -2743,7 +2743,16 @@ files share a content version; the check runs only where a side names one. (4) A
 
 ### C9. Smaller gaps
 
-**Status:** open
+**Status:** closed 2026-11-16 by the owner. Committed on branch `0.6`. Its nine bullets were
+recounted against the spec as it stood after C1 to C8 and put to the owner one at a time. Six
+are ruled: each edition has a `.system` file (bullet 1, DECISION-62); a guidance entry may
+hold `REFERENCES` (bullet 3, DECISION-63); a codex entity is its hash, lore and mechanics
+keep separate identities, and every codex edge cites its own source (bullet 6, DECISION-64,
+DECISION-65, DECISION-66); a bridge `MAP` needs no `DISPOSITION` and `SCALE` states no
+rounding (bullet 7, DECISION-67, DECISION-68); a name is not empty and holds no control
+character (bullet 8, DECISION-69). He deferred bullet 4 and the fourth part of bullet 6.
+Bullets 5 and 9, and what is left of bullet 2, are on the list *To revisit once C1 to C9 are
+closed*. The corpus work is F38 to F42.
 
 - **System vocabulary is undeclared.** §1 says system keywords are "defined by each system's
   `.ttrpg` files". No construct declares one, so a misspelled base keyword becomes vocabulary (B2)
@@ -2774,6 +2783,539 @@ files share a content version; the check runs only where a side names one. (4) A
 - **`ADD`.** In an EXTENSION, `ADD ^"X" DEF { }` and a plain `^"X" DEF { }` differ only in a
   warning.
 
+**Recounted 2026-11-14** over the 22 corpus directories and seven other repos, against the spec
+at commit `58c45b8`.
+
+| # | Bullet | Settled since it was written | Still open | Evidence |
+|---|---|---|---|---|
+| 1 | System vocabulary | nothing | a system's keywords are declared nowhere | 316 distinct system keywords in the 22 directories, 217 of them in l5r5e; 132 are written once in their corpus. A scan for rare keywords within two letters of a base keyword or a common one finds 15, and none reads as a misspelling (`OUTCOMES`, `PHASES`, `TYPES`, `COSTS`, …) |
+| 2 | `MODIFY`'s reach | the rule form (DECISION-52): a rule is replaced in a `RULES` block | another text field, a system sub-block, a nested property by path, a removal | l5r5e-3rdparty's three `OVERRIDE`s each restate a technique to change one sub-block (`OPPORTUNITIES`). `OVERRIDE` is marked as likely to be replaced (DECISION-53) |
+| 3 | `GUIDANCE` entries | `EMPHASIS` in an entry (DECISION-51); 194 entries write one | `REFERENCES` in an entry; a kind; a position | of 13,536 `ENTRY` blocks none holds `REFERENCES` or `^"Page"`; 285 hold a `TYPE` |
+| 4 | `HOOKS` | `TRIGGER` and the two upper levels are marked (DECISION-54) | whether `WHEN` is the source's text; a pointer to the sentence | the three corpus hooks each write a `WHEN` that stands word for word in their file's text |
+| 5 | `OPTIONAL` and `.selections` | `.selections` is marked (DECISION-53) | all of it | on the owner's list, below |
+| 6 | `.codex` | a codex declares its edition (DECISION-60) | a link from an `ENTITY` to a DEF; facts that are not entities; an edge's source; "the first `ENTITY`" | l5r5e: 69 files, 1,496 `ENTITY` blocks, 1,361 names; 114 names are declared by more than one block; 80 names are also a DEF's (first counted as 52; recounted in the bullet's block below) |
+| 7 | `.bridge` | the `VERSION` on a side (DECISION-61) | `MAP` needs a `DISPOSITION`; `SCALE` and rounding | two of the three bridges declare no dispositions and write no `MAP`: 21 `PROCEDURE`s, 19 `UNCHANGED INTO`. `SCALE` is written three times, all in the arm4 bridge (`6 OVER 5`, `5`, `1 OVER 3`) |
+| 8 | Names | `\"` in a name (DECISION-25) | an empty name; `^","` | the validator and the grammar accept `^""` and `^" "` with no finding. `^","` is a DEF's name in three files (invisiblesun 1; arm5e and armdef 1 each, the same nested DEF) |
+| 9 | `ADD` | `ADD … DEF` is marked (DECISION-53) | its replacement | on the owner's list, with `OVERRIDE` |
+
+Bullets 5 and 9, and what is left of bullet 2, belong with the list *To revisit once C1 to C9
+are closed*: each waits on a replacement that list is to rule. Bullets 1, 3, 4, 6, 7 and 8 are
+put to the owner in turn.
+
+**Bullet 1, direction given 2026-11-14: a `.system` file.** The agent recommended leaving the
+vocabulary undeclared, since the scan found no misspelling. Owner: "Let's do something like
+this: l5r5e.system adds the system-specific primitives and also holds the index of any/all
+files associated with it".
+
+What a system knows about itself sits in three places today, none of them DSL: a prose spec
+file in four repos (`l5r5e-dsl-spec.md`, 1,453 lines; also arm5e, root, vtm5e), which documents
+the system's keywords; a synthesist manifest (15 manifests for 9 editions), which names the
+edition and lists files in load order (l5r5e's lists 73 of its 166 DSL files); and `sources.json` in 8
+repos. No `.system` file and no `SYSTEM` keyword exists.
+
+The concrete shape was put to him before anything was applied, with a recommendation on each
+choice in it. Owner: "Yes, apply it".
+
+**Bullet 1, ruled 2026-11-14: the `.system` file (DECISION-62).** One file for each edition,
+`l5r5e.system`, in the corpus's folder: `SYSTEM "l5r5e" { NAME, VERSION, SPEC_VERSION,
+RELEASE_DATE, KEYWORDS [ … ], FILES [ … ] }`.
+
+- **`SYSTEM "id"`** is the edition that a file's `EDITION` names (DECISION-59). Its `VERSION`
+  is the corpus's content version (DECISION-61).
+- **`KEYWORDS`** lists the system's own keywords, each by its name alone.
+- **`FILES`** lists the system's files by path from the system file's folder. It is an index
+  and gives no order.
+- **With a system file in the run** the validator reports a keyword that neither the base spec
+  nor the system declares, a file of the system that `FILES` leaves out, and a `VERSION` that
+  does not begin with the system's: each a warning in a file that declares a `SPEC_VERSION`
+  below 0.6, or none, and an error from 0.6.
+- **With none in the run** nothing of this is checked, and a note says so.
+
+*Applied.* Spec: §0 item 49, DECISION-62, a new section in §19, the file table of §2, §1, §15
+(a list for the system file, and the paragraph on system keywords), two sentences of §20.
+Validator: `.system` is read; a new pass does the checks above; the base spec's keywords are a
+list in the tool, taken from §15 and §18. Grammar: the `SYSTEM` block; `check_grammar.py` reads
+the extension. README: the fixture list. New: `tests/system-good` and `tests/system-bad`.
+
+| Check | Result |
+|---|---|
+| `tests/system-good` in the validator, the grammar | 0 errors, 0 warnings; 4 of 4 accepted |
+| `tests/system-bad` in the validator | 7 errors and 1 warning: a keyword no one declares (0.6 error, 0.5 warning), a file not in `FILES`, a `VERSION` that does not begin with the system's, an `EDITION` the system file does not declare (and the two-edition error with it), a base keyword in `KEYWORDS`, a listed file that is not there. Before the change, 1 error |
+| the fixture run against the run after C8 | identical, but for the two new sets and the grammar's count |
+| both grammar gates | 76 of 76 good files accepted; 17 of 17 planted faults refused |
+| a system file generated for copies of teeth, dnd5e, curseborne and root, with an empty `KEYWORDS` | every system word is reported once for each file that writes it (37, 5, 22 and 188 findings); no `FILES` or `VERSION` finding |
+| the same, with `KEYWORDS` generated from the files | the findings are those of the corpus as it stands, in all four; each generated file passes the grammar |
+| the generated lists, read | teeth 5 words, dnd5e 2, curseborne 17, root 18; none is a base keyword |
+| validator, before against after, 29 directories | 28 identical. l5r5e, the one corpus whose files name an edition, gains the note that no system file is in the run, and no finding. The 22 corpus directories stand at 39 errors and 28,920 warnings. (This row stood as a placeholder until 2026-11-14, when it was filled from the saved run.) |
+
+*Agent's calls, to confirm.* (1) With no system file in the run the validator prints a note
+and raises no warning; the proposal said "one warning". A warning would stand on every fixture
+set and on every run of a single file. (2) The base spec's keywords are a list of 173 words in
+the validator: the 172 of §15 and §18, and `ROW`, the row of the older `TABLE` grid, which 13
+corpora write 12,394 times and which is no system's. (3) A base keyword that a system uses
+outside its block (`TRIGGER`, `TYPE`, `TAGS`) is not declared in `KEYWORDS`. (4) A keyword is
+one that opens a statement: a capitalised word first on its line. (5) A file that declares no
+edition is held to the run's system file only when the run has exactly one. (6) A bare
+`.actor` file has no header and is not held to it. (7) A system file's id is not a file id: a
+`BASE "teeth"` and a `SYSTEM "teeth"` stand together. (8) The file's own `VERSION` is checked
+against the system's, which DECISION-61 had left unchecked inside a corpus.
+
+*Not done.* No corpus has a system file: F38. A third-party book's files and keywords are not
+covered; that is with the campaign's load file, on the list below. The generator used for the
+pilot is a script in the session's scratch folder and is not in the repo.
+
+**Bullet 3, ruled 2026-11-14: `REFERENCES` in a guidance entry; its kind is a topic
+(DECISION-63).** Owner: "Yes, both".
+
+Of the bullet's four points two were settled already: `EMPHASIS` in an entry (DECISION-51), and
+the entry's place, which DECISION-45 gave every block as `^"Page"`. Counted over 11,027
+guidance entries (7,673 in arm5e): none holds `REFERENCES`, an embedded reference or `^"Page"`;
+94 carry a page in a comment (F28). The kind is written as a topic: `"errata"` and its two
+variants 2,943 times, `"Margin Note"` 316, `"Sidebar"` 266 and `"sidebar"` 76, `"Example"` 152.
+
+- **`REFERENCES`** is legal in an entry, on the terms of `EMPHASIS`: each surface form is in
+  that entry's `TEXT`.
+- **The kind** stays one of the entry's `TOPICS`. The base spec fixes no list.
+
+*Applied.* Spec: §0 item 50, DECISION-63, §22's template and two bullets. Grammar: a guidance
+entry takes a `REFERENCES` block and a `^"Page"`. The validator, `check_references.py` and
+`check_constructs.py` are unchanged: they read both already. `tests/guidance-good` gains an
+entry with a `REFERENCES` block and a page; `tests/guidance-bad` gains two faults.
+
+| Check | Result |
+|---|---|
+| `tests/guidance-good` in the four tools | validator 0 errors, 0 warnings; `check_references.py` 0 errors, 1 reference read; `check_constructs.py` 0 errors; grammar accepted |
+| `tests/guidance-good` in the grammar before the change | refused, at the entry's `^"Page"` line |
+| `tests/guidance-bad` in `check_references.py` | 4 errors: the two of DECISION-51, a `REFERENCES` span that is not in its entry's `TEXT`, and a target that is no entity |
+| the fixture run against the run after bullet 1 | identical, but for the two guidance lines |
+| both grammar gates | 76 of 76 good files accepted; 17 of 17 planted faults refused |
+
+*Agent's calls, to confirm.* (1) The grammar reads `^"Page"` in an entry. DECISION-45 gave
+every block a page and the grammar refused one here. (2) The grammar was not rerun over the
+corpora: the change lets an entry hold two things more, and no corpus entry holds either.
+(3) The two spellings `"Sidebar"` and `"sidebar"` are noted for the corpora and not ruled.
+
+*Not done.* No corpus is changed.
+
+**Bullet 4, deferred 2026-11-14.** Owner: "I think we need to defer a decision here, flag it
+for follow-up".
+
+What was put to him. `TRIGGER` and the two upper levels were marked already (DECISION-54). Two
+points stayed open: §23 calls `WHEN` "the human-readable condition (a string)" and does not say
+whether the string is the source's wording or the converter's, and a hook does not point at the
+sentence it was drawn from. The corpora write three hooks, all in arm5e and all `TAGGED`, in
+the DEFs `^"Activities While Injured"`, `^"Aiming"` and `^"Certamen"`; each `WHEN` stands word
+for word in the text of the DEF that holds it. The agent proposed that §23 say so, with
+`check_constructs.py` checking it, and gave as the alternative a free `WHEN` beside a new field
+that quotes the source.
+
+Nothing is ruled and nothing changes: the spec, the grammar and the tools read a hook as they
+did after DECISION-54. The question is on the list below.
+
+**Bullet 6, measured 2026-11-14 and put to the owner in four parts**: a repeated entity, an
+entity that is also a DEF, an edge's source, a date or a number as a fact. All counts are of
+`titterpig-dsl-l5r5e/0.5`, the one corpus with a codex: 69 files, 1,496 `ENTITY` blocks, 1,361
+names, 1,282 edges.
+
+- **A repeated entity.** §25 says a later file restates `ENTITY #hash ^"Name"`, "same hash, same
+  name", and that the first block is the canonical one. No hash is written on two `ENTITY`
+  lines. 114 names are declared by two to five blocks, 249 blocks in all, each under a hash of
+  its own. 114 blocks hold no `IS`, and the hash of each is written nowhere else. Of the 114
+  names, 94 have one block with `IS` and the rest without; 20 have two or three blocks with
+  `IS`. 204 edges name one of the 114 as their object, by name alone.
+- **How it came about.** Before commit `c7abe91` of the l5r5e repo (2026-09-23, "H1: every
+  unhashed entity hashed") 127 `ENTITY` lines carried no hash: a later file added to an entity
+  by its name. That commit gave each of them a new hash.
+- **What the tools say.** The validator reports nothing on any of this: it does not check that
+  an entity has an `IS`, and one name under two hashes is two entities (DECISION-27). The
+  grammar reads an `ENTITY` with no hash; the spec's template always writes one.
+- **An entity that is also a DEF.** 80 entity names are also the name of a DEF outside the
+  codex (49 in `.ttrpg` files, 34 in `.arc`, 3 in `.actor`; a name may be in two). 54 edges
+  name one as their object. The table above first gave 52; that count is superseded.
+- **An edge's source.** Every one of the 1,496 blocks holds exactly one `SOURCE`. 1,237 edges
+  carry `FROM`: 1,088 stand word for word in their block's `.lore` file (white space, quote
+  style and Markdown emphasis set aside); 65 join pieces with an ellipsis, and in 59 of those
+  every piece is found; 84 are not found.
+- **A date or a number.** No edge's object holds a digit, and none of the 42 predicates in use
+  is about a date or a quantity. Of the 50 blocks that are an `^"Event"`, 2 have a year
+  within 300 characters of the event's name in the section their `SOURCE` names
+  (`^"Battle of Kyūden Tonbo"`, "In the year 704"; `^"Ride of the Unicorn"`, "in the year
+  815"), 11 more have a year somewhere in the section, 36 have none and 1 names no heading.
+
+The measuring scripts are in the session's scratch folder (`c9/codex_measure*.py`) and are not
+in the repo.
+
+**Bullet 6, part 1, ruled 2026-11-14: an entity is its hash, and its name under another hash
+is a collision (DECISION-64).** The agent proposed that a file add to an entity by restating
+its hash and that no block be first, and left one name under two hashes as two entities, as
+DECISION-27 has it for DEFs. Owner: "a later file should only modify an existing hash,
+otherwise it's a collision and it should flag an error. Please let me know if I'm missing
+anything."
+
+- **An `ENTITY` writes its hash.** One name is one entity under one hash.
+- **A file adds to an entity** by restating `ENTITY #hash ^"Name"`. The node is what all its
+  blocks say together; no block is first.
+- **The same name under another hash is a collision.**
+- **At least one block of an entity holds `IS`.**
+
+*Applied.* Spec: §0 item 51 and a note on item 14, DECISION-64, §25 (the `#hash` and `IS`
+bullets, the template's comment, the validation table, one sentence on split graphs).
+Validator: a new pass over the run's `ENTITY` blocks reports the collision at every block of
+the name, an `ENTITY` with no hash, and an entity none of whose blocks holds `IS`. Grammar: a
+comment; the hash stays optional there so that an older file is read. README: the fixture
+list. New: `tests/entity-good` and `tests/entity-bad`. `tests/anchors-good/lore.codex`, an
+older fixture at 0.6, declared an entity with no `IS` and gains one.
+
+| Check | Result |
+|---|---|
+| `tests/entity-good` (a second file adds to an entity by its hash, with no `IS` of its own) | validator 0 errors, 0 warnings; grammar accepted |
+| `tests/entity-bad` in the validator | 5 errors and 1 warning: "Harrow Ford" under two hashes (an error at each of its two blocks), "Odile" under two (an error in the 0.6 file, a warning in the 0.5 file), an `ENTITY` with no hash, an entity with no `IS`. Before the change, 0 errors and 0 warnings |
+| the fixture run against the run after bullet 3 | identical, but for the two new sets and the grammar's count |
+| both grammar gates | 78 of 78 good files accepted; 17 of 17 planted faults refused |
+| l5r5e in the validator | 27 errors as before; 630 warnings, 249 more: one at each block of the 114 names |
+| validator, before against after, 29 directories | 28 identical. l5r5e gains 249 warnings, each the collision, and no other finding. Totals over the 22: 39 errors, as before; 29,169 warnings, 249 more. The working validator is the copy that was run |
+
+*What the owner asked to be told.* (1) The rule is stricter for a codex entity than
+DECISION-27 is for a DEF: two DEFs of one name under two hashes are two entities, and two
+entities of one name are now a collision. Two things that share a name have to be named apart
+in a codex. Of the 20 l5r5e names declared in full more than once, each reads as one subject
+declared twice (`^"Amaterasu"`, `^"Fu Leng"`, `^"Otosan Uchi"`); `^"Brotherhood of Shinsei"`
+is a `^"Faction"` in one block and an `^"Organization"` in the other. (2) The validator knows
+no load order, so it cannot say which block is the later one; it reports every block of the
+name. (3) An entity whose name is also a DEF's (80 names) is not touched by this ruling; it is
+part 2.
+
+*Agent's calls, to confirm.* (1) "Modify an existing hash" is read as restating
+`ENTITY #hash ^"Name"`, which is §25's form, and not as the `MODIFY` statement of §13. (2) The
+collision is a warning in a file that declares a `SPEC_VERSION` below 0.6, or none, and an
+error from 0.6, as each new check of this audit is; the owner said "flag an error". l5r5e's
+codex files declare 0.5, so its 249 findings are warnings. (3) The proposal's other two checks
+are applied with it, at the same levels: an `ENTITY` with no hash, and an entity with no `IS`.
+He did not speak to them. (4) An entity with no `IS` is not reported when its name is in
+collision, since giving the block its entity's hash answers both. (5) Two names are the same
+by the rule of DECISION-33.
+
+*Not done.* No corpus is changed: F39. `check_references.py` and `check_constructs.py` are
+unchanged.
+
+**Part 1, the level, ruled 2026-11-14.** On call (2) the owner: "first of all, I'm ok with the
+stricter interpretation; the l5r5e situation where you have two different defs of the same
+thing means that there's an error in those files, so we should throw an error." The collision
+is an error at every version. An `ENTITY` with no hash and an entity with no `IS` stay a
+warning below 0.6 and an error from 0.6; he did not speak to those two. The table above shows
+part 1 as first applied. After this change `tests/entity-bad` and l5r5e stand as the table
+under part 2 gives them.
+
+**Bullet 6, part 2, ruled 2026-11-14: lore and mechanics keep separate identities
+(DECISION-65).** The agent proposed carrying part 1 across: an entity whose subject is a DEF
+writes the DEF's hash, and a DEF's name under a new hash is a collision. Owner: "We should
+consider separating identities between lore and mechanics, because they are often only
+semi-overlapping. In general and for now, it should be normal for there to be the same thing
+named in multiple places meaning distinct things. Context and hash references should be
+sufficient to distinguish. I don't think we need a more rigorous approach defined in the base
+spec." And: "Let's mark for a review the idea of a parallel unique ID system in lore, but
+that's not immediately in scope."
+
+- **An entity and a DEF of one name are two things**, each under its own hash.
+- **The base spec defines no link** between them, and no tool compares them.
+- **A set of unique identifiers for lore** is on the list for review, below.
+
+The 80 l5r5e names, by what the entity is and what the DEF is: a person and a stat block, a
+pregenerated character or an arc's cast entry, 35; a place and an entry in an `.arc` file, 24;
+an artifact, tradition, document, organization, title or faction and an item or technique, 15;
+a race and a stat block, 4; a person and a family (`^"Isawa"`, `^"Shosuro"`), 2. The 93 DEFs
+are all hashed.
+
+*What the tools did already.* A run with an entity and a DEF both named `^"Isawa"` drew no
+finding for the shared name from the validator or `check_references.py`: the ruling is what
+they did. One thing stood against it. An edge's object could not be written with a hash: the
+grammar refused `^"founder-of" -> #hash ^"Isawa"` and the validator read it as two edges with
+no object. So in a codex a hash could not tell the two apart.
+
+*Applied.* Spec: §0 item 52, DECISION-65, §25 (a bullet on an entity and a DEF of one name;
+the edge's object and the template; two rows of the validation table), and the levels of
+DECISION-64 in item 51, its record, the `#hash` bullet and the table. Validator: the
+collision is an error at every version; an edge's object may carry a hash, which is checked
+as at any site (the hash is an anchor; the name is its anchor's). Grammar: an edge's object
+is a reference with an optional hash. `tests/entity-good` gains a DEF named as an entity is
+and an edge that tells them apart by the hash; `tests/entity-bad` gains two bad hashes on an
+edge's object and an `ENTITY` with no hash in a 0.5 file.
+
+| Check | Result |
+|---|---|
+| `tests/entity-good`, three files | validator 0 errors, 0 warnings; grammar accepted; `check_references.py` 0 errors. In the tools as they stood after part 1: validator 2 errors, grammar refused the file with the hashed object |
+| `tests/entity-bad` | 8 errors and 1 warning: the two collisions, at each block, one of them in the 0.5 file; a hash on an object that is no anchor; a hash that is another name's anchor; an `ENTITY` with no hash (an error at 0.6, a warning at 0.5); an entity with no `IS` |
+| the fixture run against the run after part 1 | identical, but for the two entity sets and the grammar's count |
+| both grammar gates | 79 of 79 good files accepted; 17 of 17 planted faults refused |
+| l5r5e in the validator, part 1's tool against this one | 276 errors and 381 warnings, where part 1 gave 27 and 630: the 249 collisions are errors. With the level set aside the two outputs are the same |
+| l5r5e in the grammar, before against after | the same output: 136 of 166 files accepted |
+| the other 28 directories | not rerun. None holds a `.codex` file, and both changes are inside the codex reader. By that, the 22 corpus directories stand at 288 errors and 28,920 warnings; the sum is not from a run |
+
+*Agent's calls, to confirm.* (1) The hash on an edge's object. He ruled that hash references
+are enough to tell two things apart, and an edge could not carry one. It is the pair of
+DECISION-44, at that decision's levels. Told of it, the owner did not rule on the form and
+put the question on the to-do: "we should update codex to handle this adequately, which
+probably involves some kind of disambiguation." The hash on the object stands as the form for
+the meantime. (2) An edge's object written with no hash is read as
+before: a warning when it names nothing, and nothing when two things carry the name. (3) §25
+still lets a category, an `IS` and an edge's object name a game DEF. That is a reference from
+lore to mechanics and is left as it was. (4) Spec text is added for the ruling (item 52, a
+bullet in §25), so that a reader of §25 learns the two may share a name.
+
+*Not done.* No corpus is changed. `check_references.py` reads a codex edge as it did.
+
+**Bullet 6, part 3, ruled 2026-11-14: an edge cites its own source (DECISION-66).** The agent
+proposed that a block hold one `SOURCE` and that its edges be read as drawn from it. Owner: "a
+block may likely have multiple sources, as in situations where later sourcebooks add to facts
+about a given entity. so how would we support that?" The agent answered that an entity takes a
+block for each source, and gave several `SOURCE` lines in one block as the alternative. Owner:
+"why can't we invert it; each edge cites its source?" Asked whether an edge that cites none
+should take its block's, he ruled: "Always on the edge".
+
+Measured for his question, over the 1,237 `FROM` phrases of l5r5e: 870 stand under the heading
+their block's `SOURCE` names, before the next heading; 73 in a sub-section of it; 71 elsewhere
+in the same file; 74 are in a block that names a file and no heading; 149 are not word for
+word in the file (the 84 and the 65 of the measurement above). The block's heading does not
+place 71 facts.
+
+Asked first what sources and edges are used for, the agent searched the Titterpig utilities:
+the validator is the one tool that reads them as structure; doublecheck counts a codex's
+strings as coverage; three maintenance scripts treat a codex as any DSL file; the synthesist,
+the rules-lawyer, the engine and the dashboard have no code that reads a `.codex` file. The
+campaign sites were not searched.
+
+- **Every edge writes its source**, `SOURCE "file" [AT "heading"]`, after its object and its
+  `FROM`.
+- **An edge does not take its block's source.**
+- **A block's `SOURCE`** is where the subject is described, and a block may hold more than one.
+
+*Applied.* Spec: §0 item 53, DECISION-66, §25 (the template, the `SOURCE` and `RELATIONSHIPS`
+bullets with an example from l5r5e, two rows of the validation table). Validator: an edge's
+source is read; an edge with none is reported; its heading is checked against the `.lore`
+file as a block's is. Grammar: an edge takes `SOURCE "file"` and an optional `AT`. New:
+`tests/source-good` and `tests/source-bad`, each with a `.lore` file so that the heading check
+runs. Every edge of `tests/good.codex`, `tests/bad.codex`, `tests/entity-good` and
+`tests/entity-bad` gains a source, as do eight of the nine edges of
+`samples/lore-codex/tor2e-eriador.codex`.
+
+| Check | Result |
+|---|---|
+| `tests/source-good` (edges with a source; one with no heading; a block with two `SOURCE` lines) | validator 0 errors, 0 warnings; grammar accepted. The grammar before the change refused it |
+| `tests/source-bad` | 1 error and 2 warnings: an edge with no source at 0.6, the same at 0.5, a heading that is not in the file. Before the change, 0 and 0 |
+| the fixture run against the run after part 2 | identical, but for the two new sets and the grammar's count |
+| both grammar gates | 80 of 80 good files accepted; 17 of 17 planted faults refused |
+| the sample's eight phrases, searched in `tor2e-0.2-core-eriador.lore` | each stands under the heading its edge now cites |
+| the sample in the validator | 0 errors, 1 warning: the edge of `^"Bilbo Baggins"`, whom the essay does not name, cites no source |
+| l5r5e in the validator, part 2's tool against this one | 276 errors as before; 1,663 warnings, 1,282 more, one for each edge and no other finding |
+| l5r5e in the grammar, before against after | the same output: 136 of 166 files accepted |
+| the other 28 directories | not rerun. None holds a `.codex` file. By that, the 22 corpus directories stand at 288 errors and 30,202 warnings; the sum is not from a run |
+
+*Agent's calls, to confirm.* (1) The form, `SOURCE "file" AT "heading"` after `FROM`. It was
+shown to the owner as an example, with the keyword left to him; he ruled where the source
+goes and named no keyword. (2) `AT` is optional on an edge, as on a block: 74 l5r5e edges
+stand in a block that names no heading. (3) A block may hold more than one `SOURCE`; the
+grammar and the validator read several already. (4) `FROM` stays optional and is checked by
+no tool, as before. (5) The sample's file name, `tor2e-0.4-core-eriador.lore`, is kept; the
+file in the tor2e repo is `tor2e-0.2-core-eriador.lore`. (6) The sample's edge for Bilbo is
+left with no source and a comment, since the essay does not name Bilbo.
+
+*Not done.* No corpus is changed: F40.
+
+**Bullet 6, part 4, deferred 2026-11-14.** Owner: "defer decision on this."
+
+What was put to him. An edge points from one named thing to another, so a fact whose other end
+is a year or a quantity cannot be written short of an entity made for the number. The counts
+are in the measurement above: no edge's object holds a digit, and of 50 `^"Event"` blocks 2
+have a year beside the event's name in their lore section and 11 more have one somewhere in
+it. The two options were to leave it, the date staying in the prose that the sources lead to,
+or to let an edge's object be a value (`^"occurred-in" -> "704"`). The agent recommended
+leaving it.
+
+Nothing is ruled and nothing changes. The question is on the list below.
+
+**Bullet 7, measured 2026-11-16 and put to the owner in two points**: a `MAP` with no
+`DISPOSITION`, and what `SCALE` says of rounding.
+
+- **The three bridges.** dnd5e to dnd5.5e declares `DISPOSITIONS` and writes 573 `MAP`s and 7
+  `REMAINDER`s, no `PROCEDURE`. arm4 to arm5e and pendragon5e to pendragon6e declare none and
+  write no `MAP`: 7 and 14 `PROCEDURE`s, 12 and 51 `CONVERT`s.
+- **Where the rule is.** §21 makes `DISPOSITION` the one required field of a `MAP`, and the
+  validator reports "MAP needs a DISPOSITION" as an error. The grammar does not require it.
+  The Pendragon bridge's header says so of itself: the appendix "declares no change-tag
+  vocabulary, so this bridge has no DISPOSITIONS -- and so no MAP or REMAINDER, which require
+  one".
+- **What goes into `CONVERT` for want of a `MAP`.** Of the 19 `UNCHANGED INTO` lines, 10 carry
+  a value under one name (`^"SIZ"` to `^"SIZ"`) and 9 name two things, all in the Pendragon
+  bridge (`^"Appearance (attribute)"` to `^"Appeal (APP)"`, `^"Attributes"` to
+  `^"Characteristics"`, `^"Siege"` to `^"Siegecraft"`). The same bridge writes a merge as three
+  `MANUAL` lines into `^"One-Handed Hafted"`, four removed Skills as `MANUAL` lines with no
+  `INTO`, and a new Characteristic as a `MANUAL` on the destination alone. Each is a shape §21
+  lists for a `MAP`: a rename, a merge, an omission, an introduction.
+- **`SCALE`.** Written three times, all in the arm4 bridge: `6 OVER 5` ("add 20% to a Fourth
+  Edition character's age"), `5` ("multiply remaining XP by five"), `1 OVER 3` ("Divide the
+  number of Twilight Points by three, and use this as the Warping Score"). None of the three
+  source sentences states a rounding, and the word does not occur in the bridge's conversion
+  units.
+- **Readers.** `gen_bridge.py` and `check_verbatim.py` in titterpig-mastra write and check a
+  bridge. No tool in the utilities reads one to convert anything.
+
+**Bullet 7, point 1, ruled 2026-11-16: a `MAP` may stand with no `DISPOSITION`
+(DECISION-67).** The agent proposed it and gave the alternative, to leave the rule and say
+that a `CONVERT … INTO` is how a document with no tags records a correspondence. Owner:
+"Let's go with this", quoting the proposal: "Make DISPOSITION optional on a MAP. A MAP with
+none asserts the correspondence and nothing about the kind of change. REMAINDER keeps
+requiring one, since a tag is all it says."
+
+- **A `MAP` with no `DISPOSITION`** asserts the correspondence and says nothing about the kind
+  of change.
+- **A `REMAINDER`** still requires `SCOPE` and `DISPOSITION`.
+
+*Applied.* Spec: §0 item 54, DECISION-67, §21 (the `DISPOSITIONS` section, the `MAP` field
+list and table with the Pendragon rename as the example, the substitution paragraph, the
+`REMAINDER` section, the first paragraph of `PROCEDURE`). Validator: the error "MAP needs a
+DISPOSITION" is removed; the `REMAINDER` error says why it stays. Grammar: comments only, since
+it never required the field. `AUTHORING-GUIDELINES.md` and the repo's skill file each gain a
+sentence. `tests/good.bridge` gains three untagged `MAP`s (a rename, a merge, an omission);
+`tests/bad.bridge` gains one, which is to raise nothing, and its `MAP` with no referents now
+raises one error where it raised two.
+
+| Check | Result |
+|---|---|
+| `tests/good.bridge` with the three untagged `MAP`s | new validator 0 errors, 0 warnings. The validator before the change: 3 errors, "MAP needs a DISPOSITION" on each |
+| `tests/bad.bridge` | 21 errors, 22 before. Its `REMAINDER` with no tag is still an error; its untagged `MAP` raises nothing; a tag that is not declared and a tag written as a string are errors as before |
+| the fixture run against the run after bullet 6 part 3 | identical but for that one line |
+| both grammar gates | 80 of 80 good files accepted; 17 of 17 planted faults refused |
+| the three bridges in two-corpus mode, old validator against new | the same output for each: Pendragon 0 errors and 9 warnings, Ars Magica 0 and 12, D&D 0 and 87 |
+| a scratch copy of the Pendragon bridge with `^"Appearance (attribute)"` to `^"Appeal (APP)"` and `^"Attributes"` to `^"Characteristics"` as untagged `MAP`s, and a third with the origin name misspelled, against the two Pendragon corpora | new validator: 1 error, the misspelled name, so an untagged `MAP`'s names are gated. Old validator: 4 errors. The grammar accepts the file. The pendragon6e repo is untouched (`git status` shows nothing) |
+
+*Agent's calls, to confirm.* (1) The rule is not gated by version: it removes an error and
+adds none, so there is nothing for an older file to be warned of. (2) A `MAP` may go untagged
+in a document that does declare tags, where the document states the correspondence and tags
+nothing. No check ties the two. (3) §21 now says that a consumer reads the kind of change of
+an untagged 1 to 1 `MAP` from its `TEXT` and, where the `TEXT` does not say, does not take it
+for a rename. (4) §21 now says that a thing renamed, merged, removed or added is a `MAP` in a
+document with no tags too, and that a renamed thing whose value also carries across takes
+both the `MAP` and the `CONVERT … UNCHANGED INTO`.
+
+*Not done.* No bridge is changed. The Pendragon bridge's renames, merges, omissions and
+introductions are F41, which counts them; the measurement above named one merge and one
+introduction, and the file holds four merges and three destination-only lines. The Ars Magica bridge has none: its three `UNCHANGED INTO` lines keep
+one name on both sides, and its `MANUAL` lines concern values.
+
+**Bullet 7, point 2, ruled 2026-11-16: `SCALE` states no rounding (DECISION-68).** The agent
+proposed one sentence, that `SCALE` states the arithmetic and that a rounding the document
+gives is written as a `MANUAL` line. Owner: "Most games have standard rules for how to handle
+rounding; by default, we should defer to those procedures if they exist. Otherwise this is
+something that can optionally be flagged as something of possible concern but would need
+adjudication from some source if there were no default heuristics to use."
+
+Measured for his rule, by a search of each corpus for a sentence that states a rounding
+(`round up`, `rounded down`, `to the nearest`, `fractions are dropped` and the like; a
+phrasing outside the pattern is not counted):
+
+| Corpus | Sentences stating a rounding | A rule for the game as a whole |
+|---|---|---|
+| dnd5.5e | 52: 38 down, 13 up, 1 other | `^"Round Down"`, glossary, page 187: "Whenever you divide or multiply a number in the game, round down if you end up with a fraction, even if the fraction is one-half or greater." |
+| pendragon6e | 26: 16 up, 9 nearest or other, 1 down | `^"Rounding Numbers"`, page 26: "Values and dice outcomes are always rounded to the nearest whole number." |
+| arm5e, the 42 core files | 22, all up; each read, each for one calculation or an erratum to one | none found |
+| dnd5e | 24: 13 down, 11 up | none found by the pattern; the sentences were not each read |
+| pendragon5e | 5 | not looked for; it is an origin |
+
+The three `SCALE` lines are all in the bridge whose destination is arm5e, so none of them has
+a general rule to take. `SCALE 5` gives a whole number; `SCALE 6 OVER 5` and `SCALE 1 OVER 3`
+can give a fraction.
+
+- **`SCALE` states the arithmetic** and takes no rounding keyword.
+- **The game's general rounding rule applies** where the game prints one.
+- **Where it prints none**, the bridge supplies none; a reader may flag the conversion as one
+  that wants a ruling from a source outside the bridge.
+
+*Applied.* Spec: §0 item 55, DECISION-68, three paragraphs in §21 after the `CONVERT`
+operations. The grammar gains a comment and no tool changes, since there is nothing new to parse
+and no check.
+
+*Agent's calls, to confirm.* (1) "The game" is the destination edition, since the result is a
+value on a destination sheet. The owner said "most games" and named no side. (2) No field is
+added for a system's general rounding rule, and the spec says that none exists and that a
+reader finds the rule in the corpus as the book prints it. A tool therefore cannot tell
+"prints a rule" from "prints none" unaided, and the flag he allowed is left to the reader;
+the validator reports nothing. (3) The spec names arm5e as a destination with no general
+rule, worded as "none was found". (4) What a bridge does when the conversion document itself
+states a rounding is not written. None of the three source sentences states one, and the
+agent's `MANUAL` proposal was not what he ruled.
+
+**Bullet 8, measured 2026-11-16 and put to the owner in three points**: an empty name, a
+name with no letter or digit, a control character in a name.
+
+Counted with the validator's own tokenizer over the 22 corpus directories and the seven other
+repos: 7,257 DSL files, 760,929 caret names written, 114,703 of them a DEF's name, 81,888
+distinct. A name inside a string is not counted.
+
+- **Empty.** 3, all in one file,
+  `titterpig-dsl-dnd5e-3rdparty/historica-arcanum/the-serpentine-door/historica-serpentine-door-0.4-adventure.arc`,
+  lines 71, 79 and 83. Each is a quote that is not escaped:
+  `SCENE ^""They Are Here" — Frederick's Clandestine Meeting"`. The validator reads the name as
+  empty and reports nothing on those lines; the grammar refuses the file. No name is blank
+  (spaces only).
+- **What the two gates say of a planted file** holding `^""`, `^" "`, `^","` and a name with
+  U+0007 in it, each a DEF at 0.6: validator 0 errors and 0 warnings; grammar accepted.
+- **No letter and no digit.** 9 distinct names, 15 written: 10 as a DEF's name and 5 as an
+  entry's label. Read in place:
+
+  | Name | Where | What it is |
+  |---|---|---|
+  | `^"—"` | tor2e `core-adventurers`, a table's `ENTRIES` | the row's own label; its `^"Skill"` is "Unskilled" |
+  | `^"—"` | vtm5e `succubus-club-chapter-five` | a DEF whose description opens "Rudi, a local Gangrel Anarch" |
+  | `^","` | arm5e and armdef `the-church … the-corrupt-demons` (the same nested DEF); invisiblesun `teratology` | a power with `^"Cost"` "*3 points"; a `^"Rule"` |
+  | `^"&"`, `^"(  )"`, `^")"`, `^"<-"` | invisiblesun `teratology`, `the-nightside`, `enchiridion-of-the-path` | four `^"Rule"` DEFs |
+  | `^":"` | vtm5e `children-of-the-blood-new-advantages` | a `^"Flaw"` |
+  | `^"▪"` | vtm5e `gehenna-war-chapter-four`, twice | a guidance entry's label |
+  | `^"“"`, `^"”"` | arm5e-3rdparty `a-vanilla-covenant`, three sidebars | a guidance entry's label |
+
+  The tor2e row reads as what the book prints. The agent reads the other 14 as conversion
+  slips; none was checked against its PDF.
+- **A control character.** 10 names, 11 written, in tor2e `realms-days-darken` (9),
+  `ruins-gathering-storm` (1) and `ruins-landmarks` (1): U+0007 after the year, `^"2973: ␇confrontation at the Black Lake"`.
+- **Space.** 5 names are written with a space at one end and 1 with a run of spaces. §14 sets
+  both aside when two names are compared, so nothing is put for them.
+- **Length.** 70 distinct names are longer than 120 characters, 67 of them a DEF's: sentences
+  used as names. Nothing is put for them.
+
+**Bullet 8, ruled 2026-11-16: what a name holds (DECISION-69).** The agent put three points:
+an empty name refused, a name with no letter and no digit warned of, a control character in a
+name refused. Owner: "Yes, all three".
+
+- **An empty name**, once white space is folded, is a warning below 0.6 and an error from 0.6.
+- **A control character in a name** is gated the same way.
+- **A name with no letter and no digit** is a warning at every version and never an error.
+
+*Applied.* Spec: §0 item 56, DECISION-69, a new part of §14, "What a name holds". Validator:
+the three checks, made where a caret name is read, so they cover a definition, a reference
+and an entry's label in every kind of file. Grammar: a comment; the rule keeps `^""` so that
+an older file is still read. New: `tests/nameform-good` and `tests/nameform-bad`.
+
+| Check | Result |
+|---|---|
+| `tests/nameform-good` (punctuation beside a letter, one letter, one digit, a letter of another script, an escaped quote, a space at the end) | validator 0 errors, 0 warnings; grammar accepted |
+| `tests/nameform-bad` | 4 errors and 7 warnings. At 0.6: two empty names, two names with U+0007 as errors, and four names with no letter and no digit as warnings. At 0.5: an empty name, U+0007 and `^":"`, each a warning. The validator before the change: 0 and 0 |
+| the fixture run against the run after bullet 7 | identical, but for the two new sets and the grammar's count |
+| both grammar gates | 81 of 81 good files accepted; 17 of 17 planted faults refused |
+| the 29 directories, bullet 7's validator against this one | 22 identical. Seven gain 29 warnings and nothing else: 15 for a name with no letter and no digit, 3 for an empty name, 11 for a control character. They are the 15, 3 and 11 of the measurement. No error is added, since every file concerned declares a version below 0.6 |
+| the 22 corpus directories, from that run | 288 errors and 30,225 warnings; 288 and 30,202 before, which is the sum the note under bullet 6 part 3 gave by arithmetic |
+
+The seven: arm5e and armdef 1 each, invisiblesun 5, tor2e 12, vtm5e 4, arm5e-3rdparty 3,
+dnd5e-3rdparty 3.
+
+*Agent's calls, to confirm.* (1) One decision number for the three points. (2) A control
+character is one of Unicode's category Cc. A tab or a line break in a name is white space
+under §14 and is not reported; a format character (a zero-width space) is not reported
+either. (3) The no-letter warning is made at a reference and an entry's label as well as at
+a definition. (4) The grammar does not refuse `^""`. (5) Nothing waives the warning on a
+name a book does print; the tor2e row keeps it.
+
+*Not done.* No corpus is changed: F42. `check_references.py` and `check_constructs.py` are
+unchanged; their own pattern for a caret name already skips an empty one.
+
 ### To revisit once C1 to C9 are closed
 
 Asked for by the owner, 2026-11-14, while ruling C6 part 1: "I would like to follow up on the
@@ -2789,6 +3331,43 @@ up.
 
 Part 3 of C6, ruled the same day, marked those four forms as likely to be replaced, and
 `OVERRIDE` and `ADD … DEF` with them (DECISION-53). The replacements are not ruled.
+
+Added 2026-11-14, while ruling C9's first bullet. Owner: "we should flag a follow-up so that a
+campaign can declare appropriate systems/settings/etc to have all the necessary
+primitives/select rule variants/etc. Probably a ".campaign" load file that tells how to build
+the codex, etc, maybe? discussion for later."
+
+- **A campaign's load file.** What a campaign loads: its systems and settings, the primitives
+  those bring, the rule variants it selects. It touches `.selections` and §24 above, the
+  synthesist's manifests (three of the 15 already compose a third-party book over a base), and
+  where a third-party book's own files and keywords are declared.
+
+Deferred by the owner while C9's fourth bullet was put to him, 2026-11-14: "I think we need
+to defer a decision here, flag it for follow-up".
+
+- **A hook's `WHEN`.** Whether it is the source's own sentence or the converter's wording, and
+  how a hook points at the sentence it was drawn from. It goes with the replacements for
+  `TRIGGER` and the two upper `FORMALITY` levels (DECISION-54). The proposal he deferred is
+  under C9, bullet 4.
+
+Asked for by the owner while ruling C9's sixth bullet, 2026-11-14: "Let's mark for a review
+the idea of a parallel unique ID system in lore, but that's not immediately in scope."
+
+- **A set of unique identifiers for lore, beside those of the mechanics.** DECISION-65 keeps
+  the two identities apart and defines no link. What the review would touch: §25 lets a
+  category, an `IS` and an edge's object name a game DEF; a codex entity's hash is drawn from
+  the same space as a DEF's, and a hash shared between the two is an error; DECISION-24 makes
+  an entity's name one that any file may use.
+
+Deferred by the owner while the fourth part of C9's sixth bullet was put to him, 2026-11-14:
+"defer decision on this."
+
+- **A date or a number as a fact in a codex.** Whether an edge's object may be a value. The
+  two options he deferred are under C9, bullet 6, part 4.
+
+Recorded from C9's recount, 2026-11-14: bullets 5 (`OPTIONAL` and `.selections`) and 9 (`ADD`)
+of C9, and what is left of bullet 2 (what `MODIFY` cannot reach, which today takes a whole
+`OVERRIDE`), wait on the items of this list.
 
 ---
 
@@ -3520,6 +4099,103 @@ name another, and each is a warning until corrected to `"0.5"`: `"dnd5e"` and `"
 `"0.5.1"` in the Pendragon bridge. `bridges/sources.json` records the same versions and
 changes with them.
 
+### F38. Every system: its `.system` file
+
+DECISION-62 gives each edition a `.system` file. 22 are to be written, one in each corpus
+folder, and they can be generated: the keywords from what the files write (316 distinct over
+the 22; l5r5e 217, of which 109 are written once and want reading), the index from the folder
+(l5r5e 166 files, teeth 94, arm5e 2,435), the `VERSION` from the folder's name.
+
+- **Generators** keep the index current as they write files; the arm5e retarget writes
+  armdef's.
+- **The prose spec files** of arm5e, l5r5e, root and vtm5e document the same keywords and can
+  point at the system file.
+- **synthesist.** Its manifests name the edition and list files in load order. The system file
+  holds the edition and the index; what a manifest adds is a selection and an order, which is
+  the campaign's load file on the owner's list.
+- **Third-party repos** have no system file of their own under this decision.
+
+### F39. l5r5e: one hash for each codex entity
+
+DECISION-64 makes an entity's name under a second hash a collision, an error at every
+version. l5r5e has 114 such names, 249 blocks, and stands at 276 errors where it had 27. Commit `c7abe91` (2026-09-23) gave a new hash to each block that until then added
+to an entity by its name.
+
+- **94 names** have one block with `IS`. Each of their other blocks takes that block's hash.
+  None of the 114 hashes to be dropped is written anywhere else in the corpus.
+- **20 names** have two or three blocks with `IS`: the same subject declared in full more than
+  once. One hash is chosen for each, and the `IS` lines are reconciled (`^"Brotherhood of
+  Shinsei"` is a `^"Faction"` in one block and an `^"Organization"` in another).
+- **The pass that hashes unhashed entities** is to leave a block that adds to an entity
+  alone, or give it its entity's hash.
+
+**Status:** open, not started.
+
+### F40. l5r5e: a source on each codex edge
+
+DECISION-66 has every edge cite its own source. l5r5e's 1,282 edges cite none.
+
+- **943 edges** have a `FROM` phrase that stands under their block's heading or in a
+  sub-section of it. Each takes its block's file and heading.
+- **71 edges** have a phrase that stands elsewhere in the file. The heading is found by
+  searching for the phrase.
+- **74 edges** are in a block that names no heading, and take the file, with a heading where
+  the phrase is found under one.
+- **149 edges** have a phrase that is not word for word in the file: 65 join pieces with an
+  ellipsis, 84 are not found. Three of the 84 were read, and each leaves a parenthesis out of
+  the sentence. They want reading; §25 calls `FROM` the verbatim source phrase.
+- **45 edges** have no `FROM` and want reading to be placed.
+
+**Status:** open, not started.
+
+### F41. pendragon6e: the bridge's renames, merges, omissions and introductions as `MAP`s
+
+DECISION-67 lets a `MAP` stand with no `DISPOSITION`. The Pendragon 5e to 6e bridge was
+written under the older rule and holds no `MAP`. In
+`bridges/0.5/pendragon5e-to-pendragon6e-0.5-notes-on-the-new-edition.bridge`:
+
+Counted in the file's 51 `CONVERT` lines on 2026-11-16:
+
+- **9 of its 16 `UNCHANGED INTO` lines** write two different names (`^"Appearance (attribute)"`
+  to `^"Appeal (APP)"`, `^"Attributes"` to `^"Characteristics"`, `^"Siege"` to
+  `^"Siegecraft"`, `^"Lance [Knightly]"` to `^"Charge"`). One of the nine, `^"Orate [Knightly]"`
+  to `^"Orate"`, differs only by the origin corpus's bracket. Which of them the appendix states
+  as a rename is read from its text; each that is takes a `MAP`, and the `CONVERT` stays where
+  the value carries across.
+- **9 `MANUAL` lines** quote "In the case of Skills that have been combined" into four
+  destinations: three into `^"One-Handed Hafted"`, two each into `^"Folklore"`, `^"Recognize"`
+  and `^"Sword"`. Each destination is one merge, a `MAP` with its origins listed.
+- **4 `MANUAL` lines** quote "Skills that no longer exist (Boating, Romance, Swimming,
+  Tourney)" and have no `INTO`. Each is a `MAP` with an origin alone.
+- **3 `CONVERT` lines** stand on the destination alone: `^"Brawling Damage"`, `^"Station"`,
+  `^"Chivalry"`. Each is a `MAP` with a destination alone, where the appendix calls it new.
+- **1 `MANUAL` line** quotes "Dagger becomes your Brawling Skill, 10 minimum".
+
+A scratch copy with two of the renames as `MAP`s validates against both corpora (bullet 7,
+point 1). The bridge's header comment, which says it has no `MAP` because a `MAP` requires a
+`DISPOSITION`, is rewritten with it.
+
+**Status:** open, not started.
+
+### F42. Names the corpora write that hold nothing a reader can use
+
+DECISION-69 reports three kinds of name. The corpora hold 29, each a warning today.
+
+- **3 empty names**, dnd5e-3rdparty `historica-serpentine-door-0.4-adventure.arc`, lines 71,
+  79 and 83: each is `^""They Are Here" — …"` and wants its quotes escaped. The grammar
+  refuses the file for the same lines.
+- **11 names with U+0007**, tor2e `realms-days-darken` (9), `ruins-gathering-storm` (1) and
+  `ruins-landmarks` (1): the character is removed. One of the eleven is a reference and
+  changes with its definition.
+- **14 names with no letter and no digit** that read as slips, each to be checked against its
+  source: `^","` (arm5e and armdef `the-church`, invisiblesun `teratology`), `^"&"`, `^"(  )"`,
+  `^")"`, `^"<-"` (invisiblesun), `^"—"` and `^":"` (vtm5e, one each), `^"▪"` twice (vtm5e),
+  `^"“"` and `^"”"` three times (arm5e-3rdparty `a-vanilla-covenant`). The arm5e name is fixed
+  in arm5e and carried to armdef by the retarget.
+- **1 name left as it is**, tor2e `core-adventurers`: the table row `^"—"`.
+
+**Status:** open, not started.
+
 ### To-do recorded in the spec
 
 - **Nested conditions in `WITH`** (§5b). `A AND (B OR C)` is not defined; a `WITH` that mixes `AND`
@@ -3796,6 +4472,13 @@ changes with them.
 - The grammar change is unproven: no tool runs `ttrpg.peg` (B1).
 - The atlas skill's `references/spec-map.md` gives line numbers into the spec, and every edit to
   the spec moves them. Refresh it when the 0.6 edits settle.
+- **How a codex tells apart two things of one name** (§25). Owner, 2026-11-14: "we should update
+  codex to handle this adequately, which probably involves some kind of disambiguation. Add
+  this to the to-do." An entity and a DEF may share a name (DECISION-65). A codex names its
+  targets by name in four places: an edge's object, an `IS`, a `DOMAIN` and a `RANGE`. Since
+  DECISION-65 an edge's object may carry a hash, which is the agent's form for the meantime;
+  the other three take a name alone in the grammar. No form of disambiguation is ruled. It
+  goes with the review of unique identifiers for lore, on the list after C9.
 
 ---
 
@@ -3972,6 +4655,29 @@ Filled in as each finding is walked through.
 | C8 | 2026-11-14 | Part 3: the `VERSION` beside an edition is its corpus's content version, the version each of the corpus's files' `VERSION` begins with. The validator checks a bridge's side against the corpus it is given: a warning below 0.6 and an error from 0.6. Written as DECISION-61. Four sides of the three bridges are reported: F37. | Owner: "Define and check it". §21 said a side pins "a content `VERSION`" and no tool read it; the three bridges meant three things by it. DECISION-50 makes an edition and a content version the span of a hash. |
 | C8 | 2026-11-14 | Agent's calls on part 3, to confirm. (1) "Begins with" is exact on the parts given. (2) A file with no `VERSION` is not counted. (3) Nothing checks that a corpus's files share a content version. (4) A side with no `VERSION` is not reported. (5) `.selections` is left. (6) §21's example keeps `"0.4"`. | (1): a hash namespace is one version, where a dependency pin is a floor. (2): there is nothing to compare. (3): he ruled on the line beside an edition. (4): §21 makes it optional. (5): it is marked as likely to be replaced. (6): it is a 0.4 example. |
 | C8 | 2026-11-14 | C8 is closed. The branch is committed and pushed. | Owner: "Close, commit, push". The agent's calls marked "to confirm" in parts 1 to 3 were reported to him as each part was applied and were not separately ruled on. |
+| C9 | 2026-11-14 | Bullet 1: each edition has a `.system` file. `SYSTEM "id"` is the edition; `KEYWORDS` lists the system's own keywords by name; `FILES` is the index of its files by path. With one in the run the validator reports an undeclared keyword, a file the index leaves out and a `VERSION` that does not begin with the system's: a warning below 0.6, an error from 0.6. Written as DECISION-62. The 22 system files are F38. | Owner: "Let's do something like this: l5r5e.system adds the system-specific primitives and also holds the index of any/all files associated with it"; then, on the concrete shape: "Yes, apply it". The agent had recommended leaving the vocabulary undeclared, since a scan of 7,055 files found no misspelling. |
+| C9 | 2026-11-14 | Added to the list for after C9: a campaign's load file. | Owner: "we should flag a follow-up so that a campaign can declare appropriate systems/settings/etc to have all the necessary primitives/select rule variants/etc. Probably a \".campaign\" load file that tells how to build the codex, etc, maybe? discussion for later." |
+| C9 | 2026-11-14 | Agent's calls on bullet 1, to confirm. (1) No system file in the run gives a note, not a warning. (2) The validator holds the base keywords as a list of 173, with `ROW`. (3) A base keyword used outside its block is not declared. (4) A keyword is a capitalised word that opens a statement. (5) A file with no edition is held to the system file only when the run has one. (6) A bare `.actor` is not held to it. (7) A system's id is not a file id. (8) A file's `VERSION` is checked against the system's. | (1): a warning would stand on every fixture and single-file run. (2): the tool cannot read the spec, and `ROW` is the older table form. (3): §15 already lets a system use it. (4): that is where the corpora write theirs. (5): two systems in a run cannot say whose it is. (6): it has no header. (7): nine BASE files are named for their edition. (8): the system file states the version. |
+| C9 | 2026-11-14 | Bullet 3: a guidance entry may hold `REFERENCES`, each surface form being in that entry's `TEXT`; its kind stays one of its `TOPICS`, with no list in the base spec. Its place is its `^"Page"`, as DECISION-45 has it. Written as DECISION-63. | Owner: "Yes, both". `check_references.py` read the block already and §22 did not allow it; none of 11,027 entries writes one. The corpora write the kind as a topic. |
+| C9 | 2026-11-14 | Agent's calls on bullet 3, to confirm. (1) The grammar reads `^"Page"` in an entry. (2) The grammar was not rerun over the corpora. (3) `"Sidebar"` and `"sidebar"` are noted and not ruled. | (1): DECISION-45 gave every block a page. (2): no corpus entry holds either new form. (3): a corpus matter. |
+| C9 | 2026-11-14 | Bullet 4 (`HOOKS`) deferred: whether a hook's `WHEN` is the source's own sentence, and how a hook points at it. Nothing in the spec or a tool changes. Added to the list for after C9. | Owner: "I think we need to defer a decision here, flag it for follow-up". The agent had proposed a verbatim `WHEN` checked against the enclosing DEF's text; the three corpus hooks already comply. |
+| C9 | 2026-11-14 | Bullet 6, part 1: a codex entity is its hash. An `ENTITY` writes its hash; a file adds to an entity by restating that hash and name; no block is first; the same name under another hash is a collision; at least one block of an entity holds `IS`. Written as DECISION-64. The 114 l5r5e names are F39. | Owner: "a later file should only modify an existing hash, otherwise it's a collision and it should flag an error. Please let me know if I'm missing anything." The agent had proposed adding by hash and had left one name under two hashes as two entities. |
+| C9 | 2026-11-14 | Agent's calls on bullet 6 part 1, to confirm. (1) "Modify" is read as restating `ENTITY #hash ^"Name"`, with no `MODIFY` statement. (2) The collision is a warning below 0.6 and an error from 0.6. (3) An `ENTITY` with no hash and an entity with no `IS` are reported at the same levels. (4) No `IS` finding for a name in collision. (5) An older fixture, `tests/anchors-good/lore.codex`, gains an `IS`. | Recorded under the bullet. |
+| C9 | 2026-11-14 | Bullet 6, part 1, the level: the collision is an error at every version. The other two checks stay a warning below 0.6 and an error from 0.6. | Owner: "first of all, I'm ok with the stricter interpretation; the l5r5e situation where you have two different defs of the same thing means that there's an error in those files, so we should throw an error." The agent had made it a warning below 0.6. |
+| C9 | 2026-11-14 | Bullet 6, part 2: lore and mechanics keep separate identities. A codex entity and a DEF of one name are two things, each under its own hash; the base spec defines no link and no tool compares them. Written as DECISION-65. | Owner: "We should consider separating identities between lore and mechanics, because they are often only semi-overlapping. In general and for now, it should be normal for there to be the same thing named in multiple places meaning distinct things. Context and hash references should be sufficient to distinguish. I don't think we need a more rigorous approach defined in the base spec." The agent had proposed that such an entity write the DEF's hash. |
+| C9 | 2026-11-14 | Added to the list for after C9: a set of unique identifiers for lore, beside those of the mechanics. | Owner: "Let's mark for a review the idea of a parallel unique ID system in lore, but that's not immediately in scope." |
+| C9 | 2026-11-14 | Agent's calls on bullet 6 part 2, to confirm. (1) An edge's object may carry its hash, checked as at any site; the grammar and the validator had refused one. (2) An object with no hash is read as before. (3) A category, an `IS` and an edge's object may still name a game DEF. (4) Spec text is added for the ruling. | Recorded under the bullet. |
+| C9 | 2026-11-14 | Added to the to-do: how a codex tells apart two things of one name. The hash on an edge's object stands for the meantime; no form of disambiguation is ruled. | Owner: "we should update codex to handle this adequately, which probably involves some kind of disambiguation. Add this to the to-do." |
+| C9 | 2026-11-14 | Bullet 6, part 3: every codex edge cites its own source, `SOURCE "file" [AT "heading"]` after its object and its `FROM`. It does not take its block's. A block's `SOURCE` is where the subject is described and may be written more than once. Written as DECISION-66. The 1,282 l5r5e edges are F40. | Owner: "why can't we invert it; each edge cites its source?"; then, on whether an edge with none takes its block's: "Always on the edge". The agent had proposed one `SOURCE` to a block with its edges read as drawn from it, and then a source on the edge with the block's as the fallback. |
+| C9 | 2026-11-14 | Agent's calls on bullet 6 part 3, to confirm. (1) The form is `SOURCE "file" AT "heading"` after `FROM`. (2) `AT` is optional on an edge. (3) A block may hold more than one `SOURCE`. (4) `FROM` stays optional and unchecked. (5) The sample keeps its lore file's name. (6) The sample's Bilbo edge is left with no source. | Recorded under the bullet. |
+| C9 | 2026-11-14 | Bullet 6, part 4 deferred: whether a codex may record a date or a number as a fact. Nothing in the spec or a tool changes. Added to the list for after C9. | Owner: "defer decision on this." The agent had recommended leaving it. |
+| C9 | 2026-11-16 | Bullet 7, point 1: `DISPOSITION` is optional on a bridge `MAP`. A `MAP` with none asserts the correspondence and nothing about the kind of change. A `REMAINDER` still requires one. Written as DECISION-67. The Pendragon bridge is F41. | Owner: "Let's go with this", on the agent's proposal as put. |
+| C9 | 2026-11-16 | Agent's calls on bullet 7 point 1, to confirm. (1) Not gated by version. (2) A `MAP` may go untagged in a document that declares tags. (3) A consumer does not take an untagged 1 to 1 `MAP` for a rename where its `TEXT` does not say. (4) A renamed thing whose value carries across takes a `MAP` and a `CONVERT`. | Recorded under the bullet. |
+| C9 | 2026-11-16 | Bullet 7, point 2: `SCALE` states the arithmetic and no rounding. A result that is not whole is rounded by the game's general rounding rule where it prints one; where it prints none, a reader may flag the conversion as wanting a ruling. No keyword and no check. Written as DECISION-68. | Owner: "Most games have standard rules for how to handle rounding; by default, we should defer to those procedures if they exist. Otherwise this is something that can optionally be flagged as something of possible concern but would need adjudication from some source if there were no default heuristics to use." The agent had proposed that a document's stated rounding go in a `MANUAL` line. |
+| C9 | 2026-11-16 | Agent's calls on bullet 7 point 2, to confirm. (1) The game whose rule applies is the destination edition. (2) No field names a system's general rounding rule; the spec says so, and the validator reports nothing. (3) The spec names arm5e as a destination with no general rule found. (4) A rounding stated by the conversion document itself is not written. | Recorded under the bullet. |
+| C9 | 2026-11-16 | Bullet 8: what a name holds. An empty name and a control character in a name are each a warning below 0.6 and an error from 0.6; a name with no letter and no digit is a warning at every version. Written as DECISION-69. The corpora's 29 names are F42. | Owner: "Yes, all three", on the agent's three points as put. |
+| C9 | 2026-11-16 | Agent's calls on bullet 8, to confirm. (1) One decision number. (2) A control character is Unicode category Cc; a tab, a line break and a format character are not reported. (3) The no-letter warning is made at a reference and an entry's label too. (4) The grammar does not refuse `^""`. (5) Nothing waives the warning on the tor2e row. | Recorded under the bullet. |
+| C9 | 2026-11-16 | C9 is closed. The branch is committed and not pushed. | Owner: "Close and commit". The agent's calls marked "to confirm" under bullets 1, 3, 6, 7 and 8 were reported to him as each was applied and were not separately ruled on; he was told that they stand as written if C9 is closed without going through them. |
 
 ---
 

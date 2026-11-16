@@ -1,0 +1,13 @@
+EXTENSION "SysBad_4" {
+    NAME "fault 4 — a VERSION that does not begin with the system's: an error"
+    SPEC_VERSION "0.6"
+    EDITION "sysbad"
+    VERSION "0.5.9"
+    RELEASE_DATE "2026-11-14"
+    DEPENDS_ON "SysBad_Core"
+
+    #Syb4StrikeJ9k1M2n3P4q5 ^"Strike SysBad_4" DEF {
+        EXTENDS #SybTechA1b2C3d4E5f6G7h8 ^"Technique"
+        ACTIVATION "As an Attack action, strike once."
+    }
+}

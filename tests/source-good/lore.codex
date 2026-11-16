@@ -1,0 +1,47 @@
+# An edge cites its own source (spec §25, DECISION-66): SOURCE "file" AT "heading" after the
+# object and its FROM. A block's own SOURCE says where the subject is described, and a block
+# may hold more than one. harrow.lore is beside this file, so each heading is checked.
+# 0 errors, 0 warnings.
+
+CODEX "Source_Good" {
+    NAME "Edge-source fixture: every edge cites its source"
+    VERSION "0.1"
+    SPEC_VERSION "0.6"
+    EDITION "demo"
+    RELEASE_DATE "2026-11-14"
+
+    CATEGORIES {
+        ^"Place"  DEF {}
+        ^"Person" DEF {}
+    }
+
+    RELATIONS {
+        ^"lives-in" { INVERSE ^"residents"  DOMAIN ^"Person" RANGE ^"Place" }
+        ^"born-at"  { INVERSE ^"birthplace-of" DOMAIN ^"Person" RANGE ^"Place" }
+        ^"near"     { SYMMETRIC DOMAIN ^"Place" RANGE ^"Place" }
+    }
+
+    ENTITY #srcGoodPlaceFord0001 ^"Harrow Ford" {
+        IS ^"Place"
+        SOURCE "harrow.lore" AT "the-ford"
+        SOURCE "harrow.lore" AT "the-mill"                # the subject is described in two places
+        RELATIONSHIPS {
+            ^"near" -> ^"The Mill" FROM "The mill stands a mile above the ford." SOURCE "harrow.lore" AT "the-mill"
+        }
+    }
+
+    ENTITY #srcGoodPlaceMill0001 ^"The Mill" {
+        IS ^"Place"
+        SOURCE "harrow.lore" AT "the-mill"
+    }
+
+    ENTITY #srcGoodPersonOdile01 ^"Odile" {
+        IS ^"Person"
+        SOURCE "harrow.lore" AT "odile"
+        RELATIONSHIPS {
+            ^"lives-in" -> ^"Harrow Ford" FROM "Odile keeps the ferry at Harrow Ford"
+                SOURCE "harrow.lore" AT "odile"
+            ^"born-at"  -> ^"The Mill" SOURCE "harrow.lore"                  # a file, and no heading
+        }
+    }
+}

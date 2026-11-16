@@ -109,6 +109,9 @@ in `.lore`) — mirror, don't duplicate.
 - Organize files under a **content-version directory** (`0.3/`, `1.0/`) — version lives in the
   directory, not re-encoded redundantly everywhere.
 - Consistent filenames within a system: `<system>-<version>-<book>-<facet>.ttrpg`.
+- **One `.system` file for each edition** *(v0.6, DECISION-62)*, `<edition>.system`, in the corpus's
+  folder. It declares the system's own keywords in `KEYWORDS` and lists every file of the system in
+  `FILES`. A new keyword or a new file goes into it when it is written.
 - Every file declares `NAME`, `EDITION` (the edition it belongs to, e.g. `"l5r5e"`; v0.6), `VERSION` (content), `SPEC_VERSION` (DSL-spec targeted, e.g. `"0.4"`),
   and `RELEASE_DATE`.
 
@@ -215,7 +218,8 @@ A published edition-conversion document ("Converting to SRD 5.2.1", Ars Magica 5
   `ttrpg_validator.py 0.4/ --corpus dnd5e=<dir> --corpus dnd5.5e=<dir>`
 - **Adopt the document's disposition vocabulary, don't invent one.** Declare its tags in
   `DISPOSITIONS`; a tag it never declares is a coherence error. If the document declares none (ArM5's
-  Appendix I), the bridge has none — do not supply one.
+  Appendix I), the bridge has none — do not supply one. Its renames, merges, omissions and
+  introductions are still `MAP`s, written with no `DISPOSITION` (DECISION-67); a `REMAINDER` needs one.
 - **Type every referent you can.** A plain string is legal for something the corpus has no `DEF` for,
   but the validator warns if it *would* have resolved. Where the name is genuinely taken by an
   unrelated entity (the 5.1 weapon property `Light` versus the 5.1 *spell* `Light`), say so with

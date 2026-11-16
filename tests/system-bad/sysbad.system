@@ -1,0 +1,20 @@
+SYSTEM "sysbad" {
+    NAME "DECISION-62 fixture — a system file, and files that do not fit it"
+    VERSION "0.6"
+    SPEC_VERSION "0.6"
+    RELEASE_DATE "2026-11-14"
+
+    # Run:
+    #   ttrpg_validator.py tests/system-bad
+
+    # ERROR: DESCRIPTION is a keyword of the base spec
+    KEYWORDS [ "ACTIVATION", "DESCRIPTION" ]
+
+    FILES [
+        "core.ttrpg",
+        "1-keyword.ttrpg",
+        "2-keyword-old.ttrpg",
+        "4-version.ttrpg",
+        "6-gone.ttrpg"                    # ERROR: no such file
+    ]
+}

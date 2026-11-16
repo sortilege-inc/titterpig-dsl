@@ -1,0 +1,38 @@
+# Planted faults for DECISION-64 and DECISION-65 (spec §25). An entity's name under a second
+# hash is an error at every version; the other faults are an error from 0.6 and a warning below
+# it. This file is at 0.6. later.codex and older.codex hold the rest. 8 errors, 1 warning.
+
+CODEX "Entity_Bad_Schema" {
+    NAME "Entity fixture: faults"
+    VERSION "0.1"
+    SPEC_VERSION "0.6"
+    EDITION "demo"
+    RELEASE_DATE "2026-11-14"
+
+    CATEGORIES {
+        ^"Place"  DEF {}
+        ^"Person" DEF {}
+    }
+
+    RELATIONS {
+        ^"lives-in" { INVERSE ^"residents" DOMAIN ^"Person" RANGE ^"Place" }
+    }
+
+    ENTITY #entBadPlaceId000001 ^"Harrow Ford" {                # 1: the name is under another hash in later.codex
+        IS ^"Place"
+    }
+
+    ENTITY #entBadPersonId00001 ^"Odile" {                      # (declared once, with IS: no fault)
+        IS ^"Person"
+    }
+
+    ENTITY ^"Marl" {                                            # 2: an ENTITY with no hash
+        IS ^"Person"
+    }
+
+    ENTITY #entBadPersonId00002 ^"Tobit" {                      # 3: no block of this entity holds IS
+        RELATIONSHIPS {
+            ^"lives-in" -> ^"Harrow Ford" SOURCE "entity-bad.lore"
+        }
+    }
+}

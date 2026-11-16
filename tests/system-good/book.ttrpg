@@ -1,0 +1,13 @@
+EXTENSION "SysGood_Book" {
+    NAME "DECISION-62 fixture — a file that writes one of the system's keywords"
+    SPEC_VERSION "0.6"
+    EDITION "sysgood"
+    VERSION "0.6.3"
+    RELEASE_DATE "2026-11-14"
+    DEPENDS_ON "SysGood_Core"
+
+    #SygStrikeJ9k1M2n3P4q5R6s7 ^"Iron Strike" DEF {
+        EXTENDS #SygTechA1b2C3d4E5f6G7h8 ^"Technique"
+        ACTIVATION "As an Attack action, strike once."
+    }
+}

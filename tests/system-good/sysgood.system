@@ -1,0 +1,19 @@
+SYSTEM "sysgood" {
+    NAME "DECISION-62 fixture — a system file: the edition, its keywords, its files (§19)"
+    VERSION "0.6"
+    SPEC_VERSION "0.6"
+    RELEASE_DATE "2026-11-14"
+
+    # Run:
+    #   ttrpg_validator.py tests/system-good      0 errors, 0 warnings
+
+    # the system's own keywords: every capitalised word its files write that the base spec does not define
+    KEYWORDS [ "ACTIVATION", "CHECKS", "CHECK", "SKILL", "TN" ]
+
+    # the index of its files, each a path from this folder
+    FILES [
+        "core.ttrpg",
+        "book.ttrpg",
+        "story.arc"
+    ]
+}

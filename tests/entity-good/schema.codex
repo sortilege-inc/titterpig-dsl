@@ -1,0 +1,28 @@
+# An entity is its hash (spec §25, DECISION-64). This file declares two entities; places.codex
+# adds to one of them by restating its hash and name. 0 errors, 0 warnings.
+
+CODEX "Entity_Good_Schema" {
+    NAME "Entity fixture: the declarations"
+    VERSION "0.1"
+    SPEC_VERSION "0.6"
+    EDITION "demo"
+    RELEASE_DATE "2026-11-14"
+
+    CATEGORIES {
+        ^"Place"  DEF {}
+        ^"Person" DEF {}
+    }
+
+    RELATIONS {
+        ^"lives-in"   { INVERSE ^"residents" DOMAIN ^"Person" RANGE ^"Place" }
+        ^"founder-of" { INVERSE ^"founded-by" DOMAIN ^"Person" }
+    }
+
+    ENTITY #entGoodPlaceId00001 ^"Harrow Ford" {
+        IS ^"Place"
+    }
+
+    ENTITY #entGoodPersonId0001 ^"Odile" {
+        IS ^"Person"
+    }
+}

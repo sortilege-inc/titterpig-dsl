@@ -1,0 +1,30 @@
+BASE "NameForm_Bad_Core" {
+    NAME "DECISION-69 fixture — names that hold nothing a reader can use (§14)"
+    SPEC_VERSION "0.6"
+    EDITION "demo"
+    VERSION "1.0"
+    RELEASE_DATE "2026-11-16"
+
+    #   ttrpg_validator.py tests/nameform-bad         4 errors, 7 warnings
+    #   (this file: 4 errors, 4 warnings; older.ttrpg: 3 warnings)
+
+    #NfbSpellAaK2vQ9wN3cL7pXd ^"Spell" DEF { }
+
+    #NfbEmptyxxB8tJ1yL4sD5fG0 ^"" DEF { }                                  # ERROR: empty
+    #NfbBlankxxC4pH7zR2wE9uX1 ^"   " DEF { }                               # ERROR: empty once space is folded
+    #NfbBellxxxD4fG7hJ0kL2mNq ^"2973: confrontation at the Black Lake" DEF { }   # ERROR: U+0007
+    #NfbCommaxxE1vP5xJ9cL2sQ7 ^"," DEF { }                                 # WARNING: no letter, no digit
+    #NfbDashxxxF6gP2tR8mX4cJ1 ^"—" DEF { }                                 # WARNING: the same
+
+    #NfbUserxxxG9hT3yW7zK5vB2 ^"User" DEF {
+        EXTENDS #NfbSpellAaK2vQ9wN3cL7pXd ^"Spell"
+        GUIDANCE {
+            ENTRY ^"▪" #NfbEntryxxH2jK5mN8pQ1rS {                          # WARNING: an entry's label
+                TEXT "They come at night."
+            }
+            ENTRY ^"" #NfbEntryxxJ5kL8mN1pQ4rS {                          # ERROR: U+0007; and WARNING: no letter
+                TEXT "They leave at dawn."
+            }
+        }
+    }
+}

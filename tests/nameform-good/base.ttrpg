@@ -1,0 +1,24 @@
+BASE "NameForm_Core" {
+    NAME "DECISION-69 fixture — what a name holds (§14)"
+    SPEC_VERSION "0.6"
+    EDITION "demo"
+    VERSION "1.0"
+    RELEASE_DATE "2026-11-16"
+
+    #   ttrpg_validator.py tests/nameform-good        0 errors, 0 warnings
+    #
+    # Each name holds at least one letter or digit. Punctuation beside it, a single letter, a
+    # digit alone, a letter of another script and an escaped quote are all names.
+
+    #NfmSpellAaK2vQ9wN3cL7pXd ^"Spell" DEF { }
+    #NfmOrcsxxC4pH7zR2wE9uX1a ^"Orcs!" DEF { EXTENDS #NfmSpellAaK2vQ9wN3cL7pXd ^"Spell" }
+    #NfmPlusOneD4fG7hJ0kL2mNq ^"+1" DEF { EXTENDS #NfmSpellAaK2vQ9wN3cL7pXd ^"Spell" }
+    #NfmLetterAE1vP5xJ9cL2sQ7 ^"A" DEF { EXTENDS #NfmSpellAaK2vQ9wN3cL7pXd ^"Spell" }
+    #NfmSevenxxF6gP2tR8mX4cJ1 ^"7" DEF { EXTENDS #NfmSpellAaK2vQ9wN3cL7pXd ^"Spell" }
+    #NfmDragonxG9hT3yW7zK5vB2 ^"龍" DEF { EXTENDS #NfmSpellAaK2vQ9wN3cL7pXd ^"Spell" }
+    #NfmQuotedxH2jK5mN8pQ1rS4 ^"\"They Are Here\" — Frederick's Clandestine Meeting" DEF {
+        EXTENDS #NfmSpellAaK2vQ9wN3cL7pXd ^"Spell"
+    }
+    # a dash beside a word is a name; a space at the end is set aside (§14)
+    #NfmDashedxJ5kL8mN1pQ4rS7 ^"— Unskilled " DEF { EXTENDS #NfmSpellAaK2vQ9wN3cL7pXd ^"Spell" }
+}

@@ -1,0 +1,13 @@
+EXTENSION "SysBad_5" {
+    NAME "fault 5 — an EDITION that the run's system file does not declare: an error"
+    SPEC_VERSION "0.6"
+    EDITION "elsewhere"
+    VERSION "0.6.1"
+    RELEASE_DATE "2026-11-14"
+    DEPENDS_ON "SysBad_Core"
+
+    #Syb5StrikeJ9k1M2n3P4q5 ^"Strike SysBad_5" DEF {
+        EXTENDS #SybTechA1b2C3d4E5f6G7h8 ^"Technique"
+        ACTIVATION "As an Attack action, strike once."
+    }
+}

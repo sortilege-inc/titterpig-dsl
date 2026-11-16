@@ -1,0 +1,13 @@
+EXTENSION "SysBad_1" {
+    NAME "fault 1 — ACTIVATON is no keyword of the base spec or of the system, in a file that declares 0.6: an error"
+    SPEC_VERSION "0.6"
+    EDITION "sysbad"
+    VERSION "0.6.1"
+    RELEASE_DATE "2026-11-14"
+    DEPENDS_ON "SysBad_Core"
+
+    #Syb1StrikeJ9k1M2n3P4q5 ^"Strike SysBad_1" DEF {
+        EXTENDS #SybTechA1b2C3d4E5f6G7h8 ^"Technique"
+        ACTIVATON "As an Attack action, strike once."
+    }
+}

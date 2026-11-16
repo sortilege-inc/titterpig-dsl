@@ -92,6 +92,24 @@ BRIDGE "Test_Good_Bridge" {
             TEXT "Cave Dwarf (use Scout)"
         }
 
+        # no DISPOSITION (v0.6, DECISION-67): the document states the rename and tags
+        # nothing. The MAP asserts the correspondence and not the kind of change.
+        MAP #testBridgeMapUntaggedRename {
+            ORIGIN      ^"Appearance"
+            DESTINATION ^"Appeal"
+            TEXT "Apart from Appearance becoming Appeal, the five Characteristics remain unchanged."
+        }
+
+        # an untagged merge and an untagged omission
+        MAP #testBridgeMapUntaggedMerge1 {
+            ORIGIN      [ ^"Mace", ^"Hammer" ]
+            DESTINATION ^"Hafted Weapon"
+        }
+        MAP #testBridgeMapUntaggedOmit01 {
+            ORIGIN      ^"Boating"
+            TEXT "The Boating Skill is gone."
+        }
+
         # an UNTYPED referent: the destination corpus has no DEF for this section.
         MAP #testBridgeMapUntypedSample1 {
             DESTINATION "Tiers of Play"

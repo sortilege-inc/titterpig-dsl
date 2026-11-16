@@ -1,0 +1,20 @@
+# A second file adds to an entity schema.codex declares: the same hash, the same name, further
+# edges. It repeats no IS; the entity has one in its other block. 0 errors, 0 warnings.
+# "Odile" is also a DEF in game.ttrpg, the family. An edge's object may carry its hash
+# (DECISION-65), and here the hash says which of the two is meant.
+
+CODEX "Entity_Good_Places" {
+    NAME "Entity fixture: a file that adds to an entity"
+    VERSION "0.1"
+    SPEC_VERSION "0.6"
+    EDITION "demo"
+    RELEASE_DATE "2026-11-14"
+    DEPENDS_ON "Entity_Good_Schema" VERSION "0.1"
+
+    ENTITY #entGoodPersonId0001 ^"Odile" {
+        RELATIONSHIPS {
+            ^"lives-in"   -> ^"Harrow Ford" SOURCE "entity-good.lore" AT "odile"
+            ^"founder-of" -> #entGoodFamilyOdile01 ^"Odile" SOURCE "entity-good.lore" AT "odile"
+        }
+    }
+}

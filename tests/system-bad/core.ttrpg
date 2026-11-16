@@ -1,0 +1,9 @@
+BASE "SysBad_Core" {
+    NAME "DECISION-62 fixture — the base the faulty files depend on"
+    SPEC_VERSION "0.6"
+    EDITION "sysbad"
+    VERSION "0.6.0"
+    RELEASE_DATE "2026-11-14"
+
+    #SybTechA1b2C3d4E5f6G7h8 ^"Technique" DEF { }
+}

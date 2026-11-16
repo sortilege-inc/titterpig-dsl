@@ -1,5 +1,5 @@
 BASE "Guidance_Core" {
-    NAME "DECISION-51 fixture — EMPHASIS in a guidance ENTRY (§22)"
+    NAME "DECISION-51 and DECISION-63 fixture — EMPHASIS and REFERENCES in a guidance ENTRY (§22)"
     SPEC_VERSION "0.6"
     EDITION "demo"
     VERSION "1.0"
@@ -9,6 +9,10 @@ BASE "Guidance_Core" {
     #   check_grammar.py     tests/guidance-good     accepted
     #   check_references.py  tests/guidance-good     0 errors
     #   check_constructs.py  tests/guidance-good     0 errors
+
+    #GuiFearsomeC3d4E5f6G7h8 ^"Fearsome" DEF {
+        DESCRIPTION "A trait of some mutants."
+    }
 
     #GuiReputationK2vQ9wN3cL ^"Mutant Reputation Effects" DEF {
         DESCRIPTION "A mutant's reputation changes how strangers react."
@@ -26,6 +30,16 @@ BASE "Guidance_Core" {
             ENTRY ^"note-1" #GuiEntryTwoR5tJ1yL8sD4 {
                 TOPICS [ "Note" ]
                 TEXT "Reputation is tracked per community."
+            }
+            # a span of the entry's TEXT that names another entity (v0.6, DECISION-63); the page the
+            # entry is printed on is its ^"Page" (DECISION-45), and its kind is one of its TOPICS
+            ENTRY ^"sidebar-1" #GuiEntryThreeW6xY8zA1b {
+                TOPICS [ "Sidebar" ]
+                ^"Page" 112
+                TEXT "A Fearsome mutant unsettles a crowd before anyone speaks."
+                REFERENCES {
+                    "Fearsome" -> #GuiFearsomeC3d4E5f6G7h8 ^"Fearsome"
+                }
             }
         }
     }

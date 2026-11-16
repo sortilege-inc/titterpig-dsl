@@ -35,32 +35,33 @@ CODEX "Good_Codex" {
     ENTITY #codexCityTestId00001 ^"Rivertown" {
         IS ^"City"
         RELATIONSHIPS {
-            ^"located-in"  -> ^"The Vale"      FROM "the town in the vale"
-            ^"bordered-by" -> ^"The Long River"
+            ^"located-in"  -> ^"The Vale"      FROM "the town in the vale" SOURCE "good-region.lore" AT "rivertown"
+            ^"bordered-by" -> ^"The Long River" SOURCE "good-region.lore" AT "rivertown"
         }
     }
 
     ENTITY #codexRiverTestId0001 ^"The Long River" {
         IS ^"River"
         RELATIONSHIPS {
-            ^"flows-from" -> ^"The Vale"
+            ^"flows-from" -> ^"The Vale" SOURCE "good-region.lore"       # a file, and no heading
         }
     }
 
     ENTITY #codexPersonTestId001 ^"Mira" {
         IS ^"Person"
         RELATIONSHIPS {
-            ^"lives-in" -> ^"Rivertown"
+            ^"lives-in" -> ^"Rivertown" SOURCE "good-region.lore" AT "rivertown"
         }
     }
 
-    # Amend (§13): re-state an existing entity by the SAME hash + name to add a
-    # further source and edge, as another book would. Legal, not a duplicate.
+    # A block that restates an entity's hash and name adds to it (DECISION-64): a
+    # further source and edge, as another book would give. Legal, not a duplicate.
+    # Each edge cites its own source (DECISION-66).
     ENTITY #codexPersonTestId001 ^"Mira" {
         IS ^"Person"
         SOURCE "good-city.lore" AT "notable-residents"
         RELATIONSHIPS {
-            ^"lives-in" -> ^"The Vale"
+            ^"lives-in" -> ^"The Vale" SOURCE "good-city.lore" AT "notable-residents"
         }
     }
 }

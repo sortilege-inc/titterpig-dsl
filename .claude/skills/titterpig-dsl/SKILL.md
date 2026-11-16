@@ -205,7 +205,8 @@ gap `.bridge` fills. Not an EXTENSION, not errata (same edition), not `FIAT`.
   for prose, tagged with `CONCERNS` (gated, side-qualified, may name both sides) and `TOPICS`
   (ungated free strings for subsystems with no DEF).
 - **Adopt the document's own disposition vocabulary**, declared in `DISPOSITIONS` as DEFs; an
-  undeclared tag is a coherence error. If the source declares none, the bridge has none.
+  undeclared tag is a coherence error. If the source declares none, the bridge has none, and its
+  `MAP`s carry no `DISPOSITION` (optional on a `MAP` from 0.6, DECISION-67; a `REMAINDER` needs one).
 - **Untyped referents** (a plain `"Name"` instead of `^"Name"`) are legal for things the corpus has
   no DEF for, but the validator WARNS if the name would have resolved. A genuine cross-category
   collision gets `FIAT "reason"`.

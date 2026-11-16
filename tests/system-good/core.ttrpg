@@ -1,0 +1,9 @@
+BASE "SysGood_Core" {
+    NAME "DECISION-62 fixture — a base of the system"
+    SPEC_VERSION "0.6"
+    EDITION "sysgood"
+    VERSION "0.6.0"
+    RELEASE_DATE "2026-11-14"
+
+    #SygTechA1b2C3d4E5f6G7h8 ^"Technique" DEF { }
+}

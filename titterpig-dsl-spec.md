@@ -68,7 +68,7 @@ Changes made since v0.5, listed as they are decided. **Not all are additive.**
     second DEF under it is an error. A later file changes an entity with `OVERRIDE`, `MODIFY` or
     `REPRINT`. No corpus used the implicit form and the validator never accepted it. A DEF of the
     same name under another hash is a second entity and replaces nothing, and a consumer must not
-    merge the two.
+    merge the two. (A codex `ENTITY` is held to more: one name, one hash. See item 51.)
 15. **An `.actor` file is an `EXTENSION` file of instances** *(§2, §3, DECISION-28; not additive)* —
     it opens with the `EXTENSION` wrapper as a `.ttrpg` does, holds one or more instance DEFs, and
     holds nothing else. §2 had called it a standalone single DEF. A file that opens with a bare
@@ -189,6 +189,41 @@ Changes made since v0.5, listed as they are decided. **Not all are additive.**
     `"0.5"` for files at `0.5.0` and `0.5.10`. An edition and that version name a corpus. The
     validator checks a bridge's side against the corpus it is given: an error from 0.6 and a
     warning below it.
+49. **The `.system` file** *(new file kind, §2, §19, DECISION-62)* — one for each edition:
+    `SYSTEM "l5r5e" { … }`. It is the edition that a file's `EDITION` names. `KEYWORDS` lists
+    the system's own keywords, and `FILES` is the index of its files. With one in the run the
+    validator reports a keyword that neither the base spec nor the system declares, and a file
+    the index leaves out: errors from 0.6, warnings below it.
+50. **`REFERENCES` in a guidance `ENTRY`** *(§22, DECISION-63)* — an entry may name the spans of
+    its `TEXT` that refer to another entity, as it may mark emphasis. Its kind is one of its
+    `TOPICS`, and the page it is printed on is its `^"Page"` (DECISION-45).
+51. **A codex entity is its hash** *(§25, DECISION-64; not additive)* — an `ENTITY` writes its
+    hash, and one name is one entity under one hash. A file adds to an entity another file
+    declares by restating that hash and name; no block is the first, and at least one block of
+    an entity holds `IS`. The same name under another hash is a collision, an **error** at
+    every version. An `ENTITY` with no hash and an entity with no `IS` are each a **warning**
+    in a file that declares a `SPEC_VERSION` below 0.6, or none, and an **error** from 0.6.
+52. **Lore and mechanics keep separate identities** *(§25, DECISION-65)* — a codex entity and a
+    game DEF may have the same name. They are two things, each under its own hash, and the
+    base spec defines no link between them. An edge's object may carry its hash,
+    `^"predicate" -> #hash ^"Object"`, where the name alone would not say which is meant.
+53. **An edge cites its own source** *(§25, DECISION-66; not additive)* — every edge names the
+    file and heading it was drawn from, `SOURCE "file" AT "heading"` after its object and its
+    `FROM`. A block's own `SOURCE` says where the subject is described and is not its edges'
+    source; a block may hold more than one. An edge with no source is a **warning** in a file
+    that declares a `SPEC_VERSION` below 0.6, or none, and an **error** from 0.6.
+54. **A `MAP` may stand with no `DISPOSITION`** *(§21, DECISION-67)* — a bridge `MAP` with no
+    tag asserts the correspondence and says nothing about the kind of change, so a conversion
+    document that declares no change-tags can still record its renames, merges and omissions.
+    A `REMAINDER` still requires one.
+55. **`SCALE` states no rounding** *(§21, DECISION-68)* — a result that is not whole is rounded
+    by the destination edition's own general rounding rule, where it prints one. Where it
+    prints none, the bridge supplies none, and a reader may flag the conversion as one that
+    wants a ruling.
+56. **What a name holds** *(§14, DECISION-69; not additive)* — a caret name is not empty and
+    holds no control character: each is a **warning** in a file that declares a `SPEC_VERSION`
+    below 0.6, or none, and an **error** from 0.6. A name with no letter and no digit is a
+    **warning** at every version.
 
 ### v0.5 — five new constructs, and one rule tightened *(current)*
 
@@ -950,6 +985,108 @@ stay valid.
   `SPEC_VERSION` below 0.6, or none, and an **error** from 0.6. A side declared `EXTERNAL`
   has no corpus and is not checked. Four sides of the three bridges are reported. A
   `.selections` file writes the same pair and is left to its own review (DECISION-53).
+- **DECISION-62 — The `.system` file: a system's keywords and its index of files** *(resolved,
+  v0.6, 2026-11-14)* (§2, §19): §1 says a system's keywords are defined by its own files, and
+  no construct declared one: any capitalised word a file wrote was a system keyword. The 22
+  corpus directories write 316 of them, 132 once only, and nothing could tell a rare block
+  from a misspelt base keyword. What a system knew about itself sat outside the DSL: a prose
+  spec file in four repos, a synthesist manifest, a `sources.json`. The owner ruled a file for
+  it: "l5r5e.system adds the system-specific primitives and also holds the index of any/all
+  files associated with it". **`SYSTEM "id"`** is the edition, the one a file's `EDITION`
+  names (DECISION-59), and its `VERSION` is the corpus's content version (DECISION-61).
+  **`KEYWORDS`** lists the system's own keywords by name. **`FILES`** lists its files, each a
+  path from the folder the system file stands in; it is an index and no load order. With a
+  system file in the run the validator reports a keyword that neither the base spec nor the
+  system declares, a file of the system that `FILES` leaves out, and a `VERSION` that does not
+  begin with the system's: each a **warning** in a file that declares a `SPEC_VERSION` below
+  0.6, or none, and an **error** from 0.6. With none in the run nothing of this is checked.
+  A third-party book's own files and keywords, and what a campaign loads, are left to a later
+  decision on a campaign's load file.
+- **DECISION-63 — `REFERENCES` in a guidance `ENTRY`; its kind is a topic** *(resolved, v0.6,
+  2026-11-14)* (§22): `check_references.py` read a `REFERENCES` block in an entry and tested
+  it against the entry's `TEXT`, and §22 did not say an entry may hold one; the grammar refused
+  it. None of the 11,027 guidance entries in the corpora writes one. The decision is that an
+  entry may hold `REFERENCES`, on the terms of `EMPHASIS` (DECISION-51): each surface form is
+  in that entry's `TEXT`. The same finding asked for an entry's kind and its place in the
+  source. The corpora write the kind as a topic (`"Sidebar"`, `"Margin Note"`, `"Example"`,
+  `"errata"`), and the base spec fixes no list of kinds. The place is the entry's `^"Page"`,
+  which DECISION-45 gave every block; the grammar now reads it in an entry.
+- **DECISION-64 — A codex entity is its hash; its name under another hash is a collision**
+  *(resolved, v0.6, 2026-11-14)* (§25; for a codex entity, amends what DECISION-27 says of a
+  name): §25 let a later file restate `ENTITY #hash ^"Name"` to add sources and edges, and
+  called the first such block the canonical one, which depends on the file that is read first.
+  l5r5e, the one corpus with a codex, writes no hash on two `ENTITY` lines. 114 of its 1,361
+  entity names are declared by two to five blocks, each under a hash of its own, and 114 of
+  those blocks hold no `IS`. Until 2026-09-23 those blocks carried no hash and added to an
+  entity by its name; a pass that hashed every entity gave each a new one. The validator
+  reported none of it. The decision, in the owner's words: "a later file should only modify an
+  existing hash, otherwise it's a collision and it should flag an error". An `ENTITY` writes
+  its hash. A file adds to an entity by restating that hash and name; the node is what all its
+  blocks say together, and no block is first. A block that writes an existing entity's name
+  under another hash is a collision. DECISION-27 reads two DEFs of one name as two entities; in
+  a codex two things of one name are named apart. At least one block of an entity holds `IS`.
+  The collision is an error at every version, on the owner's word the same day: "the l5r5e
+  situation where you have two different defs of the same thing means that there's an error in
+  those files, so we should throw an error". An `ENTITY` with no hash and an entity with no
+  `IS` are a warning in a file that declares a `SPEC_VERSION` below 0.6, or none, and an error
+  from 0.6.
+- **DECISION-65 — Lore and mechanics keep separate identities** *(resolved, v0.6, 2026-11-14)*
+  (§25): nothing in §25 says a codex entity and a game DEF are the same thing, and the audit
+  asked for a link. In l5r5e 80 entity names are also a DEF's: a person and that person's stat
+  block, a town and an adventure's entry for it, and also Isawa the founder beside the Isawa
+  family. The owner: "We should consider separating identities between lore and mechanics,
+  because they are often only semi-overlapping. In general and for now, it should be normal
+  for there to be the same thing named in multiple places meaning distinct things. Context and
+  hash references should be sufficient to distinguish. I don't think we need a more rigorous
+  approach defined in the base spec." The decision is that an entity and a DEF of one name
+  are two things, each under its own hash; the base spec defines no link between them and no
+  tool compares them. The grammar and the validator had refused a hash on an edge's object,
+  so an edge could not say which of two things it meant; an object may now be written
+  `#hash ^"Object"`, a reference like any other (DECISION-44). A set of unique identifiers
+  for lore, beside those of the mechanics, is noted for review and is not in this decision.
+- **DECISION-66 — An edge cites its own source** *(resolved, v0.6, 2026-11-14)* (§25): an edge
+  recorded the phrase it was drawn from (`FROM`) and no file, and a reader took the file and
+  heading from the `SOURCE` of the block the edge stood in. That holds only while a block has
+  one source, and the owner expects more: "a block may likely have multiple sources, as in
+  situations where later sourcebooks add to facts about a given entity". It also misplaces
+  facts. Of the 1,237 `FROM` phrases in l5r5e, 943 stand under the heading their block names
+  or in a sub-section of it, 71 stand elsewhere in the same file, 74 are in a block that names
+  no heading, and 149 are not word for word in the file. A block's `SOURCE` says where the
+  subject is described, and a fact about the subject is often stated somewhere else. The
+  owner asked: "why can't we invert it; each edge cites its source?", and ruled "Always on the
+  edge". Every edge writes `SOURCE "file" [AT "heading"]` after its object and its `FROM`. A
+  block's `SOURCE` keeps its meaning, the place the subject is described, and a block may hold
+  more than one. An edge with no source is a warning in a file that declares a `SPEC_VERSION`
+  below 0.6, or none, and an error from 0.6; an edge does not take its block's source.
+- **DECISION-67 — A `MAP` may stand with no `DISPOSITION`** *(resolved, v0.6, 2026-11-16)*
+  (§21): `DISPOSITION` was the one required field of a `MAP`, so a conversion document that
+  declares no change-tags could write no `MAP`. Two of the three bridges are in that position
+  and write none. The Pendragon bridge records "Appearance becoming Appeal" as a value carried
+  across (`CONVERT … UNCHANGED INTO`), as it does eight more renames; it writes a merge as
+  three `MANUAL` lines, and four removed Skills and a new Characteristic as `MANUAL` lines too.
+  The owner took the agent's proposal as it was put ("Let's go with this"): `DISPOSITION` is
+  optional on a `MAP`; a `MAP` with none asserts the correspondence and nothing about the
+  kind of change; a `REMAINDER` keeps requiring one, since a tag is all it says. The rule
+  holds at every version, since it refuses nothing a file could write before.
+- **DECISION-68 — `SCALE` states no rounding** *(resolved, v0.6, 2026-11-16)* (§21):
+  `SCALE 1 OVER 3` on 7 gives 2.33, and §21 did not say what a reader does with the fraction.
+  `SCALE` is written three times, all in the Ars Magica bridge, and none of the three source
+  sentences states a rounding. The owner ruled: "Most games have standard rules for how to
+  handle rounding; by default, we should defer to those procedures if they exist. Otherwise
+  this is something that can optionally be flagged as something of possible concern but would
+  need adjudication from some source if there were no default heuristics to use." `SCALE`
+  takes no rounding keyword. The result is rounded by the destination edition's general rule
+  where it prints one, and is left for a ruling where it prints none.
+- **DECISION-69 — What a name holds** *(resolved, v0.6, 2026-11-16)* (§14): the spec did not
+  say what a caret name must hold, and the validator and the grammar accepted `^""`, `^" "`,
+  `^","` and a name with U+0007 in it. Of the 760,929 names written in the 29 directories,
+  three are empty, each a quote that was not escaped
+  (`^""They Are Here" — Frederick's Clandestine Meeting"`); fifteen have no letter and no
+  digit, of which one is a table row a book labels `—` and fourteen read as slips of
+  conversion; eleven hold U+0007. The owner took the agent's three proposals together ("Yes,
+  all three"). An empty name and a control character in a name are each a warning below 0.6
+  and an error from 0.6. A name with no letter and no digit is a warning at every version and
+  never an error, since a book can print one.
 
 
 ## 1. Overview & Design Principles
@@ -978,7 +1115,7 @@ Titterpig is a domain-specific language (DSL) for defining tabletop role-playing
 
 ### What Systems Own
 
-Everything else. Keywords like `CURRICULUM`, `SCHOOL_ABILITY`, `POWERS`, `AMALGAMS`, `CHARACTERISTICS`, `DISCIPLINE`, `PREDATOR_TEMPLATES` — these are vocabulary defined by each system's `.ttrpg` files, not reserved by the base spec.
+Everything else. Keywords like `CURRICULUM`, `SCHOOL_ABILITY`, `POWERS`, `AMALGAMS`, `CHARACTERISTICS`, `DISCIPLINE`, `PREDATOR_TEMPLATES` — these are vocabulary defined by each system's `.ttrpg` files, not reserved by the base spec. A system declares its keywords in its `.system` file (§19) *(v0.6, DECISION-62)*.
 
 ### Structural Representation *(v0.4)*
 
@@ -1042,6 +1179,7 @@ The DSL uses multiple file extensions, each corresponding to a specific containe
 | `.bridge` | BRIDGE | **Cross-edition conversion** — a directed correspondence between two editions (DSL) *(v0.4, §21)* |
 | `.lore` | (none — Markdown) | **Free narrative prose / flavor** — no DSL syntax *(v0.4)* |
 | `.codex` | CODEX | **Stand-off lore knowledge graph** — typed entities + declared relationships over `.lore` prose (DSL) *(v0.5, §25)* |
+| `.system` | SYSTEM | **A system's own file** — the edition, the system's keywords and the index of its files (DSL) *(v0.6, §19, DECISION-62)* |
 | `.selections` | SELECTIONS | **User's optional-rule choices** for a corpus — `SELECT #hash on\|off` (DSL) *(v0.5, §24; likely to be replaced, v0.6, DECISION-53)* |
 
 **An `.actor` file is an `EXTENSION` file that holds instances and nothing else** *(v0.6,
@@ -2861,6 +2999,25 @@ Every comparison of names uses this rule: a reference against a definition, a ca
 the name of the hash before it (§5d), an alias, a list member. Two definitions whose names are the
 same are two entities of one name where their hashes differ (§13).
 
+### What a name holds *(v0.6, DECISION-69)*
+
+A name is what the source prints. Three things are checked of it, wherever a caret name is
+written: a definition, a reference, an entry's label.
+
+- **A name is not empty.** `^""` names nothing. Neither does `^"   "`, since white space is set
+  aside first. An empty name can come from a quote that was not escaped:
+  `^""They Are Here" — Frederick's Clandestine Meeting"` reads as an empty name with stray
+  text after it, and is written `^"\"They Are Here\" — Frederick's Clandestine Meeting"`.
+- **A name holds no control character.** U+0007 inside a name cannot be seen, and no reference
+  typed by hand matches it. A tab or a line break is white space and is folded as above.
+- **A name with no letter and no digit is reported.** `^","` and `^":"` are usually a slip of
+  conversion. A book can print such a name, as a table row it labels `—`, and that name stays
+  with its warning. A letter or a digit of any script counts.
+
+An empty name and a control character are each a **warning** in a file that declares a
+`SPEC_VERSION` below 0.6, or none, and an **error** from 0.6. A name with no letter and no
+digit is a **warning** at every version and is never an error.
+
 ### Hash IDs `#identifier`
 
 Unique anchors for cross-file traceability:
@@ -2906,6 +3063,8 @@ own DEFs, and `TRIGGER` is a `HOOK` keyword. (Before DECISION-58 the example her
 `SKILL`, then a SCENE keyword.) The file-level, definition, type, modifier, scope, choice and modification
 keywords are reserved everywhere.
 
+**System file (§19):** `SYSTEM`, `KEYWORDS`, `FILES`
+
 **File-level:** `BASE`, `EXTENSION`, `EXTENDS`, `NAME`, `EDITION` (§19; shared with **Codex**), `VERSION`, `SPEC_VERSION`, `RELEASE_DATE`, `DEPENDS_ON`, `ORIGIN` (a port's source, §19; shared with **Bridge**)
 
 **Definition:** `DEF`, `ACTOR`, `TEMPLATE`, `CHOICES`, `PROPERTIES`, `RULES`
@@ -2942,7 +3101,7 @@ keywords are reserved everywhere.
 
 **Bridge (§21):** `BRIDGE`, `ORIGIN`, `DESTINATION`, `EXTERNAL`, `DISPOSITIONS`, `DISPOSITION`, `ALIASES`, `CONVERSION`, `GUIDANCE`, `MAP`, `REMAINDER`, `PROCEDURE`, `SUBJECT`, `SCOPE`, `ASPECT`, `CONCERNS`, `TOPICS`, `EXHAUSTIVE`, `CONVERT`, `INTO`, `UNCHANGED`, `SCALE`, `OVER`, `RESTATE`, `MANUAL` (`ALIAS`/`FOR` are shared with §5b; `ENTRY` and `TEXT` with §16/§10)
 
-All other keywords — `CURRICULUM`, `SCHOOL_ABILITY`, `POWERS`, `AMALGAMS`, `TRIGGER` (outside a `HOOK`), `CHARACTERISTICS`, `HERITAGE_TABLE`, `ACTIVATION`, `OPPORTUNITIES`, `PREDATOR_TEMPLATES`, `DICE_POOL`, `COST`, `DURATION`, etc. — are **system-defined**. They belong to L5R5e, VTM5e, or whatever system uses them.
+All other keywords — `CURRICULUM`, `SCHOOL_ABILITY`, `POWERS`, `AMALGAMS`, `TRIGGER` (outside a `HOOK`), `CHARACTERISTICS`, `HERITAGE_TABLE`, `ACTIVATION`, `OPPORTUNITIES`, `PREDATOR_TEMPLATES`, `DICE_POOL`, `COST`, `DURATION`, etc. — are **system-defined**. They belong to L5R5e, VTM5e, or whatever system uses them, and a system declares its own in the `KEYWORDS` of its `.system` file (§19) *(v0.6, DECISION-62)*.
 
 ---
 
@@ -4229,6 +4388,60 @@ A line that points at an edition may give that version after it, as a bridge's s
 it checks every file there. A side that names a version its corpus is not at is a **warning**
 in a bridge that declares a `SPEC_VERSION` below 0.6, or none, and an **error** from 0.6.
 
+### The system file *(v0.6, DECISION-62)*
+
+An edition has one `.system` file. It is the edition: the id a file's `EDITION` names. It holds
+what the system adds to the base spec and what the system consists of.
+
+```
+SYSTEM "l5r5e" {
+    NAME "Legend of the Five Rings, Fifth Edition"
+    VERSION "0.5"
+    SPEC_VERSION "0.6"
+    RELEASE_DATE "2026-11-14"
+
+    KEYWORDS [ "ACTIVATION", "CHECK", "CHECKS", "OPPORTUNITIES", "RING", "RING_TN", "SKILL", "TN" ]
+
+    FILES [
+        "l5r5e-0.5-core-base.ttrpg",
+        "l5r5e-0.5-core-character.ttrpg"
+    ]
+}
+```
+
+- **`SYSTEM "id"`** is the edition's id. A file of the system writes `EDITION "id"`. The file is
+  named for it, `l5r5e.system`, and stands in the corpus's folder.
+- **`VERSION`** is the corpus's content version (above): the `VERSION` of each of the system's
+  files begins with it.
+- **`KEYWORDS`** lists the system's own keywords, each by name: every capitalised word that
+  opens a statement in the system's files and that the base spec does not define (§15). A
+  keyword is declared by its name alone. What it takes, a string or a block or a list, is not
+  declared. A base keyword that a system also uses outside the block that reserves it (§15) is
+  not listed.
+- **`FILES`** lists the system's files, each as a path from the folder the system file stands
+  in. It is an index. It gives no order: a file loads after what it depends on (§3, §13).
+
+**What the validator checks**, where a system file is in the run. It governs each file that
+declares its edition and, when it is the run's one system file, each file that declares none.
+
+| What | Severity |
+|---|---|
+| a keyword that neither the base spec nor the system declares | gated |
+| a file of the system that `FILES` does not list | gated |
+| a file's `VERSION` that does not begin with the system's | gated |
+| a file `FILES` lists that is not there, or that declares another edition | error |
+| an `EDITION` that no system file of the run declares | error |
+| two system files of one id; a base keyword in `KEYWORDS`; a keyword listed twice | error |
+
+"Gated" is a warning in a file that declares a `SPEC_VERSION` below 0.6, or none, and an error
+from 0.6. With no system file in the run none of this is checked, and the validator says so in
+a note for each edition the run's files declare.
+
+**Not covered.** A third-party book is kept apart from the system it extends and may add
+keywords of its own. Where its files are indexed and its keywords declared, and what a
+campaign loads, are for a later decision on a campaign's load file. A bare `.actor` file has no
+header (§2) and is not held to the system file.
+
 **Forward-porting.** A sourcebook published for an older edition does **not** automatically apply to a
 newer one — it references the old edition's hashes. To use it under a newer edition, generate a **new
 `.ttrpg` of that sourcebook converted to the newer edition**, targeting the newer edition's
@@ -4319,8 +4532,13 @@ And its edition (§19, DECISION-59): a BASE, EXTENSION, FRAME, ARC or CAMPAIGN d
 the files of a run declare the same one, and a `--corpus` directory holds the edition it is
 given as.
 
+And its system file, where the run holds one (§19, DECISION-62): a keyword is the base spec's
+or the system's, a file of the system is in its index, and a file's `VERSION` begins with the
+system's.
+
 Not checked, and why: a value for a property no type declares, which no rule forbids; the fields
-of a nested or unnamed DEF; and a misspelt keyword, which reads as a system's own (§15). A name that
+of a nested or unnamed DEF; and a misspelt keyword, which reads as a system's own (§15) unless the
+run holds the system's file, whose `KEYWORDS` it is then checked against (§19, DECISION-62). A name that
 two definitions share is not followed up a chain: the reference needs its hash (§5d).
 
 **The modification system is part of coherence** *(v0.4, 2026-07-25)*. A `MODIFY` / `OVERRIDE`
@@ -4511,6 +4729,9 @@ DISPOSITIONS {
 **A disposition is a SET, not a single value.** Documents compose tags
 (`Magic Action [New Name, Revised Rule]`), so `DISPOSITION` always takes a list.
 
+A document that declares no change-tags has no `DISPOSITIONS` block, and the bridge does not
+supply one. Its `MAP`s carry no `DISPOSITION` (below).
+
 ### ALIASES — when the document and the edition disagree
 
 A conversion document is written *about* two editions, not generated from them, and real ones name
@@ -4552,7 +4773,7 @@ MAP {
 }
 ```
 
-Fields, all optional except `DISPOSITION` and at least one of `ORIGIN` / `DESTINATION`:
+Fields, all optional except at least one of `ORIGIN` / `DESTINATION`:
 
 | Field | Meaning |
 |---|---|
@@ -4560,8 +4781,25 @@ Fields, all optional except `DISPOSITION` and at least one of `ORIGIN` / `DESTIN
 | `DESTINATION` | Referent(s) in the destination edition. |
 | `SCOPE` | A sided reference situating the correspondence — the entity these referents belong to. Required where a name is only unique within a parent (`Epic Boon` exists under twelve classes). |
 | `ASPECT` | A free string naming the *part* of the entity the disposition is about ("Starting Equipment", "Weapon Proficiencies"). Untyped by nature: a sub-part often has no `DEF`. |
-| `DISPOSITION` | The tag set, as caret references into `DISPOSITIONS`. |
+| `DISPOSITION` | The tag set, as caret references into `DISPOSITIONS`. Optional *(v0.6, DECISION-67)*. |
 | `TEXT` | The source's verbatim statement. |
+
+**A `MAP` with no `DISPOSITION`** *(v0.6, DECISION-67)* asserts the correspondence and says
+nothing about the kind of change. It is how a document that declares no change-tags records a
+rename, a merge, an omission or an introduction. Pendragon 6th Edition's conversion notes tag
+nothing and say "Apart from Appearance becoming Appeal, the five Characteristics (formerly
+called Attributes) remain unchanged":
+
+```
+MAP {
+    ORIGIN      ^"Appearance (attribute)"
+    DESTINATION ^"Appeal (APP)"
+    TEXT "Apart from Appearance becoming Appeal, the five Characteristics (formerly called Attributes) remain unchanged. Keep your Characteristic values as-is."
+}
+```
+
+A `MAP` in a document that does declare tags may also go untagged, where the document states
+the correspondence and tags nothing.
 
 **One MAP asserts exactly one correspondence.** When both sides carry more than one referent the
 correspondence is **joint** — `[^"Stillness of Mind", ^"Purity of Body"] → [^"Self-Restoration"]` is
@@ -4583,7 +4821,9 @@ A `MAP` covers, with no extra vocabulary:
 
 Substitution is **not** a rename and must not be modelled as one: it is lossy and many-to-one (five
 5.1 monsters collapse onto three 5.2.1 replacements). The `Omitted Rule` disposition is what
-distinguishes them; a consumer that treats them alike will silently mangle content.
+distinguishes them; a consumer that treats them alike will silently mangle content. A 1 → 1
+`MAP` with no disposition says neither *(v0.6, DECISION-67)*: a consumer reads the kind of
+change from its `TEXT`, and where the `TEXT` does not say, does not take it for a rename.
 
 #### REMAINDER — a bulk disposition over what is not listed
 
@@ -4598,7 +4838,9 @@ REMAINDER {
 This is essential, not a convenience: without it you cannot tell **"unmentioned means unchanged"**
 from **"unmentioned means not covered"** — the same job `dispositionRules` do in a coverage manifest.
 A `REMAINDER` applies its disposition to every member of `SCOPE` on that side that no `MAP` in this
-bridge names.
+bridge names. `SCOPE` and `DISPOSITION` are both required. A `MAP` may go untagged because it
+still names a correspondence; a `REMAINDER` names none, and its tag is all it says
+*(v0.6, DECISION-67)*.
 
 `EXHAUSTIVE true` or `EXHAUSTIVE false` (default `true`) records whether the source claims the disposition for *all*
 unlisted members or hedges. `"All monsters not listed above …"` is exhaustive; `"Most magic items not
@@ -4608,7 +4850,10 @@ check rather than a fact.
 #### PROCEDURE — carrying a character's values across
 
 `MAP` corresponds *entities*. A `PROCEDURE` converts the *values on a sheet* — the table-facing half
-of the problem, and all that some conversion documents contain.
+of the problem, and all that some conversion documents contain. A thing that was renamed,
+merged, removed or added is a `MAP`, in a document with no tags as in one with them
+*(v0.6, DECISION-67)*; `CONVERT … UNCHANGED INTO` records a value that carries across, and a
+renamed thing whose value also carries across takes both.
 
 ```
 PROCEDURE {
@@ -4632,6 +4877,24 @@ an expression language:
 | `MANUAL "instruction"` | Requires human judgement. The instruction is the source's own words, verbatim. |
 
 `INTO` retargets: `CONVERT ORIGIN ^"Twilight Points" SCALE 1 OVER 3 INTO DESTINATION ^"Warping Score"`.
+
+**`SCALE` and rounding** *(v0.6, DECISION-68)*. `SCALE` states the arithmetic and no rounding,
+and takes no rounding keyword. A result that is not whole is rounded by the game's own general
+rule, where the game prints one. The game is the destination edition, since the result is a
+value on a destination sheet. D&D 2024 prints one as `^"Round Down"` ("Whenever you divide or
+multiply a number in the game, round down if you end up with a fraction, even if the fraction
+is one-half or greater."), and Pendragon 6th Edition as `^"Rounding Numbers"` ("Values and
+dice outcomes are always rounded to the nearest whole number.").
+
+Where the destination edition prints no general rule, the bridge supplies none. A reader may
+flag such a conversion as one that wants a ruling, and the ruling comes from a source outside
+the bridge. Ars Magica Fifth Edition is the case among the bridges: its core states a rounding
+beside each calculation that needs one, and no rule for the game as a whole was found in it.
+`SCALE 1 OVER 3` on Twilight Points and `SCALE 6 OVER 5` on an age are therefore left
+unrounded.
+
+No field names a system's general rounding rule. A reader finds it in the corpus as the book
+prints it.
 
 `MANUAL` is how a procedure records that the source **delegates to the reader** without pretending it
 mechanized something it did not. It is the honest encoding of "Convert each Virtue or Flaw to its new
@@ -4706,6 +4969,8 @@ GUIDANCE {
         TOPICS   [ "topic", … ]         # optional free-text tags
         TEXT     "verbatim guidance prose"
         EMPHASIS BOLD { "span" }        # optional: the spans the source marks in TEXT (v0.6)
+        REFERENCES { "span" -> #hash ^"Entity" }   # optional: the spans of TEXT that name another entity (v0.6)
+        ^"Page" 112                    # optional: the page the entry is printed on (§8)
     }
 }
 ```
@@ -4716,6 +4981,12 @@ GUIDANCE {
 - Distinct from `.lore` (no tool assumes structure in it) and from `DESCRIPTION` (the entry's own rules).
 - **`EMPHASIS`** *(v0.6, DECISION-51)*. An entry may hold an `EMPHASIS` block (§5c) for the spans
   the source marks in its `TEXT`. Each span is in that entry's `TEXT`.
+- **`REFERENCES`** *(v0.6, DECISION-63)*. An entry may hold a `REFERENCES` block (§5c) for the
+  spans of its `TEXT` that name another entity. Each surface form is in that entry's `TEXT`, and
+  each target resolves. What the whole entry is about stays in `CONCERNS`.
+- **Kind and place** *(v0.6, DECISION-63)*. An entry's kind, a sidebar or a margin note or an
+  example, is one of its `TOPICS`; the base spec fixes no list. The page it is printed on is its
+  `^"Page"` (§8, DECISION-45).
 
 ## 23. Conditional emit hooks *(v0.5, DECISION-9)* — the `HOOKS` block + `FORMALITY`
 
@@ -4827,8 +5098,8 @@ BASE/EXTENSION split: the schema is the reusable base, per-book graphs depend on
 A single logical graph may also be **physically split** across many codex files that share one schema
 and one entity namespace: a lightweight **parent** carries the `SOURCES` manifest and edition-spanning
 anchor entities, and **section files** (per book, per chapter) hold the rest. Because an entity is a
-first-class caret target, any section resolves `^"Name"` to any other, and a section may **amend** a
-node introduced elsewhere (see the amend rule under ENTITY). This keeps each file small while the
+first-class caret target, any section resolves `^"Name"` to any other, and a section may **add to** a
+node another file declares (see the rule under ENTITY). This keeps each file small while the
 consumer reads them as one graph.
 
 ### SOURCES — the derived-provenance manifest
@@ -4901,10 +5172,10 @@ Predicate qualifiers, all optional:
 
 ```
 ENTITY #hash ^"Name" {
-    IS ^"Category" [ ^"Category2" … ]                  # one or more; ≥1 required
-    [SOURCE "<lore-file>" [AT "<heading-slug>"]]       # provenance into the prose
+    IS ^"Category" [ ^"Category2" … ]                  # one or more; at least one block of the entity holds it
+    [SOURCE "<lore-file>" [AT "<heading-slug>"]] …     # where the subject is described; zero or more
     RELATIONSHIPS {
-        ^"predicate" -> ^"Object" [FROM "<surface text>"]
+        ^"predicate" -> [#hash] ^"Object" [FROM "<surface text>"] SOURCE "<lore-file>" [AT "<heading-slug>"]
         …
     }
 }
@@ -4912,26 +5183,63 @@ ENTITY #hash ^"Name" {
 
 - **`#hash`** — opaque, ≥16 chars (§5). An entity is a first-class caret target: any file in
   the corpus resolves `^"Name"` to it, so **entity→entity links are ordinary caret refs** and are
-  coherence-checked like any other reference. **Amend across files (§13).** A node is *canonically*
-  defined once — the first `ENTITY #hash ^"Name"` that introduces it. A later section file may
-  **re-state `ENTITY #hash ^"Name"`** (same hash, same name) to add `SOURCE` bindings and
-  `RELATIONSHIPS` as further books describe the same subject; the consumer merges the re-statements by
-  hash into one node. This recurrence is **legal and expected** (multiple sources enriching one entry).
-  What stays an **error** is a hash mapped to *two different* entity names, or a hash shared between a
-  codex entity and any other anchor — those are genuine collisions, not amends.
+  coherence-checked like any other reference. **An entity is its hash** *(v0.6, DECISION-64)*.
+  An `ENTITY` writes its hash, and one name is one entity under one hash. A file **adds to** an
+  entity that another file declares by restating `ENTITY #hash ^"Name"`, the same hash and the
+  same name, with further `SOURCE` bindings and `RELATIONSHIPS` as further books describe the
+  same subject. The node is what all its blocks say together, and no block is first. This
+  recurrence is **legal and expected** (several sources adding to one entry). A block that
+  writes an existing entity's name under **another hash** is a **collision**: the file meant to
+  add to the entity and declared a second one. Two entities of one name are named apart. The
+  collision is an **error** at every version, as are a hash written for *two different* entity
+  names and a hash shared between a codex entity and any other anchor. An `ENTITY` with no
+  hash is a **warning** in a file that declares a `SPEC_VERSION` below 0.6, or none, and an
+  **error** from 0.6.
+- **An entity and a DEF of one name** *(v0.6, DECISION-65)*. Lore and mechanics keep separate
+  identities. A codex entity may have the name of a game DEF, and the two are two things, each
+  under its own hash: the person and the stat block, the founder and the family that bears the founder's name.
+  The base spec defines no link that says they are one, and no tool compares them. Where it
+  matters which is meant, the reference writes the hash.
 - **`IS`** — one or more categories (multi-typing is common: a place that `IS ^"City" ^"Capital"`).
   Each must resolve to a declared `CATEGORY` or an in-corpus DEF; an unresolved `IS` is an **error**
-  (it is the type system).
+  (it is the type system). At least one block of an entity holds `IS`, and a block that adds to
+  the entity need not repeat it *(v0.6, DECISION-64)*; an entity with none is a **warning** in a
+  file that declares a `SPEC_VERSION` below 0.6, or none, and an **error** from 0.6.
 - **`SOURCE … AT`** — binds the entity to the `.lore` file and heading that describes it, by path and
   GitHub-style heading slug. The one structural assumption made about the prose body is heading text:
-  a slug matching no heading **WARNs**. `SOURCE` is optional (some entities are named only in passing).
+  a slug matching no heading **WARNs**. `SOURCE` is optional (some entities are named only in passing),
+  and a block may hold more than one where the subject is described in more than one place
+  *(v0.6, DECISION-66)*. It is the subject's source. An edge has its own.
 - **`RELATIONSHIPS`** — the entity's outgoing edges. Each line is `^"predicate" -> ^"Object"
-  [FROM "surface"]`, reusing the §5c arrow and surface-form. The predicate MUST be declared in a
+  [FROM "surface"] SOURCE "file" [AT "heading"]`, reusing the §5c arrow and surface-form. The predicate MUST be declared in a
   `RELATIONS` block in scope (**error** otherwise). The object caret **should** resolve to an entity,
   DEF, or category; an unresolved object **WARNs** — facts derived from prose routinely name things
-  not yet modeled, the same tolerance as bridge untyped referents (§21). `FROM` records the verbatim
+  not yet modeled, the same tolerance as bridge untyped referents (§21). The object may carry its
+  hash, `^"founder-of" -> #hash ^"Isawa"` *(v0.6, DECISION-65)*: the hash is a declared anchor
+  and the name is its anchor's, as at any reference site (§5d), a **warning** in a file that
+  declares a `SPEC_VERSION` below 0.6, or none, and an **error** from 0.6. How a codex tells
+  apart two things of one name, here and in `IS`, `DOMAIN` and `RANGE`, is **not yet defined
+  (to-do)**; the hash on the object is the form for now. `FROM` records the verbatim
   source phrase the fact was derived from, making the edge auditable against the `.lore`; it is
   advisory provenance (substring-checked against the prose only by a verifier that loads the `.lore`).
+  **An edge cites its own source** *(v0.6, DECISION-66)*: `SOURCE "file" AT "heading"` names
+  the `.lore` file and the heading the fact is stated under, in the form of the block's
+  `SOURCE`. `AT` may be left out where the file has no heading for the passage, and a slug
+  matching no heading **WARNs**. An edge does not take its block's source: a fact about a
+  subject is often stated away from the passage that describes the subject. An edge with no
+  source is a **warning** in a file that declares a `SPEC_VERSION` below 0.6, or none, and an
+  **error** from 0.6.
+
+  ```
+  ENTITY #L5RcxEEhist18akodozzz ^"Lord Akodo" {
+      IS ^"Kami"
+      SOURCE "l5r5e-0.5-emerald-empire-history.lore" AT "the-descent-of-the-kami"
+      RELATIONSHIPS {
+          ^"child-of" -> ^"Amaterasu" FROM "Amaterasu and Onnotangu were blessed with children"
+              SOURCE "l5r5e-0.5-emerald-empire-history.lore" AT "the-descent-of-the-kami"
+      }
+  }
+  ```
 
 ### Validation summary
 
@@ -4941,12 +5249,18 @@ ENTITY #hash ^"Name" {
 | relationship predicate declared in a `RELATIONS` block | **error** |
 | `#hash` opaque, ≥16 chars | **error** if <16 |
 | `#hash` reused for a *different* entity name, or shared with a non-entity anchor | **error** |
-| `#hash` re-stated for the *same* entity name across files (amend) | allowed |
+| `#hash` re-stated for the *same* entity name across files (it adds to the entity) | allowed |
+| one entity name under two hashes *(v0.6, DECISION-64)* | **error** |
+| an entity and a DEF of one name *(v0.6, DECISION-65)* | allowed: two things |
+| an edge object's `#hash` is an anchor, and the name is its anchor's *(v0.6, DECISION-65)* | warn below 0.6, **error** from 0.6 |
+| an `ENTITY` with no hash *(v0.6, DECISION-64)* | warn below 0.6, **error** from 0.6 |
+| an entity none of whose blocks holds `IS` *(v0.6, DECISION-64)* | warn below 0.6, **error** from 0.6 |
 | category `EXTENDS` parent resolves | **error** |
 | `INVERSE` + `SYMMETRIC` on one predicate | **error** |
 | relationship object caret resolves | warn |
 | `DOMAIN` / `RANGE` respected by an edge | warn |
-| `SOURCE` / `AT` slug matches a `.lore` heading | warn |
+| `SOURCE` / `AT` slug matches a `.lore` heading, on a block and on an edge | warn |
+| an edge with no `SOURCE` *(v0.6, DECISION-66)* | warn below 0.6, **error** from 0.6 |
 
 ### Relationship to other containers
 

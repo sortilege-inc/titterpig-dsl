@@ -4,5 +4,11 @@ CODEX "Demo_Anchors_Codex" {
     EDITION "demo"
     VERSION "1.0"
 
-    ENTITY #AncDemoIfritEEEEEEEEEEEE ^"Ifrit King" { }
+    CATEGORIES {
+        ^"Lore Figure" DEF {}
+    }
+
+    ENTITY #AncDemoIfritEEEEEEEEEEEE ^"Ifrit King" {
+        IS ^"Lore Figure"                                # an entity holds an IS (DECISION-64)
+    }
 }

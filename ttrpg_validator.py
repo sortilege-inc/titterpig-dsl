@@ -345,6 +345,30 @@ def note_escapes(body, start_line, fname, findings):
                                 % (repr(seq[1:]) if len(seq) > 1 else 'nothing')))
 
 
+def note_name(raw, line, fname, findings):
+    """What a caret name holds (§14, DECISION-69). An empty name, once white space is folded,
+    and a name with a control character in it are each gated: a warning in a file that
+    declares SPEC_VERSION below 0.6, or none, and an error from 0.6. A name with no letter and
+    no digit is a warning at every version, since a book can print one (a table row labelled
+    with a dash)."""
+    key = name_key(raw)
+    if not key:
+        findings.append(Finding(fname, 'lint', 'gated', line,
+                                'a name is empty: ^"" names nothing. A quote inside a name is '
+                                'written \\" (§14)'))
+        return
+    ctrl = sorted({'U+%04X' % ord(ch) for ch in key if unicodedata.category(ch) == 'Cc'})
+    shown = ''.join(ch for ch in key if unicodedata.category(ch) != 'Cc')
+    if ctrl:
+        findings.append(Finding(fname, 'lint', 'gated', line,
+                                'the name ^"%s" holds a control character (%s): a name holds '
+                                'what a reader can see (§14)' % (shown, ', '.join(ctrl))))
+    if not any(ch.isalnum() for ch in key):
+        findings.append(Finding(fname, 'lint', 'warning', line,
+                                'the name ^"%s" has no letter and no digit: check it against '
+                                'the source (§14)' % shown))
+
+
 def tokenize(text, fname, findings):
     toks = []
     i, n, line = 0, len(text), 1
@@ -382,6 +406,7 @@ def tokenize(text, fname, findings):
                 findings.append(Finding(fname, 'lint', 'error', start, "unterminated caret reference"))
                 break
             note_escapes(text[i + 2:j], start, fname, findings)
+            note_name(text[i + 2:j], start, fname, findings)
             toks.append(Tok('CARET', name_key(text[i + 2:j]), start)); i = j + 1; continue
         if c == '"':
             if text[i:i + 3] == '"""':
@@ -706,14 +731,16 @@ def analyze_bridge(fname, text, findings):
             if not ({'ORIGIN', 'DESTINATION'} & f):
                 findings.append(Finding(fname, 'lint', 'error', ln,
                                         "MAP needs at least one of ORIGIN / DESTINATION"))
-            if 'DISPOSITION' not in f:
-                findings.append(Finding(fname, 'lint', 'error', ln, "MAP needs a DISPOSITION"))
+            # A MAP may stand with no DISPOSITION (§21, DECISION-67): it asserts the
+            # correspondence and says nothing of the kind of change. A document that
+            # declares no change-tags still writes its renames, merges and omissions.
         elif u['kind'] == 'REMAINDER':
             if 'SCOPE' not in f:
                 findings.append(Finding(fname, 'lint', 'error', ln,
                                         "REMAINDER needs a SCOPE — otherwise 'what is not listed' is undefined"))
             if 'DISPOSITION' not in f:
-                findings.append(Finding(fname, 'lint', 'error', ln, "REMAINDER needs a DISPOSITION"))
+                findings.append(Finding(fname, 'lint', 'error', ln,
+                                        "REMAINDER needs a DISPOSITION: its tag is all a remainder says (§21)"))
         elif u['kind'] == 'PROCEDURE':
             if 'SUBJECT' not in f:
                 findings.append(Finding(fname, 'lint', 'error', ln, "PROCEDURE needs a SUBJECT"))
@@ -1357,9 +1384,115 @@ def check_actor_file(fname, toks, spec_version, findings):
     return not wrapped
 
 
+# The base spec's keywords (§15 and §18), and ROW, the cell row of the older TABLE grid (§5e).
+# A capitalised word that opens a statement and is none of these is a system's own (§19,
+# DECISION-62).
+BASE_KEYWORDS = frozenset((
+    'ACTOR', 'ADD', 'ADD_TO', 'ADVANCEMENT', 'ALIAS', 'ALIASES', 'AND', 'ANY', 'APPLIES', 'ARC',
+    'ASPECT', 'AT', 'AXIS', 'BASE', 'BETWEEN', 'BOLD', 'BOOLEAN', 'BRIDGE', 'BY', 'CAMPAIGN',
+    'CAST', 'CATEGORIES', 'CHOICES', 'CHOOSE', 'CLUE', 'CLUES', 'CODEX', 'COLUMNS',
+    'COMPLETED_SCENES', 'CONCERNS', 'CONDITION', 'CONDITIONAL', 'CONFLICT', 'CONVERSION',
+    'CONVERT', 'DEF', 'DEFAULT', 'DEPENDS_ON', 'DESCRIPTION', 'DESTINATION', 'DISCOVERED_BY',
+    'DISPOSITION', 'DISPOSITIONS', 'DISTINCT', 'DIVIDE', 'DOMAIN', 'DOWN', 'DOWNTIME', 'EDITION',
+    'EMPHASIS', 'ENTITY', 'ENTRY', 'ENUM', 'EXHAUSTIVE', 'EXTENDS', 'EXTENSION', 'EXTERNAL',
+    'FACES', 'FIAT', 'FIXED', 'FLOW', 'FOR', 'FORMAL', 'FORMALITY', 'FRAME', 'FROM', 'GLOBAL',
+    'GUIDANCE', 'HISTORY', 'HOOK', 'HOOKS', 'INCLUDE', 'INDISTINCT', 'INTEGER', 'INTO',
+    'INVERSE', 'IS', 'ITALIC', 'LABEL', 'LEADS_TO', 'LIST', 'LOCATION', 'MANUAL', 'MAP', 'MAX',
+    'MENTIONS', 'MIN', 'MINIMUM_CLUES', 'MODIFICATIONS', 'MODIFY', 'MOMENT', 'MONTAGE',
+    'MULTIPLY', 'NAME', 'NEAREST', 'NEXT', 'NOT', 'OBJECTIVES', 'OF', 'OPPONENTS', 'OPTIONAL',
+    'OR', 'ORIGIN', 'OUTCOME', 'OVER', 'OVERRIDE', 'PARAMETERS', 'PERIOD', 'PHASE',
+    'PREREQUISITES', 'PROCEDURE', 'PROGRESSION', 'PROPERTIES', 'PROSE', 'RANGE',
+    'RECURRING_CAST', 'REF', 'REFERENCED', 'REFERENCES', 'RELATIONS', 'RELATIONSHIPS',
+    'RELEASE_DATE', 'REMAINDER', 'REMOVE_FROM', 'REPRINT', 'REQUIRED', 'RESOLUTION',
+    'RESOLUTIONS', 'RESTATE', 'ROLL', 'ROUND', 'ROW', 'RULES', 'SCALE', 'SCENE', 'SCENE_REF',
+    'SCOPE', 'SELECT', 'SELECTIONS', 'SET', 'SETTING', 'SITUATIONAL', 'SOURCE', 'SOURCES',
+    'SPEC_VERSION', 'STAKES', 'STARTING_CONDITIONS', 'STRING', 'SUBJECT', 'SUBTRACT',
+    'SYMMETRIC', 'TABLE', 'TAGGED', 'TAGS', 'TEMPLATE', 'TEXT', 'THEMES', 'THEN', 'TO', 'TOPICS',
+    'TRANSFORM', 'TRANSITIVE', 'TRIGGER', 'TYPE', 'UNCHANGED', 'UP', 'USES_EXTENSION',
+    'USES_FRAME', 'USES_SETTING', 'VERSION', 'WEIGHT', 'WHEN', 'WITH',
+))
+SYSTEM_KEYWORD = re.compile(r'^[A-Z][A-Z0-9_]+$')
+
+
+def analyze_system(fname, text, findings):
+    """A .system file (§19, DECISION-62): SYSTEM "id" { NAME, VERSION, SPEC_VERSION,
+    RELEASE_DATE, KEYWORDS [ "WORD", … ], FILES [ "file", … ] }. The id is the edition's.
+    KEYWORDS are the system's own keywords; FILES is the index of its files, each a path
+    from the folder the system file stands in."""
+    toks = tokenize(text, fname, findings)
+    rec = {'id': None, 'line': 1, 'version': None, 'keywords': {}, 'files': []}
+    spec_version, depth, i, n = (0, 0), 0, 0, len(toks)
+    if n >= 2 and toks[0].kind == 'ID' and toks[0].val == 'SYSTEM' and toks[1].kind == 'STR':
+        rec['id'], rec['line'] = toks[1].val, toks[0].line
+    else:
+        findings.append(Finding(fname, 'lint', 'error', 1,
+                                'a .system file opens with SYSTEM "id" { (§19)'))
+    while i < n:
+        t = toks[i]
+        if t.kind == 'LBRACE':
+            depth += 1
+        elif t.kind == 'RBRACE':
+            depth -= 1
+        elif depth == 1 and t.kind == 'ID':
+            nxt = toks[i + 1] if i + 1 < n else None
+            if t.val in ('NAME', 'RELEASE_DATE') and nxt is not None and nxt.kind == 'STR':
+                i += 2
+                continue
+            if t.val == 'VERSION' and nxt is not None and nxt.kind == 'STR':
+                rec['version'] = nxt.val
+                i += 2
+                continue
+            if t.val == 'SPEC_VERSION' and nxt is not None and nxt.kind == 'STR':
+                m = re.match(r'\s*(\d+)\.(\d+)', nxt.val)
+                if m:
+                    spec_version = (int(m.group(1)), int(m.group(2)))
+                i += 2
+                continue
+            if t.val in ('KEYWORDS', 'FILES') and nxt is not None and nxt.kind == 'LBRACK':
+                j = i + 2
+                while j < n and toks[j].kind != 'RBRACK':
+                    it = toks[j]
+                    if it.kind == 'STR' and t.val == 'FILES':
+                        rec['files'].append((it.val, it.line))
+                    elif it.kind == 'STR':
+                        if not SYSTEM_KEYWORD.match(it.val):
+                            findings.append(Finding(fname, 'lint', 'error', it.line,
+                                                    'KEYWORDS: "%s" is not a keyword: capital '
+                                                    'letters, digits and underscores (§19)' % it.val))
+                        elif it.val in BASE_KEYWORDS:
+                            findings.append(Finding(fname, 'lint', 'error', it.line,
+                                                    'KEYWORDS: %s is a keyword of the base spec, '
+                                                    'and a system does not declare it (§15, §19)'
+                                                    % it.val))
+                        elif it.val in rec['keywords']:
+                            findings.append(Finding(fname, 'lint', 'error', it.line,
+                                                    'KEYWORDS: %s is listed twice (§19)' % it.val))
+                        else:
+                            rec['keywords'][it.val] = it.line
+                    elif it.kind != 'COMMA':
+                        findings.append(Finding(fname, 'lint', 'error', it.line,
+                                                '%s takes a list of strings (§19)' % t.val))
+                    j += 1
+                i = j + 1
+                continue
+            findings.append(Finding(fname, 'lint', 'error', t.line,
+                                    '%s: a system file holds NAME, VERSION, SPEC_VERSION, '
+                                    'RELEASE_DATE, KEYWORDS and FILES (§19)' % t.val))
+        i += 1
+    if rec['id'] is not None and spec_version == (0, 0):
+        findings.append(Finding(fname, 'lint', 'warning', 1, 'no SPEC_VERSION declared'))
+    return {
+        'file': fname, 'kind': 'system', 'system': rec, 'names': {}, 'anchors': {},
+        'refs': [], 'depends': [], 'file_ids': [], 'waived_ranges': [], 'waived_lines': set(),
+        'spec_version': spec_version,
+    }
+
+
 def analyze_file(fname, text, findings):
     if fname.endswith('.bridge'):
         return analyze_bridge(fname, text, findings)
+    if fname.endswith('.system'):
+        return analyze_system(fname, text, findings)
     if fname.endswith('.codex'):
         return analyze_codex(fname, text, findings)
     toks = tokenize(text, fname, findings)
@@ -2539,6 +2672,13 @@ def analyze_file(fname, text, findings):
     for fr in frames:
         findings.append(Finding(fname, 'lint', 'error', fr['open'], "unclosed '{'"))
     site_refs = collect_site_refs(toks, refs)
+    system_keywords = {}                 # word -> the first line that writes it (DECISION-62)
+    for _i, _t in enumerate(toks):
+        if _t.kind == 'ID' and _t.val not in BASE_KEYWORDS and SYSTEM_KEYWORD.match(_t.val) \
+                and (_i == 0 or toks[_i - 1].line < _t.line) \
+                and (_i + 1 >= len(toks) or toks[_i + 1].line > _t.line
+                     or toks[_i + 1].kind in ('STR', 'LBRACE', 'LBRACK', 'CARET', 'HASH', 'INT')):
+            system_keywords.setdefault(_t.val, _t.line)
     # §12: a rule states itself. `#hash: slug` alone on its line — a name with no text, the
     # rule only described in a comment beside it — carries nothing a tool can read (the L5R
     # corpus held 980 of them, 2026-09-23).
@@ -2687,6 +2827,7 @@ def analyze_file(fname, text, findings):
         'vdefs': vdefs, 'bound': bound, 'spec_version': spec_version,
         'file_version': file_version, 'pins': pins, 'header': header,
         'hash_refs': hash_refs, 'sit_targets': sit_targets, 'site_refs': site_refs,
+        'system_keywords': system_keywords,
     }
 
 
@@ -2714,6 +2855,10 @@ def analyze_codex(fname, text, findings):
     edges = []        # (subject, predicate, object, line)
     dr_refs = []      # (category-name, line) — DOMAIN/RANGE targets, checked as warnings
     sources = []      # (entity, lore-file, heading-slug, line)
+    edge_hashes = []  # (object name, hash, line): an edge whose object is written #hash ^"Name"
+    edge_sources = [] # (predicate, object, lore-file or None, heading-slug or None, line): one per
+                      # edge; an edge cites its own source (§25, DECISION-66)
+    entities = []     # one per ENTITY block: {'name', 'hash', 'line', 'is'}  (§25, DECISION-64)
     has_spec_version = False
 
     ctx = []          # stack of (label, name) frames, aligned with brace depth
@@ -2772,10 +2917,13 @@ def analyze_codex(fname, text, findings):
                     if hsh:
                         anchors.setdefault(hsh, []).append(t.line)
                         entity_anchors.setdefault(hsh, set()).add(nm)
+                    entities.append({'name': nm, 'hash': hsh, 'line': t.line, 'is': False})
                     pending = ('ENTITY', nm)
                     i = k + 1
                     continue
             elif w == 'IS' and top == 'ENTITY':
+                if entities and i + 1 < n and toks[i + 1].kind == 'CARET':
+                    entities[-1]['is'] = True
                 k = i + 1
                 while k < n and toks[k].kind == 'CARET':
                     refs.append(('entity IS', toks[k].val, None, toks[k].line))
@@ -2842,13 +2990,28 @@ def analyze_codex(fname, text, findings):
                     i += 1   # position at the '{'
                     continue
             elif top == 'RELATIONSHIPS':
-                # edge: ^"pred" -> ^"obj" [FROM "surface"]   (arrow is a non-token)
-                if i + 1 < n and toks[i + 1].kind == 'CARET':
-                    edges.append((nearest('ENTITY'), t.val, toks[i + 1].val, t.line))
-                    k = i + 2
+                # edge: ^"pred" -> [#hash] ^"obj" [FROM "surface"] SOURCE "file" [AT "slug"]
+                # (the arrow is a non-token)
+                o = i + 1
+                if o + 1 < n and toks[o].kind == 'HASH' and toks[o + 1].kind == 'CARET':
+                    edge_hashes.append((toks[o + 1].val, toks[o].val, toks[o].line))
+                    o += 1
+                if o < n and toks[o].kind == 'CARET':
+                    edges.append((nearest('ENTITY'), t.val, toks[o].val, t.line))
+                    k = o + 1
                     if k + 1 < n and toks[k].kind == 'ID' and toks[k].val == 'FROM' \
                             and toks[k + 1].kind == 'STR':
                         k += 2
+                    efile, eslug = None, None
+                    if k + 1 < n and toks[k].kind == 'ID' and toks[k].val == 'SOURCE' \
+                            and toks[k + 1].kind == 'STR':
+                        efile = toks[k + 1].val
+                        k += 2
+                        if k + 1 < n and toks[k].kind == 'ID' and toks[k].val == 'AT' \
+                                and toks[k + 1].kind == 'STR':
+                            eslug = toks[k + 1].val
+                            k += 2
+                    edge_sources.append((t.val, toks[o].val, efile, eslug, t.line))
                     i = k
                     continue
                 findings.append(Finding(fname, 'lint', 'error', t.line,
@@ -2878,7 +3041,7 @@ def analyze_codex(fname, text, findings):
         'depends': depends, 'file_ids': file_ids,
         'waived_ranges': [], 'waived_lines': set(),
         'def_props': {}, 'def_extends': {}, 'mods': [], 'adds': [],
-        'entity_anchors': entity_anchors,
+        'entity_anchors': entity_anchors, 'entities': entities, 'edge_hashes': edge_hashes, 'edge_sources': edge_sources,
         'file_version': collect_header(toks)[0], 'pins': collect_header(toks)[1],
         'header': (lambda h: (collect_header(toks, h), h)[1])({}), 'spec_version': (0, 0),
         'declared_spec_version': next(
@@ -3018,13 +3181,43 @@ def codex_coherence(files_data, corpus_names, findings):
                 corpus_relations.add(rec['inverse'])   # the inverse name is usable too
         corpus_categories.update(d['names'])           # entity+category names of this codex
 
+    entity_pass(codices, findings)
+
+    # An edge's object may carry its hash (§25, DECISION-65): the hash is an anchor, and the
+    # name is its anchor's. A warning below 0.6 and an error from 0.6, as at any site (§5d).
+    hash_names = {}
+    for d in files_data:
+        if d.get('kind') == 'bridge':
+            continue
+        for key in ('anchor_names', 'block_anchors', 'entity_anchors'):
+            for h, nms in (d.get(key) or {}).items():
+                hash_names.setdefault(h, set()).update(name_key(x) for x in nms)
+        for h in d.get('anchors', {}):
+            hash_names.setdefault(h, set())
+        for al, h, _ln in d.get('alias_hashes', []):
+            hash_names.setdefault(h, set()).add(name_key(al))
+    for d in codices:
+        sev = 'error' if d.get('declared_spec_version', (0, 0)) >= (0, 6) else 'warning'
+        hashed_lines = set()
+        for obj, h, line in d.get('edge_hashes', []):
+            hashed_lines.add((obj, line))
+            if h not in hash_names:
+                findings.append(Finding(d['file'], 'coherence', sev, line,
+                                        'relationship object %s ^"%s": the hash is not a declared '
+                                        'anchor (§5d, §25)' % (h, obj)))
+            elif hash_names[h] and name_key(obj) not in hash_names[h]:
+                findings.append(Finding(d['file'], 'coherence', sev, line,
+                                        'relationship object %s ^"%s": the hash is the anchor of '
+                                        '^"%s" (§5d, §25)' % (h, obj, sorted(hash_names[h])[0])))
+        d['_hashed_edge_objects'] = hashed_lines
+
     for d in codices:
         for subj, pred, obj, line in d['edges']:
             if pred not in corpus_relations:
                 findings.append(Finding(d['file'], 'coherence', 'error', line,
                                         "relationship uses undeclared predicate ^\"%s\" "
                                         "(declare it in a RELATIONS block)" % pred))
-            if obj not in corpus_names:
+            if obj not in corpus_names and (obj, line) not in d['_hashed_edge_objects']:
                 findings.append(Finding(d['file'], 'coherence', 'warning', line,
                                         "relationship object ^\"%s\" does not resolve" % obj))
         for cat, line in d['dr_refs']:
@@ -3041,6 +3234,86 @@ def codex_coherence(files_data, corpus_names, findings):
                 findings.append(Finding(d['file'], 'coherence', 'warning', line,
                                         "SOURCE AT \"%s\" matches no heading in %s"
                                         % (slug, os.path.basename(srcfile))))
+        # An edge cites its own source (§25, DECISION-66): SOURCE "file" [AT "slug"] after the
+        # object and its FROM. An edge with none is a warning in a codex that declares
+        # SPEC_VERSION below 0.6, or none, and an error from 0.6. Its heading is checked as a
+        # block's is.
+        sev = 'error' if d.get('declared_spec_version', (0, 0)) >= (0, 6) else 'warning'
+        for pred, obj, srcfile, slug, line in d.get('edge_sources', []):
+            if not srcfile:
+                findings.append(Finding(d['file'], 'coherence', sev, line,
+                                        'relationship ^"%s" -> ^"%s" cites no source: an edge names '
+                                        'the file and heading it was drawn from, SOURCE "file" AT '
+                                        '"heading" (§25)' % (pred, obj)))
+                continue
+            if not slug:
+                continue
+            lore_path = _find_lore(d['file'], srcfile)
+            if lore_path is None:
+                continue                                # cannot verify — do not warn
+            if slug not in _heading_slugs(lore_path):
+                findings.append(Finding(d['file'], 'coherence', 'warning', line,
+                                        "relationship ^\"%s\": SOURCE AT \"%s\" matches no heading "
+                                        "in %s" % (pred, slug, os.path.basename(srcfile))))
+
+
+def entity_pass(codices, findings):
+    """An entity is its hash (§25, DECISION-64).
+
+    An error at every version: a name that the run's ENTITY blocks write under more than one
+    hash. A file adds to an entity by restating its hash and name, and the same name under
+    another hash is a collision. Each block of the name is reported, since no block is first.
+    A warning in a codex that declares SPEC_VERSION below 0.6, or none, and an error from 0.6:
+      - an ENTITY that writes no hash;
+      - an entity none of whose blocks holds IS. It is not reported for a name in collision:
+        giving the block its entity's hash answers both.
+    A hash under two names, and a hash an entity shares with another anchor, are errors at every
+    version and are found with the other duplicate anchors. An entity and a DEF of one name
+    are two things and are not compared (DECISION-65)."""
+    def level(d):
+        return 'error' if d.get('declared_spec_version', (0, 0)) >= (0, 6) else 'warning'
+
+    by_name = {}       # normalised name -> [(file data, entity)]
+    by_hash = {}       # hash -> [(file data, entity)]
+    for d in codices:
+        for e in d.get('entities', []):
+            if e['hash'] is None:
+                findings.append(Finding(d['file'], 'coherence', level(d), e['line'],
+                                        'ENTITY ^"%s" writes no hash: an entity is its hash, and a '
+                                        'block that adds to one restates it, ENTITY #hash ^"%s" (§25)'
+                                        % (e['name'], e['name'])))
+                continue
+            by_name.setdefault(name_key(e['name']), []).append((d, e))
+            by_hash.setdefault(e['hash'], []).append((d, e))
+
+    collided = set()
+    for key, blocks in by_name.items():
+        hashes = []
+        for d, e in blocks:
+            if e['hash'] not in hashes:
+                hashes.append(e['hash'])
+        if len(hashes) < 2:
+            continue
+        collided.update(hashes)
+        first = {}
+        for d, e in blocks:
+            first.setdefault(e['hash'], (d, e))
+        for d, e in blocks:
+            others = ', '.join('%s at %s:%d' % (h, os.path.basename(first[h][0]['file']),
+                                                 first[h][1]['line'])
+                               for h in hashes if h != e['hash'])
+            findings.append(Finding(d['file'], 'coherence', 'error', e['line'],
+                                    'entity ^"%s" is written under %s here and under %s: one name is '
+                                    'one entity under one hash, and a block that adds to it restates '
+                                    'that hash (§25)' % (e['name'], e['hash'], others)))
+
+    for h, blocks in by_hash.items():
+        if h in collided or any(e['is'] for d, e in blocks):
+            continue
+        d, e = blocks[0]
+        findings.append(Finding(d['file'], 'coherence', level(d), e['line'],
+                                'entity %s ^"%s" has no IS: at least one of its blocks names a '
+                                'category (§25)' % (h, e['name'])))
 
 
 def _find_lore(codex_file, srcfile):
@@ -3765,6 +4038,83 @@ def pin_pass(files_data, findings):
 DICE_MODULE = 'Titterpig_Dice'
 
 
+def system_pass(files_data, findings, notes):
+    """The system file (§19, DECISION-62). A system file is the edition: SYSTEM "id". It
+    governs every file of the run that declares EDITION "id", and, where it is the run's one
+    system file, every file that declares no edition.
+
+    A warning in a file that declares SPEC_VERSION below 0.6, or none, and an error from 0.6: a
+    keyword that neither the base spec nor the system declares; a file the system's FILES does
+    not list; a VERSION that does not begin with the system's.
+    Errors at every version: two system files of one id; a file FILES lists that is not there,
+    or that declares another edition; an EDITION that no system file of the run declares.
+    With no system file in the run nothing is checked, and a note says so for each edition."""
+    systems = {}
+    for d in files_data:
+        if d.get('kind') != 'system' or d['system']['id'] is None:
+            continue
+        sid = d['system']['id']
+        if sid in systems:
+            findings.append(Finding(d['file'], 'coherence', 'error', d['system']['line'],
+                                    'SYSTEM "%s" is declared twice in this run, here and in %s '
+                                    '(§19)' % (sid, os.path.basename(systems[sid]['file']))))
+            continue
+        systems[sid] = d
+    members = []                 # (data, header, declared edition or None)
+    for d in files_data:
+        h = d.get('header') or {}
+        if d.get('kind') in ('bridge', 'system') or not h.get('kind') or h.get('id') == DICE_MODULE:
+            continue
+        eds = [e for e, _ln in h.get('editions', [])] or [e for e, _ln in h.get('for_editions', [])]
+        members.append((d, h, eds[0] if eds else None))
+    if not systems:
+        for ed in sorted({e for _d, _h, e in members if e}):
+            notes.append('edition "%s" has no system file in this run: its keywords and its '
+                         'index of files are not checked (§19)' % ed)
+        return
+    for d, h, ed in members:
+        if ed is not None and ed not in systems:
+            findings.append(Finding(d['file'], 'coherence', 'error', h['line'],
+                                    'EDITION "%s": the system file(s) of this run declare %s (§19)'
+                                    % (ed, ', '.join('"%s"' % x for x in sorted(systems)))))
+    for sid, sd in sorted(systems.items()):
+        rec, base = sd['system'], os.path.dirname(os.path.abspath(sd['file']))
+        listed = {}
+        for name, line in rec['files']:
+            path = os.path.realpath(os.path.join(base, name))
+            listed[path] = (name, line)
+            if not os.path.isfile(path):
+                findings.append(Finding(sd['file'], 'coherence', 'error', line,
+                                        'FILES lists "%s", and no such file stands there (§19)' % name))
+        for d, h, ed in members:
+            path = os.path.realpath(d['file'])
+            if ed is not None and ed != sid:
+                if path in listed:
+                    findings.append(Finding(sd['file'], 'coherence', 'error', listed[path][1],
+                                            'FILES lists "%s", which declares EDITION "%s" (§19)'
+                                            % (listed[path][0], ed)))
+                continue
+            if ed is None and len(systems) != 1:
+                continue
+            version = d.get('declared_spec_version', d.get('spec_version', (0, 0)))
+            gated = 'error' if version >= (0, 6) else 'warning'
+            for kw, line in sorted(d.get('system_keywords', {}).items(), key=lambda kv: kv[1]):
+                if kw not in rec['keywords'] and not is_waived(line, d):
+                    findings.append(Finding(d['file'], 'lint', gated, line,
+                                            '%s is a keyword of neither the base spec nor system '
+                                            '"%s": a system declares its keywords in the KEYWORDS '
+                                            'of its system file (§19)' % (kw, sid)))
+            if path not in listed:
+                findings.append(Finding(d['file'], 'coherence', gated, h['line'],
+                                        '%s "%s" is a file of system "%s", and the system\'s '
+                                        'FILES does not list it (§19)' % (h['kind'], h['id'], sid)))
+            have = d.get('file_version')
+            if rec['version'] and have and not version_begins(have, rec['version']):
+                findings.append(Finding(d['file'], 'coherence', gated, h['line'],
+                                        'VERSION "%s" does not begin with "%s", the content '
+                                        'version of system "%s" (§19)' % (have, rec['version'], sid)))
+
+
 def side_version_pass(files_data, corpus_versions, findings):
     """The VERSION beside an edition, on a bridge's side (§19, §21, DECISION-61): the content
     version of that edition's corpus, which is what the VERSION of each of its files begins
@@ -4117,7 +4467,8 @@ def _all_hashes(files_data):
 
 def collect_paths(args):
     files = []
-    exts = ('.ttrpg', '.actor', '.arc', '.frame', '.setting', '.campaign', '.bridge', '.codex')
+    exts = ('.ttrpg', '.actor', '.arc', '.frame', '.setting', '.campaign', '.bridge', '.codex',
+            '.system')
     for p in args:
         if os.path.isdir(p):
             for root, _, names in os.walk(p):
@@ -4209,6 +4560,7 @@ def main(argv):
     modification_pass(files_data, findings)
     bridge_coherence(files_data, corpora, findings, notes)
     side_version_pass(files_data, corpus_versions, findings)
+    system_pass(files_data, findings, notes)
 
     # A finding the tokenizer could only mark as gated: a warning in a file that declares
     # SPEC_VERSION below 0.6, or none, and an error from 0.6.

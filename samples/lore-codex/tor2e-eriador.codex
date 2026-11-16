@@ -3,7 +3,7 @@
 # Every fact below is derived from tor2e-0.4-core-eriador.lore; the .lore prose
 # itself is UNTOUCHED and stays byte-verbatim. This file is the stand-off graph
 # that points INTO it (SOURCE ... AT <heading-slug>) and the surface text it was
-# derived from (FROM "...").
+# derived from (FROM "..."). Each edge cites its own source (v0.6, DECISION-66).
 #
 # Combined schema+data for the pilot. In a real corpus the CATEGORIES/RELATIONS
 # ontology would live in one schema codex and be imported by DEPENDS_ON.
@@ -63,8 +63,8 @@ CODEX "TOR2E_Eriador_Codex" {
         IS ^"Region"
         SOURCE "tor2e-0.4-core-eriador.lore" AT "the-shire"
         RELATIONSHIPS {
-            ^"located-in"  -> ^"Eriador"              FROM "found at the heart of Eriador"
-            ^"bordered-by" -> ^"The Brandywine River" FROM "bordered by the Brandywine River"
+            ^"located-in"  -> ^"Eriador"              FROM "found at the heart of Eriador" SOURCE "tor2e-0.4-core-eriador.lore" AT "the-shire"
+            ^"bordered-by" -> ^"The Brandywine River" FROM "bordered by the Brandywine River" SOURCE "tor2e-0.4-core-eriador.lore" AT "the-shire"
         }
     }
 
@@ -72,7 +72,7 @@ CODEX "TOR2E_Eriador_Codex" {
         IS ^"River"
         SOURCE "tor2e-0.4-core-eriador.lore" AT "the-brandywine-river"
         RELATIONSHIPS {
-            ^"flows-from" -> ^"Lake Evendim" FROM "flows south out of Lake Evendim"
+            ^"flows-from" -> ^"Lake Evendim" FROM "flows south out of Lake Evendim" SOURCE "tor2e-0.4-core-eriador.lore" AT "the-brandywine-river"
         }
     }
 
@@ -80,7 +80,7 @@ CODEX "TOR2E_Eriador_Codex" {
         IS ^"Lake"
         SOURCE "tor2e-0.4-core-eriador.lore" AT "lake-evendim"
         RELATIONSHIPS {
-            ^"named-after" -> ^"The Hills of Evendim" FROM "the great lake for which those rolling lands are named"
+            ^"named-after" -> ^"The Hills of Evendim" FROM "the great lake for which those rolling lands are named" SOURCE "tor2e-0.4-core-eriador.lore" AT "lake-evendim"
         }
     }
 
@@ -93,8 +93,8 @@ CODEX "TOR2E_Eriador_Codex" {
         IS ^"Ruined City"
         SOURCE "tor2e-0.4-core-eriador.lore" AT "annúminas"
         RELATIONSHIPS {
-            ^"located-on"        -> ^"Lake Evendim" FROM "cast its long shadows on the shores of Lake Evendim"
-            ^"former-capital-of" -> ^"Eriador"      FROM "Once the capital of the North Kingdom of the Men of the West"
+            ^"located-on"        -> ^"Lake Evendim" FROM "cast its long shadows on the shores of Lake Evendim" SOURCE "tor2e-0.4-core-eriador.lore" AT "annúminas"
+            ^"former-capital-of" -> ^"Eriador"      FROM "Once the capital of the North Kingdom of the Men of the West" SOURCE "tor2e-0.4-core-eriador.lore" AT "annúminas"
         }
     }
 
@@ -102,18 +102,20 @@ CODEX "TOR2E_Eriador_Codex" {
         IS ^"Tower"
         SOURCE "tor2e-0.4-core-eriador.lore" AT "the-western-tower"
         RELATIONSHIPS {
-            ^"part-of" -> ^"Annúminas" FROM "the tallest and unbroken towers and walls emerge from the surface"
+            ^"part-of" -> ^"Annúminas" FROM "the tallest and unbroken towers and walls emerge from the surface" SOURCE "tor2e-0.4-core-eriador.lore" AT "the-western-tower"
         }
     }
 
     ENTITY #tor2eRangersNorth01 ^"Rangers of the North" {
         IS ^"Faction"
         RELATIONSHIPS {
-            ^"frequents" -> ^"Annúminas" FROM "The Rangers of the North sometimes come here"
+            ^"frequents" -> ^"Annúminas" FROM "The Rangers of the North sometimes come here" SOURCE "tor2e-0.4-core-eriador.lore" AT "annúminas"
         }
     }
 
     # Your example: a Person node whose category is a game DEF, living in a place.
+    # The Eriador essay does not name Bilbo, so this edge has no source to cite. It is the
+    # older form (DECISION-66) and draws one warning in this 0.5 file.
     ENTITY #tor2eBilboBaggins01 ^"Bilbo Baggins" {
         IS ^"Hobbit"
         RELATIONSHIPS {

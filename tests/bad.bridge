@@ -6,7 +6,8 @@
 //   - DESTINATION never declared (a bridge is directed; both sides are mandatory)
 //   - ORIGIN edition has no corpus and is not EXTERNAL ("not checked" must never
 //     read as "checked and fine")
-//   - MAP with no referents / no DISPOSITION
+//   - MAP with no referents (a MAP with no DISPOSITION is allowed, DECISION-67, and
+//     the untagged MAP below raises nothing of its own)
 //   - a disposition that DISPOSITIONS never declares
 //   - a disposition written as a bare string instead of a caret reference
 //   - REMAINDER with no SCOPE / no DISPOSITION
@@ -37,7 +38,11 @@ BRIDGE "Test_Bad_Bridge" {
 
     CONVERSION {
         MAP #testBadBridgeNoReferents1 {
-            TEXT "no ORIGIN, no DESTINATION, no DISPOSITION"
+            TEXT "no ORIGIN and no DESTINATION"
+        }
+        MAP #testBadBridgeUntaggedMap01 {
+            DESTINATION ^"Something Untagged"
+            TEXT "no DISPOSITION: allowed, and no finding for it"
         }
         MAP #testBadBridgeUndeclaredTag {
             DESTINATION ^"Something"

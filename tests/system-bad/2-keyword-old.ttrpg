@@ -1,0 +1,13 @@
+EXTENSION "SysBad_2" {
+    NAME "fault 2 — the same in a file that declares 0.5: a warning"
+    SPEC_VERSION "0.5"
+    EDITION "sysbad"
+    VERSION "0.6.1"
+    RELEASE_DATE "2026-11-14"
+    DEPENDS_ON "SysBad_Core"
+
+    #Syb2StrikeJ9k1M2n3P4q5 ^"Strike SysBad_2" DEF {
+        EXTENDS #SybTechA1b2C3d4E5f6G7h8 ^"Technique"
+        ACTIVATON "As an Attack action, strike once."
+    }
+}

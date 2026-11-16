@@ -34,7 +34,7 @@ import threading
 import time
 
 SPACE_RULES = ('_', 'SP', 'WHITESPACE', 'COMMENT', 'LINE_COMMENT', 'SLASH_COMMENT', 'EOL', 'B')
-DSL_EXT = ('.ttrpg', '.actor', '.arc', '.frame', '.setting', '.campaign', '.bridge', '.codex',
+DSL_EXT = ('.ttrpg', '.actor', '.arc', '.frame', '.setting', '.campaign', '.bridge', '.codex', '.system',
            '.selections')
 ESC = {'n': '\n', 't': '\t', 'r': '\r'}
 

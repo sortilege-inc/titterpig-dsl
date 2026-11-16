@@ -1,0 +1,18 @@
+# A later file meant to add to "Harrow Ford" and wrote a new hash: a collision (DECISION-64).
+
+CODEX "Entity_Bad_Later" {
+    NAME "Entity fixture: a new hash under an existing name"
+    VERSION "0.1"
+    SPEC_VERSION "0.6"
+    EDITION "demo"
+    RELEASE_DATE "2026-11-14"
+    DEPENDS_ON "Entity_Bad_Schema" VERSION "0.1"
+
+    ENTITY #entBadPlaceId000002 ^"Harrow Ford" {                # 1: the same name under a second hash
+        RELATIONSHIPS {
+            ^"residents" -> ^"Odile" SOURCE "entity-bad.lore"
+            ^"residents" -> #entBadNoSuchHash0001 ^"Tobit" SOURCE "entity-bad.lore"       # 5: the object's hash is no anchor
+            ^"residents" -> #entBadPersonId00002 ^"Odile" SOURCE "entity-bad.lore"        # 6: the hash is the anchor of "Tobit"
+        }
+    }
+}

@@ -1,0 +1,21 @@
+# A file that declares 0.5. The collision is an error at every version; an ENTITY with no hash
+# is a warning below 0.6 (DECISION-64).
+
+CODEX "Entity_Bad_Older" {
+    NAME "Entity fixture: the collision below 0.6"
+    VERSION "0.1"
+    SPEC_VERSION "0.5"
+    EDITION "demo"
+    RELEASE_DATE "2026-11-14"
+    DEPENDS_ON "Entity_Bad_Schema" VERSION "0.1"
+
+    ENTITY #entBadPersonId00003 ^"Odile" {                      # 4: a second hash for "Odile"; an error at 0.5 too
+        RELATIONSHIPS {
+            ^"lives-in" -> ^"Harrow Ford" SOURCE "entity-bad.lore"
+        }
+    }
+
+    ENTITY ^"Wenna" {                                           # 7: an ENTITY with no hash; a warning at 0.5
+        IS ^"Person"
+    }
+}

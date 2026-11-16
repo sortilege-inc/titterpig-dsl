@@ -1,0 +1,14 @@
+BASE "NameForm_Bad_Older" {
+    NAME "DECISION-69 fixture — the same names in a file below 0.6"
+    SPEC_VERSION "0.5"
+    EDITION "demo"
+    VERSION "1.0"
+    RELEASE_DATE "2026-11-16"
+
+    # Below 0.6 an empty name and a control character are warnings. A name with no letter and
+    # no digit is a warning at every version.
+
+    #NfoEmptyxxB8tJ1yL4sD5fG0 ^"" DEF { }                                  # WARNING
+    #NfoBellxxxD4fG7hJ0kL2mNq ^"2951: the Ringwraiths Reclaim Dol Guldur" DEF { }   # WARNING
+    #NfoColonxxE1vP5xJ9cL2sQ7 ^":" DEF { }                                 # WARNING
+}

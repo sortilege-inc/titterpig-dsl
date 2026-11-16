@@ -1,0 +1,17 @@
+# Lore and mechanics keep separate identities (spec §25, DECISION-65). This file's DEF and the
+# codex's entity are both named "Odile": the family here, the person there. Two things, each
+# under its own hash, and no finding. places.codex tells them apart by the hash.
+
+BASE "Entity_Good_Game" {
+    NAME "Entity fixture: a DEF that shares its name with a codex entity"
+    VERSION "0.1"
+    SPEC_VERSION "0.6"
+    EDITION "demo"
+    RELEASE_DATE "2026-11-14"
+
+    #entGoodFamilyType001 ^"Family" DEF { }
+
+    #entGoodFamilyOdile01 ^"Odile" DEF {
+        EXTENDS #entGoodFamilyType001 ^"Family"
+    }
+}
