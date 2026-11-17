@@ -30,10 +30,10 @@ BASE "Demo_Dice" {
         EXTENDS #tx5rnK3W3skTZ1JHSIzRfZwk ^"Die"
         FACES { 2  3 WEIGHT 2  4 WEIGHT 2  5 }
     }
-    # a die built on another
-    #DiceDemoD12HHHHHHHHHHHHHH ^"d12" DEF {
+    # a numeric die the module does not ship
+    #DiceDemoD30HHHHHHHHHHHHHH ^"d30" DEF {
         EXTENDS #tx5rnK3W3skTZ1JHSIzRfZwk ^"Die"
-        FACES { 1-12 }
+        FACES { 1-30 }
     }
 
     # --- things that need a roll ---------------------------------------------

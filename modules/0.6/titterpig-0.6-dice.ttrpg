@@ -5,7 +5,7 @@
 
 BASE "Titterpig_Dice" {
     NAME "Titterpig dice"
-    VERSION "0.6.0"
+    VERSION "0.6.1"
     SPEC_VERSION "0.6"
     RELEASE_DATE "2026-11-11"
 
@@ -41,6 +41,11 @@ BASE "Titterpig_Dice" {
     #tbgOQaN6xUuzn8GiibKkGw62 ^"d10" DEF {
         EXTENDS #tx5rnK3W3skTZ1JHSIzRfZwk ^"Die"
         FACES { 1-10 }
+    }
+
+    #tN4Mq9mz6CpFIn03eTEstmGe ^"d12" DEF {
+        EXTENDS #tx5rnK3W3skTZ1JHSIzRfZwk ^"Die"
+        FACES { 1-12 }
     }
 
     #tqtQ2anAhvm29UdzTfTeCLqp ^"d20" DEF {

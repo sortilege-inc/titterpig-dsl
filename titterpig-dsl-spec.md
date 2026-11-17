@@ -474,9 +474,9 @@ stay valid.
   is that **a die is an entity**: a DEF that `EXTENDS ^"Die"` and lists its faces in a `FACES` block,
   each face with a weight of 1 unless it says otherwise. l5r5e already wrote its Ring Die and Skill
   Die this way. Variant dice and uneven odds are then new DEFs and need no new grammar. The spec
-  ships a **dice module** defining `^"Die"` and d2, d3, d4, d6, d8, d10, d20 and d100; every edition
-  includes it, it is edition-neutral, and a system's BASE may `DEPENDS_ON` it. `ROLL n OF ^"die"`
-  rolls dice, and the existing `SET`, `TRANSFORM` and `REF` do the rest: the modifier, where the sum
+  ships a **dice module** defining `^"Die"` and d2, d3, d4, d6, d8, d10, d12, d20 and d100 (d12
+  added 2026-11-17 by the owner); every edition includes it, it is edition-neutral, and a system's
+  BASE may `DEPENDS_ON` it. `ROLL n OF ^"die"` rolls dice, and the existing `SET`, `TRANSFORM` and `REF` do the rest: the modifier, where the sum
   is stored, the damage type. That needs order, which the DSL did not have, so **`NEXT`** before a
   statement makes it a step that follows the statement above. `NEXT` was chosen over `THEN`, which
   already means the consequence of a `WHEN` in rules and hooks *(v0.6: in hooks only, since the
@@ -2449,8 +2449,8 @@ amount is an integer or a reference that resolves; `ROUND` is followed by `UP`, 
 - Each face has a weight of 1. `WEIGHT n` after a face gives it another: `3 WEIGHT 2`.
 
 **The dice module.** This repo ships `modules/0.6/titterpig-0.6-dice.ttrpg`. It defines `^"Die"` and
-`^"d2"`, `^"d3"`, `^"d4"`, `^"d6"`, `^"d8"`, `^"d10"`, `^"d20"` and `^"d100"`. Every edition includes
-it. It is edition-neutral: its hashes are the same wherever it is included (§19). A system's BASE
+`^"d2"`, `^"d3"`, `^"d4"`, `^"d6"`, `^"d8"`, `^"d10"`, `^"d12"`, `^"d20"` and `^"d100"`. Every
+edition includes it. It is edition-neutral: its hashes are the same wherever it is included (§19). A system's BASE
 declares `DEPENDS_ON "Titterpig_Dice"` (§3), and a corpus is validated with the module passed
 alongside it. A system defines any other die it needs as a DEF of its own.
 
