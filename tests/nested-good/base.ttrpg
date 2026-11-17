@@ -1,0 +1,29 @@
+BASE "Nested_Good_Core" {
+    NAME "A list member that names a nested definition by its hash (§8, §5d)"
+    SPEC_VERSION "0.6"
+    EDITION "demo"
+    VERSION "1.0"
+    RELEASE_DATE "2026-11-17"
+
+    #   ttrpg_validator.py tests/nested-good          0 errors, 0 warnings
+    #
+    # Two definitions are named "Candle": a sheet's item at the top of the file, and a court's
+    # item nested in its sheet. The court's list names its own by hash. The validator used to
+    # follow the name to the top-level "Candle" and report it as no Court Item.
+
+    #NstItemK2vQ9wN3cL7pXd1a2 ^"Sheet Item" DEF { PROPERTIES { ^"Name" } }
+    #NstCourtB8tJ1yL4sD5fG0zX ^"Court Item" DEF { PROPERTIES { ^"Name" } }
+
+    #NstCandleC4pH7zR2wE9uX1 ^"Candle" DEF {
+        EXTENDS #NstItemK2vQ9wN3cL7pXd1a2 ^"Sheet Item"
+    }
+
+    #NstSheetD4fG7hJ0kL2mNqP ^"Court Sheet" DEF {
+        #NstCandleE1vP5xJ9cL2sQ7 ^"Candle" DEF {
+            EXTENDS #NstCourtB8tJ1yL4sD5fG0zX ^"Court Item"
+        }
+        PROPERTIES {
+            ^"Common Items" LIST OF #NstCourtB8tJ1yL4sD5fG0zX ^"Court Item" [ #NstCandleE1vP5xJ9cL2sQ7 ^"Candle" ]
+        }
+    }
+}

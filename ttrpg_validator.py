@@ -3773,11 +3773,13 @@ def value_pass(files_data, findings):
     by_name, by_hash = {}, {}
     for d in files_data:
         for x in d.get('vdefs', []):
+            # A nested definition is reached through its hash, never by its name alone: a list
+            # member that names one by hash is that definition, not another of the same name.
+            if x['hash']:
+                by_hash.setdefault(x['hash'], []).append(x)
             if x['nested']:
                 continue
             by_name.setdefault(x['name'], []).append(x)
-            if x['hash']:
-                by_hash.setdefault(x['hash'], []).append(x)
 
     def resolve(name, hsh):
         if hsh and len(by_hash.get(hsh, [])) == 1:
