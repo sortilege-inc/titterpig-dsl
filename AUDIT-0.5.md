@@ -2743,7 +2743,7 @@ files share a content version; the check runs only where a side names one. (4) A
 
 ### C9. Smaller gaps
 
-**Status:** closed 2026-11-16 by the owner. Committed on branch `0.6`. Its nine bullets were
+**Status:** closed 2026-11-16 by the owner. Committed and pushed on branch `0.6`. Its nine bullets were
 recounted against the spec as it stood after C1 to C8 and put to the owner one at a time. Six
 are ruled: each edition has a `.system` file (bullet 1, DECISION-62); a guidance entry may
 hold `REFERENCES` (bullet 3, DECISION-63); a codex entity is its hash, lore and mechanics
@@ -4677,7 +4677,7 @@ Filled in as each finding is walked through.
 | C9 | 2026-11-16 | Agent's calls on bullet 7 point 2, to confirm. (1) The game whose rule applies is the destination edition. (2) No field names a system's general rounding rule; the spec says so, and the validator reports nothing. (3) The spec names arm5e as a destination with no general rule found. (4) A rounding stated by the conversion document itself is not written. | Recorded under the bullet. |
 | C9 | 2026-11-16 | Bullet 8: what a name holds. An empty name and a control character in a name are each a warning below 0.6 and an error from 0.6; a name with no letter and no digit is a warning at every version. Written as DECISION-69. The corpora's 29 names are F42. | Owner: "Yes, all three", on the agent's three points as put. |
 | C9 | 2026-11-16 | Agent's calls on bullet 8, to confirm. (1) One decision number. (2) A control character is Unicode category Cc; a tab, a line break and a format character are not reported. (3) The no-letter warning is made at a reference and an entry's label too. (4) The grammar does not refuse `^""`. (5) Nothing waives the warning on the tor2e row. | Recorded under the bullet. |
-| C9 | 2026-11-16 | C9 is closed. The branch is committed and not pushed. | Owner: "Close and commit". The agent's calls marked "to confirm" under bullets 1, 3, 6, 7 and 8 were reported to him as each was applied and were not separately ruled on; he was told that they stand as written if C9 is closed without going through them. |
+| C9 | 2026-11-16 | C9 is closed. The branch is committed and pushed. | Owner: "Close and commit", then "Push". The agent's calls marked "to confirm" under bullets 1, 3, 6, 7 and 8 were reported to him as each was applied and were not separately ruled on; he was told that they stand as written if C9 is closed without going through them. |
 
 ---
 
