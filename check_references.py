@@ -285,7 +285,10 @@ for f in files:
         # Never inside a REFERENCES / REFERENCED BY / EMPHASIS / LABEL block: an entry
         # line is itself `"surface" -> ^"Target"`, and folding that into the
         # prose would let every surface form prove its own presence.
-        if not mid and block is None and not d and not ol and '->' not in l and '<-' not in l:
+        # The arrow test reads the code, not the text: a string that holds "-->" (an HTML comment
+        # carried in a source's text) is prose like any other (draw-steel at 0.6, 2026-11-17).
+        code_l = QUOTED.sub('""', l)
+        if not mid and block is None and not d and not ol and '->' not in code_l and '<-' not in code_l:
             q = QUOTED.findall(l)
             if q:
                 prose_line[i] = text_of(' '.join(q))

@@ -254,7 +254,10 @@ BLOCK_REF_LIST = {'LEADS_TO': 'leads-to', 'COMPLETED_SCENES': 'completed scene',
 # or a closing bracket before it (`20*`, `5*3`, `20 (+1)*`) does not open a span, so the
 # asterisks books print mostly pass.
 MD_BOLD = re.compile(r'\*\*(?=[^\s*])((?:(?!\\n|\*\*).)+?)(?<=[^\s*])\*\*')
-MD_ITALIC = re.compile(r'(?<![*\w\\)\]])\*(?=[^\s*])((?:(?!\\n)[^*\n])+?)(?<=[^\s*])\*(?![*\w])')
+# An italic span may open after an escaped line break (\n): the 'n' is a letter to the
+# lookbehind, so without the first branch a paragraph that opens in italics was never seen
+# once its text became one string (DECISION-48; draw-steel at 0.6, 2026-11-17).
+MD_ITALIC = re.compile(r'(?:(?<=\\n)|(?<![*\w\\)\]]))\*(?=[^\s*])((?:(?!\\n)[^*\n])+?)(?<=[^\s*])\*(?![*\w])')
 # An embedded reference inside a string (§5c, DECISION-20): [#hash ]^\"Name\"[/\"literal\"].
 # In an ordinary string the quotes are escaped; in a triple-quoted one they are not. Group 2
 # is whichever quote form opened the name, and the closers must match it.
