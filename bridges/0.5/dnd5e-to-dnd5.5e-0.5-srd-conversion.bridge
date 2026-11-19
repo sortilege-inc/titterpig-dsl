@@ -9,7 +9,7 @@ BRIDGE "Dnd5e_To_Dnd5_5e_Srd_Conversion" {
     # blocks collapse onto one 5.2.1 replacement, and every [New Rule] unit
     # has no origin to run back to.
     ORIGIN      "dnd5e"   VERSION "0.6"
-    DESTINATION "dnd5.5e" VERSION "0.4"
+    DESTINATION "dnd5.5e" VERSION "0.6"
 
     # The document declares its own change-tag vocabulary on page 1; these are
     # its words, not a vocabulary invented here.
