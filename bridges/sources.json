@@ -4,18 +4,19 @@
   "dsl_dir": "titterpig-dsl/bridges",
   "content_version": "0.5.1",
   "spec_version": "0.5",
-  "note": "A .bridge (spec §21) is the one container with TWO dependency lineages: it records a DIRECTED, third-party assertion of correspondence between two independent edition namespaces. It belongs to NEITHER edition and must never live inside either edition's corpus directory — its ORIGIN names would not resolve there and its presence would pollute that namespace. Validate with the two-corpus mode: ttrpg_validator.py 0.5/ --corpus <edition>=<dir> ... A bridge may instead live in a system repo, beside that edition's corpus directory and never inside it (Pendragon: titterpig-dsl-pendragon6e/bridges/0.5/); its entry's `file` is then relative to this folder and `repo` names its home.",
+  "note": "A .bridge (spec §21) is the one container with TWO dependency lineages: it records a DIRECTED, third-party assertion of correspondence between two independent edition namespaces. It belongs to NEITHER edition and must never live inside either edition's corpus directory — its ORIGIN names would not resolve there and its presence would pollute that namespace. A bridge lives in the folder of the spec it is written to: 0.6/ for the dnd5e -> 2024 bridge (moved 2026-11-20), 0.5/ for the others until their corpora move; an entry's `spec_version` says which. Validate with the two-corpus mode: ttrpg_validator.py 0.6/ --corpus <edition>=<dir> ... A bridge may instead live in a system repo, beside that edition's corpus directory and never inside it (Pendragon: titterpig-dsl-pendragon6e/bridges/0.5/); its entry's `file` is then relative to this folder and `repo` names its home.",
   "sources": [
     {
-      "file": "0.5/dnd5e-to-dnd5.5e-0.5-srd-conversion.bridge",
+      "file": "0.6/dnd5e-to-dnd5.5e-0.6-srd-conversion.bridge",
+      "spec_version": "0.6",
       "origin": {
         "edition": "dnd5e",
-        "version": "0.4",
+        "version": "0.6",
         "repo": "titterpig-dsl-dnd5e"
       },
       "destination": {
         "edition": "dnd5.5e",
-        "version": "0.4",
+        "version": "0.6",
         "repo": "titterpig-dsl-dnd5.5e"
       },
       "source": {
@@ -23,7 +24,7 @@
         "publisher": "Wizards of the Coast LLC",
         "date": "2025-05-23",
         "license": "CC-BY-4.0",
-        "pdf": "~/Downloads/converting-to-srd-5.2.1.pdf"
+        "pdf": "~/Downloads/Unsorted Sortilege/Play/PREP/Theros - Fallow Season/converting-to-srd-5.2.1.pdf"
       },
       "coverage_manifest": "titterpig-mastra/coverage/dnd5e-to-dnd5.5e-bridge.manifest.json",
       "generator": "titterpig-mastra/scripts/bridge/ (parse_srd521.py -> units_srd521.py -> gen_bridge.py)",
@@ -66,7 +67,7 @@
       "source": {
         "title": "Pendragon Core Rulebook (6th edition), Appendix A: Notes on the New Edition (pp. 237-240)",
         "publisher": "Chaosium Inc.",
-        "corpus_file": "titterpig-dsl-pendragon6e/0.5/pendragon6e-0.5-core-notes-on-the-new-edition.ttrpg"
+        "corpus_file": "titterpig-dsl-pendragon6e/0.6/pendragon6e-0.6-core-notes-on-the-new-edition.ttrpg"
       },
       "coverage_manifest": "titterpig-dsl-pendragon6e/bridges/coverage-manifest-bridge.json",
       "generator": "hand-authored; the gates' inventory (appendix-a-units.json, appendix-a-blocks.json) is read from the appendix's corpus file by titterpig-dsl-pendragon6e/bridges/appendix_a_units.py",

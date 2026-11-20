@@ -16,9 +16,13 @@ overlay" can actually be generated and audited.
 
 | File | Origin → Destination | Shape |
 |---|---|---|
-| `0.5/dnd5e-to-dnd5.5e-0.5-srd-conversion.bridge` | `dnd5e` → `dnd5.5e` | The **rich** case: WotC's *Converting to System Reference Document 5.2.1*, entity-keyed throughout — 573 `MAP`s, 7 `REMAINDER`s, 85 `GUIDANCE` entries, the document's own four-tag disposition vocabulary. |
+| `0.6/dnd5e-to-dnd5.5e-0.6-srd-conversion.bridge` | `dnd5e` → `dnd5.5e` | The **rich** case: WotC's *Converting to System Reference Document 5.2.1*, entity-keyed throughout — 573 `MAP`s, 7 `REMAINDER`s, 85 `GUIDANCE` entries, the document's own four-tag disposition vocabulary. |
 | `0.5/arm4-to-arm5e-0.5-appendix-i.bridge` | `arm4` *(EXTERNAL)* → `arm5e` | The **sparse** case: *Ars Magica Fifth Edition*, Appendix I — ~85% prose, no mapping table at all. No `MAP`, no `REMAINDER`, no `DISPOSITIONS`; 7 field-level `PROCEDURE`s + 11 `GUIDANCE` entries. |
 | `titterpig-dsl-pendragon6e/bridges/0.5/pendragon5e-to-pendragon6e-0.5-notes-on-the-new-edition.bridge` | `pendragon5e` → `pendragon6e` | Sparse, like ArM5: the Pendragon *Core Rulebook*'s Appendix A, "Notes on the New Edition" — a character-conversion procedure with no change-tag vocabulary. No `DISPOSITIONS`, so no `MAP` or `REMAINDER`; 14 `PROCEDURE`s (51 `CONVERT`s keyed to both knights' sheet names), 7 `GUIDANCE` entries, 4 `ALIASES`. Lives in the destination's repo (see below). |
+
+A bridge sits in the folder of the spec it is written to (§21, `bridges/<specver>/`). The D&D bridge
+moved to `0.6/` on 2026-11-20, after both its corpora; the ArM5 bridge stays in `0.5/` until arm5e
+moves, and the Pendragon bridge until its eight triple-quoted texts are made one string each.
 
 The two are complementary on purpose: one is a publisher-facing *content changelog*, the other a
 table-facing *character-conversion procedure*. The same grammar holds both.
@@ -40,7 +44,7 @@ resolved per side.
 
 Most bridges live here. A bridge may instead live in a system's own repo, **beside** that edition's
 corpus directory and never inside it — the Pendragon bridge sits in
-`titterpig-dsl-pendragon6e/bridges/0.5/`, next to `0.5/` (the owner's call, 2026-09-29). It is listed
+`titterpig-dsl-pendragon6e/bridges/0.5/`, next to the corpus's `0.6/` (the owner's call, 2026-09-29). It is listed
 in `sources.json` all the same, validated in the same two-corpus mode, and run by the same gates.
 
 ## Validating
@@ -50,15 +54,16 @@ and never the union:
 
 ```bash
 # from titterpig-dsl/bridges/
+python3 ../ttrpg_validator.py 0.6/ \
+    --corpus dnd5e="../../titterpig-dsl-dnd5e/0.6" \
+    --corpus dnd5.5e="../../titterpig-dsl-dnd5.5e/0.6"
 python3 ../ttrpg_validator.py 0.5/ \
-    --corpus dnd5e="../../titterpig-dsl-dnd5e/0.5" \
-    --corpus dnd5.5e="../../titterpig-dsl-dnd5.5e/0.5" \
     --corpus arm5e="../../titterpig-dsl-arm5e/arm5e/0.5"
 
 # the Pendragon bridge, from titterpig-dsl-pendragon6e/
 python3 ../titterpig-dsl/ttrpg_validator.py bridges/0.5/ \
-    --corpus pendragon5e="../titterpig-dsl-pendragon5e/0.5" \
-    --corpus pendragon6e="0.5"
+    --corpus pendragon5e="../titterpig-dsl-pendragon5e/0.6" \
+    --corpus pendragon6e="0.6"
 ```
 
 A non-`EXTERNAL` side with no `--corpus` mapping is an **error**, not a pass: an unchecked
@@ -74,7 +79,9 @@ Validation is not completeness. Run everything:
 bash ~/Sortilege/Titterpig/Utilities/titterpig-mastra/scripts/bridge/gates.sh
 ```
 
-1. **Validator**, two-corpus mode, plus the `tests/good.bridge` / `tests/bad.bridge` fixtures.
+1. **Validator**, two-corpus mode, plus the `tests/good.bridge` / `tests/bad.bridge` fixtures, and
+   the grammar (`check_grammar.py`) on the D&D bridge. Then **file names**: every corpus file a
+   bridge names in its text exists in that edition's corpus (`check_file_names.py`).
 2. **Coverage** — every enumerable unit of each source document covered or dispositioned with a
    reason (`coverage/dnd5e-to-dnd5.5e-bridge.manifest.json`,
    `coverage/arm4-to-arm5e-bridge.manifest.json`,
@@ -95,6 +102,12 @@ python3 units_srd521.py      # blocks  -> units.json      (a unit is any heading
 python3 index_corpus.py <edition-dir> idx-<edition>.json
 python3 gen_bridge.py        # units + corpus indexes -> .bridge + inventory + routing report
 ```
+
+`regenerate.sh` runs them in order against both corpora's `0.6/` and writes
+`bridges/0.6/dnd5e-to-dnd5.5e-0.6-srd-conversion.bridge`; it reads the PDF only when the cached
+`srd521/x.xml` is missing. The generator writes spec 0.6 since 2026-11-20: no `STRING`, and each
+GUIDANCE text one string with `\n\n` between its paragraphs. `selftest_0_6.py` beside it plants
+twelve faults, each refused by its gate.
 
 The ArM5 bridge is hand-authored; at 44 source units, a generator would be more code than content.
 So is the Pendragon bridge (52 units), but its gates' inventory is not: `appendix_a_units.py` beside it

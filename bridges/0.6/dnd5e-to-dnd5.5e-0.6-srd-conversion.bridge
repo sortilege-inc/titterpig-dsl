@@ -1,7 +1,7 @@
 BRIDGE "Dnd5e_To_Dnd5_5e_Srd_Conversion" {
     NAME "Converting to System Reference Document 5.2.1"
     VERSION "2025.1"
-    SPEC_VERSION "0.5"
+    SPEC_VERSION "0.6"
     RELEASE_DATE "2025-05-23"
 
     # A DIRECTED assertion of correspondence between two independent edition
@@ -15,16 +15,16 @@ BRIDGE "Dnd5e_To_Dnd5_5e_Srd_Conversion" {
     # its words, not a vocabulary invented here.
     DISPOSITIONS {
         #bdddbcd3714532df4b8e ^"New Name" DEF {
-            ^"Description" STRING "New Name. This tag is applied to a rule that has a new name. Unless stated otherwise, the rule hasn't changed apart from its name."
+            ^"Description" "New Name. This tag is applied to a rule that has a new name. Unless stated otherwise, the rule hasn't changed apart from its name."
         }
         #bdffe0d5fb366b04eba6 ^"New Rule" DEF {
-            ^"Description" STRING "New Rule. This tag indicates a new rule."
+            ^"Description" "New Rule. This tag indicates a new rule."
         }
         #bd8eed76ee2f4d9738a3 ^"Revised Rule" DEF {
-            ^"Description" STRING "Revised Rule. This tag indicates a rule that appeared in SRD 5.1 but that has new functionality."
+            ^"Description" "Revised Rule. This tag indicates a rule that appeared in SRD 5.1 but that has new functionality."
         }
         #bd178e78a95d3848bc12 ^"Omitted Rule" DEF {
-            ^"Description" STRING "Additionally, the tag \"Omitted Rule\" indicates stat blocks that are omitted in SRD 5.2.1 but have recommended replacements."
+            ^"Description" "Additionally, the tag \"Omitted Rule\" indicates stat blocks that are omitted in SRD 5.2.1 but have recommended replacements."
         }
     }
 
@@ -54,14 +54,14 @@ BRIDGE "Dnd5e_To_Dnd5_5e_Srd_Conversion" {
             DESTINATION "Tool Proficiency"
             DISPOSITION [ ^"Revised Rule" ]
             TEXT        "If you have proficiency with both the tool and the skill that are used for an ability check, you automatically have Advantage on the check, in addition to adding your Proficiency Bonus."
-            FIAT        "Origin referent \"Tool Proficiency\" is untyped on purpose: this edition has no DEF for it in its own category, and the name is taken by an unrelated ^\"Tool Proficiency\" in dnd5e-0.5-races.ttrpg."
+            FIAT        "Origin referent \"Tool Proficiency\" is untyped on purpose: this edition has no DEF for it in its own category, and the name is taken by an unrelated ^\"Tool Proficiency\" in dnd5e-0.6-races.ttrpg."
         }
         MAP #bm9097484fdcf28eab25 {
             ORIGIN      "Attack Action"
             DESTINATION ^"Attack"
             DISPOSITION [ ^"Revised Rule" ]
             TEXT        "The Attack action contains several revisions: The action now specifies that it involves an attack with a weapon or an Unarmed Strike. The action now allows you to equip or unequip one weapon with each attack you make with the action. The ability to move between attacks during combat is now a function of the Attack action rather than a general rule."
-            FIAT        "Origin referent \"Attack Action\" is untyped on purpose: this edition has no DEF for it in its own category, and the name is taken by an unrelated ^\"Attack\" in dnd5e-0.5-monsters.ttrpg."
+            FIAT        "Origin referent \"Attack Action\" is untyped on purpose: this edition has no DEF for it in its own category, and the name is taken by an unrelated ^\"Attack\" in dnd5e-0.6-monsters.ttrpg."
         }
         MAP #bm7317dd75a251b745d5 {
             ORIGIN      "Help"
@@ -2512,7 +2512,7 @@ BRIDGE "Dnd5e_To_Dnd5_5e_Srd_Conversion" {
             DESTINATION "Tool Proficiency"
             DISPOSITION [ ^"Revised Rule" ]
             TEXT        "The rule about having Advantage on checks when you have proficiency in both the tool and the skill is new."
-            FIAT        "Origin referent \"Tool Proficiency\" is untyped on purpose: this edition has no DEF for it in its own category, and the name is taken by an unrelated ^\"Tool Proficiency\" in dnd5e-0.5-races.ttrpg."
+            FIAT        "Origin referent \"Tool Proficiency\" is untyped on purpose: this edition has no DEF for it in its own category, and the name is taken by an unrelated ^\"Tool Proficiency\" in dnd5e-0.6-races.ttrpg."
         }
         MAP #bm78749e1305a63b85d0 {
             DESTINATION "Artisan’s Tools"
@@ -2577,13 +2577,13 @@ BRIDGE "Dnd5e_To_Dnd5_5e_Srd_Conversion" {
             DESTINATION "Spellcasting"
             DISPOSITION [ ^"New Name" ]
             TEXT        "This rule was previously named Spellcasting Services."
-            FIAT        "Destination referent \"Spellcasting\" is untyped on purpose: this edition has no DEF for it in its own category, and the name is taken by an unrelated ^\"Spellcasting\" in dnd5.5e-0.5-monsters.ttrpg."
+            FIAT        "Destination referent \"Spellcasting\" is untyped on purpose: this edition has no DEF for it in its own category, and the name is taken by an unrelated ^\"Spellcasting\" in dnd5.5e-0.6-monsters.ttrpg."
         }
         MAP #bm7071d7f27f8e7fc572 {
             DESTINATION "Spellcasting"
             DISPOSITION [ ^"New Rule" ]
             TEXT        "The Spellcasting Services table is new."
-            FIAT        "Destination referent \"Spellcasting\" is untyped on purpose: this edition has no DEF for it in its own category, and the name is taken by an unrelated ^\"Spellcasting\" in dnd5.5e-0.5-monsters.ttrpg."
+            FIAT        "Destination referent \"Spellcasting\" is untyped on purpose: this edition has no DEF for it in its own category, and the name is taken by an unrelated ^\"Spellcasting\" in dnd5.5e-0.6-monsters.ttrpg."
         }
         MAP #bm08a9f33e7b6e8310e0 {
             DESTINATION "Identifying a Magic Item"
@@ -2983,7 +2983,7 @@ BRIDGE "Dnd5e_To_Dnd5_5e_Srd_Conversion" {
             ASPECT      "Action"
             DISPOSITION [ ^"Revised Rule" ]
             TEXT        "Attack [Action]"
-            FIAT        "Origin referent \"Attack\" is untyped on purpose: this edition has no DEF for it in its own category, and the name is taken by an unrelated ^\"Attack\" in dnd5e-0.5-monsters.ttrpg."
+            FIAT        "Origin referent \"Attack\" is untyped on purpose: this edition has no DEF for it in its own category, and the name is taken by an unrelated ^\"Attack\" in dnd5e-0.6-monsters.ttrpg."
         }
         MAP #bme59eadf7c3927c06ff {
             ORIGIN      "Blindsight"
@@ -3194,7 +3194,7 @@ BRIDGE "Dnd5e_To_Dnd5_5e_Srd_Conversion" {
             DESTINATION ^"Unarmed Strike"
             DISPOSITION [ ^"Revised Rule" ]
             TEXT        "Unarmed Strike (options for grappling and shoving a target now appear as part of these rules, rather than as a special function of the Attack action)"
-            FIAT        "Origin referent \"Unarmed Strike\" is untyped on purpose: this edition has no DEF for it in its own category, and the name is taken by an unrelated ^\"Unarmed Strike\" in dnd5e-0.5-monsters.ttrpg."
+            FIAT        "Origin referent \"Unarmed Strike\" is untyped on purpose: this edition has no DEF for it in its own category, and the name is taken by an unrelated ^\"Unarmed Strike\" in dnd5e-0.6-monsters.ttrpg."
         }
         MAP #bm5bf55e680735952e24 {
             DESTINATION ^"Good Roads"
@@ -3851,713 +3851,389 @@ BRIDGE "Dnd5e_To_Dnd5_5e_Srd_Conversion" {
     GUIDANCE {
         ENTRY ^"Converting to System Reference Document 5.2.1" #bg1b78eb3be0ae3f0e19 {
             TOPICS   [ "Using This Guide" ]
-            TEXT """
-            This document highlights new and revised elements in each section of System Resource Document 5.2.1 (SRD 5.2.1):
-
-            Those elements were first introduced in the Player’s Handbook (2024), Dungeon Master’s Guide (2024), and Monster Manual (2025).
-
-            In this document, each element of the new or revised elements has one or more of the following tags so you can see at a glance how it has changed: New Name. This tag is applied to a rule that has a new name. Unless stated otherwise, the rule hasn’t changed apart from its name. New Rule. This tag indicates a new rule. Revised Rule. This tag indicates a rule that appeared in SRD 5.1 but that has new functionality. Additionally, the tag “Omitted Rule” indicates stat blocks that are omitted in SRD 5.2.1 but have recommended replacements. Following these sections is guidance on capitalization.
-            """
+            TEXT     "This document highlights new and revised elements in each section of System Resource Document 5.2.1 (SRD 5.2.1):\n\nThose elements were first introduced in the Player’s Handbook (2024), Dungeon Master’s Guide (2024), and Monster Manual (2025).\n\nIn this document, each element of the new or revised elements has one or more of the following tags so you can see at a glance how it has changed: New Name. This tag is applied to a rule that has a new name. Unless stated otherwise, the rule hasn’t changed apart from its name. New Rule. This tag indicates a new rule. Revised Rule. This tag indicates a rule that appeared in SRD 5.1 but that has new functionality. Additionally, the tag “Omitted Rule” indicates stat blocks that are omitted in SRD 5.2.1 but have recommended replacements. Following these sections is guidance on capitalization."
         }
         ENTRY ^"Barbarian Class Features [New Rule]" #bgf3645d4b28d9bec58a {
             TOPICS   [ "Classes", "Barbarian" ]
             CONCERNS [ DESTINATION ^"Barbarian" ]
-            TEXT """
-            The following class features are new:
-            """
+            TEXT     "The following class features are new:"
         }
         ENTRY ^"Barbarian Class Features [Revised Rule]" #bgb83938fe0f760f886e {
             TOPICS   [ "Classes", "Barbarian" ]
             CONCERNS [ DESTINATION ^"Barbarian" ]
-            TEXT """
-            The following class features are revised:
-            """
+            TEXT     "The following class features are revised:"
         }
         ENTRY ^"Barbarian Subclass: Path of the Berserker [Revised Rule]" #bg95326273503c53f353 {
             TOPICS   [ "Classes", "Barbarian" ]
             CONCERNS [ DESTINATION ^"Path of the Berserker" ]
-            TEXT """
-            The following subclass features are revised:
-            """
+            TEXT     "The following subclass features are revised:"
         }
         ENTRY ^"Bard Class Features [New Rule]" #bg4c4b5a60dc012e839c {
             TOPICS   [ "Classes", "Bard" ]
             CONCERNS [ DESTINATION ^"Bard" ]
-            TEXT """
-            The following class features are new:
-            """
+            TEXT     "The following class features are new:"
         }
         ENTRY ^"Bard Class Features [Revised Rule]" #bg09e00bc80af5797e35 {
             TOPICS   [ "Classes", "Bard" ]
             CONCERNS [ DESTINATION ^"Bard" ]
-            TEXT """
-            The following class features are revised:
-            """
+            TEXT     "The following class features are revised:"
         }
         ENTRY ^"Bard Subclass: College of Lore [Revised Rule]" #bgfb0f607cad5ce316e1 {
             TOPICS   [ "Classes", "Bard" ]
             CONCERNS [ DESTINATION ^"College of Lore" ]
-            TEXT """
-            The following subclass features are revised:
-            """
+            TEXT     "The following subclass features are revised:"
         }
         ENTRY ^"Cleric Class Features [New Rule]" #bg3eb77288acc893fe26 {
             TOPICS   [ "Classes", "Cleric" ]
             CONCERNS [ DESTINATION ^"Cleric" ]
-            TEXT """
-            The following class features are new:
-            """
+            TEXT     "The following class features are new:"
         }
         ENTRY ^"Cleric Class Features [Revised Rule]" #bgd0d4dceab261283afa {
             TOPICS   [ "Classes", "Cleric" ]
             CONCERNS [ DESTINATION ^"Cleric" ]
-            TEXT """
-            The following class features are revised:
-            """
+            TEXT     "The following class features are revised:"
         }
         ENTRY ^"Cleric Subclass: Life Domain [Revised Rule]" #bg88970df5a3eabe2f76 {
             TOPICS   [ "Classes", "Cleric" ]
             CONCERNS [ DESTINATION ^"Life Domain" ]
-            TEXT """
-            The following subclass features are revised:
-            """
+            TEXT     "The following subclass features are revised:"
         }
         ENTRY ^"Druid Class Features [New Rule]" #bgb878f53532078466ef {
             TOPICS   [ "Classes", "Druid" ]
             CONCERNS [ DESTINATION ^"Druid" ]
-            TEXT """
-            The following class features are new:
-            """
+            TEXT     "The following class features are new:"
         }
         ENTRY ^"Druid Class Features [Revised Rule]" #bgd38697d3a3da4eab8a {
             TOPICS   [ "Classes", "Druid" ]
             CONCERNS [ DESTINATION ^"Druid" ]
-            TEXT """
-            The following class features are revised:
-            """
+            TEXT     "The following class features are revised:"
         }
         ENTRY ^"Druid Subclass: Circle of the Land [New Rule]" #bg2a29c160ffea3bcbf9 {
             TOPICS   [ "Classes", "Druid" ]
             CONCERNS [ DESTINATION ^"Circle of the Land" ]
-            TEXT """
-            The following subclass feature is new:
-            """
+            TEXT     "The following subclass feature is new:"
         }
         ENTRY ^"Druid Subclass: Circle of the Land [Revised Rule]" #bg85d9768292f2172588 {
             TOPICS   [ "Classes", "Druid" ]
             CONCERNS [ DESTINATION ^"Circle of the Land" ]
-            TEXT """
-            The following subclass features are revised:
-            """
+            TEXT     "The following subclass features are revised:"
         }
         ENTRY ^"Fighter Class Features [New Rule]" #bgd872fb1e4d665bcf0c {
             TOPICS   [ "Classes", "Fighter" ]
             CONCERNS [ DESTINATION ^"Fighter" ]
-            TEXT """
-            The following class features are new:
-            """
+            TEXT     "The following class features are new:"
         }
         ENTRY ^"Fighter Class Features [Revised Rule]" #bg3b5caa09584adbdabd {
             TOPICS   [ "Classes", "Fighter" ]
             CONCERNS [ DESTINATION ^"Fighter" ]
-            TEXT """
-            The following class features are revised:
-            """
+            TEXT     "The following class features are revised:"
         }
         ENTRY ^"Fighter Subclass: Champion [New Rule]" #bg179d88cb5f870a2c63 {
             TOPICS   [ "Classes", "Fighter" ]
             CONCERNS [ DESTINATION ^"Champion" ]
-            TEXT """
-            The following subclass feature is new:
-            """
+            TEXT     "The following subclass feature is new:"
         }
         ENTRY ^"Fighter Subclass: Champion [Revised Rule]" #bgb78344e25972dc37cb {
             TOPICS   [ "Classes", "Fighter" ]
             CONCERNS [ DESTINATION ^"Champion" ]
-            TEXT """
-            The following subclass features are revised:
-            """
+            TEXT     "The following subclass features are revised:"
         }
         ENTRY ^"Monk Class Features [New Rule]" #bg21ee81808f4d991e1c {
             TOPICS   [ "Classes", "Monk" ]
             CONCERNS [ DESTINATION ^"Monk" ]
-            TEXT """
-            The following class features are new:
-            """
+            TEXT     "The following class features are new:"
         }
         ENTRY ^"Monk Class Features [New Name, Revised Rule]" #bgc2046231557e90ce0e {
             TOPICS   [ "Classes", "Monk" ]
             CONCERNS [ DESTINATION ^"Monk" ]
-            TEXT """
-            The following class features are revised. Several of these revised class features also have new names:
-            """
+            TEXT     "The following class features are revised. Several of these revised class features also have new names:"
         }
         ENTRY ^"Monk Subclass: Warrior of the Open Hand [New Rule]" #bgccf5c905bef016b8e0 {
             TOPICS   [ "Classes", "Monk" ]
             CONCERNS [ DESTINATION ^"Warrior of the Open Hand" ]
-            TEXT """
-            The following subclass feature is new:
-            """
+            TEXT     "The following subclass feature is new:"
         }
         ENTRY ^"Monk Subclass: Warrior of the Open Hand [Revised Rule]" #bgc1da9c6d94256a222b {
             TOPICS   [ "Classes", "Monk" ]
             CONCERNS [ DESTINATION ^"Warrior of the Open Hand" ]
-            TEXT """
-            The following subclass features are revised:
-            """
+            TEXT     "The following subclass features are revised:"
         }
         ENTRY ^"Paladin Class Features [New Rule]" #bgb86c1d2b3e8761ace7 {
             TOPICS   [ "Classes", "Paladin" ]
             CONCERNS [ DESTINATION ^"Paladin" ]
-            TEXT """
-            The following class features are new:
-            """
+            TEXT     "The following class features are new:"
         }
         ENTRY ^"Paladin Class Features [New Name, Revised Rule]" #bg68920fe0e2067f28c7 {
             TOPICS   [ "Classes", "Paladin" ]
             CONCERNS [ DESTINATION ^"Paladin" ]
-            TEXT """
-            The following class features are revised. Several of these revised class features also have new names:
-            """
+            TEXT     "The following class features are revised. Several of these revised class features also have new names:"
         }
         ENTRY ^"Paladin Subclass: Oath of Devotion [New Rule]" #bgee768bdd969c0e469f {
             TOPICS   [ "Classes", "Paladin" ]
             CONCERNS [ DESTINATION ^"Oath of Devotion" ]
-            TEXT """
-            The following subclass feature is new:
-            """
+            TEXT     "The following subclass feature is new:"
         }
         ENTRY ^"Paladin Subclass: Oath of Devotion [Revised Rule]" #bg15ba3377004b52a097 {
             TOPICS   [ "Classes", "Paladin" ]
             CONCERNS [ DESTINATION ^"Oath of Devotion" ]
-            TEXT """
-            The following subclass features are revised:
-            """
+            TEXT     "The following subclass features are revised:"
         }
         ENTRY ^"Ranger Class Features [New Rule]" #bgd5fd4191d4d5f9733c {
             TOPICS   [ "Classes", "Ranger" ]
             CONCERNS [ DESTINATION ^"Ranger" ]
-            TEXT """
-            The following class features are new:
-            """
+            TEXT     "The following class features are new:"
         }
         ENTRY ^"Ranger Class Features [Revised Rule]" #bgc7ac69edadf8fdbfc8 {
             TOPICS   [ "Classes", "Ranger" ]
             CONCERNS [ DESTINATION ^"Ranger" ]
-            TEXT """
-            The following class features are revised:
-            """
+            TEXT     "The following class features are revised:"
         }
         ENTRY ^"Ranger Subclass: Hunter [New Rule]" #bg5b72e51f92b038d323 {
             TOPICS   [ "Classes", "Ranger" ]
             CONCERNS [ DESTINATION ^"Hunter" ]
-            TEXT """
-            The following subclass features are new:
-            """
+            TEXT     "The following subclass features are new:"
         }
         ENTRY ^"Ranger Subclass: Hunter [Revised Rule]" #bg7867854fd1fb8c43f7 {
             TOPICS   [ "Classes", "Ranger" ]
             CONCERNS [ DESTINATION ^"Hunter" ]
-            TEXT """
-            The following subclass features are revised:
-            """
+            TEXT     "The following subclass features are revised:"
         }
         ENTRY ^"Rogue Class Features [New Rule]" #bg3eefa59d1de0e8af66 {
             TOPICS   [ "Classes", "Rogue" ]
             CONCERNS [ DESTINATION ^"Rogue" ]
-            TEXT """
-            The following class features are new:
-            """
+            TEXT     "The following class features are new:"
         }
         ENTRY ^"Rogue Class Features [Revised Rule]" #bgcdae2a62911f2c6696 {
             TOPICS   [ "Classes", "Rogue" ]
             CONCERNS [ DESTINATION ^"Rogue" ]
-            TEXT """
-            The following class features are revised:
-            """
+            TEXT     "The following class features are revised:"
         }
         ENTRY ^"Rogue Subclass: Thief [Revised Rule]" #bg3ee1391f7a58341922 {
             TOPICS   [ "Classes", "Rogue" ]
             CONCERNS [ DESTINATION ^"Thief" ]
-            TEXT """
-            The following subclass features are revised:
-            """
+            TEXT     "The following subclass features are revised:"
         }
         ENTRY ^"Sorcerer Class Features [New Rule]" #bg4acc2a31fe8ed808c8 {
             TOPICS   [ "Classes", "Sorcerer" ]
             CONCERNS [ DESTINATION ^"Sorcerer" ]
-            TEXT """
-            The following class features are new:
-            """
+            TEXT     "The following class features are new:"
         }
         ENTRY ^"Sorcerer Class Features [Revised Rule]" #bgc3cb0d300ca53e6695 {
             TOPICS   [ "Classes", "Sorcerer" ]
             CONCERNS [ DESTINATION ^"Sorcerer" ]
-            TEXT """
-            The following class features are revised:
-            """
+            TEXT     "The following class features are revised:"
         }
         ENTRY ^"Metamagic Options [New Rule]" #bg2adb93d952f7127d5a {
             TOPICS   [ "Classes", "Sorcerer" ]
             CONCERNS [ DESTINATION ^"Sorcerer" ]
-            TEXT """
-            The following options are new:
-            """
+            TEXT     "The following options are new:"
         }
         ENTRY ^"Metamagic Options [Revised Rule]" #bg0b9cc3332809343a25 {
             TOPICS   [ "Classes", "Sorcerer" ]
             CONCERNS [ DESTINATION ^"Sorcerer" ]
-            TEXT """
-            The following options are revised:
-            """
+            TEXT     "The following options are revised:"
         }
         ENTRY ^"Sorcerer Subclass: Draconic Sorcery [New Rule]" #bg38d9b60c2a8e252eb6 {
             TOPICS   [ "Classes", "Sorcerer" ]
             CONCERNS [ DESTINATION ^"Draconic Sorcery" ]
-            TEXT """
-            The following subclass features are new:
-            """
+            TEXT     "The following subclass features are new:"
         }
         ENTRY ^"Sorcerer Subclass: Draconic Sorcery [Revised Rule]" #bg99af1b6e3554c63160 {
             TOPICS   [ "Classes", "Sorcerer" ]
             CONCERNS [ DESTINATION ^"Draconic Sorcery" ]
-            TEXT """
-            The following subclass features are revised:
-            """
+            TEXT     "The following subclass features are revised:"
         }
         ENTRY ^"Warlock Class Features [New Rule]" #bg04043b49c7a8f4878e {
             TOPICS   [ "Classes", "Warlock" ]
             CONCERNS [ DESTINATION ^"Warlock" ]
-            TEXT """
-            The following class features are new:
-            """
+            TEXT     "The following class features are new:"
         }
         ENTRY ^"Warlock Class Features [Revised Rule]" #bgbd053d50a13a57c8dc {
             TOPICS   [ "Classes", "Warlock" ]
             CONCERNS [ DESTINATION ^"Warlock" ]
-            TEXT """
-            The following class features are revised:
-            """
+            TEXT     "The following class features are revised:"
         }
         ENTRY ^"Eldritch Invocation Options [New Rule]" #bg0f5dc77cac5386486c {
             TOPICS   [ "Classes", "Warlock" ]
             CONCERNS [ DESTINATION ^"Warlock" ]
-            TEXT """
-            The following options are new:
-            """
+            TEXT     "The following options are new:"
         }
         ENTRY ^"Eldritch Invocation Options [Revised Rule]" #bgc7527f2a153658bfd1 {
             TOPICS   [ "Classes", "Warlock" ]
             CONCERNS [ DESTINATION ^"Warlock" ]
-            TEXT """
-            The following options are revised:
-            """
+            TEXT     "The following options are revised:"
         }
         ENTRY ^"Warlock Subclass: Fiend Patron [Revised Rule]" #bg9fae6354c220a11109 {
             TOPICS   [ "Classes", "Warlock" ]
             CONCERNS [ DESTINATION ^"Fiend Patron" ]
-            TEXT """
-            The following subclass features are revised:
-            """
+            TEXT     "The following subclass features are revised:"
         }
         ENTRY ^"Wizard Class Features [New Rule]" #bgf6c0cd4392b0579386 {
             TOPICS   [ "Classes", "Wizard" ]
             CONCERNS [ DESTINATION ^"Wizard" ]
-            TEXT """
-            The following class features are new:
-            """
+            TEXT     "The following class features are new:"
         }
         ENTRY ^"Wizard Class Features [Revised Rule]" #bg7aebbfdd8a19948714 {
             TOPICS   [ "Classes", "Wizard" ]
             CONCERNS [ DESTINATION ^"Wizard" ]
-            TEXT """
-            The following class features are revised:
-            """
+            TEXT     "The following class features are revised:"
         }
         ENTRY ^"Wizard Subclass: Evoker [Revised Rule]" #bg479f1ca983a5be215e {
             TOPICS   [ "Classes", "Wizard" ]
             CONCERNS [ DESTINATION ^"Evoker" ]
-            TEXT """
-            The following subclass features are revised:
-            """
+            TEXT     "The following subclass features are revised:"
         }
         ENTRY ^"Parts of a Background [New Rule]" #bg04799cc69e798c18df {
             TOPICS   [ "Character Origins", "Character Backgrounds" ]
-            TEXT """
-            The following components of the Parts of a Background rule are new:
-            """
+            TEXT     "The following components of the Parts of a Background rule are new:"
         }
         ENTRY ^"Background Descriptions [New Rule]" #bgab64346ca29ccbba54 {
             TOPICS   [ "Character Origins", "Character Backgrounds" ]
-            TEXT """
-            The following backgrounds are new:
-            """
+            TEXT     "The following backgrounds are new:"
         }
         ENTRY ^"Species Descriptions [New Rule]" #bg84a274f4507c795506 {
             TOPICS   [ "Character Origins", "Character Species" ]
-            TEXT """
-            The following species are new:
-            """
+            TEXT     "The following species are new:"
         }
         ENTRY ^"Species Descriptions [Revised Rule]" #bg66fc0e038ab75baf0f {
             TOPICS   [ "Character Origins", "Character Species" ]
-            TEXT """
-            The following species are revised:
-            """
+            TEXT     "The following species are revised:"
         }
         ENTRY ^"Properties [Revised Rule]" #bgd91b61a5d6abb5d66b {
             TOPICS   [ "Equipment", "Weapons" ]
-            TEXT """
-            The following properties are revised.
-            """
+            TEXT     "The following properties are revised."
         }
         ENTRY ^"Armor Training [New Name]" #bg57990354f86f9d01e1 {
             TOPICS   [ "Equipment", "Armor" ]
-            TEXT """
-            The following armor types have new names:
-            """
+            TEXT     "The following armor types have new names:"
         }
         ENTRY ^"Adventuring Gear [New Rule]" #bg3a00c5fc54dc2b03ff {
             TOPICS   [ "Equipment", "Adventuring Gear" ]
-            TEXT """
-            The following items of adventuring gear are new:
-            """
+            TEXT     "The following items of adventuring gear are new:"
         }
         ENTRY ^"Spells [New Name, Revised Rule]" #bgc94407fc31307e24cc {
             TOPICS   [ "Spells", "Spell Descriptions" ]
-            TEXT """
-            The following spells have new names:
-            """
+            TEXT     "The following spells have new names:"
         }
         ENTRY ^"Spells [New Rule]" #bg6078658af6853fd66e {
             TOPICS   [ "Spells", "Spell Descriptions" ]
-            TEXT """
-            The following spells are new:
-            """
+            TEXT     "The following spells are new:"
         }
         ENTRY ^"Rules Definitions [New Name]" #bg7c96470e88a7617511 {
             TOPICS   [ "Rules Glossary" ]
-            TEXT """
-            The following rule has a new name:
-            """
+            TEXT     "The following rule has a new name:"
         }
         ENTRY ^"Rules Definitions [New Name, Revised Rule]" #bg83a9dc678d0ed7fa18 {
             TOPICS   [ "Rules Glossary" ]
-            TEXT """
-            The following rules have new names in addition to revisions to their rules:
-            """
+            TEXT     "The following rules have new names in addition to revisions to their rules:"
         }
         ENTRY ^"Rules Definitions [New Rule]" #bg9d397a043bc9b3e56b {
             TOPICS   [ "Rules Glossary" ]
-            TEXT """
-            Some of the following terms appeared previously, but all of the below have a specific rules definition that is new:
-            """
+            TEXT     "Some of the following terms appeared previously, but all of the below have a specific rules definition that is new:"
         }
         ENTRY ^"Rules Definitions [Revised Rule]" #bg21c4c9efd9e790867a {
             TOPICS   [ "Rules Glossary" ]
-            TEXT """
-            The following rules are revised:
-            """
+            TEXT     "The following rules are revised:"
         }
         ENTRY ^"Sample Poisons [New Name, Revised Rule]" #bgb69b366c0a1abcfffe {
             TOPICS   [ "Gameplay Toolbox", "Poison" ]
-            TEXT """
-            The following poison has a new name in addition to revisions to its rules.
-            """
+            TEXT     "The following poison has a new name in addition to revisions to its rules."
         }
         ENTRY ^"Example Traps [New Name, Revised Rule]" #bgfc50134bfa6039901d {
             TOPICS   [ "Gameplay Toolbox", "Traps" ]
-            TEXT """
-            This section was previously named Sample Traps. The following traps have new names, in addition to having a revised presentation:
-            """
+            TEXT     "This section was previously named Sample Traps. The following traps have new names, in addition to having a revised presentation:"
         }
         ENTRY ^"Magic Items [New Name, Revised Rule]" #bgc6be6a7e4331962c64 {
             TOPICS   [ "Magic Items", "Magic Items A–Z" ]
-            TEXT """
-            The following magic items have new names in addition to revisions to their rules.
-            """
+            TEXT     "The following magic items have new names in addition to revisions to their rules."
         }
         ENTRY ^"Magic Items [New Rule]" #bgcba9ccda2ff9e4ffbe {
             TOPICS   [ "Magic Items", "Magic Items A–Z" ]
-            TEXT """
-            The following magic items are new:
-            """
+            TEXT     "The following magic items are new:"
         }
         ENTRY ^"Monsters [New Name, Revised Rule]" #bg735397266899e94c7d {
             TOPICS   [ "Monsters A–Z" ]
-            TEXT """
-            The following monsters have new names and revisions to their presentation and statistics:
-            """
+            TEXT     "The following monsters have new names and revisions to their presentation and statistics:"
         }
         ENTRY ^"Monsters [New Rule]" #bgf7b3fdb3a39be56502 {
             TOPICS   [ "Monsters A–Z" ]
-            TEXT """
-            The following monsters are new:
-            """
+            TEXT     "The following monsters are new:"
         }
         ENTRY ^"Monsters [Omitted Rule]" #bg97a7e7eb5a2382afd7 {
             TOPICS   [ "Monsters A–Z" ]
-            TEXT """
-            The following monsters are omitted; use the listed equivalents:
-            """
+            TEXT     "The following monsters are omitted; use the listed equivalents:"
         }
         ENTRY ^"Animals [New Name, Revised Rule]" #bga3e69da03fadc26905 {
             TOPICS   [ "Animals" ]
-            TEXT """
-            The following animals have new names and revisions to their presentation and statistics:
-            """
+            TEXT     "The following animals have new names and revisions to their presentation and statistics:"
         }
         ENTRY ^"Animals [New Rule]" #bga7076c25f0243d6a95 {
             TOPICS   [ "Animals" ]
-            TEXT """
-            The following animals are new:
-            """
+            TEXT     "The following animals are new:"
         }
         ENTRY ^"Using This Guide" #bgbc2d9f7362c692fbaf {
             TOPICS   [ "Using This Guide" ]
-            TEXT """
-            When you’re updating content from SRD 5.1 to SRD 5.2.1, follow these steps: 1: Apply New Names. Check the new names here and update any renamed terms in your content accordingly. 2: Check for Rules Changes by Content Type. Consider the kind of content you’re updating, and check for changes to the kind of rules it depends on. For example, if you’re publishing subclasses, make sure they still match the structure of the classes they’re meant for. If you’re publishing monsters, apply the changes to the stat block format. 3: Update Capitalization. Many more game terms are capitalized in SRD 5.2.1 than in 5.1; update their capitalization in your content to match.
-            """
+            TEXT     "When you’re updating content from SRD 5.1 to SRD 5.2.1, follow these steps: 1: Apply New Names. Check the new names here and update any renamed terms in your content accordingly. 2: Check for Rules Changes by Content Type. Consider the kind of content you’re updating, and check for changes to the kind of rules it depends on. For example, if you’re publishing subclasses, make sure they still match the structure of the classes they’re meant for. If you’re publishing monsters, apply the changes to the stat block format. 3: Update Capitalization. Many more game terms are capitalized in SRD 5.2.1 than in 5.1; update their capitalization in your content to match."
         }
         ENTRY ^"Playing the Game" #bgbed1ec8085e5e65fa2 {
             TOPICS   [ "Playing the Game", "D20 Tests", "Proficiency", "Actions", "Combat", "Damage and Healing" ]
-            TEXT """
-            The “Playing the Game” section includes the following new and revised elements, which are presented in the order in which they appear in that section.
-            """
+            TEXT     "The “Playing the Game” section includes the following new and revised elements, which are presented in the order in which they appear in that section."
         }
         ENTRY ^"Character Creation" #bg82bd7d9e2718e13b4a {
             TOPICS   [ "Character Creation", "Create Your Character", "Level Advancement", "Multiclassing" ]
-            TEXT """
-            “Character Creation” contains new and revised elements. The order of steps differs from in SRD 5.1; they are presented in the order in which they now appear.
-            """
+            TEXT     "“Character Creation” contains new and revised elements. The order of steps differs from in SRD 5.1; they are presented in the order in which they now appear."
         }
         ENTRY ^"Character Creation: Create Your Character" #bgf5f355e78a3a5714bd {
             TOPICS   [ "Character Creation", "Create Your Character", "Level Advancement", "Multiclassing" ]
-            TEXT """
-            This new section sets forth the steps to create a character in an order different from previous rules.
-            """
+            TEXT     "This new section sets forth the steps to create a character in an order different from previous rules."
         }
         ENTRY ^"Classes" #bgbeb3fb7264fa5becea {
             TOPICS   [ "Classes", "Barbarian", "Bard", "Cleric", "Druid", "Fighter", "Monk", "Paladin", "Ranger", "Rogue", "Sorcerer", "Warlock", "Wizard" ]
-            TEXT """
-            “Classes” includes the following new and revised elements, which are presented in the order in which they appear in that section.
-            """
+            TEXT     "“Classes” includes the following new and revised elements, which are presented in the order in which they appear in that section."
         }
         ENTRY ^"Character Origins" #bg3ce9da6ccb5ac3c80a {
             TOPICS   [ "Character Origins", "Character Backgrounds", "Character Species" ]
-            TEXT """
-            “Character Origins” includes the following new and revised elements, which are presented in the order in which they appear in that section.
-            """
+            TEXT     "“Character Origins” includes the following new and revised elements, which are presented in the order in which they appear in that section."
         }
         ENTRY ^"Feats" #bg4252885a16e23464de {
             TOPICS   [ "Feats" ]
-            TEXT """
-            “Feats” includes the following new and revised elements, which are presented in the order in which they appear in that section.
-            """
+            TEXT     "“Feats” includes the following new and revised elements, which are presented in the order in which they appear in that section."
         }
         ENTRY ^"Equipment" #bgf0c833a873fc2f2507 {
             TOPICS   [ "Equipment", "Weapons", "Armor", "Tools", "Adventuring Gear", "Mounts and Vehicles", "Spellcasting", "Magic Items" ]
-            TEXT """
-            “Equipment” includes the following new and revised elements, which are presented in the order in which they appear in that section.
-            """
+            TEXT     "“Equipment” includes the following new and revised elements, which are presented in the order in which they appear in that section."
         }
         ENTRY ^"Spells" #bg52e3b891c925bb2fb1 {
             TOPICS   [ "Spells", "Gaining Spells", "Casting Spells", "Spell Descriptions" ]
-            TEXT """
-            “Spells” includes the following new and revised elements, which are presented in the order in which they appear in that section.
-            """
+            TEXT     "“Spells” includes the following new and revised elements, which are presented in the order in which they appear in that section."
         }
         ENTRY ^"Rules Glossary" #bgcfd4ca15468640ce21 {
             TOPICS   [ "Rules Glossary" ]
-            TEXT """
-            “Rules Glossary” includes the following new and revised elements, which are presented in the order in which they appear in that section.
-            """
+            TEXT     "“Rules Glossary” includes the following new and revised elements, which are presented in the order in which they appear in that section."
         }
         ENTRY ^"Gameplay Toolbox" #bg10a31d65fca9827e0e {
             TOPICS   [ "Gameplay Toolbox", "Travel Pace", "Curses and Magical Contagions", "Fear and Mental Stress", "Poison", "Traps" ]
-            TEXT """
-            “Gameplay Toolbox” includes the following new and revised elements, which are presented in the order in which they appear in that section.
-            """
+            TEXT     "“Gameplay Toolbox” includes the following new and revised elements, which are presented in the order in which they appear in that section."
         }
         ENTRY ^"Magic Items" #bgb6708a254e8539cf47 {
             TOPICS   [ "Magic Items", "Magic Item Categories", "Magic Item Rarity", "Magic Items A–Z" ]
-            TEXT """
-            “Magic Items” includes the following new and revised elements, which are presented in the order in which they appear in that section.
-            """
+            TEXT     "“Magic Items” includes the following new and revised elements, which are presented in the order in which they appear in that section."
         }
         ENTRY ^"Monsters" #bg5d09e8ac90ee6863cb {
             TOPICS   [ "Monsters", "Parts of a Stat Block" ]
-            TEXT """
-            “Monsters” includes the following new and revised elements, which are presented in the order in which they appear in that section.
-            """
+            TEXT     "“Monsters” includes the following new and revised elements, which are presented in the order in which they appear in that section."
         }
         ENTRY ^"Monsters A–Z" #bge7bcef1021d5af9bb1 {
             TOPICS   [ "Monsters A–Z" ]
-            TEXT """
-            “Monsters A–Z” has been reorganized, such as by including NPCs alphabetically among the other monster stat blocks. This section includes the following new and revised elements, which are presented in the order in which they appear in that section.
-            """
+            TEXT     "“Monsters A–Z” has been reorganized, such as by including NPCs alphabetically among the other monster stat blocks. This section includes the following new and revised elements, which are presented in the order in which they appear in that section."
         }
         ENTRY ^"Animals" #bge1c7154ab6e9973766 {
             TOPICS   [ "Animals" ]
-            TEXT """
-            “Animals” includes the following new and revised elements, which are presented in the order in which they appear in that section.
-            """
+            TEXT     "“Animals” includes the following new and revised elements, which are presented in the order in which they appear in that section."
         }
         ENTRY ^"Capitalization" #bg8922d9a491fff13474 {
             TOPICS   [ "Capitalization" ]
-            TEXT """
-            Game objects are more rigorously capitalized. The following terms are capitalized:
-
-            Abilities {Strength, Intelligence}
-
-            Action names {the Attack action, the Dash action}
-
-            Action types {Bonus Action, Legendary Action, Reaction}
-
-            Advantage
-
-            Adventuring gear that has rules {Arrow, Map}
-
-            Alignments {Chaotic Neutral, Lawful Good}
-
-            Areas of effect {Cone, Cylinder, Line}
-
-            Armor Class (AC)
-
-            Armor categories {Light, Medium}
-
-            Armors {Breastplate, Hide Armor}
-
-            Attitudes {Friendly, Hostile}
-
-            Attunement
-
-            Bloodied
-
-            Challenge Rating (CR)
-
-            Classes {Fighter, Wizard}
-
-            Class features {Sneak Attack, Rage}
-
-            Coin currencies {GP, SP, PP}
-
-            Concentration
-
-            Conditions {Poisoned, Prone}
-
-            Cover {Half Cover, Three-Quarters Cover}
-
-            Creature type (Fey, Humanoid, Undead)
-
-            Critical Hit
-
-            Curses {Demonic Possession}
-
-            Damage susceptibility {Immunity, Resistance, Vulnerability}
-
-            Damage types {Acid, Piercing, Thunder}
-
-            Death Saving Throw
-
-            Difficult Terrain
-
-            Difficulty Class (DC)
-
-            Disadvantage
-
-            D20 Test
-
-            Experience Points (XP)
-
-            Feat categories {General Feat, Origin Feat}
-
-            Feats {Alert, Boon of Fate, Grappler}
-
-            Game Master (GM)
-
-            Heroic Inspiration
-
-            Hit Point Dice
-
-            Hit Points (HP)
-
-            Initiative
-
-            Languages {Common, Dwarvish, Elvish}
-
-            Lifestyles {Modest, Wealthy}
-
-            Light levels {Bright Light, Dim Light}
-
-            Magical contagions {Cackle Fever, Sewer Plague}
-
-            Magic item categories {the Wand category}
-
-            Magic items {Bag of Holding, Feather Token}
-
-            Magic item rarities {Common, Very Rare}
-
-            Mastery properties {Cleave, Slow}
-
-            Obscurement {Heavily Obscured, Lightly Obscured}
-
-            Opportunity Attack
-
-            Passive Perception
-
-            Planes of existence {Elemental Planes, Upper Planes}
-
-            Poisons {Crawler Mucus, Midnight Tears}
-
-            Proficiency Bonus
-
-            Rests {Short Rest, Long Rest}
-
-            Ritual
-
-            Schools of magic {Abjuration, Evocation}
-
-            Size {Medium, Tiny}
-
-            Skills {Arcana, Perception}
-
-            Special senses {Darkvision, Tremorsense}
-
-            Species for player characters {Dwarf, Elf}
-
-            Speeds {Climb Speed, Fly Speed, Speed}
-
-            Spells {Command, Fireball}
-
-            Spell components {Verbal, Material, Somatic}
-
-            Stable
-
-            Stat block names {Ankheg, Goblin Boss}
-
-            Subclass features {Blessed Healer, Improved Critical}
-
-            Subclasses {Champion, Draconic Sorcery}
-
-            Temporary Hit Points
-
-            Tools {Disguise Kit, Thieves’ Tools}
-
-            Traits in species and monsters {Resourceful, Siege Monster}
-
-            Travel paces {Fast, Slow}
-
-            Vehicles {Airship, Rowboat}
-
-            Weapon categories {Melee, Simple}
-
-            Weapon properties {Finesse, Light}
-
-            Weapons {Heavy Crossbow, Longsword}
-
-            Named parts of actions, class features, magic items, spells, etc. {the Break Enchantment feature of the Dispel Evil and Good spell}
-            """
+            TEXT     "Game objects are more rigorously capitalized. The following terms are capitalized:\n\nAbilities {Strength, Intelligence}\n\nAction names {the Attack action, the Dash action}\n\nAction types {Bonus Action, Legendary Action, Reaction}\n\nAdvantage\n\nAdventuring gear that has rules {Arrow, Map}\n\nAlignments {Chaotic Neutral, Lawful Good}\n\nAreas of effect {Cone, Cylinder, Line}\n\nArmor Class (AC)\n\nArmor categories {Light, Medium}\n\nArmors {Breastplate, Hide Armor}\n\nAttitudes {Friendly, Hostile}\n\nAttunement\n\nBloodied\n\nChallenge Rating (CR)\n\nClasses {Fighter, Wizard}\n\nClass features {Sneak Attack, Rage}\n\nCoin currencies {GP, SP, PP}\n\nConcentration\n\nConditions {Poisoned, Prone}\n\nCover {Half Cover, Three-Quarters Cover}\n\nCreature type (Fey, Humanoid, Undead)\n\nCritical Hit\n\nCurses {Demonic Possession}\n\nDamage susceptibility {Immunity, Resistance, Vulnerability}\n\nDamage types {Acid, Piercing, Thunder}\n\nDeath Saving Throw\n\nDifficult Terrain\n\nDifficulty Class (DC)\n\nDisadvantage\n\nD20 Test\n\nExperience Points (XP)\n\nFeat categories {General Feat, Origin Feat}\n\nFeats {Alert, Boon of Fate, Grappler}\n\nGame Master (GM)\n\nHeroic Inspiration\n\nHit Point Dice\n\nHit Points (HP)\n\nInitiative\n\nLanguages {Common, Dwarvish, Elvish}\n\nLifestyles {Modest, Wealthy}\n\nLight levels {Bright Light, Dim Light}\n\nMagical contagions {Cackle Fever, Sewer Plague}\n\nMagic item categories {the Wand category}\n\nMagic items {Bag of Holding, Feather Token}\n\nMagic item rarities {Common, Very Rare}\n\nMastery properties {Cleave, Slow}\n\nObscurement {Heavily Obscured, Lightly Obscured}\n\nOpportunity Attack\n\nPassive Perception\n\nPlanes of existence {Elemental Planes, Upper Planes}\n\nPoisons {Crawler Mucus, Midnight Tears}\n\nProficiency Bonus\n\nRests {Short Rest, Long Rest}\n\nRitual\n\nSchools of magic {Abjuration, Evocation}\n\nSize {Medium, Tiny}\n\nSkills {Arcana, Perception}\n\nSpecial senses {Darkvision, Tremorsense}\n\nSpecies for player characters {Dwarf, Elf}\n\nSpeeds {Climb Speed, Fly Speed, Speed}\n\nSpells {Command, Fireball}\n\nSpell components {Verbal, Material, Somatic}\n\nStable\n\nStat block names {Ankheg, Goblin Boss}\n\nSubclass features {Blessed Healer, Improved Critical}\n\nSubclasses {Champion, Draconic Sorcery}\n\nTemporary Hit Points\n\nTools {Disguise Kit, Thieves’ Tools}\n\nTraits in species and monsters {Resourceful, Siege Monster}\n\nTravel paces {Fast, Slow}\n\nVehicles {Airship, Rowboat}\n\nWeapon categories {Melee, Simple}\n\nWeapon properties {Finesse, Light}\n\nWeapons {Heavy Crossbow, Longsword}\n\nNamed parts of actions, class features, magic items, spells, etc. {the Break Enchantment feature of the Dispel Evil and Good spell}"
         }
     }
 }

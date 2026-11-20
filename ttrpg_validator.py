@@ -471,6 +471,32 @@ UNIT_KW = ('MAP', 'REMAINDER', 'PROCEDURE')
 CONVERT_OPS = ('UNCHANGED', 'SCALE', 'RESTATE', 'MANUAL')
 
 
+def lint_type_keywords(fname, toks, spec_version, findings):
+    """Type keywords (v0.6, DECISION-39) in a file that declares 0.6 or later: a corpus file, and a
+    .bridge (whose own analysis returned before this check until 2026-11-20)."""
+    if spec_version < (0, 6):
+        return
+    # Type keywords (v0.6, DECISION-39). STRING, INTEGER and BOOLEAN are not written from 0.6:
+    # a value shows what it is, and a declaration is the name and its constraints. LIST before
+    # a list and ENUM before one value go with them. A file below 0.6 keeps them, unreported.
+    for _i, _t in enumerate(toks):
+        if _t.kind != 'ID':
+            continue
+        _n = toks[_i + 1] if _i + 1 < len(toks) and toks[_i + 1].line == _t.line else None
+        if _t.val in DROPPED_TYPE_KW:
+            findings.append(Finding(fname, 'lint', 'error', _t.line,
+                                    "%s is not written from 0.6: a value is written alone, and "
+                                    "a declaration is the name and its constraints (§8)" % _t.val))
+        elif _t.val == 'LIST' and _n is not None and _n.kind == 'LBRACK':
+            findings.append(Finding(fname, 'lint', 'error', _t.line,
+                                    "LIST is not written before a list from 0.6: write the "
+                                    "list alone (§8)"))
+        elif _t.val == 'ENUM' and _n is not None and _n.kind == 'STR':
+            findings.append(Finding(fname, 'lint', 'error', _t.line,
+                                    "ENUM is followed by the list of values allowed; a value "
+                                    "is written alone (§8)"))
+
+
 def analyze_bridge(fname, text, findings):
     """Structure a .bridge file. Every reference is SIDE-QUALIFIED: the side comes
     from the enclosing slot keyword or an inline ORIGIN/DESTINATION qualifier, and
@@ -766,17 +792,22 @@ def analyze_bridge(fname, text, findings):
             findings.append(Finding(fname, 'lint', 'warning', tk.line,
                                     "hash id '%s' shorter than %d chars" % (tk.val, HASH_MIN_BODY)))
 
+    declared = next(
+        ((int(m.group(1)), int(m.group(2)))
+         for m in (re.match(r'\s*(\d+)\.(\d+)', toks[i + 1].val) for i, t in enumerate(toks[:-1])
+                   if t.kind == 'ID' and t.val == 'SPEC_VERSION' and toks[i + 1].kind == 'STR')
+         if m), (0, 0))
+    # A bridge at 0.6 writes values as a corpus file at 0.6 does (DECISION-39). Its gated findings
+    # (a triple-quoted string, a bad escape) take their severity from `declared_spec_version` in main().
+    lint_type_keywords(fname, toks, declared, findings)
+
     return {
         'file': fname, 'kind': 'bridge', 'names': defined_names, 'anchors': anchors,
         'refs': [], 'depends': [], 'file_ids': file_ids,
         'waived_ranges': waived_ranges, 'waived_lines': set(),
         'sides': sides, 'sided_refs': sided_refs, 'local_refs': local_refs, 'topics': topics,
         'aliases': aliases,
-        'declared_spec_version': next(
-            ((int(m.group(1)), int(m.group(2)))
-             for m in (re.match(r'\s*(\d+)\.(\d+)', toks[i + 1].val) for i, t in enumerate(toks[:-1])
-                       if t.kind == 'ID' and t.val == 'SPEC_VERSION' and toks[i + 1].kind == 'STR')
-             if m), (0, 0)),
+        'declared_spec_version': declared,
     }
 
 
@@ -1615,26 +1646,7 @@ def analyze_file(fname, text, findings):
                 spec_version = (int(_m.group(1)), int(_m.group(2)))
             break
 
-    # Type keywords (v0.6, DECISION-39). STRING, INTEGER and BOOLEAN are not written from 0.6:
-    # a value shows what it is, and a declaration is the name and its constraints. LIST before
-    # a list and ENUM before one value go with them. A file below 0.6 keeps them, unreported.
-    if spec_version >= (0, 6):
-        for _i, _t in enumerate(toks):
-            if _t.kind != 'ID':
-                continue
-            _n = toks[_i + 1] if _i + 1 < len(toks) and toks[_i + 1].line == _t.line else None
-            if _t.val in DROPPED_TYPE_KW:
-                findings.append(Finding(fname, 'lint', 'error', _t.line,
-                                        "%s is not written from 0.6: a value is written alone, and "
-                                        "a declaration is the name and its constraints (§8)" % _t.val))
-            elif _t.val == 'LIST' and _n is not None and _n.kind == 'LBRACK':
-                findings.append(Finding(fname, 'lint', 'error', _t.line,
-                                        "LIST is not written before a list from 0.6: write the "
-                                        "list alone (§8)"))
-            elif _t.val == 'ENUM' and _n is not None and _n.kind == 'STR':
-                findings.append(Finding(fname, 'lint', 'error', _t.line,
-                                        "ENUM is followed by the list of values allowed; a value "
-                                        "is written alone (§8)"))
+    lint_type_keywords(fname, toks, spec_version, findings)
     # A number written with its own range on one line: ^"Air" 7 MIN 1 MAX 5 (the older form
     # wrote INTEGER and is checked where that keyword is read).
     for _i, _t in enumerate(toks):
@@ -4569,7 +4581,9 @@ def main(argv):
 
     # A finding the tokenizer could only mark as gated: a warning in a file that declares
     # SPEC_VERSION below 0.6, or none, and an error from 0.6.
-    version_of = {d['file']: d.get('spec_version', (0, 0)) for d in files_data}
+    # A .bridge and a .codex record what they declare as `declared_spec_version` (found 2026-11-20:
+    # read as `spec_version` alone, a 0.6 bridge's triple-quoted strings stayed warnings).
+    version_of = {d['file']: d.get('spec_version', d.get('declared_spec_version', (0, 0))) for d in files_data}
     for f in findings:
         if f.sev == 'gated':
             f.sev = 'error' if version_of.get(f.file, (0, 0)) >= (0, 6) else 'warning'
