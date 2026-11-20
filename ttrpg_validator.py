@@ -3783,8 +3783,19 @@ def value_pass(files_data, findings):
     a type above gives it a value, when it is a PARAMETERS slot, or, for ^"Name", always: the
     DEF's own name answers.
 
-    A name that two definitions share is not followed: §5d makes it ambiguous without a hash."""
+    A name that two definitions share is not followed: §5d makes it ambiguous without a hash.
+
+    An ENUM is as a loaded `MODIFY ^"Type" { SET ^"P" ENUM [...] }` widens it (§13), on the type up the
+    instance's chain that the MODIFY names, which may inherit the property: a value the SET allows is not
+    outside the type's ENUM (found 2026-11-20: New Moon City's 20 Gear cards of type "Invention",
+    which its base allows by widening ^"Domain Card", were reported)."""
     by_file = {d['file']: d for d in files_data}
+    widened = {}
+    for d in files_data:
+        for m in d.get('mods', []):
+            for op in m['ops']:
+                if op['op'] == 'SET' and op.get('rec') and op['rec'].get('enum'):
+                    widened.setdefault((m['target'], op['prop']), set()).update(op['rec']['enum'])
     by_name, by_hash = {}, {}
     for d in files_data:
         for x in d.get('vdefs', []):
@@ -4017,7 +4028,8 @@ def value_pass(files_data, findings):
                                                 '^"%s" is %d; ^"%s" declares it %s (§5, §8). A value the '
                                                 'source prints outside the range takes FIAT "reason"'
                                                 % (prop, v, owner['name'], lim)))
-                elif dr['enum'] is not None and r['vkind'] == 'STR' and r['value'] not in dr['enum']:
+                elif dr['enum'] is not None and r['vkind'] == 'STR' and r['value'] not in dr['enum'] \
+                        and not any(r['value'] in widened.get((y['name'], prop), ()) for y in anc):
                     findings.append(Finding(x['file'], 'coherence', sev, r['line'],
                                             '^"%s" is "%s"; ^"%s" declares it ENUM [%s] (§8)'
                                             % (prop, r['value'], owner['name'],
