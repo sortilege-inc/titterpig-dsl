@@ -4175,7 +4175,13 @@ A scratch copy with two of the renames as `MAP`s validates against both corpora 
 point 1). The bridge's header comment, which says it has no `MAP` because a `MAP` requires a
 `DISPOSITION`, is rewritten with it.
 
-**Status:** open, not started.
+**Status:** done 2026-11-23 (owner: "B: F41 first", then "Yes, land it"), with the bridge's move to spec 0.6:
+`bridges/0.6/pendragon5e-to-pendragon6e-0.6-notes-on-the-new-edition.bridge` holds 20 `MAP`s with no `DISPOSITION`
+(8 renames, 4 merges, 5 Skills or concepts that no longer exist, 3 new things), each `TEXT` the appendix's sentence;
+the `CONVERT`s stay. Two beyond the count above, each from the appendix's text: Great Sword (the weapon) renamed the
+Longsword, and the cultural hybrid Skills that "do not exist in this edition". Left as `CONVERT`s, the text stating no
+rename: Orate, Combat Skills to Weapon Skills, Play Instrument. The header comment is rewritten. Proof:
+`titterpig-mastra/worklogs/DSL-0.6-migration.md`, D32.
 
 ### F42. Names the corpora write that hold nothing a reader can use
 

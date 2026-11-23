@@ -18,7 +18,7 @@ overlay" can actually be generated and audited.
 |---|---|---|
 | `0.6/dnd5e-to-dnd5.5e-0.6-srd-conversion.bridge` | `dnd5e` → `dnd5.5e` | The **rich** case: WotC's *Converting to System Reference Document 5.2.1*, entity-keyed throughout — 573 `MAP`s, 7 `REMAINDER`s, 85 `GUIDANCE` entries, the document's own four-tag disposition vocabulary. |
 | `0.5/arm4-to-arm5e-0.5-appendix-i.bridge` | `arm4` *(EXTERNAL)* → `arm5e` | The **sparse** case: *Ars Magica Fifth Edition*, Appendix I — ~85% prose, no mapping table at all. No `MAP`, no `REMAINDER`, no `DISPOSITIONS`; 7 field-level `PROCEDURE`s + 11 `GUIDANCE` entries. |
-| `titterpig-dsl-pendragon6e/bridges/0.5/pendragon5e-to-pendragon6e-0.5-notes-on-the-new-edition.bridge` | `pendragon5e` → `pendragon6e` | Sparse, like ArM5: the Pendragon *Core Rulebook*'s Appendix A, "Notes on the New Edition" — a character-conversion procedure with no change-tag vocabulary. No `DISPOSITIONS`, so no `MAP` or `REMAINDER`; 14 `PROCEDURE`s (51 `CONVERT`s keyed to both knights' sheet names), 7 `GUIDANCE` entries, 4 `ALIASES`. Lives in the destination's repo (see below). |
+| `titterpig-dsl-pendragon6e/bridges/0.6/pendragon5e-to-pendragon6e-0.6-notes-on-the-new-edition.bridge` | `pendragon5e` → `pendragon6e` | Sparse, like ArM5: the Pendragon *Core Rulebook*'s Appendix A, "Notes on the New Edition" — a character-conversion procedure with no change-tag vocabulary. No `DISPOSITIONS`, so no `REMAINDER`; 20 `MAP`s with no `DISPOSITION` (DECISION-67: what the appendix says was renamed, combined, dropped or added), 14 `PROCEDURE`s (51 `CONVERT`s keyed to both knights' sheet names), 7 `GUIDANCE` entries, 4 `ALIASES`. Lives in the destination's repo (see below). |
 
 A bridge sits in the folder of the spec it is written to (§21, `bridges/<specver>/`). The D&D bridge
 moved to `0.6/` on 2026-11-20, after both its corpora; the ArM5 bridge stays in `0.5/` until arm5e
@@ -44,7 +44,7 @@ resolved per side.
 
 Most bridges live here. A bridge may instead live in a system's own repo, **beside** that edition's
 corpus directory and never inside it — the Pendragon bridge sits in
-`titterpig-dsl-pendragon6e/bridges/0.5/`, next to the corpus's `0.6/` (the owner's call, 2026-09-29). It is listed
+`titterpig-dsl-pendragon6e/bridges/0.6/`, next to the corpus's `0.6/` (the owner's call, 2026-09-29). It is listed
 in `sources.json` all the same, validated in the same two-corpus mode, and run by the same gates.
 
 ## Validating
