@@ -543,7 +543,12 @@ MODIFY_ENTRY    <- SET_DESCRIPTION_ENTRY / SET_ENTRY / ADD_TO_ENTRY / REMOVE_FRO
 
 # A SET may restate the whole type (`SET ^"Magnitude" ENUM [...]`) or just adjust a
 # constraint on it (`SET ^"Starting Honor" DEFAULT 45`, as in the spec's own example).
-SET_ENTRY       <- 'SET' _ CARET_REF _ (PROPERTY_TYPE / (MODIFIER _)+)
+# It may also give the property's value, written as a property's is from v0.6 (DECISION-39):
+# no type keyword, the value on the name's line (`SET ^"Grips" "1-hand: –"`, the 0.6
+# spelling of `SET ^"Grips" STRING "1-hand: –"`). The value ends its line, as a property's
+# does: `SET ^"Grips" "a" "b"` is refused, not read as a SET and a stray string.
+SET_ENTRY       <- 'SET' _ CARET_REF SP PLAIN_VALUE (SP MODIFIER)* END_OF_LINE
+                 / 'SET' _ CARET_REF _ (PROPERTY_TYPE / (MODIFIER _)+)
 # A variant printing replaces the target's whole DESCRIPTION, verbatim (v0.5 addendum, §13).
 SET_DESCRIPTION_ENTRY <- 'SET' _ 'DESCRIPTION' _ STRING
 ADD_TO_ENTRY    <- 'ADD_TO' _ CARET_REF _ VALUE

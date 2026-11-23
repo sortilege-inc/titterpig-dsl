@@ -85,5 +85,8 @@ BASE "Keywords_Core" {
     # §13: SET restates a value or adjusts a constraint
     MODIFY #KwdSamuraiP7cJ3yT9hL5sD ^"Samurai" {
         SET ^"Honor" DEFAULT 45
+        # ... or gives the value, with no type keyword (an errata's corrected text)
+        SET ^"Notes" "A samurai's notes, as the errata words them."
+        SET ^"Size" 1
     }
 }

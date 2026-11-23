@@ -1,0 +1,12 @@
+BASE "Grammar_Bad_18" {
+    NAME "syntax fault — a SET in a MODIFY with two values on its line (§13)"
+    SPEC_VERSION "0.6"
+    #GrmBadQQQQQQQQQQQQQQQQ ^"Samurai" DEF {
+        PROPERTIES {
+            ^"Notes"
+        }
+    }
+    MODIFY #GrmBadQQQQQQQQQQQQQQQQ ^"Samurai" {
+        SET ^"Notes" "first" "second"
+    }
+}
