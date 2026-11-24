@@ -4,7 +4,7 @@
   "dsl_dir": "titterpig-dsl/bridges",
   "content_version": "0.5.1",
   "spec_version": "0.5",
-  "note": "A .bridge (spec §21) is the one container with TWO dependency lineages: it records a DIRECTED, third-party assertion of correspondence between two independent edition namespaces. It belongs to NEITHER edition and must never live inside either edition's corpus directory — its ORIGIN names would not resolve there and its presence would pollute that namespace. A bridge lives in the folder of the spec it is written to: 0.6/ for the dnd5e -> 2024 bridge (moved 2026-11-20), 0.5/ for the arm4 -> arm5e bridge until arm5e moves; an entry's `spec_version` says which. Validate with the two-corpus mode: ttrpg_validator.py 0.6/ --corpus <edition>=<dir> ... A bridge may instead live in a system repo, beside that edition's corpus directory and never inside it (Pendragon: titterpig-dsl-pendragon6e/bridges/0.6/); its entry's `file` is then relative to this folder and `repo` names its home.",
+  "note": "A .bridge (spec §21) is the one container with TWO dependency lineages: it records a DIRECTED, third-party assertion of correspondence between two independent edition namespaces. It belongs to NEITHER edition and must never live inside either edition's corpus directory — its ORIGIN names would not resolve there and its presence would pollute that namespace. A bridge lives in the folder of the spec it is written to: 0.6/ for the dnd5e -> 2024 bridge (moved 2026-11-20) and the arm4 -> arm5e bridge (moved 2026-11-23, D33); an entry's `spec_version` says which. Validate with the two-corpus mode: ttrpg_validator.py 0.6/ --corpus <edition>=<dir> ... A bridge may instead live in a system repo, beside that edition's corpus directory and never inside it (Pendragon: titterpig-dsl-pendragon6e/bridges/0.6/); its entry's `file` is then relative to this folder and `repo` names its home.",
   "sources": [
     {
       "file": "0.6/dnd5e-to-dnd5.5e-0.6-srd-conversion.bridge",
@@ -31,7 +31,8 @@
       "description": "The RICH case: entity-keyed throughout. 573 MAPs, 7 REMAINDERs, 85 GUIDANCE entries, the document's own four-tag disposition vocabulary."
     },
     {
-      "file": "0.5/arm4-to-arm5e-0.5-appendix-i.bridge",
+      "file": "0.6/arm4-to-arm5e-0.6-appendix-i.bridge",
+      "spec_version": "0.6",
       "origin": {
         "edition": "arm4",
         "version": "4",
@@ -39,7 +40,7 @@
       },
       "destination": {
         "edition": "arm5e",
-        "version": "0.4",
+        "version": "0.6",
         "repo": "titterpig-dsl-arm5e/arm5e"
       },
       "source": {

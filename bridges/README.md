@@ -17,7 +17,7 @@ overlay" can actually be generated and audited.
 | File | Origin → Destination | Shape |
 |---|---|---|
 | `0.6/dnd5e-to-dnd5.5e-0.6-srd-conversion.bridge` | `dnd5e` → `dnd5.5e` | The **rich** case: WotC's *Converting to System Reference Document 5.2.1*, entity-keyed throughout — 573 `MAP`s, 7 `REMAINDER`s, 85 `GUIDANCE` entries, the document's own four-tag disposition vocabulary. |
-| `0.5/arm4-to-arm5e-0.5-appendix-i.bridge` | `arm4` *(EXTERNAL)* → `arm5e` | The **sparse** case: *Ars Magica Fifth Edition*, Appendix I — ~85% prose, no mapping table at all. No `MAP`, no `REMAINDER`, no `DISPOSITIONS`; 7 field-level `PROCEDURE`s + 11 `GUIDANCE` entries. |
+| `0.6/arm4-to-arm5e-0.6-appendix-i.bridge` | `arm4` *(EXTERNAL)* → `arm5e` | The **sparse** case: *Ars Magica Fifth Edition*, Appendix I — ~85% prose, no mapping table at all. No `MAP`, no `REMAINDER`, no `DISPOSITIONS`; 7 field-level `PROCEDURE`s + 11 `GUIDANCE` entries. |
 | `titterpig-dsl-pendragon6e/bridges/0.6/pendragon5e-to-pendragon6e-0.6-notes-on-the-new-edition.bridge` | `pendragon5e` → `pendragon6e` | Sparse, like ArM5: the Pendragon *Core Rulebook*'s Appendix A, "Notes on the New Edition" — a character-conversion procedure with no change-tag vocabulary. No `DISPOSITIONS`, so no `REMAINDER`; 20 `MAP`s with no `DISPOSITION` (DECISION-67: what the appendix says was renamed, combined, dropped or added), 14 `PROCEDURE`s (51 `CONVERT`s keyed to both knights' sheet names), 7 `GUIDANCE` entries, 4 `ALIASES`. Lives in the destination's repo (see below). |
 
 A bridge sits in the folder of the spec it is written to (§21, `bridges/<specver>/`). The D&D bridge
@@ -57,8 +57,8 @@ and never the union:
 python3 ../ttrpg_validator.py 0.6/ \
     --corpus dnd5e="../../titterpig-dsl-dnd5e/0.6" \
     --corpus dnd5.5e="../../titterpig-dsl-dnd5.5e/0.6"
-python3 ../ttrpg_validator.py 0.5/ \
-    --corpus arm5e="../../titterpig-dsl-arm5e/arm5e/0.5"
+python3 ../ttrpg_validator.py 0.6/arm4-to-arm5e-0.6-appendix-i.bridge \
+    --corpus arm5e="../../titterpig-dsl-arm5e/arm5e/0.6"
 
 # the Pendragon bridge, from titterpig-dsl-pendragon6e/
 python3 ../titterpig-dsl/ttrpg_validator.py bridges/0.5/ \
