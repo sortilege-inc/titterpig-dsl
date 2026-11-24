@@ -1,5 +1,5 @@
 #!/usr/bin/env python3
-"""DSL 0.5 gate for STRUCTURE — the thing no other gate measures.
+"""DSL gate for STRUCTURE (spec 0.5 and 0.6) — the thing no other gate measures.
 
 The validator asks whether a file is well-formed. `coverageAudit.ts` asks whether
 every source unit is represented. The verbatim QA asks whether the text is the book's.
@@ -12,6 +12,16 @@ One check:
   SHAPE     DESCRIPTION must not outnumber PROPERTIES. When it does, the mechanics are in
             prose and the conversion is not done.
 
+What is counted, the same way at both specs:
+
+  DESCRIPTION  prose values: a DESCRIPTION line, or ^"Description" with a value. A type that
+               declares the property (^"Description" STRING at 0.5) is not prose and is not
+               counted.
+  lists        list values: a property name and its list, in any of the forms the specs write
+               (^"X" [...], ^"X" LIST [...], ^"X" LIST OF <type> [...]). A table's AXIS or COLUMNS
+               is not a list value. At 0.6 a list in a table cell is named and counted; at 0.5 it
+               sat unnamed in a ROW and was not.
+
 REQUIRED is no longer checked here. Until v0.6 this file failed a property that a type declared
 REQUIRED and that no instance of the type filled, and only noted one that some instances left
 out. DECISION-34 gives the word one meaning (every instance of the type has the property) and
@@ -21,6 +31,9 @@ ttrpg_validator.py checks it for every instance.
 """
 import glob, os, re, sys
 
+NAME = r'\^"(?:[^"\\]|\\.)*"'
+LIST_VALUE = re.compile(r'(?<!AXIS )(?<!COLUMNS )' + NAME + r'\s+(?:LIST OF\s+(?:(?:#\w+\s+)?(?:'
+                        + NAME + r'|[A-Z]+)\s+)?|LIST\s+)?\[')
 EXTS = ('.ttrpg', '.actor', '.arc', '.frame', '.setting', '.campaign', '.codex')
 
 
@@ -39,10 +52,10 @@ def main():
 
     n_prop = len(re.findall(r'^\s*PROPERTIES\s*\{', blob, re.M))
     n_desc = len(re.findall(r'^\s*DESCRIPTION\s', blob, re.M)) \
-        + len(re.findall(r'^\s*\^"Description"\s+(?:STRING\s|")', blob, re.M))
+        + len(re.findall(r'^\s*\^"Description"\s+(?:STRING\s+)?"', blob, re.M))
     n_def = len(re.findall(r'DEF\s*\{', blob))
     n_table = len(re.findall(r'\bTABLE\s*\{', blob))
-    n_list = len(re.findall(r'\bLIST OF\b', blob))
+    n_list = len(LIST_VALUE.findall(blob))
     n_empty = len(re.findall(r'DEF\s*\{\s*\}', blob))
     ratio = n_prop / n_desc if n_desc else float('inf')
 
@@ -50,7 +63,7 @@ def main():
 
     print(f'STRUCTURE: {len(texts)} file(s) | {n_def} DEF | {n_prop} PROPERTIES | '
           f'{n_desc} DESCRIPTION | ratio {ratio:.1f} | {n_table} TABLE | '
-          f'{n_list} LIST OF | {n_empty} empty DEF')
+          f'{n_list} lists | {n_empty} empty DEF')
     if ratio < min_ratio:
         errs.append(f'SHAPE: {n_desc} DESCRIPTION vs {n_prop} PROPERTIES '
                     f'(ratio {ratio:.2f} < {min_ratio}) — the mechanics are in prose')
