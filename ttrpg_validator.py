@@ -1183,7 +1183,9 @@ def collect_definitions(fname, toks):
                                 else:
                                     pos.append((nargs, tk.val))
                     q += 1
-                bound.append({'base': t.val, 'nargs': nargs + 1 if (seen or nargs) else 0,
+                # the hash written before the base, when there is one: a name can be several DEFs' (D60)
+                hsh = toks[i - 1].val if i and toks[i - 1].kind == 'HASH' and toks[i - 1].line == t.line else None
+                bound.append({'base': t.val, 'hash': hsh, 'nargs': nargs + 1 if (seen or nargs) else 0,
                               'pos': pos, 'named': named, 'line': t.line})
             # a property line: ^"Name" TYPE [value] [modifiers]
             in_props = bool(stack) and stack[-1]['kind'] in ('DEF', 'PROPS') and stack[-1]['def'] is not None
@@ -3880,7 +3882,7 @@ def value_pass(files_data, findings):
         for b in d.get('bound', []):
             if is_waived(b['line'], d):
                 continue
-            base = resolve(b['base'], None)
+            base = resolve(b['base'], b.get('hash'))     # by its hash first: a name can be several DEFs'
             if base is None:
                 continue
             params = base['params']
