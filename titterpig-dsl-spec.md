@@ -1,6 +1,6 @@
-# Titterpig DSL Specification v0.5
+# Titterpig DSL Specification v0.6
 
-> **Status: v0.5 (current, canonical).** Supersedes v0.4 (which superseded v0.3); superseded
+> **Status: v0.6 (current, canonical).** Supersedes v0.5 (which superseded v0.4); superseded
 > versions live in this repo's git history. `AUTHORING-GUIDELINES.md` holds authoring
 > best-practices for system-specific content. The
 > `ttrpg.peg` grammar states the syntax and `check_grammar.py` runs it: every good fixture in this
@@ -10,11 +10,11 @@
 
 ## 0. What changed
 
-The DSL is **at v0.5**, and a v0.6 working draft is in progress. This section lists the v0.6 changes
+The DSL is **at v0.6**. This section lists the v0.6 changes
 first, then the v0.5 additions, then the v0.4 changelog for history; the *Resolved decisions*
 subsections below carry the full detail.
 
-### v0.6 — working draft *(in progress, 2026-11)*
+### v0.6 *(current, 2026-11)*
 
 Changes made since v0.5, listed as they are decided. **Not all are additive.**
 
@@ -225,7 +225,7 @@ Changes made since v0.5, listed as they are decided. **Not all are additive.**
     below 0.6, or none, and an **error** from 0.6. A name with no letter and no digit is a
     **warning** at every version.
 
-### v0.5 — five new constructs, and one rule tightened *(current)*
+### v0.5 — five new constructs, and one rule tightened
 
 1. **`GUIDANCE`** *(new, §22, DECISION-8)* — first-class guidance prose (most **sidebars**): prose
    *about* the mechanics that is neither a deterministic `DESCRIPTION` rule nor opaque `.lore` flavor.
